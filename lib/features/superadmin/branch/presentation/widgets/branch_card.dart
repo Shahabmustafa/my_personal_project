@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+import '../../data/model/branch_model.dart';
+
+class BranchCard extends StatelessWidget {
+  final BranchModel branch;
+  final bool canEdit;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const BranchCard({
+    super.key,
+    required this.branch,
+    required this.canEdit,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAEFFD),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.apartment_outlined, color: Color(0xFF3E63DD), size: 22),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(branch.branchName,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                    ),
+                    _StatusPill(isActive: branch.isActive),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                if (branch.address.isNotEmpty) _IconRow(icon: Icons.location_on_outlined, text: branch.address),
+                if (branch.city.isNotEmpty) _IconRow(icon: Icons.location_city, text: branch.city),
+                if (branch.phoneNumber.isNotEmpty) _IconRow(icon: Icons.phone_outlined, text: branch.phoneNumber),
+              ],
+            ),
+          ),
+          if (canEdit) ...[
+            const SizedBox(width: 8),
+            Column(
+              children: [
+                _ActionBtn(icon: Icons.edit_outlined, color: const Color(0xFF3E63DD), onTap: onEdit),
+                const SizedBox(height: 6),
+                _ActionBtn(icon: Icons.delete_outline, color: Colors.redAccent, onTap: onDelete),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  final bool isActive;
+  const _StatusPill({required this.isActive});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFEAF5E6) : const Color(0xFFFEECEC),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        isActive ? 'Active' : 'Inactive',
+        style: TextStyle(
+          color: isActive ? const Color(0xFF2E7D32) : const Color(0xFFC62828),
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _IconRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _IconRow({required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Row(
+        children: [
+          Icon(icon, size: 13, color: const Color(0xFF8A8FA3)),
+          const SizedBox(width: 5),
+          Expanded(child: Text(text, style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _ActionBtn({required this.icon, required this.color, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, size: 18, color: color),
+      ),
+    );
+  }
+}

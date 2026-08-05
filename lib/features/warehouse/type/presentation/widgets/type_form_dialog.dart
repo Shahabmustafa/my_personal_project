@@ -1,0 +1,108 @@
+import 'package:flutter/material.dart';
+import '../../data/model/type_model.dart';
+
+class TypeFormDialog extends StatefulWidget {
+  final TypeModel? item;
+  final ValueChanged<TypeModel> onSave;
+
+  const TypeFormDialog({
+    super.key,
+    this.item,
+    required this.onSave,
+  });
+
+  @override
+  State<TypeFormDialog> createState() => _TypeFormDialogState();
+}
+
+class _TypeFormDialogState extends State<TypeFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.item?.name ?? '');
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEdit = widget.item != null;
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          const Icon(Icons.style_outlined, color: Color(0xFF3E63DD), size: 20),
+          const SizedBox(width: 8),
+          Text(isEdit ? 'Edit Type' : 'Add Type',
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
+        ],
+      ),
+      content: SizedBox(
+        width: 360,
+        child: Form(
+          key: _formKey,
+          child: TextFormField(
+            controller: _ctrl,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Type Name *',
+              hintText: 'e.g. Sandal',
+              labelStyle: const TextStyle(fontSize: 13),
+              prefixIcon: const Icon(Icons.style_outlined, size: 18, color: Color(0xFF8A8FA3)),
+              isDense: true,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF3E63DD), width: 1.5)),
+              errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.redAccent)),
+            ),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Type Name is required' : null,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3E63DD),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          onPressed: () {
+            if (_formKey.currentState?.validate() ?? false) {
+              widget.onSave(TypeModel(
+                id: widget.item?.id ?? '',
+                name: _ctrl.text.trim(),
+              ));
+              Navigator.pop(context);
+            }
+          },
+          child: Text(isEdit ? 'Update' : 'Save'),
+        ),
+      ],
+    );
+  }
+}
