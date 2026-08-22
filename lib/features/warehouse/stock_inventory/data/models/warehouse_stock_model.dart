@@ -10,6 +10,7 @@ class WarehouseStockModel {
   final String categoryId;
   final String typeId;
   final int quantity;
+  final double discount;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -35,6 +36,7 @@ class WarehouseStockModel {
     required this.categoryId,
     required this.typeId,
     required this.quantity,
+    this.discount = 0,
     required this.createdAt,
     required this.updatedAt,
     this.productName,
@@ -46,6 +48,13 @@ class WarehouseStockModel {
     this.typeName,
     this.warehouseName,
   });
+
+  static double _toDouble(dynamic v) {
+    if (v == null) return 0.0;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? 0.0;
+    return 0.0;
+  }
 
   factory WarehouseStockModel.fromJson(Map<String, dynamic> json) {
     return WarehouseStockModel(
@@ -60,6 +69,7 @@ class WarehouseStockModel {
       categoryId: json['category_id'] as String,
       typeId: json['type_id'] as String,
       quantity: json['quantity'] as int,
+      discount: _toDouble(json['discount']),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       // Joined fields
@@ -94,6 +104,7 @@ class WarehouseStockModel {
       'category_id': categoryId,
       'type_id': typeId,
       'quantity': quantity,
+      'discount': discount,
     };
   }
 }

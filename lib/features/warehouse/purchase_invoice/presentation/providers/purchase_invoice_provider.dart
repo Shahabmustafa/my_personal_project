@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/purchase_invoice_datasource.dart';
 import '../../data/models/purchase_invoice_model.dart';
+import '../../data/models/purchase_return_model.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/purchase_invoice_repository.dart';
-
-const kWarehouseId = '1d6646fe-d2ce-43a6-a9b3-705f23c199ee';
+import '../../../shared/current_warehouse_provider.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final purchaseInvoiceDatasourceProvider = Provider<PurchaseInvoiceDatasource>(
@@ -23,12 +23,51 @@ final purchaseCompaniesProvider = FutureProvider<List<StockLookupItem>>(
       (ref) => ref.read(purchaseInvoiceRepositoryProvider).getCompanies(),
 );
 
-// ── Warehouse stock cache ─────────────────────────────────────────────────
-final warehouseStockCacheProvider = FutureProvider<List<WarehouseStockModel>>(
-      (ref) => ref
-      .read(purchaseInvoiceRepositoryProvider)
-      .getWarehouseStock(kWarehouseId),
+// ── Cash Counter (replaces warehouseCashProvider) ─────────────────────────
+final purchaseCashCounterProvider =
+StateNotifierProvider<PurchaseCashCounterNotifier, WarehouseCashCounter?>(
+      (ref) =>
+      PurchaseCashCounterNotifier(
+        ref.read(purchaseInvoiceRepositoryProvider),
+        ref.watch(currentWarehouseIdProvider),
+      ),
 );
+
+class PurchaseCashCounterNotifier
+    extends StateNotifier<WarehouseCashCounter?> {
+  final PurchaseInvoiceRepository _repo;
+  final String _warehouseId;
+
+  PurchaseCashCounterNotifier(this._repo, this._warehouseId) : super(null) {
+    load();
+  }
+
+  Future<void> load() async {
+    final counter = await _repo.getOrCreateCounter(_warehouseId);
+    if (mounted) state = counter;
+  }
+}
+
+// ── Company balance ───────────────────────────────────────────────────────
+final companyBalanceProvider = StateNotifierProvider.family<
+    CompanyBalanceNotifier, CompanyWithBalance?, String>(
+      (ref, companyId) => CompanyBalanceNotifier(
+      ref.read(purchaseInvoiceRepositoryProvider), companyId),
+);
+
+class CompanyBalanceNotifier extends StateNotifier<CompanyWithBalance?> {
+  final PurchaseInvoiceRepository _repo;
+  final String companyId;
+
+  CompanyBalanceNotifier(this._repo, this.companyId) : super(null) {
+    load();
+  }
+
+  Future<void> load() async {
+    final company = await _repo.getCompanyWithBalance(companyId);
+    if (mounted) state = company;
+  }
+}
 
 // ── Invoice list ──────────────────────────────────────────────────────────
 class InvoiceListState {
@@ -56,12 +95,15 @@ class InvoiceListState {
 
 class InvoiceListNotifier extends StateNotifier<InvoiceListState> {
   final PurchaseInvoiceRepository _repo;
-  InvoiceListNotifier(this._repo) : super(const InvoiceListState());
+  final String _warehouseId;
+
+  InvoiceListNotifier(this._repo, this._warehouseId)
+      : super(const InvoiceListState());
 
   Future<void> loadInvoices() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final list = await _repo.getInvoices(kWarehouseId);
+      final list = await _repo.getInvoices(_warehouseId);
       state = state.copyWith(invoices: list, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -71,8 +113,18 @@ class InvoiceListNotifier extends StateNotifier<InvoiceListState> {
 
 final invoiceListProvider =
 StateNotifierProvider<InvoiceListNotifier, InvoiceListState>((ref) {
-  return InvoiceListNotifier(ref.read(purchaseInvoiceRepositoryProvider));
+  return InvoiceListNotifier(
+    ref.read(purchaseInvoiceRepositoryProvider),
+    ref.watch(currentWarehouseIdProvider),
+  );
 });
+
+// ── Warehouse stock cache ─────────────────────────────────────────────────
+final warehouseStockCacheProvider = FutureProvider<List<WarehouseStockModel>>(
+      (ref) => ref
+      .read(purchaseInvoiceRepositoryProvider)
+      .getWarehouseStock(ref.watch(currentWarehouseIdProvider)),
+);
 
 // ── Cart / active invoice state ───────────────────────────────────────────
 class PurchaseInvoiceState {
@@ -92,11 +144,12 @@ class PurchaseInvoiceState {
     this.error,
   });
 
+  // Purchase invoice mein company ko purchasePrice pay karte hain, salePrice nahi
   double get totalAmount =>
-      cartItems.fold(0, (sum, i) => sum + (i.salePrice * i.quantity));
+      cartItems.fold(0, (sum, i) => sum + (i.purchasePrice * i.quantity));
   double get totalDiscount =>
-      cartItems.fold(0, (sum, i) => sum + (i.discountAmount * i.quantity));
-  double get netAmount => cartItems.fold(0, (sum, i) => sum + i.lineTotal);
+      cartItems.fold(0, (sum, i) => sum + (i.purchaseDiscountAmount * i.quantity));
+  double get netAmount => cartItems.fold(0, (sum, i) => sum + i.purchaseLineTotal);
   int get totalQuantity => cartItems.fold(0, (sum, i) => sum + i.quantity);
 
   PurchaseInvoiceState copyWith({
@@ -122,12 +175,13 @@ class PurchaseInvoiceState {
 
 class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
   final PurchaseInvoiceRepository _repo;
+  final String _warehouseId;
 
-  PurchaseInvoiceNotifier(this._repo) : super(const PurchaseInvoiceState()) {
+  PurchaseInvoiceNotifier(this._repo, this._warehouseId)
+      : super(const PurchaseInvoiceState()) {
     _loadInvoiceNumber();
   }
 
-  // ── Generate next number: MAX of all existing + 1 ────────────────────────
   static Future<String> _generateNextNumber() async {
     final client = Supabase.instance.client;
     final res = await client
@@ -231,8 +285,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
 
   void updateItemSalePrice(String stockId, double price) {
     final updated = state.cartItems
-        .map((i) =>
-    i.stockId == stockId ? i.copyWith(salePrice: price) : i)
+        .map((i) => i.stockId == stockId ? i.copyWith(salePrice: price) : i)
         .toList();
     state = state.copyWith(cartItems: updated);
   }
@@ -255,27 +308,32 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     state = state.copyWith(cartItems: []);
   }
 
-  /// Save invoice: generate a FRESH number at save time to avoid duplicates,
-  /// then retry once if still duplicate (race condition safety net).
-  Future<String?> saveInvoice() async {
+  /// Save invoice — payment logic datasource ke andar handle hota hai
+  Future<String?> saveInvoice({
+    required double paidAmount,
+    required double creditAmount,
+    required String paymentMode,
+    required PurchaseInvoiceRepository repo,
+  }) async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
     state = state.copyWith(isSaving: true, clearError: true);
 
     try {
-      // Generate fresh number RIGHT before inserting
       final freshNumber = await _generateNextNumber();
 
-      await _repo.savePurchaseInvoice(
+      await repo.savePurchaseInvoice(
         invoiceNumber: freshNumber,
-        warehouseId: kWarehouseId,
+        warehouseId: _warehouseId,
         companyId: state.selectedCompany?.id,
         totalAmount: state.totalAmount,
         totalDiscount: state.totalDiscount,
         netAmount: state.netAmount,
+        paidAmount: paidAmount,
+        creditAmount: creditAmount,
+        paymentMode: paymentMode,
         cartItems: state.cartItems,
       );
 
-      // Update displayed number to match what was actually saved
       if (mounted) {
         state = state.copyWith(isSaving: false, invoiceNumber: freshNumber);
       }
@@ -283,24 +341,27 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     } catch (e) {
       final errMsg = e.toString();
 
-      // If duplicate key → retry once with a new number
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {
         try {
           await Future.delayed(const Duration(milliseconds: 50));
           final retryNumber = await _generateNextNumber();
 
-          await _repo.savePurchaseInvoice(
+          await repo.savePurchaseInvoice(
             invoiceNumber: retryNumber,
-            warehouseId: kWarehouseId,
+            warehouseId: _warehouseId,
             companyId: state.selectedCompany?.id,
             totalAmount: state.totalAmount,
             totalDiscount: state.totalDiscount,
             netAmount: state.netAmount,
+            paidAmount: paidAmount,
+            creditAmount: creditAmount,
+            paymentMode: paymentMode,
             cartItems: state.cartItems,
           );
 
           if (mounted) {
-            state = state.copyWith(isSaving: false, invoiceNumber: retryNumber);
+            state =
+                state.copyWith(isSaving: false, invoiceNumber: retryNumber);
           }
           return null;
         } catch (e2) {
@@ -329,5 +390,7 @@ final purchaseInvoiceProvider =
 StateNotifierProvider<PurchaseInvoiceNotifier, PurchaseInvoiceState>(
         (ref) {
       return PurchaseInvoiceNotifier(
-          ref.read(purchaseInvoiceRepositoryProvider));
+        ref.read(purchaseInvoiceRepositoryProvider),
+        ref.watch(currentWarehouseIdProvider),
+      );
     });

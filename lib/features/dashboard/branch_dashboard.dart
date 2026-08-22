@@ -4,7 +4,13 @@ import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import 'package:safishoe_app/features/user/presentation/screens/users_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
+import '../branch/assign_stock_to_my_branch/presentation/screen/branch_assign_list_screen.dart';
+import '../branch/branch_cash_counter/presentation/screens/branch_cash_counter_screen.dart';
+import '../branch/branch_stock_inventory/presentation/screen/branch_stock_screen.dart';
 import '../branch/customer/presentation/screens/customers_screen.dart';
+import '../branch/dashboard/presentation/screen/branch_overview_screen.dart';
+import '../branch/expense/presentation/screen/expense_screen.dart';
+import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 
 // Roles: cashier, manager, salesman
 
@@ -19,13 +25,25 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
   int _index = 0;
 
   static const _navItems = [
+    SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Users'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Customers'),
+    SidebarItem(icon: Icons.apartment_outlined, label: 'Assign Stock My Branch'),
+    SidebarItem(icon: Icons.apartment_outlined, label: 'Stock Inventory'),
+    SidebarItem(icon: Icons.point_of_sale_outlined, label: 'Cash Counter'),
+    SidebarItem(icon: Icons.receipt_long_outlined, label: 'Expense'),
+    SidebarItem(icon: Icons.shopping_cart_checkout_outlined, label: 'Sale Invoice'),
   ];
 
   static const _pages = [
+    BranchOverviewScreen(),
     UsersScreen(),
     CustomersScreen(),
+    BranchAssignListScreen(),
+    BranchStockScreen(),
+    BranchCashCounterScreen(),
+    ExpenseScreen(),
+    SaleInvoiceScreen(),
   ];
 
   @override

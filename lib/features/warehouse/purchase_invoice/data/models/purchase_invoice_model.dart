@@ -8,6 +8,9 @@ class PurchaseInvoiceModel {
   final double totalAmount;
   final double totalDiscount;
   final double netAmount;
+  final double paidAmount;
+  final double creditAmount;
+  final String paymentMode; // 'cash' | 'credit' | 'partial'
   final String? notes;
   final DateTime createdAt;
   final List<PurchaseInvoiceItemModel> items;
@@ -22,6 +25,9 @@ class PurchaseInvoiceModel {
     required this.totalAmount,
     required this.totalDiscount,
     required this.netAmount,
+    this.paidAmount = 0,
+    this.creditAmount = 0,
+    this.paymentMode = 'cash',
     this.notes,
     required this.createdAt,
     this.items = const [],
@@ -34,12 +40,15 @@ class PurchaseInvoiceModel {
       invoiceNumber: json['invoice_number'] as String,
       companyId: json['company_id'] as String?,
       companyName:
-          (json['companies'] as Map<String, dynamic>?)?['name'] as String?,
+      (json['companies'] as Map<String, dynamic>?)?['name'] as String?,
       warehouseId: json['warehouse_id'] as String,
       invoiceDate: DateTime.parse(json['invoice_date'] as String),
       totalAmount: (json['total_amount'] as num).toDouble(),
       totalDiscount: (json['total_discount'] as num).toDouble(),
       netAmount: (json['net_amount'] as num).toDouble(),
+      paidAmount: (json['paid_amount'] as num? ?? 0).toDouble(),
+      creditAmount: (json['credit_amount'] as num? ?? 0).toDouble(),
+      paymentMode: json['payment_mode'] as String? ?? 'cash',
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       items: items,
@@ -119,13 +128,17 @@ class PurchaseInvoiceItemModel {
       netPrice: (json['net_price'] as num).toDouble(),
       lineTotal: (json['line_total'] as num).toDouble(),
       productName:
-          (json['products'] as Map<String, dynamic>?)?['article_name'] as String?,
+      (json['products'] as Map<String, dynamic>?)?['article_name']
+      as String?,
       sizeName: (json['sizes'] as Map<String, dynamic>?)?['number'] as String?,
-      colorName: (json['colors'] as Map<String, dynamic>?)?['name'] as String?,
-      brandName: (json['brands'] as Map<String, dynamic>?)?['name'] as String?,
+      colorName:
+      (json['colors'] as Map<String, dynamic>?)?['name'] as String?,
+      brandName:
+      (json['brands'] as Map<String, dynamic>?)?['name'] as String?,
       categoryName:
-          (json['categories'] as Map<String, dynamic>?)?['name'] as String?,
-      typeName: (json['types'] as Map<String, dynamic>?)?['name'] as String?,
+      (json['categories'] as Map<String, dynamic>?)?['name'] as String?,
+      typeName:
+      (json['types'] as Map<String, dynamic>?)?['name'] as String?,
     );
   }
 }
@@ -174,9 +187,15 @@ class PurchaseCartItem {
     required this.discountPct,
   });
 
+  // Sale price based (branch mein sale ke liye)
   double get discountAmount => salePrice * discountPct / 100;
   double get netPrice => salePrice - discountAmount;
   double get lineTotal => netPrice * quantity;
+
+  // Purchase price based (company ko payment ke liye)
+  double get purchaseDiscountAmount => purchasePrice * discountPct / 100;
+  double get purchaseNetPrice => purchasePrice - purchaseDiscountAmount;
+  double get purchaseLineTotal => purchaseNetPrice * quantity;
 
   PurchaseCartItem copyWith({
     int? quantity,
@@ -204,6 +223,48 @@ class PurchaseCartItem {
       salePrice: salePrice ?? this.salePrice,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       discountPct: discountPct ?? this.discountPct,
+    );
+  }
+}
+
+/// Warehouse cash in hand model
+class WarehouseCashInHand {
+  final String id;
+  final String warehouseId;
+  final double amount;
+
+  const WarehouseCashInHand({
+    required this.id,
+    required this.warehouseId,
+    required this.amount,
+  });
+
+  factory WarehouseCashInHand.fromJson(Map<String, dynamic> json) {
+    return WarehouseCashInHand(
+      id: json['id'] as String,
+      warehouseId: json['warehouse_id'] as String,
+      amount: (json['amount'] as num).toDouble(),
+    );
+  }
+}
+
+/// Lightweight company info with balance (from companies table)
+class CompanyWithBalance {
+  final String id;
+  final String name;
+  final double openingBalance;
+
+  const CompanyWithBalance({
+    required this.id,
+    required this.name,
+    required this.openingBalance,
+  });
+
+  factory CompanyWithBalance.fromJson(Map<String, dynamic> json) {
+    return CompanyWithBalance(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      openingBalance: (json['opening_balance'] as num? ?? 0).toDouble(),
     );
   }
 }

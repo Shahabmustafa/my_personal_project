@@ -11,6 +11,8 @@ class AuthLocalDatasource {
   static const _kBranchIds = 'user_branch_ids';
   static const _kWarehouseIds = 'user_warehouse_ids';
   static const _kIsLoggedIn = 'is_logged_in';
+  static const _kSelectedBranchId = 'selected_branch_id';
+  static const _kSelectedWarehouseId = 'selected_warehouse_id';
 
   Future<void> saveUser(UserModel user) async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,6 +50,26 @@ class AuthLocalDatasource {
     return prefs.getBool(_kIsLoggedIn) ?? false;
   }
 
+  Future<void> saveSelectedBranchId(String branchId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kSelectedBranchId, branchId);
+  }
+
+  Future<String> getSelectedBranchId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kSelectedBranchId) ?? '';
+  }
+
+  Future<void> saveSelectedWarehouseId(String warehouseId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kSelectedWarehouseId, warehouseId);
+  }
+
+  Future<String> getSelectedWarehouseId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kSelectedWarehouseId) ?? '';
+  }
+
   Future<void> clearUser() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kId);
@@ -58,6 +80,8 @@ class AuthLocalDatasource {
     await prefs.remove(_kIsActive);
     await prefs.remove(_kBranchIds);
     await prefs.remove(_kWarehouseIds);
+    await prefs.remove(_kSelectedBranchId);
+    await prefs.remove(_kSelectedWarehouseId);
     await prefs.setBool(_kIsLoggedIn, false);
   }
 

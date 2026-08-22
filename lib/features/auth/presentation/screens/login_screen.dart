@@ -7,6 +7,7 @@ import '../providers/auth_provider.dart';
 import '../providers/auth_state.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
+import 'select_workspace_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -30,10 +31,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _handleLogin() {
     if (_formKey.currentState?.validate() ?? false) {
-      ref.read(authProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
+      ref.read(authProvider.notifier).login(_emailController.text.trim(), _passwordController.text.trim(),);
     }
   }
 
@@ -74,10 +72,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       if (next.status == AuthStatus.success && next.user != null) {
-        final dashboard = _getDashboard(next.user!.role);
+        final user = next.user!;
+        final needsWorkspaceSelection = !user.isSuperAdmin &&
+            !user.isAdmin &&
+            (user.branchIds.length + user.warehouseIds.length) > 1;
+
+        final destination = needsWorkspaceSelection
+            ? const SelectWorkspaceScreen()
+            : _getDashboard(user.role);
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => dashboard),
+          MaterialPageRoute(builder: (_) => destination),
         );
       }
     });

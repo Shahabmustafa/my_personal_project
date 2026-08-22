@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import 'package:safishoe_app/features/warehouse/purchase_invoice/presentation/screens/purchase_invoice_screen.dart';
+import 'package:safishoe_app/features/warehouse/purchase_invoice/presentation/screens/purchase_return_screen.dart';
+import 'package:safishoe_app/features/warehouse/warehouse_cash_counter/presentation/screens/warehouse_cash_counter_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
+import '../warehouse/assign_stock_to_branch/presentation/screens/assign_stock_screen.dart';
 import '../warehouse/brand/presentation/screens/brands_screen.dart';
 import '../warehouse/category/presentation/screens/categorys_screen.dart';
 import '../warehouse/color/presentation/screens/colors_screen.dart';
@@ -28,6 +31,9 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
 
   static const _navItems = [
     SidebarItem(icon: Icons.business_outlined,           label: 'Purchase Invoice'),
+    SidebarItem(icon: Icons.business_outlined,           label: 'Purchase Return'),
+    SidebarItem(icon: Icons.business_outlined,           label: 'Assign Stock To Branch'),
+    SidebarItem(icon: Icons.business_outlined,           label: 'Warehouse Cash Counter'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Company'),
     SidebarItem(icon: Icons.inventory_2_outlined,        label: 'Products'),
     SidebarItem(icon: Icons.branding_watermark_outlined, label: 'Brands'),
@@ -40,6 +46,9 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
 
   static const _pages = [
     PurchaseInvoiceScreen(),
+    PurchaseReturnScreen(),
+    AssignStockScreen(),
+    WarehouseCashCounterScreen(),
     CompaniesScreen(),
     ProductsScreen(),
     BrandsScreen(),

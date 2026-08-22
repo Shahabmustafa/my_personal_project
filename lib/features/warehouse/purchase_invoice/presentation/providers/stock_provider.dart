@@ -4,9 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/stock_datasource.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/stock_repository.dart';
-
-// ── Hardcoded warehouse id ────────────────────────────────────────────────
-const kWarehouseId = '1d6646fe-d2ce-43a6-a9b3-705f23c199ee';
+import '../../../shared/current_warehouse_provider.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final stockDatasourceProvider = Provider<StockDatasource>(
@@ -82,13 +80,15 @@ class StockState {
 
 class StockNotifier extends StateNotifier<StockState> {
   final StockRepository _repository;
+  final String _warehouseId;
 
-  StockNotifier(this._repository) : super(const StockState());
+  StockNotifier(this._repository, this._warehouseId)
+      : super(const StockState());
 
   Future<void> loadStock() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final items = await _repository.getStockByWarehouse(kWarehouseId);
+      final items = await _repository.getStockByWarehouse(_warehouseId);
       state = state.copyWith(items: items, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -177,5 +177,8 @@ class StockNotifier extends StateNotifier<StockState> {
 
 final stockProvider =
     StateNotifierProvider<StockNotifier, StockState>((ref) {
-  return StockNotifier(ref.read(stockRepositoryProvider));
+  return StockNotifier(
+    ref.read(stockRepositoryProvider),
+    ref.watch(currentWarehouseIdProvider),
+  );
 });

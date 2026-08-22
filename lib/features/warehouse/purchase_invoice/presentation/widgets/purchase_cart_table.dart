@@ -66,6 +66,8 @@ class _DesktopTable extends ConsumerWidget {
             _h('Article', flex: 3),
             _h('Size', flex: 1),
             _h('Color', flex: 2),
+            _h('Type', flex: 2),
+            _h('Category', flex: 2),
             _h('S.Price', flex: 2),
             _h('P.Price', flex: 2),
             _h('Disc%', flex: 2),
@@ -173,6 +175,10 @@ class _CartRowState extends ConsumerState<_CartRow> {
           _c(item.sizeName, flex: 1),
           // Color
           _c(item.colorName, flex: 2),
+          // Type
+          _c(item.typeName, flex: 2),
+          // Category
+          _c(item.categoryName, flex: 2),
 
           // S.Price editable
           Expanded(
@@ -215,8 +221,8 @@ class _CartRowState extends ConsumerState<_CartRow> {
             ),
           ),
 
-          // Net Price read-only
-          _c(item.netPrice.toStringAsFixed(0),
+          // Net Price (purchase price - discount)
+          _c(item.purchaseNetPrice.toStringAsFixed(0),
               flex: 2,
               style: TextStyle(
                   fontSize: 12,
@@ -236,8 +242,8 @@ class _CartRowState extends ConsumerState<_CartRow> {
             ),
           ),
 
-          // Total
-          _c(item.lineTotal.toStringAsFixed(0),
+          // Total (purchasePrice * qty - discount)
+          _c(item.purchaseLineTotal.toStringAsFixed(0),
               flex: 2,
               style: const TextStyle(
                   fontSize: 12, fontWeight: FontWeight.w700)),
@@ -457,9 +463,10 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalQty = items.fold(0, (s, i) => s + i.quantity);
-    final totalAmt = items.fold(0.0, (s, i) => s + i.salePrice * i.quantity);
-    final totalDisc = items.fold(0.0, (s, i) => s + i.discountAmount * i.quantity);
-    final net = items.fold(0.0, (s, i) => s + i.lineTotal);
+    // Purchase invoice: company ko purchasePrice pay karte hain
+    final totalAmt = items.fold(0.0, (s, i) => s + i.purchasePrice * i.quantity);
+    final totalDisc = items.fold(0.0, (s, i) => s + i.purchaseDiscountAmount * i.quantity);
+    final net = items.fold(0.0, (s, i) => s + i.purchaseLineTotal);
     final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
@@ -471,9 +478,9 @@ class _Footer extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
         children: [
-          // label spanning first 5 cols (#, Barcode, Article, Size, Color)
+          // label spanning first 7 cols (#, Barcode, Article, Size, Color, Type, Category)
           const Expanded(
-            flex: 10, // 1+3+3+1+2
+            flex: 14, // 1+3+3+1+2+2+2
             child: Text('TOTALS',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
           ),
@@ -589,7 +596,7 @@ class _MobileList extends ConsumerWidget {
                           notifier.updateItemQuantity(item.stockId, v),
                     ),
                     const SizedBox(width: 10),
-                    Text(item.lineTotal.toStringAsFixed(0),
+                    Text(item.purchaseLineTotal.toStringAsFixed(0),
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,

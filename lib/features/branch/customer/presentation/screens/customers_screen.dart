@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
+import '../../../shared/current_branch_provider.dart';
 import '../../data/model/customer_model.dart';
 import '../providers/customer_provider.dart';
 import '../providers/customer_state.dart';
@@ -35,10 +36,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
     });
   }
 
-  String get _currentBranchId {
-    final user = ref.read(authProvider).user;
-    return user?.branchIds.isNotEmpty == true ? user!.branchIds.first : '';
-  }
+  String get _currentBranchId => ref.read(currentBranchIdProvider);
 
   @override
   Widget build(BuildContext context) {

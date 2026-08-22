@@ -98,29 +98,29 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
             child: userState.isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : userState.status == UserStatus.error
-                    ? _ErrorView(
-                        message: userState.errorMessage ?? 'Error',
-                        onRetry: () => ref.read(userProvider.notifier).loadAllUsers(),
-                      )
-                    : filtered.isEmpty
-                        ? const _EmptyView(icon: Icons.people_outline, message: 'No users found')
-                        : isMobile
-                            ? _MobileList(
-                                users: filtered,
-                                canEdit: canEdit,
-                                roles: _roles,
-                                onRoleChange: (u, r) => ref.read(userProvider.notifier).updateUserRole(userId: u.id, role: r),
-                                onToggleActive: (u) => ref.read(userProvider.notifier).toggleUserActive(userId: u.id, isActive: !u.isActive),
-                                onAssign: (u) => showDialog(context: context, builder: (_) => AssignDialog(user: u)),
-                              )
-                            : _DesktopTable(
-                                users: filtered,
-                                canEdit: canEdit,
-                                roles: _roles,
-                                onRoleChange: (u, r) => ref.read(userProvider.notifier).updateUserRole(userId: u.id, role: r),
-                                onToggleActive: (u) => ref.read(userProvider.notifier).toggleUserActive(userId: u.id, isActive: !u.isActive),
-                                onAssign: (u) => showDialog(context: context, builder: (_) => AssignDialog(user: u)),
-                              ),
+                ? _ErrorView(
+              message: userState.errorMessage ?? 'Error',
+              onRetry: () => ref.read(userProvider.notifier).loadAllUsers(),
+            )
+                : filtered.isEmpty
+                ? const _EmptyView(icon: Icons.people_outline, message: 'No users found')
+                : isMobile
+                ? _MobileList(
+              users: filtered,
+              canEdit: canEdit,
+              roles: _roles,
+              onRoleChange: (u, r) => ref.read(userProvider.notifier).updateUserRole(userId: u.id, role: r),
+              onToggleActive: (u) => ref.read(userProvider.notifier).toggleUserActive(userId: u.id, isActive: !u.isActive),
+              onAssign: (u) => showDialog(context: context, builder: (_) => AssignDialog(user: u)),
+            )
+                : _DesktopTable(
+              users: filtered,
+              canEdit: canEdit,
+              roles: _roles,
+              onRoleChange: (u, r) => ref.read(userProvider.notifier).updateUserRole(userId: u.id, role: r),
+              onToggleActive: (u) => ref.read(userProvider.notifier).toggleUserActive(userId: u.id, isActive: !u.isActive),
+              onAssign: (u) => showDialog(context: context, builder: (_) => AssignDialog(user: u)),
+            ),
           ),
         ],
       ),
@@ -225,31 +225,83 @@ class _DesktopTable extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             child: canEdit
                                 ? DropdownButtonFormField<String>(
-                                    value: u.role,
-                                    isDense: true,
-                                    isExpanded: true,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
-                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
-                                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF3E63DD))),
-                                    ),
-                                    items: roles.map((r) => DropdownMenuItem(
-                                      value: r,
-                                      child: Text(_roleLabel(r), style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
-                                    )).toList(),
-                                    onChanged: (v) { if (v != null) onRoleChange(u, v); },
-                                  )
+                              value: u.role,
+                              isDense: true,
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
+                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
+                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFF3E63DD))),
+                              ),
+                              items: roles.map((r) => DropdownMenuItem(
+                                value: r,
+                                child: Text(_roleLabel(r), style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis),
+                              )).toList(),
+                              onChanged: (v) { if (v != null) onRoleChange(u, v); },
+                            )
                                 : _RoleBadge(role: u.role),
                           ),
                         ),
                         // Status
                         Expanded(flex: 2, child: _TD(child: _StatusBadge(isActive: u.isActive))),
                         // Branches count
-                        Expanded(flex: 2, child: _TD(child: Text('${u.branchIds.length}', style: const TextStyle(fontSize: 13)))),
+                        Expanded(
+                          flex: 2,
+                          child: _TD(
+                            child: u.branchIds.isEmpty
+                                ? Text('0', style: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)))
+                                : GestureDetector(
+                              onTap: () => _showBranchWarehouseDialog(
+                                context,
+                                title: 'Branches — ${u.username}',
+                                icon: Icons.apartment_outlined,
+                                ids: u.branchIds,
+                                type: 'branch',
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAEFFD),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${u.branchIds.length}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF3E63DD)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         // Warehouses count
-                        Expanded(flex: 2, child: _TD(child: Text('${u.warehouseIds.length}', style: const TextStyle(fontSize: 13)))),
+                        Expanded(
+                          flex: 2,
+                          child: _TD(
+                            child: u.warehouseIds.isEmpty
+                                ? Text('0', style: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)))
+                                : GestureDetector(
+                              onTap: () => _showBranchWarehouseDialog(
+                                context,
+                                title: 'Warehouses — ${u.username}',
+                                icon: Icons.warehouse_outlined,
+                                ids: u.warehouseIds,
+                                type: 'warehouse',
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0FAF0),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${u.warehouseIds.length}',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF2E7D32)),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                         // Actions
                         if (canEdit)
                           Expanded(
@@ -311,6 +363,139 @@ class _MobileList extends StatelessWidget {
         onToggleActive: () => onToggleActive(users[i]),
         onAssign: () => onAssign(users[i]),
       ),
+    );
+  }
+}
+
+// ── Branch / Warehouse Info Dialog ───────────────────────────────────────────
+
+void _showBranchWarehouseDialog(
+    BuildContext context, {
+      required String title,
+      required IconData icon,
+      required List<String> ids,
+      required String type, // 'branch' or 'warehouse'
+    }) {
+  showDialog(
+    context: context,
+    builder: (_) => _BranchWarehouseInfoDialog(
+      title: title,
+      icon: icon,
+      ids: ids,
+      type: type,
+    ),
+  );
+}
+
+class _BranchWarehouseInfoDialog extends ConsumerWidget {
+  final String title;
+  final IconData icon;
+  final List<String> ids;
+  final String type;
+
+  const _BranchWarehouseInfoDialog({
+    required this.title,
+    required this.icon,
+    required this.ids,
+    required this.type,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isBranch = type == 'branch';
+    final branches = ref.watch(branchProvider).branches;
+    final warehouses = ref.watch(warehouseProvider).warehouses;
+
+    final items = isBranch
+        ? branches.where((b) => ids.contains(b.id)).toList()
+        : warehouses.where((w) => ids.contains(w.id)).toList();
+
+    final accentColor = isBranch ? const Color(0xFF3E63DD) : const Color(0xFF2E7D32);
+    final bgColor = isBranch ? const Color(0xFFEAEFFD) : const Color(0xFFF0FAF0);
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: accentColor, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(title,
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                overflow: TextOverflow.ellipsis),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 340,
+        child: items.isEmpty
+            ? Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 16, color: Colors.grey[400]),
+              const SizedBox(width: 8),
+              Text(
+                isBranch ? 'Branch data loading...' : 'Warehouse data loading...',
+                style: TextStyle(color: Colors.grey[500], fontSize: 13),
+              ),
+            ],
+          ),
+        )
+            : Column(
+          mainAxisSize: MainAxisSize.min,
+          children: items.map((item) {
+            final name = isBranch
+                ? (item as dynamic).branchName as String
+                : (item as dynamic).warehouseName as String;
+            final sub = (item as dynamic).city as String;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: bgColor.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: accentColor.withOpacity(0.15)),
+              ),
+              child: Row(
+                children: [
+                  Icon(icon, size: 16, color: accentColor),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name,
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: accentColor)),
+                        Text(sub,
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3))),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+      actions: [
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: accentColor,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }

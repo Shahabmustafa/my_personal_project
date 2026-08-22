@@ -40,6 +40,9 @@ class StockRepository {
   Future<WarehouseStockModel> updateQuantity(String stockId, int quantity) =>
       _datasource.updateQuantity(stockId, quantity);
 
+  Future<WarehouseStockModel> updateDiscount(String stockId, double discount) =>
+      _datasource.updateDiscount(stockId, discount);
+
   Future<void> deleteStock(String stockId) =>
       _datasource.deleteStock(stockId);
 

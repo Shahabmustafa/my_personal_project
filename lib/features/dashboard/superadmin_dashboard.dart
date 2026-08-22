@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
+import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_entries_screen.dart';
+import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_heads_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../superadmin/branch/presentation/screens/branches_screen.dart';
+import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
+import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
+import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
 import '../user/presentation/screens/users_screen.dart';
 
@@ -25,12 +30,22 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: Icons.people_outline, label: 'Users'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Branches'),
     SidebarItem(icon: Icons.warehouse_outlined, label: 'Warehouse'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Bank Head'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Bank Entry'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Print'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Assign Print'),
+    SidebarItem(icon: Icons.payments_outlined, label: 'Employee Salary'),
   ];
 
   static const _pages = [
     UsersScreen(),
     BranchesScreen(),
     WarehouseScreen(),
+    BankHeadsScreen(),
+    BankEntriesScreen(),
+    PrinterHeadsScreen(),
+    AssignPrinterScreen(),
+    EmployeeSalaryScreen(),
   ];
 
   @override

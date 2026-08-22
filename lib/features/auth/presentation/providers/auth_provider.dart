@@ -3,6 +3,7 @@ import '../../data/datasource/auth_local_datasource.dart';
 import '../../data/datasource/auth_remote_datasource.dart';
 import '../../data/repository/auth_repository.dart';
 import 'auth_state.dart';
+import 'workspace_selection_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 
@@ -18,8 +19,9 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repo;
+  final Ref _ref;
 
-  AuthNotifier(this._repo) : super(const AuthState()) {
+  AuthNotifier(this._repo, this._ref) : super(const AuthState()) {
     _loadSavedUser();
   }
 
@@ -45,6 +47,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await _repo.logout();
+    _ref.read(selectedBranchIdProvider.notifier).clear();
+    _ref.read(selectedWarehouseIdProvider.notifier).clear();
     state = const AuthState();
   }
 
@@ -55,5 +59,5 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.read(authRepositoryProvider));
+  return AuthNotifier(ref.read(authRepositoryProvider), ref);
 });

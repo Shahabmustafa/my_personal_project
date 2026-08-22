@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
+import '../../../shared/current_warehouse_provider.dart';
 import '../../data/model/company_model.dart';
 import '../providers/company_provider.dart';
 import '../providers/company_state.dart';
@@ -26,12 +27,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
     });
   }
 
-  String get _currentWarehouseId {
-    final user = ref.read(authProvider).user;
-    return user?.warehouseIds.isNotEmpty == true
-        ? user!.warehouseIds.first
-        : '';
-  }
+  String get _currentWarehouseId => ref.read(currentWarehouseIdProvider);
 
   @override
   Widget build(BuildContext context) {

@@ -3,7 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/widget/app_dropdown.dart';
 import '../../data/models/warehouse_stock_model.dart';
+import '../../../shared/current_warehouse_provider.dart';
 import '../providers/stock_provider.dart';
+
+// ── Per-size entry model ──────────────────────────────────────────────────
+class _SizeQtyEntry {
+  StockLookupItem? size;
+  int quantity;
+  final TextEditingController qtyCtrl;
+
+  _SizeQtyEntry({this.size, this.quantity = 1})
+      : qtyCtrl = TextEditingController(text: '1');
+
+  void dispose() => qtyCtrl.dispose();
+}
 
 class AddStockDialog extends ConsumerStatefulWidget {
   const AddStockDialog({super.key});
@@ -16,19 +29,20 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
   StockLookupItem? _product;
   StockLookupItem? _brand;
   StockLookupItem? _company;
-  int _quantity = 1;
-  final _qtyCtrl = TextEditingController(text: '1');
+  final _discountCtrl = TextEditingController(text: '0');
 
-  List<StockLookupItem> _sizes = [];
-  List<StockLookupItem> _colors = [];
-  List<StockLookupItem> _categories = [];
-  List<StockLookupItem> _types = [];
+  // Size + Qty rows
+  final List<_SizeQtyEntry> _sizeRows = [_SizeQtyEntry()];
+
+  StockLookupItem? _color;
+  StockLookupItem? _category;
+  StockLookupItem? _type;
 
   List<_StockRow> _previewRows = [];
   bool _previewed = false;
   bool _saving = false;
 
-  // Validation
+  // Validation errors
   String? _productError;
   String? _brandError;
   String? _sizesError;
@@ -38,23 +52,23 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
 
   @override
   void dispose() {
-    _qtyCtrl.dispose();
+    for (final row in _sizeRows) {
+      row.dispose();
+    }
+    _discountCtrl.dispose();
     super.dispose();
   }
 
   // ── Generate 13-digit EAN-style barcode ───────────────────────────────
   String _generateBarcode(int index) {
     final rng = Random();
-    // 12 random digits + Luhn-like check digit
     final digits = List.generate(12, (_) => rng.nextInt(10));
-    // Make it more deterministic: embed index in last 4 digits
     final idx = index % 10000;
     digits[8] = idx ~/ 1000;
     digits[9] = (idx ~/ 100) % 10;
     digits[10] = (idx ~/ 10) % 10;
     digits[11] = idx % 10;
 
-    // EAN-13 check digit
     int sum = 0;
     for (int i = 0; i < 12; i++) {
       sum += digits[i] * (i.isEven ? 1 : 3);
@@ -65,47 +79,51 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
 
   bool _validate() {
     bool ok = true;
+
+    // Check size rows: all must have a size selected and qty > 0
+    final hasSizeError = _sizeRows.any((r) => r.size == null || r.quantity <= 0);
+
     setState(() {
       _productError = _product == null ? 'Required' : null;
       _brandError = _brand == null ? 'Required' : null;
-      _sizesError = _sizes.isEmpty ? 'Select at least one' : null;
-      _colorsError = _colors.isEmpty ? 'Select at least one' : null;
-      _categoriesError = _categories.isEmpty ? 'Select at least one' : null;
-      _typesError = _types.isEmpty ? 'Select at least one' : null;
+      _sizesError = hasSizeError ? 'Each size row must have a size & qty' : null;
+      _colorsError = _color == null ? 'Required' : null;
+      _categoriesError = _category == null ? 'Required' : null;
+      _typesError = _type == null ? 'Required' : null;
     });
+
     if (_productError != null ||
         _brandError != null ||
         _sizesError != null ||
         _colorsError != null ||
         _categoriesError != null ||
         _typesError != null) ok = false;
+
     return ok;
   }
 
   void _generatePreview() {
     if (!_validate()) return;
+    final discount = double.tryParse(_discountCtrl.text.trim()) ?? 0;
     final rows = <_StockRow>[];
     int counter = 1;
-    for (final size in _sizes) {
-      for (final color in _colors) {
-        for (final category in _categories) {
-          for (final type in _types) {
-            rows.add(_StockRow(
-              barcode: _generateBarcode(counter),
-              product: _product!,
-              size: size,
-              color: color,
-              category: category,
-              type: type,
-              brand: _brand!,
-              company: _company,
-              quantity: _quantity,
-            ));
-            counter++;
-          }
-        }
-      }
+
+    for (final sizeEntry in _sizeRows) {
+      rows.add(_StockRow(
+        barcode: _generateBarcode(counter),
+        product: _product!,
+        size: sizeEntry.size!,
+        color: _color!,
+        category: _category!,
+        type: _type!,
+        brand: _brand!,
+        company: _company,
+        quantity: sizeEntry.quantity,
+        discount: discount,
+      ));
+      counter++;
     }
+
     setState(() {
       _previewRows = rows;
       _previewed = true;
@@ -115,22 +133,24 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
   Future<void> _save() async {
     setState(() => _saving = true);
 
+    final warehouseId = ref.read(currentWarehouseIdProvider);
     final stocks = _previewRows
         .map((row) => WarehouseStockModel(
-              id: '',
-              barcode: row.barcode,
-              warehouseId: kWarehouseId,
-              productId: row.product.id,
-              sizeId: row.size.id,
-              brandId: row.brand.id,
-              companyId: row.company?.id,
-              colorId: row.color.id,
-              categoryId: row.category.id,
-              typeId: row.type.id,
-              quantity: row.quantity,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ))
+      id: '',
+      barcode: row.barcode,
+      warehouseId: warehouseId,
+      productId: row.product.id,
+      sizeId: row.size.id,
+      brandId: row.brand.id,
+      companyId: row.company?.id,
+      colorId: row.color.id,
+      categoryId: row.category.id,
+      typeId: row.type.id,
+      quantity: row.quantity,
+      discount: row.discount,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    ))
         .toList();
 
     final result = await ref.read(stockProvider.notifier).addBatchStock(stocks);
@@ -145,7 +165,6 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
 
     final saved = stocks.length - result.skipped.length;
     if (result.skipped.isNotEmpty) {
-      // Show partial success dialog
       await showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -187,6 +206,24 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
     );
   }
 
+  // ── Add a new size row ────────────────────────────────────────────────
+  void _addSizeRow() {
+    setState(() {
+      _sizeRows.add(_SizeQtyEntry());
+      _previewed = false;
+    });
+  }
+
+  // ── Remove a size row ─────────────────────────────────────────────────
+  void _removeSizeRow(int index) {
+    if (_sizeRows.length == 1) return; // keep at least one
+    setState(() {
+      _sizeRows[index].dispose();
+      _sizeRows.removeAt(index);
+      _previewed = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(stockProductsProvider);
@@ -212,7 +249,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 720),
+        constraints: const BoxConstraints(maxWidth: 800, maxHeight: 760),
         child: Column(
           children: [
             // ── Header ─────────────────────────────────────────────────
@@ -233,7 +270,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Section 1 ─────────────────────────────────
+                      // ── Section 1: Product & Brand ────────────────
                       _SectionLabel(
                           icon: Icons.inventory_2_outlined,
                           label: 'Product & Brand'),
@@ -247,8 +284,9 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (p) => p.label,
                             errorText: _productError,
                             isRequired: true,
-                            prefixIcon:
-                                const Icon(Icons.inventory_2_outlined, size: 20),
+                            prefixIcon: const Icon(
+                                Icons.inventory_2_outlined,
+                                size: 20),
                             onChanged: (p) => setState(() {
                               _product = p;
                               _previewed = false;
@@ -275,105 +313,167 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         ),
                       ]),
                       const SizedBox(height: 14),
-                      Row(children: [
-                        Expanded(
-                          child: AppSearchDropdown<StockLookupItem>(
-                            label: 'Company (optional)',
-                            items: companiesAsync.value ?? [],
-                            selectedItem: _company,
-                            itemLabel: (c) => c.label,
-                            prefixIcon:
-                                const Icon(Icons.business_outlined, size: 20),
-                            onChanged: (c) => setState(() {
-                              _company = c;
-                              _previewed = false;
-                            }),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: AppSearchDropdown<StockLookupItem>(
+                              label: 'Company (optional)',
+                              items: companiesAsync.value ?? [],
+                              selectedItem: _company,
+                              itemLabel: (c) => c.label,
+                              prefixIcon: const Icon(
+                                  Icons.business_outlined, size: 20),
+                              onChanged: (c) => setState(() {
+                                _company = c;
+                                _previewed = false;
+                              }),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildQtyField()),
-                      ]),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            flex: 1,
+                            child: TextFormField(
+                              controller: _discountCtrl,
+                              keyboardType: const TextInputType
+                                  .numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                labelText: 'Discount %',
+                                prefixIcon: const Icon(
+                                    Icons.percent_outlined, size: 20),
+                                border: OutlineInputBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(10)),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: BorderSide(
+                                      color: Colors.grey.shade300),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 14),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              onChanged: (_) =>
+                                  setState(() => _previewed = false),
+                            ),
+                          ),
+                        ],
+                      ),
 
                       const SizedBox(height: 24),
 
-                      // ── Section 2 ─────────────────────────────────
+                      // ── Section 2: Sizes with per-row Qty ────────
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _SectionLabel(
+                              icon: Icons.format_size_outlined,
+                              label: 'Sizes & Quantities  —  one size per row',
+                            ),
+                          ),
+                          TextButton.icon(
+                            icon: const Icon(Icons.add, size: 16),
+                            label: const Text('Add Size',
+                                style: TextStyle(fontSize: 13)),
+                            onPressed: _addSizeRow,
+                          ),
+                        ],
+                      ),
+                      if (_sizesError != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          _sizesError!,
+                          style: TextStyle(
+                              color: theme.colorScheme.error, fontSize: 12),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+
+                      // Size rows
+                      ..._sizeRows.asMap().entries.map((entry) {
+                        final idx = entry.key;
+                        final row = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: _SizeQtyRow(
+                            index: idx,
+                            entry: row,
+                            allSizes: sizesAsync.value ?? [],
+                            canRemove: _sizeRows.length > 1,
+                            onSizeChanged: (size) => setState(() {
+                              row.size = size;
+                              _previewed = false;
+                            }),
+                            onQtyChanged: (qty) {
+                              row.quantity = qty;
+                              _previewed = false;
+                            },
+                            onRemove: () => _removeSizeRow(idx),
+                          ),
+                        );
+                      }),
+
+                      const SizedBox(height: 16),
+
+                      // ── Section 3: Variations ────────────────────
                       _SectionLabel(
                           icon: Icons.tune_outlined,
                           label:
-                              'Variations  —  each combination = 1 stock entry'),
+                          'Variations  —  each combination = 1 stock entry'),
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(
-                          child: AppMultiSelectDropdown<StockLookupItem>(
-                            label: 'Sizes',
-                            allItems: sizesAsync.value ?? [],
-                            selectedItems: _sizes,
-                            itemLabel: (s) => s.label,
-                            errorText: _sizesError,
+                          child: AppSearchDropdown<StockLookupItem>(
+                            label: 'Color',
+                            items: colorsAsync.value ?? [],
+                            selectedItem: _color,
+                            itemLabel: (c) => c.label,
+                            errorText: _colorsError,
                             isRequired: true,
                             prefixIcon: const Icon(
-                                Icons.format_size_outlined,
+                                Icons.color_lens_outlined,
                                 size: 20),
-                            onChanged: (list) => setState(() {
-                              _sizes = list;
+                            onChanged: (c) => setState(() {
+                              _color = c;
                               _previewed = false;
                             }),
                           ),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: AppMultiSelectDropdown<StockLookupItem>(
-                            label: 'Colors',
-                            allItems: colorsAsync.value ?? [],
-                            selectedItems: _colors,
+                          child: AppSearchDropdown<StockLookupItem>(
+                            label: 'Category',
+                            items: categoriesAsync.value ?? [],
+                            selectedItem: _category,
                             itemLabel: (c) => c.label,
-                            errorText: _colorsError,
+                            errorText: _categoriesError,
                             isRequired: true,
-                            prefixIcon: const Icon(Icons.color_lens_outlined,
-                                size: 20),
-                            onChanged: (list) => setState(() {
-                              _colors = list;
+                            prefixIcon:
+                            const Icon(Icons.category_outlined, size: 20),
+                            onChanged: (c) => setState(() {
+                              _category = c;
                               _previewed = false;
                             }),
                           ),
                         ),
                       ]),
                       const SizedBox(height: 14),
-                      Row(children: [
-                        Expanded(
-                          child: AppMultiSelectDropdown<StockLookupItem>(
-                            label: 'Categories',
-                            allItems: categoriesAsync.value ?? [],
-                            selectedItems: _categories,
-                            itemLabel: (c) => c.label,
-                            errorText: _categoriesError,
-                            isRequired: true,
-                            prefixIcon:
-                                const Icon(Icons.category_outlined, size: 20),
-                            onChanged: (list) => setState(() {
-                              _categories = list;
-                              _previewed = false;
-                            }),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: AppMultiSelectDropdown<StockLookupItem>(
-                            label: 'Types',
-                            allItems: typesAsync.value ?? [],
-                            selectedItems: _types,
-                            itemLabel: (t) => t.label,
-                            errorText: _typesError,
-                            isRequired: true,
-                            prefixIcon:
-                                const Icon(Icons.style_outlined, size: 20),
-                            onChanged: (list) => setState(() {
-                              _types = list;
-                              _previewed = false;
-                            }),
-                          ),
-                        ),
-                      ]),
+                      AppSearchDropdown<StockLookupItem>(
+                        label: 'Type',
+                        items: typesAsync.value ?? [],
+                        selectedItem: _type,
+                        itemLabel: (t) => t.label,
+                        errorText: _typesError,
+                        isRequired: true,
+                        prefixIcon:
+                        const Icon(Icons.style_outlined, size: 20),
+                        onChanged: (t) => setState(() {
+                          _type = t;
+                          _previewed = false;
+                        }),
+                      ),
 
                       const SizedBox(height: 20),
 
@@ -400,7 +500,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              color:
+                              theme.colorScheme.primary.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -423,29 +524,32 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
 
             // ── Footer ─────────────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
-                border:
-                    Border(top: BorderSide(color: Colors.grey.shade200)),
+                border: Border(
+                    top: BorderSide(color: Colors.grey.shade200)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: _saving ? null : () => Navigator.pop(context),
+                    onPressed:
+                    _saving ? null : () => Navigator.pop(context),
                     child: const Text('Cancel'),
                   ),
                   const SizedBox(width: 12),
                   FilledButton.icon(
                     icon: _saving
                         ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white))
                         : Icon(_previewed
-                            ? Icons.save_outlined
-                            : Icons.visibility_outlined),
+                        ? Icons.save_outlined
+                        : Icons.visibility_outlined),
                     label: Text(_previewed
                         ? 'Save ${_previewRows.length} Entries'
                         : 'Preview First'),
@@ -454,8 +558,9 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             horizontal: 20, vertical: 12),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10))),
-                    onPressed:
-                        _saving ? null : (_previewed ? _save : _generatePreview),
+                    onPressed: _saving
+                        ? null
+                        : (_previewed ? _save : _generatePreview),
                   ),
                 ],
               ),
@@ -465,33 +570,94 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
       ),
     );
   }
+}
 
-  Widget _buildQtyField() {
-    return TextFormField(
-      controller: _qtyCtrl,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: 'Quantity per entry *',
-        prefixIcon: const Icon(Icons.numbers_outlined, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+// ── Size + Qty row widget ─────────────────────────────────────────────────
+
+class _SizeQtyRow extends StatelessWidget {
+  final int index;
+  final _SizeQtyEntry entry;
+  final List<StockLookupItem> allSizes;
+  final bool canRemove;
+  final ValueChanged<StockLookupItem?> onSizeChanged;
+  final ValueChanged<int> onQtyChanged;
+  final VoidCallback onRemove;
+
+  const _SizeQtyRow({
+    required this.index,
+    required this.entry,
+    required this.allSizes,
+    required this.canRemove,
+    required this.onSizeChanged,
+    required this.onQtyChanged,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Size dropdown (single select)
+        Expanded(
+          flex: 3,
+          child: AppSearchDropdown<StockLookupItem>(
+            label: 'Size ${index + 1}',
+            items: allSizes,
+            selectedItem: entry.size,
+            itemLabel: (s) => s.label,
+            isRequired: true,
+            prefixIcon:
+            const Icon(Icons.format_size_outlined, size: 20),
+            onChanged: onSizeChanged,
+          ),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        filled: true,
-        fillColor: Colors.white,
-      ),
-      onChanged: (v) {
-        final parsed = int.tryParse(v);
-        if (parsed != null && parsed >= 0) {
-          setState(() {
-            _quantity = parsed;
-            _previewed = false;
-          });
-        }
-      },
+        const SizedBox(width: 12),
+        // Qty field
+        Expanded(
+          flex: 2,
+          child: TextFormField(
+            controller: entry.qtyCtrl,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: 'Quantity *',
+              prefixIcon:
+              const Icon(Icons.numbers_outlined, size: 20),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide:
+                BorderSide(color: Colors.grey.shade300),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12, vertical: 14),
+              filled: true,
+              fillColor: Colors.white,
+            ),
+            onChanged: (v) {
+              final parsed = int.tryParse(v);
+              if (parsed != null && parsed > 0) {
+                onQtyChanged(parsed);
+              }
+            },
+          ),
+        ),
+        const SizedBox(width: 4),
+        // Remove button
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: IconButton(
+            icon: Icon(
+              Icons.remove_circle_outline,
+              color:
+              canRemove ? Colors.red.shade400 : Colors.grey.shade300,
+            ),
+            tooltip: canRemove ? 'Remove row' : 'At least one size required',
+            onPressed: canRemove ? onRemove : null,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -520,7 +686,8 @@ class _DialogHeader extends StatelessWidget {
             Theme.of(context).colorScheme.primary.withOpacity(0.85),
           ],
         ),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius:
+        const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
         children: [
@@ -546,7 +713,8 @@ class _DialogHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(subtitle,
                     style: TextStyle(
-                        color: Colors.white.withOpacity(0.8), fontSize: 12)),
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 12)),
               ],
             ),
           ),
@@ -570,7 +738,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+        Icon(icon, size: 16,
+            color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 6),
         Text(
           label,
@@ -598,6 +767,7 @@ class _StockRow {
   final StockLookupItem brand;
   final StockLookupItem? company;
   final int quantity;
+  final double discount;
 
   const _StockRow({
     required this.barcode,
@@ -609,6 +779,7 @@ class _StockRow {
     required this.brand,
     this.company,
     required this.quantity,
+    this.discount = 0,
   });
 }
 
@@ -639,6 +810,7 @@ class _PreviewTable extends StatelessWidget {
                 _hcell('Category'),
                 _hcell('Type'),
                 _hcell('Qty', flex: 1),
+                _hcell('Disc.', flex: 1),
               ]),
             ),
             // Rows (max 10 shown)
@@ -648,7 +820,8 @@ class _PreviewTable extends StatelessWidget {
               return Container(
                 color: even ? Colors.grey.shade50 : Colors.white,
                 child: Row(children: [
-                  _dcell(row.barcode, flex: 3,
+                  _dcell(row.barcode,
+                      flex: 3,
                       style: const TextStyle(
                           fontSize: 11,
                           fontFamily: 'monospace',
@@ -658,6 +831,7 @@ class _PreviewTable extends StatelessWidget {
                   _dcell(row.category.label),
                   _dcell(row.type.label),
                   _dcell('${row.quantity}', flex: 1),
+                  _dcell('${row.discount.toStringAsFixed(0)}%', flex: 1),
                 ]),
               );
             }),
@@ -665,12 +839,12 @@ class _PreviewTable extends StatelessWidget {
               Container(
                 width: double.infinity,
                 color: Colors.grey.shade50,
-                padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                    vertical: 8, horizontal: 12),
                 child: Text(
                   '+ ${rows.length - 10} more entries...',
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.grey.shade500),
+                  style:
+                  TextStyle(fontSize: 12, color: Colors.grey.shade500),
                 ),
               ),
           ],
@@ -680,27 +854,28 @@ class _PreviewTable extends StatelessWidget {
   }
 
   Widget _hcell(String text, {int flex = 2}) => Expanded(
-        flex: flex,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Text(text,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600)),
-        ),
-      );
+    flex: flex,
+    child: Padding(
+      padding:
+      const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Text(text,
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600)),
+    ),
+  );
 
-  Widget _dcell(String text,
-          {int flex = 2, TextStyle? style}) =>
+  Widget _dcell(String text, {int flex = 2, TextStyle? style}) =>
       Expanded(
         flex: flex,
         child: Padding(
           padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           child: Text(text,
               style: style ??
-                  const TextStyle(fontSize: 12, color: Colors.black87),
+                  const TextStyle(
+                      fontSize: 12, color: Colors.black87),
               overflow: TextOverflow.ellipsis),
         ),
       );

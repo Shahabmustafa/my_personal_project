@@ -127,6 +127,29 @@ class StockDatasource {
     return WarehouseStockModel.fromJson(response as Map<String, dynamic>);
   }
 
+  // ── Update discount ───────────────────────────────────────────────────────
+  Future<WarehouseStockModel> updateDiscount(
+      String stockId, double discount) async {
+    final response = await _client
+        .from(_table)
+        .update({'discount': discount})
+        .eq('id', stockId)
+        .select('''
+          *,
+          products(article_name),
+          sizes(number),
+          brands(name),
+          companies(name),
+          colors(name),
+          categories(name),
+          types(name),
+          warehouses(warehouse_name)
+        ''')
+        .single();
+
+    return WarehouseStockModel.fromJson(response as Map<String, dynamic>);
+  }
+
   // ── Delete ────────────────────────────────────────────────────────────────
   Future<void> deleteStock(String stockId) async {
     await _client.from(_table).delete().eq('id', stockId);

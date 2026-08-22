@@ -113,7 +113,7 @@ class StockDatasource {
         .from(_table)
         .update({
           'sale_price': salePrice,
-          'discount_pct': discountPct,
+          'discount': discountPct,
         })
         .eq('id', stockId)
         .select(_joinSelect)
