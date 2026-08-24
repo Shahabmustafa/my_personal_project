@@ -120,6 +120,7 @@ class SaleInvoiceState {
   final List<SaleCartItem> cartItems;
   final bool isSaving;
   final String? error;
+  final SaleInvoiceModel? lastSavedInvoice;
 
   const SaleInvoiceState({
     this.invoiceNumber = '',
@@ -132,6 +133,7 @@ class SaleInvoiceState {
     this.cartItems = const [],
     this.isSaving = false,
     this.error,
+    this.lastSavedInvoice,
   });
 
   double get subtotal =>
@@ -156,6 +158,7 @@ class SaleInvoiceState {
     bool? isSaving,
     String? error,
     bool clearError = false,
+    SaleInvoiceModel? lastSavedInvoice,
   }) =>
       SaleInvoiceState(
         invoiceNumber: invoiceNumber ?? this.invoiceNumber,
@@ -168,6 +171,7 @@ class SaleInvoiceState {
         cartItems: cartItems ?? this.cartItems,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
+        lastSavedInvoice: lastSavedInvoice ?? this.lastSavedInvoice,
       );
 }
 
@@ -336,17 +340,23 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
         );
 
     try {
-      await attemptSave(state.invoiceNumber);
-      if (mounted) state = state.copyWith(isSaving: false);
+      final saved = await attemptSave(state.invoiceNumber);
+      if (mounted) {
+        state = state.copyWith(isSaving: false, lastSavedInvoice: _withReceiptDetails(saved));
+      }
       return null;
     } catch (e) {
       final errMsg = e.toString();
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {
         try {
           final retryNumber = await _repo.generateInvoiceNumber();
-          await attemptSave(retryNumber);
+          final saved = await attemptSave(retryNumber);
           if (mounted) {
-            state = state.copyWith(isSaving: false, invoiceNumber: retryNumber);
+            state = state.copyWith(
+              isSaving: false,
+              invoiceNumber: retryNumber,
+              lastSavedInvoice: _withReceiptDetails(saved),
+            );
           }
           return null;
         } catch (e2) {
@@ -357,6 +367,72 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       if (mounted) state = state.copyWith(isSaving: false, error: errMsg);
       return errMsg;
     }
+  }
+
+  /// [saved] header ko (items ke bagair) cart items + payment se enrich
+  /// karta hai — print receipt ke liye extra DB round-trip nahi chahiye.
+  SaleInvoiceModel _withReceiptDetails(SaleInvoiceModel saved) {
+    final items = state.cartItems
+        .map((c) => SaleInvoiceItemModel(
+              id: '',
+              saleInvoiceId: saved.id,
+              branchStockId: c.branchStockId,
+              productId: c.productId,
+              sizeId: c.sizeId,
+              colorId: c.colorId,
+              brandId: c.brandId,
+              categoryId: c.categoryId,
+              typeId: c.typeId,
+              barcode: c.barcode,
+              quantity: c.quantity,
+              salePrice: c.salePrice,
+              purchasePrice: c.purchasePrice,
+              discountPct: c.discountPct,
+              discount: c.discountAmount * c.quantity,
+              totalPrice: c.lineTotal,
+              productName: c.productName,
+              sizeName: c.sizeName,
+              colorName: c.colorName,
+              brandName: c.brandName,
+              categoryName: c.categoryName,
+              typeName: c.typeName,
+            ))
+        .toList();
+
+    final payments = [
+      SaleInvoicePaymentModel(
+        id: '',
+        saleInvoiceId: saved.id,
+        branchId: _branchId,
+        bankEntryId: state.bankEntry?.id,
+        paymentType: state.paymentType,
+        amount: state.totalAmount,
+        createdAt: saved.createdAt,
+      ),
+    ];
+
+    return SaleInvoiceModel(
+      id: saved.id,
+      invoiceNumber: saved.invoiceNumber,
+      branchId: saved.branchId,
+      printerId: saved.printerId,
+      cashierId: saved.cashierId,
+      salesmanId: saved.salesmanId,
+      salesmanName: state.salesman?.name,
+      managerId: saved.managerId,
+      managerName: saved.managerName,
+      subtotal: saved.subtotal,
+      totalDiscount: saved.totalDiscount,
+      totalAmount: saved.totalAmount,
+      salesmanCommissionPercent: saved.salesmanCommissionPercent,
+      salesmanCommissionAmount: saved.salesmanCommissionAmount,
+      managerCommissionPercent: saved.managerCommissionPercent,
+      managerCommissionAmount: saved.managerCommissionAmount,
+      note: saved.note,
+      createdAt: saved.createdAt,
+      items: items,
+      payments: payments,
+    );
   }
 
   Future<void> resetInvoice() async {

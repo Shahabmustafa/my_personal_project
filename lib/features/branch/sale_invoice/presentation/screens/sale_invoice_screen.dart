@@ -2,6 +2,7 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_invoice_model.dart';
+import '../../data/sale_invoice_print/sale_invoice_print_service.dart';
 import '../provider/sale_invoice_provider.dart';
 import '../widgets/sale_cart_table.dart';
 import '../widgets/sale_product_selector.dart';
@@ -395,6 +396,7 @@ class _InvoiceFooter extends ConsumerWidget {
     );
     if (confirm != true || !context.mounted) return;
 
+    final printerLabel = state.printer?.label;
     final error = await ref.read(saleInvoiceProvider.notifier).saveInvoice();
     if (!context.mounted) return;
 
@@ -404,6 +406,20 @@ class _InvoiceFooter extends ConsumerWidget {
       );
       return;
     }
+
+    final savedInvoice = ref.read(saleInvoiceProvider).lastSavedInvoice;
+    if (savedInvoice != null) {
+      try {
+        await SaleInvoicePrintService.printInvoice(savedInvoice, shopName: printerLabel);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Print failed: $e'), backgroundColor: Colors.orange.shade700),
+          );
+        }
+      }
+    }
+    if (!context.mounted) return;
 
     await showDialog(
       context: context,
