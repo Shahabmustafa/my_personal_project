@@ -39,9 +39,23 @@ jobs:
 
   build-windows:
     name: Build Windows
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
+
+      # windows-2022 ships Visual Studio 2022 but not always with the C++
+      # desktop workload's CMake component, which flutter_tools requires to
+      # detect a usable install. This is a no-op (fast) if already present.
+      - name: Ensure VS C++ desktop & CMake components
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vsInstaller = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+          $vsPath = & $vswhere -latest -property installationPath
+          & $vsInstaller modify --installPath "$vsPath" `
+            --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+            --add Microsoft.VisualStudio.Component.VC.CMake.Project `
+            --quiet --norestart --wait
 
       - uses: subosito/flutter-action@v2
         with:
