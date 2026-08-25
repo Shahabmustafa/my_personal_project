@@ -331,3 +331,15 @@ $$ LANGUAGE plpgsql;
 
 -- Reload schema cache
 NOTIFY pgrst, 'reload schema';
+
+
+-- =============================================
+-- STEP 10 (later addition): invoice-wise discount
+--         Har branch ke liye superadmin se access
+--         milta hai (branches.can_apply_invoice_discount) —
+--         dekho lib/features/superadmin/branch/supabase_migration.sql
+-- =============================================
+ALTER TABLE public.sale_invoices
+  ADD COLUMN IF NOT EXISTS invoice_discount NUMERIC(15,2) NOT NULL DEFAULT 0;
+
+NOTIFY pgrst, 'reload schema';

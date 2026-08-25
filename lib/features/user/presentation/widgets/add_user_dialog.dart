@@ -25,7 +25,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
 
   // Superadmin/Admin ke liye saare roles
   static const _adminRoles = [
-    'superadmin', 'admin', 'manager',
+    'superadmin', 'admin', 'manager', 'supervisor',
     'warehouse_manager', 'inventory_manager', 'cashier', 'salesman',
   ];
 
@@ -33,6 +33,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
     'superadmin': 'Super Admin',
     'admin': 'Admin',
     'manager': 'Manager',
+    'supervisor': 'Supervisor',
     'warehouse_manager': 'Warehouse Manager',
     'inventory_manager': 'Inventory Manager',
     'cashier': 'Cashier',

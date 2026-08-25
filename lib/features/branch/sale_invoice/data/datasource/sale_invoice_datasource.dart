@@ -78,10 +78,12 @@ class SaleInvoiceDatasource {
     required String branchId,
     String? printerId,
     String? cashierId,
+    required String customerId,
     String? salesmanId,
     String? managerId,
     required double subtotal,
     required double totalDiscount,
+    double invoiceDiscount = 0,
     required double totalAmount,
     required double salesmanCommissionPercent,
     required double salesmanCommissionAmount,
@@ -89,8 +91,7 @@ class SaleInvoiceDatasource {
     required double managerCommissionAmount,
     String? note,
     required List<SaleCartItem> cartItems,
-    required String paymentType,
-    String? bankEntryId,
+    required List<PaymentInput> payments,
   }) async {
     final invoiceRes = await _client
         .from('sale_invoices')
@@ -99,10 +100,12 @@ class SaleInvoiceDatasource {
           'branch_id': branchId,
           'printer_id': printerId,
           'cashier_id': cashierId,
+          'customer_id': customerId,
           'salesman_id': salesmanId,
           'manager_id': managerId,
           'subtotal': subtotal,
           'total_discount': totalDiscount,
+          'invoice_discount': invoiceDiscount,
           'total_amount': totalAmount,
           'salesman_commission_percent': salesmanCommissionPercent,
           'salesman_commission_amount': salesmanCommissionAmount,
@@ -138,20 +141,25 @@ class SaleInvoiceDatasource {
 
     await _client.from('sale_invoice_items').insert(itemsPayload);
 
-    await _client.from('sale_invoice_payments').insert({
-      'sale_invoice_id': invoice.id,
-      'branch_id': branchId,
-      'bank_entry_id': bankEntryId,
-      'payment_type': paymentType,
-      'amount': totalAmount,
-    });
+    await _client.from('sale_invoice_payments').insert(
+          payments
+              .map((p) => {
+                    'sale_invoice_id': invoice.id,
+                    'branch_id': branchId,
+                    'bank_entry_id': p.bankEntryId,
+                    'payment_type': p.type,
+                    'amount': p.amount,
+                  })
+              .toList(),
+        );
 
     return invoice;
   }
 
   // ── Fetch invoices ───────────────────────────────────────────────────────
 
-  static const _invoiceSelect = '*, sale_invoice_payments(payment_type, amount)';
+  static const _invoiceSelect =
+      '*, sale_invoice_payments(payment_type, amount), customers(name)';
 
   Future<List<SaleInvoiceModel>> fetchInvoices(String branchId) async {
     final res = await _client

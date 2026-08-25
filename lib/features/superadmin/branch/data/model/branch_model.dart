@@ -5,6 +5,7 @@ class BranchModel {
   final String phoneNumber;
   final String city;
   final String status;
+  final bool canApplyInvoiceDiscount;
   final DateTime? createdAt;
 
   const BranchModel({
@@ -14,6 +15,7 @@ class BranchModel {
     this.phoneNumber = '',
     this.city = '',
     this.status = 'active',
+    this.canApplyInvoiceDiscount = false,
     this.createdAt,
   });
 
@@ -25,6 +27,7 @@ class BranchModel {
       phoneNumber: json['phone_number'] ?? '',
       city: json['city'] ?? '',
       status: json['status'] ?? 'active',
+      canApplyInvoiceDiscount: json['can_apply_invoice_discount'] as bool? ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -38,6 +41,7 @@ class BranchModel {
         'phone_number': phoneNumber,
         'city': city,
         'status': status,
+        'can_apply_invoice_discount': canApplyInvoiceDiscount,
       };
 
   bool get isActive => status == 'active';
@@ -49,6 +53,7 @@ class BranchModel {
     String? phoneNumber,
     String? city,
     String? status,
+    bool? canApplyInvoiceDiscount,
   }) {
     return BranchModel(
       id: id ?? this.id,
@@ -57,6 +62,7 @@ class BranchModel {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       city: city ?? this.city,
       status: status ?? this.status,
+      canApplyInvoiceDiscount: canApplyInvoiceDiscount ?? this.canApplyInvoiceDiscount,
       createdAt: createdAt,
     );
   }

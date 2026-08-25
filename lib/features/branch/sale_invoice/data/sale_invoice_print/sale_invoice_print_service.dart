@@ -54,6 +54,8 @@ class SaleInvoicePrintService {
 
             _kv('Invoice #', invoice.invoiceNumber, regularFont, boldFont),
             _kv('Date', _formatDateTime(invoice.createdAt), regularFont, boldFont),
+            if (invoice.customerName != null && invoice.customerName!.isNotEmpty)
+              _kv('Customer', invoice.customerName!, regularFont, boldFont),
             if (invoice.salesmanName != null && invoice.salesmanName!.isNotEmpty)
               _kv('Salesman', invoice.salesmanName!, regularFont, boldFont),
             _kv('Payment', invoice.paymentTypeLabel.toUpperCase(), regularFont, boldFont),
@@ -100,6 +102,8 @@ class SaleInvoicePrintService {
             _kv('Sub Total', invoice.subtotal.toStringAsFixed(0), regularFont, boldFont),
             if (invoice.totalDiscount > 0)
               _kv('Discount', '-${invoice.totalDiscount.toStringAsFixed(0)}', regularFont, boldFont),
+            if (invoice.invoiceDiscount > 0)
+              _kv('Extra Discount', '-${invoice.invoiceDiscount.toStringAsFixed(0)}', regularFont, boldFont),
 
             pw.SizedBox(height: 4),
             pw.Row(

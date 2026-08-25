@@ -5,7 +5,8 @@ import '../widgets/add_stock_dialog.dart';
 import '../widgets/stock_table.dart';
 
 class StockScreen extends ConsumerStatefulWidget {
-  const StockScreen({super.key});
+  final bool readOnly;
+  const StockScreen({super.key, this.readOnly = false});
 
   @override
   ConsumerState<StockScreen> createState() => _StockScreenState();
@@ -67,16 +68,17 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                   ],
                 ),
               ),
-              FilledButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('Add Stock'),
-                style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10))),
-                onPressed: _openAddDialog,
-              ),
+              if (!widget.readOnly)
+                FilledButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Stock'),
+                  style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10))),
+                  onPressed: _openAddDialog,
+                ),
             ],
           ),
 
@@ -115,7 +117,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           const SizedBox(height: 16),
 
           // ── Table ────────────────────────────────────────────────────
-          const Expanded(child: StockTable()),
+          Expanded(child: StockTable(readOnly: widget.readOnly)),
         ],
       ),
     );

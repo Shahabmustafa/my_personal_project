@@ -1,6 +1,7 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../customer/data/model/customer_model.dart';
 import '../../data/model/sale_invoice_model.dart';
 import '../../data/sale_invoice_print/sale_invoice_print_service.dart';
 import '../provider/sale_invoice_provider.dart';
@@ -129,6 +130,7 @@ class _SaleTypeToggle extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         _seg('Cash', 'cash', Icons.payments_outlined, primary),
         _seg('Card', 'card', Icons.credit_card_outlined, primary),
+        _seg('Cash + Card', 'cash_card', Icons.sync_alt, primary),
       ]),
     );
   }
@@ -161,13 +163,27 @@ class _SaleTypeToggle extends StatelessWidget {
 // Manager auto-resolve hota hai (branch ka jo bhi role='manager' hai) —
 // isliye yahan koi manager dropdown nahi dikhaya jata.
 
-class _InvoiceMetaRow extends ConsumerWidget {
+class _InvoiceMetaRow extends ConsumerStatefulWidget {
   const _InvoiceMetaRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_InvoiceMetaRow> createState() => _InvoiceMetaRowState();
+}
+
+class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
+  final _cashAmountCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _cashAmountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(saleInvoiceProvider);
     final notifier = ref.read(saleInvoiceProvider.notifier);
+    final customersAsync = ref.watch(customersForSaleProvider);
     final salesmenAsync = ref.watch(salesmenProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
@@ -184,6 +200,27 @@ class _InvoiceMetaRow extends ConsumerWidget {
         children: [
           Expanded(
             flex: 3,
+            child: customersAsync.when(
+              loading: () => const _FieldLoading(),
+              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+              data: (list) {
+                final active = list.where((c) => c.isActive).toList();
+                return DropdownSearch<CustomerModel>(
+                  items: (f, _) => active.where((c) => c.name.toLowerCase().contains(f.toLowerCase())).toList(),
+                  selectedItem: state.customer,
+                  itemAsString: (c) => c.name,
+                  compareFn: (a, b) => a.id == b.id,
+                  onSelected: notifier.selectCustomer,
+                  decoratorProps: DropDownDecoratorProps(decoration: _decor('Customer', required: true)),
+                  popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+
+          Expanded(
+            flex: 3,
             child: salesmenAsync.when(
               loading: () => const _FieldLoading(),
               error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
@@ -193,7 +230,7 @@ class _InvoiceMetaRow extends ConsumerWidget {
                 itemAsString: (e) => e.name,
                 compareFn: (a, b) => a.id == b.id,
                 onSelected: notifier.selectSalesman,
-                decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman')),
+                decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman', required: true)),
                 popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
               ),
             ),
@@ -211,13 +248,13 @@ class _InvoiceMetaRow extends ConsumerWidget {
                 itemAsString: (e) => e.label,
                 compareFn: (a, b) => a.id == b.id,
                 onSelected: notifier.selectPrinter,
-                decoratorProps: DropDownDecoratorProps(decoration: _decor('Printer')),
+                decoratorProps: DropDownDecoratorProps(decoration: _decor('Printer', required: true)),
                 popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
               ),
             ),
           ),
 
-          if (state.paymentType == 'card') ...[
+          if (state.paymentType == 'card' || state.paymentType == 'cash_card') ...[
             const SizedBox(width: 16),
             Expanded(
               flex: 3,
@@ -234,6 +271,23 @@ class _InvoiceMetaRow extends ConsumerWidget {
                       decoration: _decor('Bank Account', required: true)),
                   popupProps:
                       const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+                ),
+              ),
+            ),
+          ],
+
+          if (state.paymentType == 'cash_card') ...[
+            const SizedBox(width: 16),
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: _cashAmountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (v) =>
+                    notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
+                decoration: _decor('Cash Amount *').copyWith(
+                  helperText: 'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
+                  helperStyle: const TextStyle(fontSize: 11),
                 ),
               ),
             ),
@@ -264,13 +318,28 @@ class _FieldLoading extends StatelessWidget {
 
 // ── Invoice footer ────────────────────────────────────────────────────────
 
-class _InvoiceFooter extends ConsumerWidget {
+class _InvoiceFooter extends ConsumerStatefulWidget {
   const _InvoiceFooter();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_InvoiceFooter> createState() => _InvoiceFooterState();
+}
+
+class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
+  final _discountCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _discountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(saleInvoiceProvider);
     final theme = Theme.of(context);
+    final allowDiscountAsync = ref.watch(currentBranchAllowsInvoiceDiscountProvider);
+    final allowDiscount = allowDiscountAsync.value ?? false;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -284,6 +353,24 @@ class _InvoiceFooter extends ConsumerWidget {
           _stat('Sub Total', state.subtotal.toStringAsFixed(0)),
           const SizedBox(width: 28),
           _stat('Discount', '- ${state.totalDiscount.toStringAsFixed(0)}', color: Colors.orange.shade700),
+          if (allowDiscount) ...[
+            const SizedBox(width: 20),
+            SizedBox(
+              width: 130,
+              child: TextField(
+                controller: _discountCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (v) =>
+                    ref.read(saleInvoiceProvider.notifier).setInvoiceDiscount(double.tryParse(v.trim()) ?? 0),
+                decoration: InputDecoration(
+                  labelText: 'Extra Discount',
+                  isDense: true,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(width: 28),
           Expanded(
             child: TextField(
@@ -354,13 +441,29 @@ class _InvoiceFooter extends ConsumerWidget {
   Future<void> _onSaveTap(BuildContext context, WidgetRef ref) async {
     final state = ref.read(saleInvoiceProvider);
 
-    if (state.paymentType == 'card' && state.bankEntry == null) {
+    String? warning;
+    if (state.customer == null) {
+      warning = 'Please select a customer';
+    } else if (state.salesman == null) {
+      warning = 'Please select a salesman';
+    } else if (state.printer == null) {
+      warning = 'Please select a printer';
+    } else if (state.paymentType == 'card' && state.bankEntry == null) {
+      warning = 'Please select a bank account for card sale';
+    } else if (state.paymentType == 'cash_card') {
+      if (state.bankEntry == null) {
+        warning = 'Please select a bank account for the card portion';
+      } else if (state.cashAmount <= 0 || state.cashAmount >= state.totalAmount) {
+        warning = 'Enter a cash amount between 0 and the net amount';
+      }
+    }
+    if (warning != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Text('Please select a bank account for card sale'),
+          content: Row(children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 10),
+            Text(warning),
           ]),
           backgroundColor: Colors.orange.shade700,
           behavior: SnackBarBehavior.floating,
@@ -382,7 +485,7 @@ class _InvoiceFooter extends ConsumerWidget {
         ]),
         content: Text(
           'Save this invoice for Rs. ${state.totalAmount.toStringAsFixed(0)} '
-          '(${state.totalQuantity} pairs, ${state.paymentType.toUpperCase()})?',
+          '(${state.totalQuantity} pairs, ${state.paymentType == 'cash_card' ? 'CASH Rs.${state.cashAmount.toStringAsFixed(0)} + CARD Rs.${state.cardAmount.toStringAsFixed(0)}' : state.paymentType.toUpperCase()})?',
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),

@@ -89,11 +89,14 @@ class UserModel {
   bool get isSuperAdmin => role == 'superadmin';
   bool get isAdmin => role == 'admin';
   bool get isManager => role == 'manager';
+  bool get isSupervisor => role == 'supervisor';
   bool get isWarehouseManager => role == 'warehouse_manager';
   bool get isInventoryManager => role == 'inventory_manager';
   bool get isCashier => role == 'cashier';
   bool get isSalesman => role == 'salesman';
 
+  // Supervisor ko branches/warehouses assign ho sakte hain (superadmin/admin
+  // ke zariye), lekin supervisor khud kisi user ko manage/assign nahi kar sakta.
   bool get canManageUsers => isSuperAdmin || isAdmin;
   bool get canManageBranches => isSuperAdmin || isAdmin;
   bool get canManageWarehouses => isSuperAdmin || isAdmin;
@@ -110,6 +113,7 @@ class UserModel {
       'superadmin': 'Super Admin',
       'admin': 'Admin',
       'manager': 'Manager',
+      'supervisor': 'Supervisor',
       'warehouse_manager': 'Warehouse Manager',
       'inventory_manager': 'Inventory Manager',
       'cashier': 'Cashier',

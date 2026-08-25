@@ -35,8 +35,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Widget _getDashboard(String role) {
-    switch (role) {
+  Widget _getDashboard(AuthState state) {
+    final user = state.user!;
+    switch (user.role) {
       // ── Superadmin & Admin → sab kuch
       case 'superadmin':
       case 'admin':
@@ -50,6 +51,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       case 'warehouse_manager':
       case 'inventory_manager':
         return const WarehouseDashboard();
+
+      // ── Supervisor: koi dedicated dashboard nahi — jo bhi ek workspace
+      // assign hai (branch ya warehouse) usi ke hisaab se route karo.
+      case 'supervisor':
+        if (user.branchIds.isNotEmpty) return const BranchDashboard();
+        if (user.warehouseIds.isNotEmpty) return const WarehouseDashboard();
+        return const BranchDashboard();
 
       default:
         return const SuperAdminDashboard();
@@ -79,7 +87,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
         final destination = needsWorkspaceSelection
             ? const SelectWorkspaceScreen()
-            : _getDashboard(user.role);
+            : _getDashboard(next);
 
         Navigator.pushReplacement(
           context,

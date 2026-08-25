@@ -6,7 +6,8 @@ import '../providers/product_state.dart';
 import '../widgets/product_form_dialog.dart';
 
 class ProductsScreen extends ConsumerStatefulWidget {
-  const ProductsScreen({super.key});
+  final bool readOnly;
+  const ProductsScreen({super.key, this.readOnly = false});
 
   @override
   ConsumerState<ProductsScreen> createState() => _ProductsScreenState();
@@ -196,11 +197,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         : isMobile
                             ? _MobileList(
                                 products: filtered,
+                                readOnly: widget.readOnly,
                                 onEdit: (p) => _showForm(product: p),
                                 onDelete: _confirmDelete,
                               )
                             : _DesktopTable(
                                 products: filtered,
+                                readOnly: widget.readOnly,
                                 onEdit: (p) => _showForm(product: p),
                                 onDelete: _confirmDelete,
                               ),
@@ -213,11 +216,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
 class _DesktopTable extends StatelessWidget {
   final List<ProductModel> products;
+  final bool readOnly;
   final Function(ProductModel) onEdit;
   final Function(ProductModel) onDelete;
 
   const _DesktopTable({
     required this.products,
+    this.readOnly = false,
     required this.onEdit,
     required this.onDelete,
   });
@@ -242,12 +247,12 @@ class _DesktopTable extends StatelessWidget {
                   border: Border(
                       bottom: BorderSide(color: Color(0xFFE7E9F0))),
                 ),
-                child: const Row(children: [
-                  _TH('image', flex: 2),
-                  _TH('Article Name', flex: 4),
-                  _TH('Sale Price', flex: 2),
-                  _TH('Purchase Price', flex: 2),
-                  _TH('Actions', flex: 2),
+                child: Row(children: [
+                  const _TH('image', flex: 2),
+                  const _TH('Article Name', flex: 4),
+                  const _TH('Sale Price', flex: 2),
+                  const _TH('Purchase Price', flex: 2),
+                  if (!readOnly) const _TH('Actions', flex: 2),
                 ]),
               ),
               Expanded(
@@ -303,24 +308,25 @@ class _DesktopTable extends StatelessWidget {
                                   fontSize: 13,
                                   color: Color(0xFF5A5F7A))),
                         ),
-                        Expanded(
-                          flex: 2,
-                          child: Row(children: [
-                            _IconBtn(
-                              icon: Icons.edit_outlined,
-                              color: const Color(0xFF3E63DD),
-                              tooltip: 'Edit',
-                              onTap: () => onEdit(p),
-                            ),
-                            const SizedBox(width: 8),
-                            _IconBtn(
-                              icon: Icons.delete_outline,
-                              color: Colors.redAccent,
-                              tooltip: 'Delete',
-                              onTap: () => onDelete(p),
-                            ),
-                          ]),
-                        ),
+                        if (!readOnly)
+                          Expanded(
+                            flex: 2,
+                            child: Row(children: [
+                              _IconBtn(
+                                icon: Icons.edit_outlined,
+                                color: const Color(0xFF3E63DD),
+                                tooltip: 'Edit',
+                                onTap: () => onEdit(p),
+                              ),
+                              const SizedBox(width: 8),
+                              _IconBtn(
+                                icon: Icons.delete_outline,
+                                color: Colors.redAccent,
+                                tooltip: 'Delete',
+                                onTap: () => onDelete(p),
+                              ),
+                            ]),
+                          ),
                       ]),
                     );
                   },
@@ -347,11 +353,13 @@ class _DesktopTable extends StatelessWidget {
 
 class _MobileList extends StatelessWidget {
   final List<ProductModel> products;
+  final bool readOnly;
   final Function(ProductModel) onEdit;
   final Function(ProductModel) onDelete;
 
   const _MobileList({
     required this.products,
+    this.readOnly = false,
     required this.onEdit,
     required this.onDelete,
   });
@@ -399,21 +407,22 @@ class _MobileList extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                children: [
-                  _IconBtn(
-                      icon: Icons.edit_outlined,
-                      color: const Color(0xFF3E63DD),
-                      tooltip: 'Edit',
-                      onTap: () => onEdit(p)),
-                  const SizedBox(height: 6),
-                  _IconBtn(
-                      icon: Icons.delete_outline,
-                      color: Colors.redAccent,
-                      tooltip: 'Delete',
-                      onTap: () => onDelete(p)),
-                ],
-              ),
+              if (!readOnly)
+                Column(
+                  children: [
+                    _IconBtn(
+                        icon: Icons.edit_outlined,
+                        color: const Color(0xFF3E63DD),
+                        tooltip: 'Edit',
+                        onTap: () => onEdit(p)),
+                    const SizedBox(height: 6),
+                    _IconBtn(
+                        icon: Icons.delete_outline,
+                        color: Colors.redAccent,
+                        tooltip: 'Delete',
+                        onTap: () => onDelete(p)),
+                  ],
+                ),
             ],
           ),
         );

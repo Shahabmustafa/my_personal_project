@@ -9,6 +9,8 @@ class StockRepository {
   Future<List<WarehouseStockModel>> getStockByWarehouse(String warehouseId) =>
       _datasource.fetchByWarehouse(warehouseId);
 
+  Future<List<WarehouseStockModel>> getAllStock() => _datasource.fetchAll();
+
   Future<bool> barcodeExists(String barcode) =>
       _datasource.barcodeExists(barcode);
 

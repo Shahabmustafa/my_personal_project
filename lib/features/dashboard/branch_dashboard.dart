@@ -10,7 +10,9 @@ import '../branch/branch_stock_inventory/presentation/screen/branch_stock_screen
 import '../branch/customer/presentation/screens/customers_screen.dart';
 import '../branch/dashboard/presentation/screen/branch_overview_screen.dart';
 import '../branch/expense/presentation/screen/expense_screen.dart';
+import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
+import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
 
 // Roles: cashier, manager, salesman
 
@@ -33,6 +35,8 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     SidebarItem(icon: Icons.point_of_sale_outlined, label: 'Cash Counter'),
     SidebarItem(icon: Icons.receipt_long_outlined, label: 'Expense'),
     SidebarItem(icon: Icons.shopping_cart_checkout_outlined, label: 'Sale Invoice'),
+    SidebarItem(icon: Icons.assignment_return_outlined, label: 'Sale Return'),
+    SidebarItem(icon: Icons.swap_horiz_outlined, label: 'Sale Exchange'),
   ];
 
   static const _pages = [
@@ -44,6 +48,8 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     BranchCashCounterScreen(),
     ExpenseScreen(),
     SaleInvoiceScreen(),
+    SaleReturnScreen(),
+    SaleExchangeInvoicePickerScreen(),
   ];
 
   @override

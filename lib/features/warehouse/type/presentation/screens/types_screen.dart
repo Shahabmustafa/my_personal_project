@@ -6,7 +6,8 @@ import '../providers/type_state.dart';
 import '../widgets/type_form_dialog.dart';
 
 class TypesScreen extends ConsumerStatefulWidget {
-  const TypesScreen({super.key});
+  final bool readOnly;
+  const TypesScreen({super.key, this.readOnly = false});
 
   @override
   ConsumerState<TypesScreen> createState() => _TypesScreenState();
@@ -189,6 +190,7 @@ class _TypesScreenState extends ConsumerState<TypesScreen> {
                         : _TableView(
                             items: filtered,
                             fieldLabel: 'Type Name',
+                            readOnly: widget.readOnly,
                             onEdit: _showForm,
                             onDelete: _confirmDelete,
                           ),
@@ -202,12 +204,14 @@ class _TypesScreenState extends ConsumerState<TypesScreen> {
 class _TableView extends StatelessWidget {
   final List<TypeModel> items;
   final String fieldLabel;
+  final bool readOnly;
   final Function({TypeModel? item}) onEdit;
   final Function(TypeModel) onDelete;
 
   const _TableView({
     required this.items,
     required this.fieldLabel,
+    this.readOnly = false,
     required this.onEdit,
     required this.onDelete,
   });
@@ -246,19 +250,20 @@ class _TableView extends StatelessWidget {
                               letterSpacing: 0.3)),
                     ),
                   ),
-                  const SizedBox(
-                    width: 100,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Text('Actions',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF8A8FA3),
-                              letterSpacing: 0.3)),
+                  if (!readOnly)
+                    const SizedBox(
+                      width: 100,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Text('Actions',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF8A8FA3),
+                                letterSpacing: 0.3)),
+                      ),
                     ),
-                  ),
                 ]),
               ),
               Expanded(
@@ -280,24 +285,25 @@ class _TableView extends StatelessWidget {
                                   fontSize: 13,
                                   color: Color(0xFF1A1D2E))),
                         ),
-                        SizedBox(
-                          width: 100,
-                          child: Row(children: [
-                            _IconBtn(
-                              icon: Icons.edit_outlined,
-                              color: const Color(0xFF3E63DD),
-                              tooltip: 'Edit',
-                              onTap: () => onEdit(item: item),
-                            ),
-                            const SizedBox(width: 8),
-                            _IconBtn(
-                              icon: Icons.delete_outline,
-                              color: Colors.redAccent,
-                              tooltip: 'Delete',
-                              onTap: () => onDelete(item),
-                            ),
-                          ]),
-                        ),
+                        if (!readOnly)
+                          SizedBox(
+                            width: 100,
+                            child: Row(children: [
+                              _IconBtn(
+                                icon: Icons.edit_outlined,
+                                color: const Color(0xFF3E63DD),
+                                tooltip: 'Edit',
+                                onTap: () => onEdit(item: item),
+                              ),
+                              const SizedBox(width: 8),
+                              _IconBtn(
+                                icon: Icons.delete_outline,
+                                color: Colors.redAccent,
+                                tooltip: 'Delete',
+                                onTap: () => onDelete(item),
+                              ),
+                            ]),
+                          ),
                       ]),
                     );
                   },

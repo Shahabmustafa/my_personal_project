@@ -33,6 +33,7 @@ class BranchRemoteDatasource {
           'phone_number': branch.phoneNumber,
           'city': branch.city,
           'status': branch.status,
+          'can_apply_invoice_discount': branch.canApplyInvoiceDiscount,
         })
         .select()
         .single();
@@ -48,6 +49,7 @@ class BranchRemoteDatasource {
           'phone_number': branch.phoneNumber,
           'city': branch.city,
           'status': branch.status,
+          'can_apply_invoice_discount': branch.canApplyInvoiceDiscount,
         })
         .eq('id', branch.id)
         .select()

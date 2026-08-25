@@ -40,6 +40,36 @@ class StockDatasource {
     return list;
   }
 
+  // ── Fetch stock across ALL warehouses — admin-level view ──────────────────
+  Future<List<WarehouseStockModel>> fetchAll() async {
+    final response = await _client
+        .from(_table)
+        .select('''
+          *,
+          products(article_name),
+          sizes(number),
+          brands(name),
+          companies(name),
+          colors(name),
+          categories(name),
+          types(name),
+          warehouses(warehouse_name)
+        ''');
+
+    final list = (response as List)
+        .map((e) => WarehouseStockModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    list.sort((a, b) {
+      final nameCompare = (a.productName ?? '').toLowerCase()
+          .compareTo((b.productName ?? '').toLowerCase());
+      if (nameCompare != 0) return nameCompare;
+      return b.quantity.compareTo(a.quantity);
+    });
+
+    return list;
+  }
+
   // ── Check barcode exists globally ─────────────────────────────────────────
   Future<bool> barcodeExists(String barcode) async {
     final res = await _client

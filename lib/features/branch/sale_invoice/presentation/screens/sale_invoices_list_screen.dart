@@ -5,7 +5,14 @@ import '../provider/sale_invoice_provider.dart';
 import 'sale_invoice_screen.dart';
 
 class SaleInvoicesListScreen extends ConsumerStatefulWidget {
-  const SaleInvoicesListScreen({super.key});
+  final bool showNewInvoiceButton;
+  final void Function(SaleInvoiceModel invoice)? onExchangeTap;
+
+  const SaleInvoicesListScreen({
+    super.key,
+    this.showNewInvoiceButton = true,
+    this.onExchangeTap,
+  });
 
   @override
   ConsumerState<SaleInvoicesListScreen> createState() =>
@@ -52,24 +59,25 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                   icon: const Icon(Icons.refresh),
                 ),
               ),
-              FilledButton.icon(
-                icon: const Icon(Icons.add),
-                label: const Text('New Invoice'),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('New Sale Invoice')),
-                        body: const SaleInvoiceScreen(),
+              if (widget.showNewInvoiceButton)
+                FilledButton.icon(
+                  icon: const Icon(Icons.add),
+                  label: const Text('New Invoice'),
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => Scaffold(
+                          appBar: AppBar(title: const Text('New Sale Invoice')),
+                          body: const SaleInvoiceScreen(),
+                        ),
                       ),
-                    ),
-                  );
-                  if (context.mounted) {
-                    ref.read(saleInvoiceListProvider.notifier).loadInvoices();
-                  }
-                },
-              ),
+                    );
+                    if (context.mounted) {
+                      ref.read(saleInvoiceListProvider.notifier).loadInvoices();
+                    }
+                  },
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -99,8 +107,10 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
               child: LayoutBuilder(builder: (context, constraints) {
                 final isWide = constraints.maxWidth > 700;
                 return isWide
-                    ? _DesktopInvoiceTable(invoices: state.invoices)
-                    : _MobileInvoiceList(invoices: state.invoices);
+                    ? _DesktopInvoiceTable(
+                        invoices: state.invoices, onExchangeTap: widget.onExchangeTap)
+                    : _MobileInvoiceList(
+                        invoices: state.invoices, onExchangeTap: widget.onExchangeTap);
               }),
             ),
         ],
@@ -113,7 +123,8 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
 
 class _DesktopInvoiceTable extends StatelessWidget {
   final List<SaleInvoiceModel> invoices;
-  const _DesktopInvoiceTable({required this.invoices});
+  final void Function(SaleInvoiceModel invoice)? onExchangeTap;
+  const _DesktopInvoiceTable({required this.invoices, this.onExchangeTap});
 
   @override
   Widget build(BuildContext context) {
@@ -128,11 +139,13 @@ class _DesktopInvoiceTable extends StatelessWidget {
           ),
           child: Row(children: [
             _hcell('Invoice #', flex: 2, style: headerStyle),
+            _hcell('Customer', flex: 2, style: headerStyle),
             _hcell('Date', flex: 2, style: headerStyle),
             _hcell('Type', flex: 1, style: headerStyle),
             _hcell('Sub Total', flex: 2, style: headerStyle),
             _hcell('Discount', flex: 2, style: headerStyle),
             _hcell('Net Amount', flex: 2, style: headerStyle),
+            if (onExchangeTap != null) _hcell('', flex: 1, style: headerStyle),
           ]),
         ),
         Expanded(
@@ -146,12 +159,24 @@ class _DesktopInvoiceTable extends StatelessWidget {
                   _dcell(inv.invoiceNumber,
                       flex: 2,
                       style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+                  _dcell(inv.customerName ?? '—', flex: 2),
                   _dcell(_formatDate(inv.createdAt), flex: 2),
                   _dcell(inv.paymentTypeLabel.toUpperCase(), flex: 1),
                   _dcell(inv.subtotal.toStringAsFixed(0), flex: 2),
                   _dcell('- ${inv.totalDiscount.toStringAsFixed(0)}', flex: 2, style: const TextStyle(color: Colors.orange)),
                   _dcell(inv.totalAmount.toStringAsFixed(0), flex: 2,
                       style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.green)),
+                  if (onExchangeTap != null)
+                    Expanded(
+                      flex: 1,
+                      child: Center(
+                        child: IconButton(
+                          icon: const Icon(Icons.swap_horiz_outlined, size: 20),
+                          tooltip: 'Exchange',
+                          onPressed: () => onExchangeTap!(inv),
+                        ),
+                      ),
+                    ),
                 ]),
               );
             },
@@ -211,7 +236,8 @@ class _DesktopInvoiceTable extends StatelessWidget {
 
 class _MobileInvoiceList extends StatelessWidget {
   final List<SaleInvoiceModel> invoices;
-  const _MobileInvoiceList({required this.invoices});
+  final void Function(SaleInvoiceModel invoice)? onExchangeTap;
+  const _MobileInvoiceList({required this.invoices, this.onExchangeTap});
 
   @override
   Widget build(BuildContext context) {
@@ -248,8 +274,20 @@ class _MobileInvoiceList extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(_formatDate(inv.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    if (onExchangeTap != null)
+                      IconButton(
+                        icon: const Icon(Icons.swap_horiz_outlined, size: 18),
+                        tooltip: 'Exchange',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        onPressed: () => onExchangeTap!(inv),
+                      ),
                   ],
                 ),
+                if (inv.customerName != null && inv.customerName!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(inv.customerName!, style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                ],
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,

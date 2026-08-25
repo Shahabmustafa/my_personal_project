@@ -2,10 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../shared/current_branch_provider.dart';
 import '../../../branch_stock_inventory/data/datasource/branch_stock_datasource.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
 import '../../../branch_stock_inventory/data/repository/branch_stock_repository.dart';
+import '../../../customer/data/model/customer_model.dart';
+import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../data/datasource/sale_invoice_datasource.dart';
 import '../../data/model/sale_invoice_model.dart';
 import '../../data/repository/sale_invoice_repository.dart';
@@ -39,6 +42,12 @@ final salesmenProvider = FutureProvider<List<EmployeeLookupItem>>(
       .getSalesmen(ref.watch(currentBranchIdProvider)),
 );
 
+final customersForSaleProvider = FutureProvider<List<CustomerModel>>(
+  (ref) => ref
+      .read(customerRepositoryProvider)
+      .getCustomersByBranch(ref.watch(currentBranchIdProvider)),
+);
+
 final bankEntriesForSaleProvider = FutureProvider<List<BankEntryLookupItem>>(
   (ref) => ref
       .read(saleInvoiceRepositoryProvider)
@@ -50,6 +59,15 @@ final printersForSaleProvider = FutureProvider<List<PrinterLookupItem>>(
       .read(saleInvoiceRepositoryProvider)
       .getPrinters(ref.watch(currentBranchIdProvider)),
 );
+
+/// Superadmin ki "Invoice Discount Access" screen se decide hota hai —
+/// false hone par Sale Invoice screen par discount field dikhta hi nahi.
+final currentBranchAllowsInvoiceDiscountProvider = FutureProvider<bool>((ref) async {
+  final branchId = ref.watch(currentBranchIdProvider);
+  if (branchId.isEmpty) return false;
+  final branch = await ref.read(branchRepositoryProvider).getBranchById(branchId);
+  return branch.canApplyInvoiceDiscount;
+});
 
 // ── Invoice list ──────────────────────────────────────────────────────────
 
@@ -112,12 +130,15 @@ final saleInvoiceListProvider =
 class SaleInvoiceState {
   final String invoiceNumber;
   final bool invoiceLoading;
-  final String paymentType; // cash | card
+  final String paymentType; // cash | card | cash_card
+  final double cashAmount; // only used when paymentType == 'cash_card'
+  final CustomerModel? customer;
   final EmployeeLookupItem? salesman;
   final BankEntryLookupItem? bankEntry;
   final PrinterLookupItem? printer;
   final String note;
   final List<SaleCartItem> cartItems;
+  final double invoiceDiscount;
   final bool isSaving;
   final String? error;
   final SaleInvoiceModel? lastSavedInvoice;
@@ -126,27 +147,38 @@ class SaleInvoiceState {
     this.invoiceNumber = '',
     this.invoiceLoading = false,
     this.paymentType = 'cash',
+    this.cashAmount = 0,
+    this.customer,
     this.salesman,
     this.bankEntry,
     this.printer,
     this.note = '',
     this.cartItems = const [],
+    this.invoiceDiscount = 0,
     this.isSaving = false,
     this.error,
     this.lastSavedInvoice,
   });
 
+  /// 'cash_card' ke liye card portion = total - cash (0 se kam nahi ho sakta).
+  double get cardAmount => (totalAmount - cashAmount).clamp(0, double.infinity);
+
   double get subtotal =>
       cartItems.fold(0, (sum, i) => sum + (i.salePrice * i.quantity));
   double get totalDiscount =>
       cartItems.fold(0, (sum, i) => sum + (i.discountAmount * i.quantity));
-  double get totalAmount => cartItems.fold(0, (sum, i) => sum + i.lineTotal);
+  /// Items ka net total, invoice-wise extra discount lagne se pehle.
+  double get itemsTotal => cartItems.fold(0, (sum, i) => sum + i.lineTotal);
+  double get totalAmount => (itemsTotal - invoiceDiscount).clamp(0, double.infinity);
   int get totalQuantity => cartItems.fold(0, (sum, i) => sum + i.quantity);
 
   SaleInvoiceState copyWith({
     String? invoiceNumber,
     bool? invoiceLoading,
     String? paymentType,
+    double? cashAmount,
+    CustomerModel? customer,
+    bool clearCustomer = false,
     EmployeeLookupItem? salesman,
     bool clearSalesman = false,
     BankEntryLookupItem? bankEntry,
@@ -155,6 +187,7 @@ class SaleInvoiceState {
     bool clearPrinter = false,
     String? note,
     List<SaleCartItem>? cartItems,
+    double? invoiceDiscount,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -164,11 +197,14 @@ class SaleInvoiceState {
         invoiceNumber: invoiceNumber ?? this.invoiceNumber,
         invoiceLoading: invoiceLoading ?? this.invoiceLoading,
         paymentType: paymentType ?? this.paymentType,
+        cashAmount: cashAmount ?? this.cashAmount,
+        customer: clearCustomer ? null : customer ?? this.customer,
         salesman: clearSalesman ? null : salesman ?? this.salesman,
         bankEntry: clearBankEntry ? null : bankEntry ?? this.bankEntry,
         printer: clearPrinter ? null : printer ?? this.printer,
         note: note ?? this.note,
         cartItems: cartItems ?? this.cartItems,
+        invoiceDiscount: invoiceDiscount ?? this.invoiceDiscount,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
         lastSavedInvoice: lastSavedInvoice ?? this.lastSavedInvoice,
@@ -200,7 +236,20 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     }
   }
 
-  void selectPaymentType(String type) => state = state.copyWith(paymentType: type);
+  void selectPaymentType(String type) => state = state.copyWith(
+        paymentType: type,
+        cashAmount: type == 'cash_card' ? state.cashAmount : 0,
+      );
+
+  void setCashAmount(double amount) => state = state.copyWith(cashAmount: amount);
+
+  void selectCustomer(CustomerModel? customer) {
+    if (customer == null) {
+      state = state.copyWith(clearCustomer: true);
+    } else {
+      state = state.copyWith(customer: customer);
+    }
+  }
 
   void selectSalesman(EmployeeLookupItem? emp) {
     if (emp == null) {
@@ -297,17 +346,51 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     );
   }
 
-  void clearCart() => state = state.copyWith(cartItems: []);
+  void clearCart() => state = state.copyWith(cartItems: [], invoiceDiscount: 0);
+
+  /// 0..itemsTotal tak clamp — branch ki permission check UI (footer field
+  /// ki visibility) mein hoti hai, yahan sirf value sanity clamp hai.
+  void setInvoiceDiscount(double amount) {
+    final capped = amount.clamp(0, state.itemsTotal);
+    state = state.copyWith(invoiceDiscount: capped.toDouble());
+  }
+
+  /// Current state se payment legs banata hai — cash/card ek row, cash_card do rows.
+  List<PaymentInput> _buildPayments() {
+    switch (state.paymentType) {
+      case 'card':
+        return [PaymentInput(type: 'card', amount: state.totalAmount, bankEntryId: state.bankEntry?.id)];
+      case 'cash_card':
+        return [
+          PaymentInput(type: 'cash', amount: state.cashAmount),
+          PaymentInput(type: 'card', amount: state.cardAmount, bankEntryId: state.bankEntry?.id),
+        ];
+      default:
+        return [PaymentInput(type: 'cash', amount: state.totalAmount)];
+    }
+  }
 
   Future<String?> saveInvoice() async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
+    if (state.customer == null) return 'Select a customer';
+    if (state.salesman == null) return 'Select a salesman';
+    if (state.printer == null) return 'Select a printer';
     if (state.paymentType == 'card' && state.bankEntry == null) {
       return 'Select a bank account for card sale';
+    }
+    if (state.paymentType == 'cash_card') {
+      if (state.bankEntry == null) return 'Select a bank account for the card portion';
+      if (state.cashAmount <= 0 || state.cashAmount >= state.totalAmount) {
+        return 'Enter a cash amount between 0 and the net amount';
+      }
     }
     for (final item in state.cartItems) {
       if (item.availableStock > 0 && item.quantity > item.availableStock) {
         return '${item.productName} — only ${item.availableStock} in stock';
       }
+    }
+    if (state.invoiceDiscount > state.itemsTotal) {
+      return 'Discount cannot exceed the items total';
     }
 
     state = state.copyWith(isSaving: true, clearError: true);
@@ -324,10 +407,12 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           branchId: _branchId,
           printerId: state.printer?.id,
           cashierId: cashierId,
+          customerId: state.customer!.id,
           salesmanId: state.salesman?.id,
           managerId: manager?.id,
           subtotal: state.subtotal,
           totalDiscount: state.totalDiscount,
+          invoiceDiscount: state.invoiceDiscount,
           totalAmount: state.totalAmount,
           salesmanCommissionPercent: salesmanCommissionPercent,
           salesmanCommissionAmount: salesmanCommissionAmount,
@@ -335,8 +420,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           managerCommissionAmount: managerCommissionAmount,
           note: state.note.trim().isEmpty ? null : state.note.trim(),
           cartItems: state.cartItems,
-          paymentType: state.paymentType,
-          bankEntryId: state.bankEntry?.id,
+          payments: _buildPayments(),
         );
 
     try {
@@ -399,17 +483,17 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
             ))
         .toList();
 
-    final payments = [
-      SaleInvoicePaymentModel(
-        id: '',
-        saleInvoiceId: saved.id,
-        branchId: _branchId,
-        bankEntryId: state.bankEntry?.id,
-        paymentType: state.paymentType,
-        amount: state.totalAmount,
-        createdAt: saved.createdAt,
-      ),
-    ];
+    final payments = _buildPayments()
+        .map((p) => SaleInvoicePaymentModel(
+              id: '',
+              saleInvoiceId: saved.id,
+              branchId: _branchId,
+              bankEntryId: p.bankEntryId,
+              paymentType: p.type,
+              amount: p.amount,
+              createdAt: saved.createdAt,
+            ))
+        .toList();
 
     return SaleInvoiceModel(
       id: saved.id,
@@ -417,12 +501,15 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       branchId: saved.branchId,
       printerId: saved.printerId,
       cashierId: saved.cashierId,
+      customerId: saved.customerId,
+      customerName: state.customer?.name,
       salesmanId: saved.salesmanId,
       salesmanName: state.salesman?.name,
       managerId: saved.managerId,
       managerName: saved.managerName,
       subtotal: saved.subtotal,
       totalDiscount: saved.totalDiscount,
+      invoiceDiscount: saved.invoiceDiscount,
       totalAmount: saved.totalAmount,
       salesmanCommissionPercent: saved.salesmanCommissionPercent,
       salesmanCommissionAmount: saved.salesmanCommissionAmount,

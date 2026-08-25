@@ -17,6 +17,16 @@ class _AssignDialogState extends ConsumerState<AssignDialog> {
   late List<String> _selectedBranches;
   late List<String> _selectedWarehouses;
 
+  // Sirf superadmin/admin/supervisor multiple branches + warehouses (dono
+  // types) rakh sakte hain. Baaki roles apne role-type tak limited hain aur
+  // sirf 1 hi le sakte hain — DB trigger bhi isi ko enforce karta hai.
+  bool get _isUnrestricted =>
+      widget.user.isSuperAdmin || widget.user.isAdmin || widget.user.isSupervisor;
+  bool get _showBranches =>
+      _isUnrestricted || !(widget.user.isWarehouseManager || widget.user.isInventoryManager);
+  bool get _showWarehouses =>
+      _isUnrestricted || (widget.user.isWarehouseManager || widget.user.isInventoryManager);
+
   @override
   void initState() {
     super.initState();
@@ -41,49 +51,78 @@ class _AssignDialogState extends ConsumerState<AssignDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Branches section
-              const Text('Branches', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              const SizedBox(height: 6),
-              if (branches.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('No branches available', style: TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
-                )
-              else
-                ...branches.map((b) => CheckboxListTile(
-                      dense: true,
-                      title: Text(b.branchName, style: const TextStyle(fontSize: 13)),
-                      subtitle: Text(b.city, style: const TextStyle(fontSize: 11)),
-                      value: _selectedBranches.contains(b.id),
-                      activeColor: const Color(0xFF3E63DD),
-                      onChanged: (v) => setState(() {
-                        if (v == true) _selectedBranches.add(b.id);
-                        else _selectedBranches.remove(b.id);
-                      }),
-                    )),
+              if (!_isUnrestricted)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Yeh role sirf ek ${_showBranches ? 'branch' : 'warehouse'} tak limited hai.',
+                    style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
+                  ),
+                ),
 
-              const Divider(height: 24),
+              // Branches section
+              if (_showBranches) ...[
+                const Text('Branches', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                if (branches.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('No branches available', style: TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
+                  )
+                else
+                  ...branches.map((b) => CheckboxListTile(
+                        dense: true,
+                        title: Text(b.branchName, style: const TextStyle(fontSize: 13)),
+                        subtitle: Text(b.city, style: const TextStyle(fontSize: 11)),
+                        value: _selectedBranches.contains(b.id),
+                        activeColor: const Color(0xFF3E63DD),
+                        onChanged: (v) => setState(() {
+                          if (v != true) {
+                            _selectedBranches.remove(b.id);
+                          } else if (_isUnrestricted) {
+                            _selectedBranches.add(b.id);
+                          } else {
+                            // Restricted roles: sirf ek hi branch select ho sakti hai
+                            _selectedBranches
+                              ..clear()
+                              ..add(b.id);
+                          }
+                        }),
+                      )),
+              ],
+
+              if (_showBranches && _showWarehouses) const Divider(height: 24),
 
               // Warehouses section
-              const Text('Warehouses', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              const SizedBox(height: 6),
-              if (warehouses.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text('No warehouses available', style: TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
-                )
-              else
-                ...warehouses.map((w) => CheckboxListTile(
-                      dense: true,
-                      title: Text(w.warehouseName, style: const TextStyle(fontSize: 13)),
-                      subtitle: Text(w.city, style: const TextStyle(fontSize: 11)),
-                      value: _selectedWarehouses.contains(w.id),
-                      activeColor: const Color(0xFF3E63DD),
-                      onChanged: (v) => setState(() {
-                        if (v == true) _selectedWarehouses.add(w.id);
-                        else _selectedWarehouses.remove(w.id);
-                      }),
-                    )),
+              if (_showWarehouses) ...[
+                const Text('Warehouses', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                if (warehouses.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('No warehouses available', style: TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
+                  )
+                else
+                  ...warehouses.map((w) => CheckboxListTile(
+                        dense: true,
+                        title: Text(w.warehouseName, style: const TextStyle(fontSize: 13)),
+                        subtitle: Text(w.city, style: const TextStyle(fontSize: 11)),
+                        value: _selectedWarehouses.contains(w.id),
+                        activeColor: const Color(0xFF3E63DD),
+                        onChanged: (v) => setState(() {
+                          if (v != true) {
+                            _selectedWarehouses.remove(w.id);
+                          } else if (_isUnrestricted) {
+                            _selectedWarehouses.add(w.id);
+                          } else {
+                            // Restricted roles: sirf ek hi warehouse select ho sakta hai
+                            _selectedWarehouses
+                              ..clear()
+                              ..add(w.id);
+                          }
+                        }),
+                      )),
+              ],
             ],
           ),
         ),
@@ -97,15 +136,32 @@ class _AssignDialogState extends ConsumerState<AssignDialog> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           onPressed: () async {
-            await ref.read(userProvider.notifier).assignBranchesToUser(
-                  userId: widget.user.id,
-                  branchIds: _selectedBranches,
-                );
-            await ref.read(userProvider.notifier).assignWarehousesToUser(
-                  userId: widget.user.id,
-                  warehouseIds: _selectedWarehouses,
-                );
-            if (context.mounted) Navigator.pop(context);
+            final notifier = ref.read(userProvider.notifier);
+            if (_showBranches) {
+              await notifier.assignBranchesToUser(
+                userId: widget.user.id,
+                branchIds: _selectedBranches,
+              );
+            }
+            if (_showWarehouses) {
+              await notifier.assignWarehousesToUser(
+                userId: widget.user.id,
+                warehouseIds: _selectedWarehouses,
+              );
+            }
+            if (!context.mounted) return;
+            final error = ref.read(userProvider).errorMessage;
+            if (error != null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(error),
+                  backgroundColor: Colors.redAccent,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              return;
+            }
+            Navigator.pop(context);
           },
           child: const Text('Save'),
         ),

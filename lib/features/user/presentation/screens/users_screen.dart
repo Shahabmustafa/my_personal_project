@@ -21,7 +21,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   String _searchQuery = '';
 
   static const _roles = [
-    'superadmin', 'admin', 'manager',
+    'superadmin', 'admin', 'manager', 'supervisor',
     'warehouse_manager', 'inventory_manager', 'cashier', 'salesman',
   ];
 
@@ -634,6 +634,7 @@ class _EmptyView extends StatelessWidget {
 String _roleLabel(String role) {
   const map = {
     'superadmin': 'Super Admin', 'admin': 'Admin', 'manager': 'Manager',
+    'supervisor': 'Supervisor',
     'warehouse_manager': 'WH Manager', 'inventory_manager': 'Inv Manager',
     'cashier': 'Cashier', 'salesman': 'Salesman',
   };

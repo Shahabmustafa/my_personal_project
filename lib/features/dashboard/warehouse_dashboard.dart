@@ -35,12 +35,12 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
     SidebarItem(icon: Icons.business_outlined,           label: 'Assign Stock To Branch'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Warehouse Cash Counter'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Company'),
-    SidebarItem(icon: Icons.inventory_2_outlined,        label: 'Products'),
-    SidebarItem(icon: Icons.branding_watermark_outlined, label: 'Brands'),
-    SidebarItem(icon: Icons.format_size_outlined,        label: 'Sizes'),
-    SidebarItem(icon: Icons.color_lens_outlined,         label: 'Colors'),
-    SidebarItem(icon: Icons.category_outlined,           label: 'Categories'),
-    SidebarItem(icon: Icons.style_outlined,              label: 'Types'),
+    SidebarItem(icon: Icons.inventory_2_outlined,        label: 'Products', group: 'Catalog'),
+    SidebarItem(icon: Icons.branding_watermark_outlined, label: 'Brands', group: 'Catalog'),
+    SidebarItem(icon: Icons.format_size_outlined,        label: 'Sizes', group: 'Catalog'),
+    SidebarItem(icon: Icons.color_lens_outlined,         label: 'Colors', group: 'Catalog'),
+    SidebarItem(icon: Icons.category_outlined,           label: 'Categories', group: 'Catalog'),
+    SidebarItem(icon: Icons.style_outlined,              label: 'Types', group: 'Catalog'),
     SidebarItem(icon: Icons.warehouse_outlined,          label: 'Stock Inventory'),
   ];
 

@@ -6,7 +6,8 @@ import '../../data/models/warehouse_stock_model.dart';
 import '../providers/stock_provider.dart';
 
 class StockTable extends ConsumerWidget {
-  const StockTable({super.key});
+  final bool readOnly;
+  const StockTable({super.key, this.readOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,8 +56,8 @@ class StockTable extends ConsumerWidget {
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 700;
         return isWide
-            ? _DesktopTable(items: items)
-            : _MobileList(items: items);
+            ? _DesktopTable(items: items, readOnly: readOnly)
+            : _MobileList(items: items, readOnly: readOnly);
       },
     );
   }
@@ -66,7 +67,8 @@ class StockTable extends ConsumerWidget {
 
 class _DesktopTable extends ConsumerWidget {
   final List<WarehouseStockModel> items;
-  const _DesktopTable({required this.items});
+  final bool readOnly;
+  const _DesktopTable({required this.items, this.readOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -104,7 +106,8 @@ class _DesktopTable extends ConsumerWidget {
             itemCount: items.length,
             itemBuilder: (context, i) {
               final stock = items[i];
-              return _DesktopRow(stock: stock, isEven: i.isEven);
+              return _DesktopRow(
+                  stock: stock, isEven: i.isEven, readOnly: readOnly);
             },
           ),
         ),
@@ -126,8 +129,10 @@ class _DesktopTable extends ConsumerWidget {
 class _DesktopRow extends ConsumerWidget {
   final WarehouseStockModel stock;
   final bool isEven;
+  final bool readOnly;
 
-  const _DesktopRow({required this.stock, required this.isEven});
+  const _DesktopRow(
+      {required this.stock, required this.isEven, this.readOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -154,13 +159,14 @@ class _DesktopRow extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Edit quantity & discount
-                IconButton(
-                  icon: Icon(Icons.edit_outlined,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.primary),
-                  tooltip: 'Edit',
-                  onPressed: () => showEditStockDialog(context, ref, stock),
-                ),
+                if (!readOnly)
+                  IconButton(
+                    icon: Icon(Icons.edit_outlined,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary),
+                    tooltip: 'Edit',
+                    onPressed: () => showEditStockDialog(context, ref, stock),
+                  ),
                 // Copy barcode
                 IconButton(
                   icon: const Icon(Icons.copy_outlined,
@@ -177,12 +183,13 @@ class _DesktopRow extends ConsumerWidget {
                   onPressed: () => _showPrintDialog(context),
                 ),
                 // Delete
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      size: 18, color: Colors.red),
-                  tooltip: 'Delete',
-                  onPressed: () => _confirmDelete(context, ref),
-                ),
+                if (!readOnly)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 18, color: Colors.red),
+                    tooltip: 'Delete',
+                    onPressed: () => _confirmDelete(context, ref),
+                  ),
               ],
             ),
           ),
@@ -645,7 +652,8 @@ class _LabelDetail extends StatelessWidget {
 
 class _MobileList extends ConsumerWidget {
   final List<WarehouseStockModel> items;
-  const _MobileList({required this.items});
+  final bool readOnly;
+  const _MobileList({required this.items, this.readOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -674,13 +682,14 @@ class _MobileList extends ConsumerWidget {
                       ),
                     ),
                     // Edit
-                    IconButton(
-                      icon: Icon(Icons.edit_outlined,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 18),
-                      onPressed: () =>
-                          showEditStockDialog(context, ref, stock),
-                    ),
+                    if (!readOnly)
+                      IconButton(
+                        icon: Icon(Icons.edit_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: 18),
+                        onPressed: () =>
+                            showEditStockDialog(context, ref, stock),
+                      ),
                     // Copy
                     IconButton(
                       icon: const Icon(Icons.copy_outlined,
@@ -706,22 +715,23 @@ class _MobileList extends ConsumerWidget {
                       ),
                     ),
                     // Delete
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline,
-                          color: Colors.red, size: 20),
-                      onPressed: () async {
-                        final err = await ref
-                            .read(stockProvider.notifier)
-                            .deleteStock(stock.id);
-                        if (err != null && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('Error: $err'),
-                                backgroundColor: Colors.red),
-                          );
-                        }
-                      },
-                    ),
+                    if (!readOnly)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline,
+                            color: Colors.red, size: 20),
+                        onPressed: () async {
+                          final err = await ref
+                              .read(stockProvider.notifier)
+                              .deleteStock(stock.id);
+                          if (err != null && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Error: $err'),
+                                  backgroundColor: Colors.red),
+                            );
+                          }
+                        },
+                      ),
                   ],
                 ),
                 const SizedBox(height: 6),

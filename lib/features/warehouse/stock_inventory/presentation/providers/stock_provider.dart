@@ -37,6 +37,10 @@ final stockCategoriesProvider = FutureProvider<List<StockLookupItem>>(
 final stockTypesProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getTypes());
 
+// ── Admin: read-only stock across ALL warehouses ────────────────────────────
+final adminStockProvider = FutureProvider<List<WarehouseStockModel>>(
+    (ref) => ref.read(stockRepositoryProvider).getAllStock());
+
 // ── Stock list state ──────────────────────────────────────────────────────
 class StockState {
   final List<WarehouseStockModel> items;

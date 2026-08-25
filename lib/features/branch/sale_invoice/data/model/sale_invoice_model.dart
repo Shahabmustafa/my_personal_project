@@ -4,12 +4,15 @@ class SaleInvoiceModel {
   final String branchId;
   final String? printerId;
   final String? cashierId;
+  final String? customerId;
+  final String? customerName;
   final String? salesmanId;
   final String? salesmanName;
   final String? managerId;
   final String? managerName;
   final double subtotal;
   final double totalDiscount;
+  final double invoiceDiscount;
   final double totalAmount;
   final double salesmanCommissionPercent;
   final double salesmanCommissionAmount;
@@ -26,12 +29,15 @@ class SaleInvoiceModel {
     required this.branchId,
     this.printerId,
     this.cashierId,
+    this.customerId,
+    this.customerName,
     this.salesmanId,
     this.salesmanName,
     this.managerId,
     this.managerName,
     required this.subtotal,
     required this.totalDiscount,
+    this.invoiceDiscount = 0,
     required this.totalAmount,
     this.salesmanCommissionPercent = 0,
     this.salesmanCommissionAmount = 0,
@@ -43,9 +49,13 @@ class SaleInvoiceModel {
     this.payments = const [],
   });
 
-  /// Payments se resolve hone wala payment type (cash/card) — display ke liye.
-  String get paymentTypeLabel =>
-      payments.isNotEmpty ? payments.first.paymentType : '—';
+  /// Payments se resolve hone wala payment type (cash/card/cash+card) — display ke liye.
+  String get paymentTypeLabel {
+    if (payments.isEmpty) return '—';
+    final types = payments.map((p) => p.paymentType).toSet();
+    if (types.length > 1) return 'cash + card';
+    return types.first;
+  }
 
   static double _toDouble(dynamic v) {
     if (v == null) return 0.0;
@@ -60,6 +70,7 @@ class SaleInvoiceModel {
         (json['salesman'] as Map<String, dynamic>?)?['users'] as Map<String, dynamic>?;
     final managerUser =
         (json['manager'] as Map<String, dynamic>?)?['users'] as Map<String, dynamic>?;
+    final customer = json['customers'] as Map<String, dynamic>?;
     final paymentsJson = payments.isNotEmpty
         ? payments
         : ((json['sale_invoice_payments'] as List?) ?? const [])
@@ -71,12 +82,15 @@ class SaleInvoiceModel {
       branchId: json['branch_id']?.toString() ?? '',
       printerId: json['printer_id']?.toString(),
       cashierId: json['cashier_id']?.toString(),
+      customerId: json['customer_id']?.toString(),
+      customerName: customer?['name']?.toString(),
       salesmanId: json['salesman_id']?.toString(),
       salesmanName: salesmanUser?['username']?.toString(),
       managerId: json['manager_id']?.toString(),
       managerName: managerUser?['username']?.toString(),
       subtotal: _toDouble(json['subtotal']),
       totalDiscount: _toDouble(json['total_discount']),
+      invoiceDiscount: _toDouble(json['invoice_discount']),
       totalAmount: _toDouble(json['total_amount']),
       salesmanCommissionPercent: _toDouble(json['salesman_commission_percent']),
       salesmanCommissionAmount: _toDouble(json['salesman_commission_amount']),
@@ -90,6 +104,16 @@ class SaleInvoiceModel {
       payments: paymentsJson,
     );
   }
+}
+
+/// One payment leg to insert for an invoice/return — a 'cash + card' sale
+/// results in two of these (one 'cash', one 'card') against the same invoice.
+class PaymentInput {
+  final String type; // cash | card
+  final double amount;
+  final String? bankEntryId;
+
+  const PaymentInput({required this.type, required this.amount, this.bankEntryId});
 }
 
 class SaleInvoicePaymentModel {

@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 class SidebarItem {
   final IconData icon;
   final String label;
-  const SidebarItem({required this.icon, required this.label});
+  final String? group;
+  const SidebarItem({required this.icon, required this.label, this.group});
 }
 
 class SidebarShell extends StatelessWidget {
@@ -97,54 +98,16 @@ class SidebarShell extends StatelessWidget {
                           color: _textDim, fontSize: 11, letterSpacing: 0.8)),
                 ),
 
-                // Nav items
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
-                  child: Column(
-                    children: List.generate(navItems.length, (i) {
-                      final item = navItems[i];
-                      final active = i == safeIndex;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 4),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(9),
-                            onTap: () => onSelect(i),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 11),
-                              decoration: BoxDecoration(
-                                color: active ? _accentSoft : Colors.transparent,
-                                borderRadius: BorderRadius.circular(9),
-                                border: Border.all(
-                                  color: active
-                                      ? _accent.withOpacity(0.25)
-                                      : Colors.transparent,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(item.icon,
-                                      size: 19,
-                                      color: active ? _accent : _textDim),
-                                  const SizedBox(width: 12),
-                                  Text(item.label,
-                                      style: TextStyle(
-                                          color: active ? _textDark : _textDim,
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
+                // Nav items — scrollable so grouped/expanded items never
+                // overflow the sidebar's fixed height.
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: Column(
+                      children: _buildNavTree(safeIndex),
+                    ),
                   ),
                 ),
-
-                const Spacer(),
                 const Divider(color: _line, height: 1),
 
                 // User info + logout
@@ -207,6 +170,89 @@ class SidebarShell extends StatelessWidget {
           // Page
           Expanded(child: pages[safeIndex]),
         ],
+      ),
+    );
+  }
+
+  // Consecutive items sharing the same `group` are bundled into one
+  // ExpansionTile; ungrouped items render as flat tiles like before.
+  List<Widget> _buildNavTree(int safeIndex) {
+    final widgets = <Widget>[];
+    int i = 0;
+    while (i < navItems.length) {
+      final group = navItems[i].group;
+      if (group == null) {
+        widgets.add(_navTile(i, safeIndex));
+        i++;
+      } else {
+        final start = i;
+        while (i < navItems.length && navItems[i].group == group) {
+          i++;
+        }
+        final indices = List.generate(i - start, (k) => start + k);
+        widgets.add(_groupTile(group, indices, safeIndex));
+      }
+    }
+    return widgets;
+  }
+
+  Widget _navTile(int i, int safeIndex) {
+    final item = navItems[i];
+    final active = i == safeIndex;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(9),
+          onTap: () => onSelect(i),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: active ? _accentSoft : Colors.transparent,
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(
+                color: active ? _accent.withOpacity(0.25) : Colors.transparent,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(item.icon, size: 19, color: active ? _accent : _textDim),
+                const SizedBox(width: 12),
+                Text(item.label,
+                    style: TextStyle(
+                        color: active ? _textDark : _textDim,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _groupTile(String group, List<int> indices, int safeIndex) {
+    final containsActive = indices.contains(safeIndex);
+    return Theme(
+      data: ThemeData(dividerColor: Colors.transparent),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: ExpansionTile(
+          initiallyExpanded: containsActive,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 14),
+          childrenPadding: const EdgeInsets.only(left: 8),
+          shape: const Border(),
+          collapsedShape: const Border(),
+          leading: Icon(navItems[indices.first].icon,
+              size: 19, color: containsActive ? _accent : _textDim),
+          title: Text(group,
+              style: TextStyle(
+                  color: containsActive ? _textDark : _textDim,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500)),
+          children: indices.map((i) => _navTile(i, safeIndex)).toList(),
+        ),
       ),
     );
   }
