@@ -52,13 +52,16 @@ class SaleInvoiceDatasource {
   Future<List<PrinterLookupItem>> fetchPrinters(String branchId) async {
     final res = await _client
         .from('assign_printer')
-        .select('id, printer_heads(name)')
+        .select('id, printer_heads(name, address, phone_number, image_url)')
         .eq('branch_id', branchId);
     return (res as List).map((e) {
       final printer = e['printer_heads'] as Map<String, dynamic>?;
       return PrinterLookupItem(
         id: e['id'].toString(),
         label: printer?['name']?.toString() ?? 'Printer',
+        address: printer?['address']?.toString() ?? '',
+        phoneNumber: printer?['phone_number']?.toString() ?? '',
+        imageUrl: printer?['image_url']?.toString() ?? '',
       );
     }).toList();
   }

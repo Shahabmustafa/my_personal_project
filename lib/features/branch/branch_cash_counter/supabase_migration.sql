@@ -50,6 +50,8 @@ FOR EACH ROW EXECUTE FUNCTION update_branch_cash_counter_updated_at();
 
 -- =============================================
 -- STEP 5: Har raat 12 baje (PKT) nai rows insert
+-- Sab kuch 0 se shuru hota hai, sirf total_amount pichle
+-- din wale (us branch ka last row) se carry forward hota hai.
 -- =============================================
 SELECT cron.schedule(
     'nightly-branch-cash-counter',
@@ -69,9 +71,19 @@ SELECT cron.schedule(
         total_amount
     )
     SELECT
-        id,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    FROM public.branches;
+        b.id,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        COALESCE(
+            (
+                SELECT total_amount
+                FROM public.branch_cash_counter
+                WHERE branch_id = b.id
+                ORDER BY created_at DESC
+                LIMIT 1
+            ),
+            0
+        )
+    FROM public.branches b;
     $$
 );
 

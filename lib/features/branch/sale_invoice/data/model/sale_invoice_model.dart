@@ -354,12 +354,24 @@ class BankEntryLookupItem {
   int get hashCode => id.hashCode;
 }
 
-/// Lightweight printer lookup
+/// Lightweight printer lookup. [label] is the printer head's name — also
+/// used to match the physical OS printer for direct silent printing on
+/// desktop. [address]/[phoneNumber] come from the same printer head record
+/// and are printed on the receipt as the shop's branch header.
 class PrinterLookupItem {
   final String id;
   final String label;
+  final String address;
+  final String phoneNumber;
+  final String imageUrl;
 
-  const PrinterLookupItem({required this.id, required this.label});
+  const PrinterLookupItem({
+    required this.id,
+    required this.label,
+    this.address = '',
+    this.phoneNumber = '',
+    this.imageUrl = '',
+  });
 
   @override
   bool operator ==(Object other) =>

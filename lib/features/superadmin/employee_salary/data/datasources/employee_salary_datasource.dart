@@ -16,6 +16,18 @@ class EmployeeSalaryDatasource {
         .toList();
   }
 
+  Future<List<EmployeeSalaryModel>> fetchByBranch(String branchId) async {
+    final response = await _client
+        .from('employee_salary')
+        .select('*, users(username, role), branches(branch_name)')
+        .eq('branch_id', branchId)
+        .order('created_at', ascending: false);
+
+    return (response as List)
+        .map((e) => EmployeeSalaryModel.fromMap(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<void> insertEmployeeSalary({
     required String userId,
     required String branchId,

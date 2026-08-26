@@ -21,5 +21,24 @@ CREATE TABLE IF NOT EXISTS public.employee_salary (
 ALTER TABLE public.employee_salary DISABLE ROW LEVEL SECURITY;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.employee_salary TO authenticated;
 
+-- =============================================
+-- Har mahine ki 1 tareekh (00:00 Pakistan time) ko total_sales aur
+-- total_sales_return 0 ho jate hain — Salary/Commission % wahi rehte hain.
+-- UNIQUE(user_id, branch_id) ki wajah se ek hi row rehta hai (naya row
+-- nahi banta, history nahi rakhi jati — reset in-place hota hai).
+-- Job roz raat 00:00 PKT (19:00 UTC) chalti hai, sirf 1 tareekh ko kuch
+-- karti hai (branch_cash_counter ki nightly job jaisa hi PKT-anchored pattern).
+-- =============================================
+SELECT cron.schedule(
+    'monthly-employee-salary-reset',
+    '0 19 * * *',
+    $$
+    UPDATE public.employee_salary
+    SET total_sales = 0,
+        total_sales_return = 0
+    WHERE EXTRACT(DAY FROM (now() AT TIME ZONE 'Asia/Karachi')) = 1;
+    $$
+);
+
 -- Reload schema cache
 NOTIFY pgrst, 'reload schema';

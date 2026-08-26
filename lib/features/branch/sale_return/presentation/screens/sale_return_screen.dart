@@ -1,8 +1,11 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/service/print/print_service.dart';
+import '../../../../superadmin/employee_salary/presentation/providers/employee_salary_providers.dart';
+import '../../../customer/data/model/customer_model.dart';
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
-    show bankEntriesForSaleProvider, printersForSaleProvider;
+    show bankEntriesForSaleProvider, customersForSaleProvider, printersForSaleProvider, salesmenProvider;
 import '../../data/model/sale_return_model.dart';
 import '../provider/sale_return_provider.dart';
 import '../widgets/sale_return_cart_table.dart';
@@ -183,6 +186,8 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
   Widget build(BuildContext context) {
     final state = ref.watch(saleReturnProvider);
     final notifier = ref.read(saleReturnProvider.notifier);
+    final customersAsync = ref.watch(customersForSaleProvider);
+    final salesmenAsync = ref.watch(salesmenProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
 
@@ -196,6 +201,43 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Expanded(
+            flex: 3,
+            child: customersAsync.when(
+              loading: () => const _FieldLoading(),
+              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+              data: (list) {
+                final active = list.where((c) => c.isActive).toList();
+                return DropdownSearch<CustomerModel>(
+                  items: (f, _) => active.where((c) => c.name.toLowerCase().contains(f.toLowerCase())).toList(),
+                  selectedItem: state.customer,
+                  itemAsString: (c) => c.name,
+                  compareFn: (a, b) => a.id == b.id,
+                  onSelected: notifier.selectCustomer,
+                  decoratorProps: DropDownDecoratorProps(decoration: _decor('Customer', required: true)),
+                  popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 3,
+            child: salesmenAsync.when(
+              loading: () => const _FieldLoading(),
+              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+              data: (list) => DropdownSearch<EmployeeLookupItem>(
+                items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
+                selectedItem: state.salesman,
+                itemAsString: (e) => e.name,
+                compareFn: (a, b) => a.id == b.id,
+                onSelected: notifier.selectSalesman,
+                decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman', required: true)),
+                popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             flex: 3,
             child: printersAsync.when(
@@ -420,6 +462,7 @@ class _ReturnFooter extends ConsumerWidget {
     );
     if (confirm != true || !context.mounted) return;
 
+    final printer = state.printer;
     final error = await ref.read(saleReturnProvider.notifier).saveReturn();
 
     if (!context.mounted) return;
@@ -434,6 +477,25 @@ class _ReturnFooter extends ConsumerWidget {
       );
       return;
     }
+
+    // Return ne is salesman ki employee_salary total_sales_return badal di
+    // hai (DB trigger se) — Branch Employee screen ki cached figures ko
+    // taaza karne ke liye is provider ko invalidate karna zaroori hai.
+    ref.invalidate(employeeSalariesForBranchProvider);
+
+    final savedReturn = ref.read(saleReturnProvider).lastSavedReturn;
+    if (savedReturn != null) {
+      try {
+        await ThermalPrintService.printSaleReturn(savedReturn, printer: printer);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Print failed: $e'), backgroundColor: Colors.orange.shade700),
+          );
+        }
+      }
+    }
+    if (!context.mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(

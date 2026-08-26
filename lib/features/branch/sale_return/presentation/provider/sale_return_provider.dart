@@ -5,6 +5,8 @@ import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../shared/current_branch_provider.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
 import '../../../customer/data/model/customer_model.dart';
+import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
+    show customersForSaleProvider;
 import '../../data/datasource/sale_return_datasource.dart';
 import '../../data/model/sale_return_model.dart';
 import '../../data/repository/sale_return_repository.dart';
@@ -83,6 +85,7 @@ class SaleReturnState {
   final String paymentType; // cash | card | cash_card
   final double cashAmount; // only used when paymentType == 'cash_card'
   final CustomerModel? customer;
+  final EmployeeLookupItem? salesman;
   final BankEntryLookupItem? bankEntry;
   final PrinterLookupItem? printer;
   final String note;
@@ -97,6 +100,7 @@ class SaleReturnState {
     this.paymentType = 'cash',
     this.cashAmount = 0,
     this.customer,
+    this.salesman,
     this.bankEntry,
     this.printer,
     this.note = '',
@@ -123,6 +127,8 @@ class SaleReturnState {
     double? cashAmount,
     CustomerModel? customer,
     bool clearCustomer = false,
+    EmployeeLookupItem? salesman,
+    bool clearSalesman = false,
     BankEntryLookupItem? bankEntry,
     bool clearBankEntry = false,
     PrinterLookupItem? printer,
@@ -140,6 +146,7 @@ class SaleReturnState {
         paymentType: paymentType ?? this.paymentType,
         cashAmount: cashAmount ?? this.cashAmount,
         customer: clearCustomer ? null : customer ?? this.customer,
+        salesman: clearSalesman ? null : salesman ?? this.salesman,
         bankEntry: clearBankEntry ? null : bankEntry ?? this.bankEntry,
         printer: clearPrinter ? null : printer ?? this.printer,
         note: note ?? this.note,
@@ -158,6 +165,25 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
   SaleReturnNotifier(this._ref, this._repo, this._branchId)
       : super(const SaleReturnState()) {
     _loadReturnNumber();
+    _loadDefaultCustomer();
+  }
+
+  /// Har naye return pe by default "Walk-in Customer" (branches ke darmiyan
+  /// shared record) select kar deta hai — screen mein abhi customer dropdown
+  /// nahi hai, is default ke bina saveReturn() hamesha "Select a customer"
+  /// error deta rehta.
+  Future<void> _loadDefaultCustomer() async {
+    try {
+      final customers = await _ref.read(customersForSaleProvider.future);
+      if (!mounted || state.customer != null) return;
+      final walkIn = customers.where((c) => c.isWalkIn);
+      if (walkIn.isNotEmpty) {
+        state = state.copyWith(customer: walkIn.first);
+      }
+    } catch (_) {
+      // Fail hone par bhi return flow chalta rahega; agar future mein
+      // customer dropdown add hua to cashier manually chun sakega.
+    }
   }
 
   Future<void> _loadReturnNumber() async {
@@ -187,6 +213,14 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       state = state.copyWith(clearCustomer: true);
     } else {
       state = state.copyWith(customer: customer);
+    }
+  }
+
+  void selectSalesman(EmployeeLookupItem? salesman) {
+    if (salesman == null) {
+      state = state.copyWith(clearSalesman: true);
+    } else {
+      state = state.copyWith(salesman: salesman);
     }
   }
 
@@ -287,6 +321,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
   Future<String?> saveReturn() async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
     if (state.customer == null) return 'Select a customer';
+    if (state.salesman == null) return 'Select a salesman';
     if (state.printer == null) return 'Select a printer';
     if (state.paymentType == 'card' && state.bankEntry == null) {
       return 'Select a bank account for card refund';
@@ -308,6 +343,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
           printerId: state.printer?.id,
           cashierId: cashierId,
           customerId: state.customer!.id,
+          salesmanId: state.salesman?.id,
           subtotal: state.subtotal,
           totalDiscount: state.totalDiscount,
           totalAmount: state.totalAmount,
@@ -394,6 +430,8 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       cashierId: saved.cashierId,
       customerId: saved.customerId,
       customerName: state.customer?.name,
+      salesmanId: saved.salesmanId,
+      salesmanName: state.salesman?.name,
       subtotal: saved.subtotal,
       totalDiscount: saved.totalDiscount,
       totalAmount: saved.totalAmount,
@@ -408,6 +446,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
     if (!mounted) return;
     state = const SaleReturnState(numberLoading: true);
     await _loadReturnNumber();
+    await _loadDefaultCustomer();
   }
 }
 

@@ -1,9 +1,10 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/service/print/print_service.dart';
+import '../../../../superadmin/employee_salary/presentation/providers/employee_salary_providers.dart';
 import '../../../customer/data/model/customer_model.dart';
 import '../../data/model/sale_invoice_model.dart';
-import '../../data/sale_invoice_print/sale_invoice_print_service.dart';
 import '../provider/sale_invoice_provider.dart';
 import '../widgets/sale_cart_table.dart';
 import '../widgets/sale_product_selector.dart';
@@ -499,7 +500,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
     );
     if (confirm != true || !context.mounted) return;
 
-    final printerLabel = state.printer?.label;
+    final printer = state.printer;
     final error = await ref.read(saleInvoiceProvider.notifier).saveInvoice();
     if (!context.mounted) return;
 
@@ -510,10 +511,15 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
       return;
     }
 
+    // Invoice ne is salesman ki employee_salary total_sales badal di hai
+    // (DB trigger se) — Branch Employee screen ki cached figures ko taaza
+    // karne ke liye is provider ko invalidate karna zaroori hai.
+    ref.invalidate(employeeSalariesForBranchProvider);
+
     final savedInvoice = ref.read(saleInvoiceProvider).lastSavedInvoice;
     if (savedInvoice != null) {
       try {
-        await SaleInvoicePrintService.printInvoice(savedInvoice, shopName: printerLabel);
+        await ThermalPrintService.printSaleInvoice(savedInvoice, printer: printer);
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

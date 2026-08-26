@@ -10,6 +10,10 @@ class CustomerModel {
   final bool isActive;
   final DateTime? createdAt;
 
+  /// True only for the single shared "Walk-in Customer" record — it has no
+  /// branch_id and is visible/selectable from every branch's sale screens.
+  final bool isWalkIn;
+
   const CustomerModel({
     required this.id,
     required this.branchId,
@@ -21,6 +25,7 @@ class CustomerModel {
     this.loyaltyPoints = 0,
     this.isActive = true,
     this.createdAt,
+    this.isWalkIn = false,
   });
 
   factory CustomerModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +42,7 @@ class CustomerModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
+      isWalkIn: json['is_walkin'] ?? false,
     );
   }
 
@@ -73,6 +79,7 @@ class CustomerModel {
       loyaltyPoints: loyaltyPoints ?? this.loyaltyPoints,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt,
+      isWalkIn: isWalkIn,
     );
   }
 

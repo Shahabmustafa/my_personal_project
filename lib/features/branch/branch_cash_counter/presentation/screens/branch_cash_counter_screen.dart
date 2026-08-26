@@ -447,8 +447,15 @@ class _MobileRow extends StatelessWidget {
 
 // ── Helper functions ──────────────────────────────────────────────────────────
 
-String _fmtDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+/// `created_at` UTC se aata hai (jaise "2026-08-24T19:00:00Z"), lekin har
+/// row ka din pg_cron ke Pakistan-time midnight boundary (`0 19 * * *` UTC)
+/// se decide hota hai — yani 19:00 UTC row asal mein *agle* din (00:00 PKT)
+/// ki hai. Raw UTC date parts dikhana ek din peeche ki date deta tha, is
+/// liye display se pehle hamesha PKT (UTC+5) mein shift karo.
+String _fmtDate(DateTime d) {
+  final pkt = d.toUtc().add(const Duration(hours: 5));
+  return '${pkt.day.toString().padLeft(2, '0')}/${pkt.month.toString().padLeft(2, '0')}/${pkt.year}';
+}
 
 String _fmtAmt(double v) {
   if (v == v.truncate()) return v.toStringAsFixed(0);

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
-import 'package:safishoe_app/features/user/presentation/screens/users_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../branch/assign_stock_to_my_branch/presentation/screen/branch_assign_list_screen.dart';
@@ -9,6 +8,7 @@ import '../branch/branch_cash_counter/presentation/screens/branch_cash_counter_s
 import '../branch/branch_stock_inventory/presentation/screen/branch_stock_screen.dart';
 import '../branch/customer/presentation/screens/customers_screen.dart';
 import '../branch/dashboard/presentation/screen/branch_overview_screen.dart';
+import '../branch/employee/presentation/screens/branch_employee_screen.dart';
 import '../branch/expense/presentation/screen/expense_screen.dart';
 import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
@@ -28,7 +28,7 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
 
   static const _navItems = [
     SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
-    SidebarItem(icon: Icons.apartment_outlined, label: 'Users'),
+    SidebarItem(icon: Icons.badge_outlined, label: 'Employees'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Customers'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Assign Stock My Branch'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Stock Inventory'),
@@ -41,7 +41,7 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
 
   static const _pages = [
     BranchOverviewScreen(),
-    UsersScreen(),
+    BranchEmployeeScreen(),
     CustomersScreen(),
     BranchAssignListScreen(),
     BranchStockScreen(),

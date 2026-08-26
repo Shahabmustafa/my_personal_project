@@ -386,58 +386,198 @@ class _DesktopTable extends ConsumerWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor:
-                  WidgetStateProperty.all(const Color(0xFFF7F8FC)),
-              headingTextStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF8A8FA3)),
-              dataTextStyle: const TextStyle(fontSize: 13),
-              columns: const [
-                DataColumn(label: Text('Date')),
-                DataColumn(label: Text('Head')),
-                DataColumn(label: Text('Amount'), numeric: true),
-                DataColumn(label: Text('Note')),
-                DataColumn(label: Text('')),
-              ],
-              rows: entries
-                  .map((e) => DataRow(cells: [
-                        DataCell(Text(_fmtDate(e.createdAt))),
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF1E0),
-                            borderRadius: BorderRadius.circular(6),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF7F8FC),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE7E9F0))),
+                ),
+                child: const Row(children: [
+                  _TH('#', flex: 1),
+                  _TH('Date', flex: 2),
+                  _TH('Expense Head', flex: 3),
+                  _TH('Note', flex: 4),
+                  _TH('Amount', flex: 2, alignEnd: true),
+                  _TH('', flex: 1),
+                ]),
+              ),
+              // Rows
+              Expanded(
+                child: ListView.separated(
+                  itemCount: entries.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFE7E9F0)),
+                  itemBuilder: (_, i) {
+                    final e = entries[i];
+                    return Container(
+                      color: i.isEven ? Colors.white : const Color(0xFFFAFAFC),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            flex: 1,
+                            child: _TD(
+                              child: Text('${i + 1}',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Color(0xFF8A8FA3))),
+                            ),
                           ),
-                          child: Text(e.expenseHeadName,
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _primary)),
-                        )),
-                        DataCell(Text('Rs. ${_fmtAmt(e.amount)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: _primary))),
-                        DataCell(Text(e.note ?? '—',
-                            style: const TextStyle(color: Color(0xFF8A8FA3)))),
-                        DataCell(IconButton(
-                          icon: Icon(Icons.delete_outline,
-                              size: 18, color: Colors.red.shade400),
-                          onPressed: () => _confirmDelete(context, ref, e.id),
-                        )),
-                      ]))
-                  .toList(),
-            ),
+                          Expanded(
+                            flex: 2,
+                            child: _TD(
+                              child: Text(_fmtDate(e.createdAt),
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Color(0xFF8A8FA3))),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: _TD(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFF1E0),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                        Icons.receipt_long_outlined,
+                                        size: 14,
+                                        color: _primary),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Flexible(
+                                    child: Text(e.expenseHeadName,
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600),
+                                        overflow: TextOverflow.ellipsis),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 4,
+                            child: _TD(
+                              child: Text(
+                                (e.note == null || e.note!.isEmpty)
+                                    ? '—'
+                                    : e.note!,
+                                style: const TextStyle(
+                                    fontSize: 13, color: Color(0xFF5A5F73)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: _TD(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Text('Rs. ${_fmtAmt(e.amount)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                        color: _primary)),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 1,
+                            child: _TD(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: _IconBtn(
+                                  icon: Icons.delete_outline,
+                                  color: Colors.red.shade400,
+                                  tooltip: 'Delete',
+                                  onTap: () =>
+                                      _confirmDelete(context, ref, e.id),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+}
+
+// ── Table helpers ──────────────────────────────────────────────────────────
+
+class _TH extends StatelessWidget {
+  final String text;
+  final int flex;
+  final bool alignEnd;
+  const _TH(this.text, {this.flex = 1, this.alignEnd = false});
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+        flex: flex,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Text(text,
+              textAlign: alignEnd ? TextAlign.right : TextAlign.left,
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF8A8FA3),
+                  letterSpacing: 0.3)),
+        ),
+      );
+}
+
+class _TD extends StatelessWidget {
+  final Widget child;
+  const _TD({required this.child});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: child,
+      );
+}
+
+class _IconBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _IconBtn({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+        message: tooltip,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(6)),
+            child: Icon(icon, size: 16, color: color),
+          ),
+        ),
+      );
 }
 
 // ── Mobile List ───────────────────────────────────────────────────────────────

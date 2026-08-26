@@ -12,21 +12,28 @@ class SaleExchangeNewCartTable extends ConsumerWidget {
     final items = ref.watch(saleExchangeProvider).newCartItems;
 
     if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.shopping_bag_outlined, size: 56, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            Text('No new item selected yet',
-                style: TextStyle(
-                    color: Colors.grey.shade500, fontSize: 15, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            Text('Scan a barcode or select a product to give the customer',
-                style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
-          ],
-        ),
-      );
+      return LayoutBuilder(builder: (ctx, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.shopping_bag_outlined, size: 56, color: Colors.grey.shade300),
+                  const SizedBox(height: 12),
+                  Text('No new item selected yet',
+                      style: TextStyle(
+                          color: Colors.grey.shade500, fontSize: 15, fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 4),
+                  Text('Scan a barcode or select a product to give the customer',
+                      style: TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+                ],
+              ),
+            ),
+          ),
+        );
+      });
     }
 
     return LayoutBuilder(builder: (ctx, constraints) {

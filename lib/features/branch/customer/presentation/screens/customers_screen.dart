@@ -269,6 +269,10 @@ class _DesktopTable extends StatelessWidget {
                                       fontSize: 13),
                                   overflow: TextOverflow.ellipsis),
                             ),
+                            if (c.isWalkIn) ...[
+                              const SizedBox(width: 6),
+                              const _SharedBadge(),
+                            ],
                           ])),
                         ),
                         // Phone
@@ -330,7 +334,13 @@ class _DesktopTable extends StatelessWidget {
                         Expanded(
                           flex: 2,
                           child: _TD(
-                              child: Row(children: [
+                              child: c.isWalkIn
+                                  ? Text('Shared across branches',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: Colors.grey.shade500,
+                                          fontStyle: FontStyle.italic))
+                                  : Row(children: [
                                 _IconBtn(
                                   icon: Icons.star_outline,
                                   color: const Color(0xFFD4A017),
@@ -414,9 +424,15 @@ class _MobileList extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(c.name,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 15)),
+                        Row(children: [
+                          Text(c.name,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 15)),
+                          if (c.isWalkIn) ...[
+                            const SizedBox(width: 6),
+                            const _SharedBadge(),
+                          ],
+                        ]),
                         if (c.phoneNumber.isNotEmpty)
                           Text(c.phoneNumber,
                               style: const TextStyle(
@@ -448,28 +464,38 @@ class _MobileList extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _IconBtn(
-                      icon: Icons.star_outline,
-                      color: const Color(0xFFD4A017),
-                      tooltip: 'Loyalty',
-                      onTap: () => onLoyalty(c)),
-                  const SizedBox(width: 8),
-                  _IconBtn(
-                      icon: Icons.edit_outlined,
-                      color: const Color(0xFF3E63DD),
-                      tooltip: 'Edit',
-                      onTap: () => onEdit(c)),
-                  const SizedBox(width: 8),
-                  _IconBtn(
-                      icon: Icons.delete_outline,
-                      color: Colors.redAccent,
-                      tooltip: 'Delete',
-                      onTap: () => onDelete(c)),
-                ],
-              ),
+              if (c.isWalkIn)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('Shared across branches',
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                          fontStyle: FontStyle.italic)),
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _IconBtn(
+                        icon: Icons.star_outline,
+                        color: const Color(0xFFD4A017),
+                        tooltip: 'Loyalty',
+                        onTap: () => onLoyalty(c)),
+                    const SizedBox(width: 8),
+                    _IconBtn(
+                        icon: Icons.edit_outlined,
+                        color: const Color(0xFF3E63DD),
+                        tooltip: 'Edit',
+                        onTap: () => onEdit(c)),
+                    const SizedBox(width: 8),
+                    _IconBtn(
+                        icon: Icons.delete_outline,
+                        color: Colors.redAccent,
+                        tooltip: 'Delete',
+                        onTap: () => onDelete(c)),
+                  ],
+                ),
             ],
           ),
         );
@@ -541,6 +567,24 @@ class _IconBtn extends StatelessWidget {
           child: Icon(icon, size: 16, color: color),
         ),
       ),
+    );
+  }
+}
+
+class _SharedBadge extends StatelessWidget {
+  const _SharedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAEFFD),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text('Shared',
+          style: TextStyle(
+              color: Color(0xFF3E63DD), fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
 }

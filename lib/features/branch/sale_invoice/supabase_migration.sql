@@ -163,7 +163,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -171,7 +171,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
     ELSIF TG_OP = 'UPDATE' THEN
@@ -183,7 +183,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -191,7 +191,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
         -- Phir naya add karo
@@ -202,7 +202,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -210,7 +210,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
     ELSIF TG_OP = 'DELETE' THEN
@@ -221,7 +221,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -229,7 +229,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND DATE(created_at) = CURRENT_DATE;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
     END IF;
 

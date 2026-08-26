@@ -1,5 +1,5 @@
 export '../../../sale_invoice/data/model/sale_invoice_model.dart'
-    show SaleCartItem, BankEntryLookupItem, PrinterLookupItem, PaymentInput;
+    show SaleCartItem, BankEntryLookupItem, PrinterLookupItem, PaymentInput, EmployeeLookupItem;
 
 class SaleReturnModel {
   final String id;
@@ -9,6 +9,8 @@ class SaleReturnModel {
   final String? cashierId;
   final String? customerId;
   final String? customerName;
+  final String? salesmanId;
+  final String? salesmanName;
   final double subtotal;
   final double totalDiscount;
   final double totalAmount;
@@ -25,6 +27,8 @@ class SaleReturnModel {
     this.cashierId,
     this.customerId,
     this.customerName,
+    this.salesmanId,
+    this.salesmanName,
     required this.subtotal,
     required this.totalDiscount,
     required this.totalAmount,
@@ -65,6 +69,7 @@ class SaleReturnModel {
       cashierId: json['cashier_id']?.toString(),
       customerId: json['customer_id']?.toString(),
       customerName: customer?['name']?.toString(),
+      salesmanId: json['salesman_id']?.toString(),
       subtotal: _toDouble(json['subtotal']),
       totalDiscount: _toDouble(json['total_discount']),
       totalAmount: _toDouble(json['total_amount']),

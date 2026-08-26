@@ -219,6 +219,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
   SaleInvoiceNotifier(this._ref, this._repo, this._branchId)
       : super(const SaleInvoiceState()) {
     _loadInvoiceNumber();
+    _loadDefaultCustomer();
   }
 
   Future<void> _loadInvoiceNumber() async {
@@ -233,6 +234,23 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       if (mounted) {
         state = state.copyWith(invoiceNumber: 'SAL-000001', invoiceLoading: false);
       }
+    }
+  }
+
+  /// Har naye invoice pe by default "Walk-in Customer" (branches ke darmiyan
+  /// shared record) select kar deta hai — cashier chahe to dropdown se kisi
+  /// aur customer par badal sakta hai.
+  Future<void> _loadDefaultCustomer() async {
+    try {
+      final customers = await _ref.read(customersForSaleProvider.future);
+      if (!mounted || state.customer != null) return;
+      final walkIn = customers.where((c) => c.isWalkIn);
+      if (walkIn.isNotEmpty) {
+        state = state.copyWith(customer: walkIn.first);
+      }
+    } catch (_) {
+      // Customer dropdown apna error khud dikha dega — default select
+      // fail hone par bhi cashier manually customer chun sakta hai.
     }
   }
 
@@ -526,6 +544,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     if (!mounted) return;
     state = const SaleInvoiceState(invoiceLoading: true);
     await _loadInvoiceNumber();
+    await _loadDefaultCustomer();
   }
 }
 

@@ -24,7 +24,7 @@ class SaleExchangeScreen extends ConsumerWidget {
 
     final invoice = state.originalInvoice!;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +104,8 @@ class SaleExchangeScreen extends ConsumerWidget {
           const SaleExchangeNewItemSelector(),
           const SizedBox(height: 12),
 
-          Expanded(
+          SizedBox(
+            height: 380,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,

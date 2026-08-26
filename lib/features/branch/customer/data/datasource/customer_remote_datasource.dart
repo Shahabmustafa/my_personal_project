@@ -4,12 +4,15 @@ import '../model/customer_model.dart';
 class CustomerRemoteDatasource {
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// Fetch all customers for a specific branch
+  /// Fetch all customers for a specific branch, plus the one shared
+  /// Walk-in Customer (branch_id is null, is_walkin true) that every
+  /// branch can select without creating its own.
   Future<List<CustomerModel>> getCustomersByBranch(String branchId) async {
     final data = await _client
         .from('customers')
         .select()
-        .eq('branch_id', branchId)
+        .or('branch_id.eq.$branchId,is_walkin.eq.true')
+        .order('is_walkin', ascending: false)
         .order('name');
     return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
   }
@@ -23,14 +26,16 @@ class CustomerRemoteDatasource {
     return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
   }
 
-  /// Fetch customers for multiple branches
+  /// Fetch customers for multiple branches, plus the shared Walk-in Customer.
   Future<List<CustomerModel>> getCustomersForBranches(
       List<String> branchIds) async {
     if (branchIds.isEmpty) return [];
+    final ids = branchIds.join(',');
     final data = await _client
         .from('customers')
         .select()
-        .inFilter('branch_id', branchIds)
+        .or('branch_id.in.($ids),is_walkin.eq.true')
+        .order('is_walkin', ascending: false)
         .order('name');
     return (data as List).map((e) => CustomerModel.fromJson(e)).toList();
   }
