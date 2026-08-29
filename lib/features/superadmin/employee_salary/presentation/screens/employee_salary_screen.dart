@@ -235,6 +235,8 @@ class _DesktopTable extends StatelessWidget {
                   _TH('Branch',       flex: 3),
                   _TH('Salary',       flex: 2),
                   _TH('Commission',   flex: 2),
+                  _TH('Total Sale',   flex: 2),
+                  _TH('Total Return', flex: 2),
                   _TH('Net Salary',   flex: 2),
                   _TH('Date',         flex: 2),
                   _TH('Action',       flex: 1),
@@ -302,6 +304,29 @@ class _DesktopTable extends StatelessWidget {
                             child: Text(
                                 '${s.commissionPercent.toStringAsFixed(1)}%',
                                 style: const TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _TD(
+                            child: Text('Rs. ${s.totalSales.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                    fontSize: 13, fontWeight: FontWeight.w600)),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _TD(
+                            child: Text(
+                              s.totalSalesReturn > 0
+                                  ? '- Rs. ${s.totalSalesReturn.toStringAsFixed(0)}'
+                                  : 'Rs. 0',
+                              style: TextStyle(
+                                  fontSize: 13,
+                                  color: s.totalSalesReturn > 0
+                                      ? Colors.red.shade400
+                                      : const Color(0xFF8A8FA3)),
+                            ),
                           ),
                         ),
                         Expanded(

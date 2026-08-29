@@ -10,6 +10,7 @@ class SaleReturnRepository {
   Future<SaleReturnModel> saveSaleReturn({
     required String returnNumber,
     required String branchId,
+    String? originalInvoiceId,
     String? printerId,
     String? cashierId,
     required String customerId,
@@ -24,6 +25,7 @@ class SaleReturnRepository {
       _datasource.saveSaleReturn(
         returnNumber: returnNumber,
         branchId: branchId,
+        originalInvoiceId: originalInvoiceId,
         printerId: printerId,
         cashierId: cashierId,
         customerId: customerId,

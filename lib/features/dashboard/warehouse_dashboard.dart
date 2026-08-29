@@ -7,6 +7,7 @@ import 'package:safishoe_app/features/warehouse/purchase_invoice/presentation/sc
 import 'package:safishoe_app/features/warehouse/warehouse_cash_counter/presentation/screens/warehouse_cash_counter_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../warehouse/assign_stock_to_branch/presentation/screens/assign_stock_screen.dart';
+import '../warehouse/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
 import '../warehouse/brand/presentation/screens/brands_screen.dart';
 import '../warehouse/category/presentation/screens/categorys_screen.dart';
 import '../warehouse/color/presentation/screens/colors_screen.dart';
@@ -33,6 +34,7 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
     SidebarItem(icon: Icons.business_outlined,           label: 'Purchase Invoice'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Purchase Return'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Assign Stock To Branch'),
+    SidebarItem(icon: Icons.move_to_inbox_outlined,      label: 'Incoming Branch Returns'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Warehouse Cash Counter'),
     SidebarItem(icon: Icons.business_outlined,           label: 'Company'),
     SidebarItem(icon: Icons.inventory_2_outlined,        label: 'Products', group: 'Catalog'),
@@ -48,6 +50,7 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
     PurchaseInvoiceScreen(),
     PurchaseReturnScreen(),
     AssignStockScreen(),
+    IncomingBranchReturnsScreen(),
     WarehouseCashCounterScreen(),
     CompaniesScreen(),
     ProductsScreen(),

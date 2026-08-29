@@ -6,6 +6,7 @@ class SaleInvoiceModel {
   final String? cashierId;
   final String? customerId;
   final String? customerName;
+  final String? branchName;
   final String? salesmanId;
   final String? salesmanName;
   final String? managerId;
@@ -22,6 +23,8 @@ class SaleInvoiceModel {
   final DateTime createdAt;
   final List<SaleInvoiceItemModel> items;
   final List<SaleInvoicePaymentModel> payments;
+  final bool hasReturn;
+  final bool hasExchange;
 
   const SaleInvoiceModel({
     required this.id,
@@ -31,6 +34,7 @@ class SaleInvoiceModel {
     this.cashierId,
     this.customerId,
     this.customerName,
+    this.branchName,
     this.salesmanId,
     this.salesmanName,
     this.managerId,
@@ -47,6 +51,8 @@ class SaleInvoiceModel {
     required this.createdAt,
     this.items = const [],
     this.payments = const [],
+    this.hasReturn = false,
+    this.hasExchange = false,
   });
 
   /// Payments se resolve hone wala payment type (cash/card/cash+card) — display ke liye.
@@ -71,10 +77,16 @@ class SaleInvoiceModel {
     final managerUser =
         (json['manager'] as Map<String, dynamic>?)?['users'] as Map<String, dynamic>?;
     final customer = json['customers'] as Map<String, dynamic>?;
+    final branch = json['branches'] as Map<String, dynamic>?;
     final paymentsJson = payments.isNotEmpty
         ? payments
         : ((json['sale_invoice_payments'] as List?) ?? const [])
             .map((e) => SaleInvoicePaymentModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+    final itemsJson = items.isNotEmpty
+        ? items
+        : ((json['sale_invoice_items'] as List?) ?? const [])
+            .map((e) => SaleInvoiceItemModel.fromJson(e as Map<String, dynamic>))
             .toList();
     return SaleInvoiceModel(
       id: json['id']?.toString() ?? '',
@@ -84,6 +96,7 @@ class SaleInvoiceModel {
       cashierId: json['cashier_id']?.toString(),
       customerId: json['customer_id']?.toString(),
       customerName: customer?['name']?.toString(),
+      branchName: branch?['branch_name']?.toString(),
       salesmanId: json['salesman_id']?.toString(),
       salesmanName: salesmanUser?['username']?.toString(),
       managerId: json['manager_id']?.toString(),
@@ -100,8 +113,10 @@ class SaleInvoiceModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      items: items,
+      items: itemsJson,
       payments: paymentsJson,
+      hasReturn: ((json['sale_returns'] as List?) ?? const []).isNotEmpty,
+      hasExchange: ((json['sale_exchanges'] as List?) ?? const []).isNotEmpty,
     );
   }
 }

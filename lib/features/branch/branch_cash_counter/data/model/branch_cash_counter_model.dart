@@ -61,4 +61,9 @@ class BranchCashCounterModel {
           : null,
     );
   }
+
+  /// Gross sale mein se sale-return aur exchange refund minus, aur exchange
+  /// mein mila extra amount plus — taake poora return hone par ye 0 ho jaye.
+  double get netSale =>
+      totalSale - returnSale - returnAmountInExchange + receivedAmountInExchange;
 }

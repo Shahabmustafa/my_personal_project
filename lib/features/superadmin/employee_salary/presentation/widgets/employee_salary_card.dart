@@ -75,6 +75,18 @@ class EmployeeSalaryCard extends StatelessWidget {
                       highlight: true)),
             ],
           ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                  child: _Stat(label: 'Total Sale', value: salary.totalSales)),
+              Expanded(
+                  child: _Stat(
+                      label: 'Total Return',
+                      value: salary.totalSalesReturn,
+                      isReturn: true)),
+            ],
+          ),
         ],
       ),
     );
@@ -86,12 +98,14 @@ class _Stat extends StatelessWidget {
   final double value;
   final String suffix;
   final bool highlight;
+  final bool isReturn;
 
   const _Stat({
     required this.label,
     required this.value,
     this.suffix = '',
     this.highlight = false,
+    this.isReturn = false,
   });
 
   @override
@@ -104,13 +118,19 @@ class _Stat extends StatelessWidget {
                 const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3))),
         const SizedBox(height: 2),
         Text(
-          suffix.isEmpty
-              ? 'Rs. ${value.toStringAsFixed(0)}'
-              : '${value.toStringAsFixed(1)}$suffix',
+          suffix.isNotEmpty
+              ? '${value.toStringAsFixed(1)}$suffix'
+              : isReturn && value > 0
+                  ? '- Rs. ${value.toStringAsFixed(0)}'
+                  : 'Rs. ${value.toStringAsFixed(0)}',
           style: TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.w700,
-            color: highlight ? const Color(0xFF3E63DD) : const Color(0xFF2D2D3A),
+            color: highlight
+                ? const Color(0xFF3E63DD)
+                : isReturn && value > 0
+                    ? Colors.red.shade400
+                    : const Color(0xFF2D2D3A),
           ),
         ),
       ],

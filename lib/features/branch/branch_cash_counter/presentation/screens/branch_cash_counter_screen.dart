@@ -77,20 +77,29 @@ class _BranchCashCounterScreenState
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
+                                  label: 'Net Sale',
+                                  amount: state.totalNetSale,
+                                  icon: Icons.published_with_changes_outlined,
+                                  color: const Color(0xFF0F9D8F))),
+                        ]),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                              child: _SummaryCard(
                                   label: 'Gross',
                                   amount: state.totalGross,
                                   icon: Icons.trending_up_outlined,
                                   color: const Color(0xFF22A06B))),
-                        ]),
-                        const SizedBox(height: 12),
-                        Row(children: [
+                          const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Expense',
                                   amount: state.totalExpense,
                                   icon: Icons.receipt_long_outlined,
                                   color: const Color(0xFFE56A00))),
-                          const SizedBox(width: 12),
+                        ]),
+                        const SizedBox(height: 12),
+                        Row(children: [
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Amount',
@@ -107,6 +116,13 @@ class _BranchCashCounterScreenState
                               amount: state.totalSale,
                               icon: Icons.point_of_sale_outlined,
                               color: const Color(0xFF3E63DD))),
+                      const SizedBox(width: 14),
+                      Expanded(
+                          child: _SummaryCard(
+                              label: 'Net Sale',
+                              amount: state.totalNetSale,
+                              icon: Icons.published_with_changes_outlined,
+                              color: const Color(0xFF0F9D8F))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
@@ -263,6 +279,7 @@ class _DesktopTable extends StatelessWidget {
                 DataColumn(label: Text('Return Sale'), numeric: true),
                 DataColumn(label: Text('Return in Exch.'), numeric: true),
                 DataColumn(label: Text('Received in Exch.'), numeric: true),
+                DataColumn(label: Text('Net Sale'), numeric: true),
                 DataColumn(label: Text('Expense'), numeric: true),
                 DataColumn(label: Text('Gross'), numeric: true),
                 DataColumn(label: Text('Paid Amount'), numeric: true),
@@ -298,6 +315,10 @@ class _DesktopTable extends StatelessWidget {
                             'Rs. ${_fmtAmt(r.returnAmountInExchange)}')),
                         DataCell(Text(
                             'Rs. ${_fmtAmt(r.receivedAmountInExchange)}')),
+                        DataCell(Text('Rs. ${_fmtAmt(r.netSale)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF0F9D8F)))),
                         DataCell(Text('Rs. ${_fmtAmt(r.expense)}',
                             style: TextStyle(
                                 color: r.expense > 0
@@ -387,6 +408,11 @@ class _MobileList extends StatelessWidget {
               _MobileRow(
                   label: 'Received in Exchange',
                   value: 'Rs. ${_fmtAmt(r.receivedAmountInExchange)}'),
+              const SizedBox(height: 8),
+              _MobileRow(
+                  label: 'Net Sale',
+                  value: 'Rs. ${_fmtAmt(r.netSale)}',
+                  valueColor: const Color(0xFF0F9D8F)),
               const SizedBox(height: 8),
               _MobileRow(
                   label: 'Expense',

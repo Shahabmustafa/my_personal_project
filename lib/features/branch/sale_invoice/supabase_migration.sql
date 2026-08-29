@@ -163,7 +163,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -171,7 +171,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
     ELSIF TG_OP = 'UPDATE' THEN
@@ -183,7 +183,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -191,7 +191,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
         -- Phir naya add karo
@@ -202,7 +202,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -210,7 +210,7 @@ BEGIN
                 total_sale   = total_sale + NEW.amount,
                 total_amount = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
     ELSIF TG_OP = 'DELETE' THEN
@@ -221,7 +221,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
@@ -229,7 +229,7 @@ BEGIN
                 total_sale   = total_sale - OLD.amount,
                 total_amount = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
     END IF;
 
@@ -240,6 +240,52 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trg_sync_payment_to_cash_counter
 AFTER INSERT OR UPDATE OR DELETE ON public.sale_invoice_payments
 FOR EACH ROW EXECUTE FUNCTION sync_payment_to_cash_counter();
+
+
+-- =============================================
+-- STEP 6.5: Card payment (bank select) hone par
+--           us bank_entries ka opening_balance update ho
+-- =============================================
+CREATE OR REPLACE FUNCTION sync_payment_to_bank_balance()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.payment_type = 'card' AND NEW.bank_entry_id IS NOT NULL THEN
+            UPDATE public.bank_entries
+            SET opening_balance = opening_balance + NEW.amount
+            WHERE id = NEW.bank_entry_id;
+        END IF;
+
+    ELSIF TG_OP = 'UPDATE' THEN
+        -- Pehle purana minus karo
+        IF OLD.payment_type = 'card' AND OLD.bank_entry_id IS NOT NULL THEN
+            UPDATE public.bank_entries
+            SET opening_balance = opening_balance - OLD.amount
+            WHERE id = OLD.bank_entry_id;
+        END IF;
+
+        -- Phir naya add karo
+        IF NEW.payment_type = 'card' AND NEW.bank_entry_id IS NOT NULL THEN
+            UPDATE public.bank_entries
+            SET opening_balance = opening_balance + NEW.amount
+            WHERE id = NEW.bank_entry_id;
+        END IF;
+
+    ELSIF TG_OP = 'DELETE' THEN
+        IF OLD.payment_type = 'card' AND OLD.bank_entry_id IS NOT NULL THEN
+            UPDATE public.bank_entries
+            SET opening_balance = opening_balance - OLD.amount
+            WHERE id = OLD.bank_entry_id;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_sync_payment_to_bank_balance
+AFTER INSERT OR UPDATE OR DELETE ON public.sale_invoice_payments
+FOR EACH ROW EXECUTE FUNCTION sync_payment_to_bank_balance();
 
 
 -- =============================================

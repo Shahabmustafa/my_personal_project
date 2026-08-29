@@ -11,6 +11,7 @@ class SaleExchangeModel {
   final String? cashierId;
   final String? customerId;
   final String? customerName;
+  final String? branchName;
   final String? salesmanId;
   final String? salesmanName;
   final double returnSubtotal;
@@ -38,6 +39,7 @@ class SaleExchangeModel {
     this.cashierId,
     this.customerId,
     this.customerName,
+    this.branchName,
     this.salesmanId,
     this.salesmanName,
     required this.returnSubtotal,
@@ -77,10 +79,21 @@ class SaleExchangeModel {
         (json['salesman'] as Map<String, dynamic>?)?['users'] as Map<String, dynamic>?;
     final customer = json['customers'] as Map<String, dynamic>?;
     final originalInvoice = json['sale_invoices'] as Map<String, dynamic>?;
+    final branch = json['branches'] as Map<String, dynamic>?;
     final paymentsJson = payments.isNotEmpty
         ? payments
         : ((json['sale_exchange_payments'] as List?) ?? const [])
             .map((e) => SaleExchangePaymentModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+    final newItemsJson = newItems.isNotEmpty
+        ? newItems
+        : ((json['sale_exchange_new_items'] as List?) ?? const [])
+            .map((e) => SaleExchangeNewItemModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+    final returnItemsJson = returnItems.isNotEmpty
+        ? returnItems
+        : ((json['sale_exchange_return_items'] as List?) ?? const [])
+            .map((e) => SaleExchangeReturnItemModel.fromJson(e as Map<String, dynamic>))
             .toList();
     return SaleExchangeModel(
       id: json['id']?.toString() ?? '',
@@ -92,6 +105,7 @@ class SaleExchangeModel {
       cashierId: json['cashier_id']?.toString(),
       customerId: json['customer_id']?.toString(),
       customerName: customer?['name']?.toString(),
+      branchName: branch?['branch_name']?.toString(),
       salesmanId: json['salesman_id']?.toString(),
       salesmanName: salesmanUser?['username']?.toString(),
       returnSubtotal: _toDouble(json['return_subtotal']),
@@ -107,8 +121,8 @@ class SaleExchangeModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      returnItems: returnItems,
-      newItems: newItems,
+      returnItems: returnItemsJson,
+      newItems: newItemsJson,
       payments: paymentsJson,
     );
   }

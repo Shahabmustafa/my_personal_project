@@ -18,6 +18,7 @@ class SaleReturnDatasource {
   Future<SaleReturnModel> saveSaleReturn({
     required String returnNumber,
     required String branchId,
+    String? originalInvoiceId,
     String? printerId,
     String? cashierId,
     required String customerId,
@@ -34,6 +35,7 @@ class SaleReturnDatasource {
         .insert({
           'return_number': returnNumber,
           'branch_id': branchId,
+          'original_invoice_id': originalInvoiceId,
           'printer_id': printerId,
           'cashier_id': cashierId,
           'customer_id': customerId,
@@ -89,7 +91,8 @@ class SaleReturnDatasource {
   // ── Fetch returns ────────────────────────────────────────────────────
 
   static const _returnSelect =
-      '*, sale_return_payments(payment_type, amount), customers(name)';
+      '*, sale_return_payments(payment_type, amount), customers(name), '
+      'sale_invoices(invoice_number)';
 
   Future<List<SaleReturnModel>> fetchReturns(String branchId) async {
     final res = await _client

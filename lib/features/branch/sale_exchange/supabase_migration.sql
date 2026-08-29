@@ -242,14 +242,14 @@ BEGIN
                 received_amount_in_exchange = received_amount_in_exchange + NEW.amount,
                 total_amount                = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
                 return_amount_in_exchange = return_amount_in_exchange + NEW.amount,
                 total_amount              = total_amount - NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
     ELSIF TG_OP = 'UPDATE' THEN
@@ -260,14 +260,14 @@ BEGIN
                 received_amount_in_exchange = received_amount_in_exchange - OLD.amount,
                 total_amount                = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
                 return_amount_in_exchange = return_amount_in_exchange - OLD.amount,
                 total_amount              = total_amount + OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
         -- Phir naya apply karo
@@ -277,14 +277,14 @@ BEGIN
                 received_amount_in_exchange = received_amount_in_exchange + NEW.amount,
                 total_amount                = total_amount + NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
                 return_amount_in_exchange = return_amount_in_exchange + NEW.amount,
                 total_amount              = total_amount - NEW.amount
             WHERE branch_id = NEW.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (NEW.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
 
     ELSIF TG_OP = 'DELETE' THEN
@@ -294,14 +294,14 @@ BEGIN
                 received_amount_in_exchange = received_amount_in_exchange - OLD.amount,
                 total_amount                = total_amount - OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         ELSE
             UPDATE public.branch_cash_counter
             SET
                 return_amount_in_exchange = return_amount_in_exchange - OLD.amount,
                 total_amount              = total_amount + OLD.amount
             WHERE branch_id = OLD.branch_id
-              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (now() AT TIME ZONE 'Asia/Karachi')::date;
+              AND (created_at AT TIME ZONE 'Asia/Karachi')::date = (OLD.created_at AT TIME ZONE 'Asia/Karachi')::date;
         END IF;
     END IF;
 

@@ -28,6 +28,14 @@ final otherBranchesProvider = FutureProvider<List<BranchModel>>(
       .getOtherBranches(ref.watch(currentBranchIdProvider)),
 );
 
+// ── Sent transfers history (is branch ne doosri branches ko jo bheja) ──────
+
+final sentTransfersProvider = FutureProvider<List<AssignStockModel>>(
+  (ref) => ref
+      .watch(branchTransferRepositoryProvider)
+      .getSentTransfers(ref.watch(currentBranchIdProvider)),
+);
+
 // ── Cart / active transfer state ───────────────────────────────────────────
 
 class BranchTransferState {

@@ -6,6 +6,7 @@ import '../../../../auth/data/model/user_model.dart';
 import '../../../branch/data/model/branch_model.dart';
 import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../../../user/presentation/providers/user_provider.dart';
+import '../providers/employee_salary_providers.dart';
 
 class EmployeeSalaryFormDialog extends ConsumerStatefulWidget {
   final void Function({
@@ -57,8 +58,20 @@ class _EmployeeSalaryFormDialogState
   Widget build(BuildContext context) {
     final userState   = ref.watch(userProvider);
     final branchState = ref.watch(branchProvider);
+    final salariesAsync = ref.watch(employeeSalariesProvider);
+
+    // Ek employee (cashier/salesman/manager) sirf ek hi branch me kaam kar
+    // sakta hai — jis user ka pehle se kisi bhi branch me salary record ban
+    // chuka hai, use dobara doosri branch ke liye is dropdown me nahi
+    // dikhate (naya record banane ka matlab hoga wo do branches me ho gaya).
+    final assignedBranchByUser = <String, String>{
+      for (final s in salariesAsync.value ?? const [])
+        s.userId: s.branchName,
+    };
     final eligibleUsers = userState.users
-        .where((u) => _eligibleRoles.contains(u.role))
+        .where((u) =>
+            _eligibleRoles.contains(u.role) &&
+            !assignedBranchByUser.containsKey(u.id))
         .toList();
 
     return AlertDialog(
@@ -124,8 +137,17 @@ class _EmployeeSalaryFormDialogState
 
   void _submit() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final existing = (ref.read(employeeSalariesProvider).value ?? const [])
+        .where((s) => s.userId == _selectedUserId)
+        .toList();
+
     setState(() {
-      _userError   = _selectedUserId == null ? 'Select an employee' : null;
+      _userError = _selectedUserId == null
+          ? 'Select an employee'
+          : existing.isNotEmpty
+              ? 'Already assigned to ${existing.first.branchName} — an employee can only work at one branch'
+              : null;
       _branchError = _selectedBranchId == null ? 'Select a branch' : null;
     });
     if (_userError != null || _branchError != null) return;

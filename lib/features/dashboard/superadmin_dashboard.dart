@@ -10,6 +10,9 @@ import '../superadmin/branch/presentation/screens/branches_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
 import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
+import '../superadmin/report/presentation/screens/sale_exchange_report_screen.dart';
+import '../superadmin/report/presentation/screens/sale_invoice_report_screen.dart';
+import '../superadmin/report/presentation/screens/sale_return_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
 import '../user/presentation/screens/users_screen.dart';
 import '../warehouse/product/presentation/screens/products_screen.dart';
@@ -47,6 +50,9 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: Icons.print_outlined, label: 'Print', group: 'Printer'),
     SidebarItem(icon: Icons.local_printshop_outlined, label: 'Assign Print', group: 'Printer'),
     SidebarItem(icon: Icons.payments_outlined, label: 'Employee Salary'),
+    SidebarItem(icon: Icons.receipt_long_outlined, label: 'Sale Invoice Report', group: 'Reports'),
+    SidebarItem(icon: Icons.assignment_return_outlined, label: 'Sale Return Report', group: 'Reports'),
+    SidebarItem(icon: Icons.swap_horiz_outlined, label: 'Sale Exchange Report', group: 'Reports'),
     SidebarItem(icon: Icons.inventory_2_outlined, label: 'Products', group: 'Catalog'),
     SidebarItem(icon: Icons.format_size_outlined, label: 'Sizes', group: 'Catalog'),
     SidebarItem(icon: Icons.color_lens_outlined, label: 'Colors', group: 'Catalog'),
@@ -68,6 +74,9 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     PrinterHeadsScreen(),
     AssignPrinterScreen(),
     EmployeeSalaryScreen(),
+    SaleInvoiceReportScreen(),
+    SaleReturnReportScreen(),
+    SaleExchangeReportScreen(),
     // Admin sirf add kar sakta hai — edit/delete options hidden.
     ProductsScreen(readOnly: true),
     SizesScreen(readOnly: true),

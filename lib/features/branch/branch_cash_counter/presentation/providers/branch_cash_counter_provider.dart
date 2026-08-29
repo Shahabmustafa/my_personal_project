@@ -31,6 +31,7 @@ class BranchCashCounterState {
   bool get isLoading => status == BranchCashCounterStatus.loading;
 
   double get totalSale => records.fold(0, (s, r) => s + r.totalSale);
+  double get totalNetSale => records.fold(0, (s, r) => s + r.netSale);
   double get totalExpense => records.fold(0, (s, r) => s + r.expense);
   double get totalGross => records.fold(0, (s, r) => s + r.gross);
   double get totalAmount => records.fold(0, (s, r) => s + r.totalAmount);

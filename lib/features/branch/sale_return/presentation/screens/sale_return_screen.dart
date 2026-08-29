@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/service/print/print_service.dart';
 import '../../../../superadmin/employee_salary/presentation/providers/employee_salary_providers.dart';
 import '../../../customer/data/model/customer_model.dart';
+import '../../../sale_invoice/data/model/sale_invoice_model.dart' show SaleInvoiceModel;
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
-    show bankEntriesForSaleProvider, customersForSaleProvider, printersForSaleProvider, salesmenProvider;
+    show bankEntriesForSaleProvider, customersForSaleProvider, printersForSaleProvider,
+        salesmenProvider, saleInvoiceListProvider;
 import '../../data/model/sale_return_model.dart';
 import '../provider/sale_return_provider.dart';
 import '../widgets/sale_return_cart_table.dart';
+import '../widgets/sale_return_items_picker.dart';
 import '../widgets/sale_return_product_selector.dart';
 
 /// Sale Invoice screen ka mirror — structure bilkul wahi hai, sirf effect
@@ -26,7 +29,23 @@ class SaleReturnScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Sale Return', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              const Text('Sale Return', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              if (state.originalInvoice != null) ...[
+                const SizedBox(width: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text('Against ${state.originalInvoice!.invoiceNumber}',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent)),
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 14),
 
           // ── Return header card ──────────────────────────────────────────
@@ -92,19 +111,29 @@ class SaleReturnScreen extends ConsumerWidget {
           const _ReturnMetaRow(),
 
           const SizedBox(height: 12),
-          const SaleReturnProductSelector(),
-          const SizedBox(height: 12),
 
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
+          if (state.originalInvoice != null) ...[
+            if (state.originalInvoiceLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 20),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else
+              const Expanded(child: SaleReturnItemsPicker()),
+          ] else ...[
+            const SaleReturnProductSelector(),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: const SaleReturnCartTable(),
               ),
-              child: const SaleReturnCartTable(),
             ),
-          ),
+          ],
 
           const SizedBox(height: 12),
           const _ReturnFooter(),
@@ -177,6 +206,14 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
   final _cashAmountCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(saleInvoiceListProvider.notifier).loadInvoices();
+    });
+  }
+
+  @override
   void dispose() {
     _cashAmountCtrl.dispose();
     super.dispose();
@@ -186,6 +223,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
   Widget build(BuildContext context) {
     final state = ref.watch(saleReturnProvider);
     final notifier = ref.read(saleReturnProvider.notifier);
+    final invoiceListState = ref.watch(saleInvoiceListProvider);
     final customersAsync = ref.watch(customersForSaleProvider);
     final salesmenAsync = ref.watch(salesmenProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
@@ -201,6 +239,35 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Expanded(
+            flex: 3,
+            child: invoiceListState.isLoading
+                ? const _FieldLoading()
+                : DropdownSearch<SaleInvoiceModel>(
+                    items: (f, _) => invoiceListState.invoices
+                        .where((inv) => inv.invoiceNumber.toLowerCase().contains(f.toLowerCase()))
+                        .toList(),
+                    selectedItem: state.originalInvoice,
+                    itemAsString: (inv) => inv.invoiceNumber,
+                    compareFn: (a, b) => a.id == b.id,
+                    onSelected: (inv) {
+                      if (inv != null) notifier.selectOriginalInvoice(inv);
+                    },
+                    decoratorProps: DropDownDecoratorProps(
+                      decoration: _decor('Sale Invoice #').copyWith(
+                        suffixIcon: state.originalInvoice != null
+                            ? IconButton(
+                                icon: const Icon(Icons.clear, size: 18),
+                                tooltip: 'Return without invoice',
+                                onPressed: notifier.clearOriginalInvoice,
+                              )
+                            : null,
+                      ),
+                    ),
+                    popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+                  ),
+          ),
+          const SizedBox(width: 16),
           Expanded(
             flex: 3,
             child: customersAsync.when(
@@ -372,7 +439,7 @@ class _ReturnFooter extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: state.cartItems.isEmpty
+            onPressed: state.isInvoiceLinked || state.cartItems.isEmpty
                 ? null
                 : () => ref.read(saleReturnProvider.notifier).clearCart(),
           ),
@@ -389,7 +456,7 @@ class _ReturnFooter extends ConsumerWidget {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed:
-                state.isSaving || state.cartItems.isEmpty ? null : () => _onSaveTap(context, ref),
+                state.isSaving || state.totalQuantity == 0 ? null : () => _onSaveTap(context, ref),
           ),
         ],
       ),

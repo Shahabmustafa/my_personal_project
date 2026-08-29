@@ -411,11 +411,19 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       return 'Discount cannot exceed the items total';
     }
 
+    // Har invoice ka commission/accountability kisi na kisi manager ke
+    // against jana chahiye — branch me manager assign na ho to sale hi
+    // create nahi hone dete (Employee Salary se role='manager' record
+    // banwana zaroori hai).
+    final manager = await _repo.getBranchManager(_branchId);
+    if (manager == null) {
+      return 'This branch has no manager assigned. Add a manager under Employees before creating invoices.';
+    }
+
     state = state.copyWith(isSaving: true, clearError: true);
 
     final cashierId = _ref.read(authProvider).user?.id;
-    final manager = await _repo.getBranchManager(_branchId);
-    final managerCommissionPercent = manager?.commissionPercent ?? 0;
+    final managerCommissionPercent = manager.commissionPercent;
     final managerCommissionAmount = state.totalAmount * managerCommissionPercent / 100;
     final salesmanCommissionPercent = state.salesman?.commissionPercent ?? 0;
     final salesmanCommissionAmount = state.totalAmount * salesmanCommissionPercent / 100;
@@ -427,7 +435,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           cashierId: cashierId,
           customerId: state.customer!.id,
           salesmanId: state.salesman?.id,
-          managerId: manager?.id,
+          managerId: manager.id,
           subtotal: state.subtotal,
           totalDiscount: state.totalDiscount,
           invoiceDiscount: state.invoiceDiscount,

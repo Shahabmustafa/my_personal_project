@@ -129,6 +129,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const headerStyle = TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white);
+    final hasActions = onExchangeTap != null;
 
     return Column(
       children: [
@@ -145,7 +146,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
             _hcell('Sub Total', flex: 2, style: headerStyle),
             _hcell('Discount', flex: 2, style: headerStyle),
             _hcell('Net Amount', flex: 2, style: headerStyle),
-            if (onExchangeTap != null) _hcell('', flex: 1, style: headerStyle),
+            if (hasActions) _hcell('', flex: 2, style: headerStyle),
           ]),
         ),
         Expanded(
@@ -156,9 +157,28 @@ class _DesktopInvoiceTable extends StatelessWidget {
               return Container(
                 color: i.isEven ? Colors.grey.shade50 : Colors.white,
                 child: Row(children: [
-                  _dcell(inv.invoiceNumber,
-                      flex: 2,
-                      style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(inv.invoiceNumber,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).colorScheme.primary)),
+                          ),
+                          if (inv.hasReturn || inv.hasExchange) ...[
+                            const SizedBox(width: 6),
+                            _StatusBadges(hasReturn: inv.hasReturn, hasExchange: inv.hasExchange),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
                   _dcell(inv.customerName ?? '—', flex: 2),
                   _dcell(_formatDate(inv.createdAt), flex: 2),
                   _dcell(inv.paymentTypeLabel.toUpperCase(), flex: 1),
@@ -166,15 +186,19 @@ class _DesktopInvoiceTable extends StatelessWidget {
                   _dcell('- ${inv.totalDiscount.toStringAsFixed(0)}', flex: 2, style: const TextStyle(color: Colors.orange)),
                   _dcell(inv.totalAmount.toStringAsFixed(0), flex: 2,
                       style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.green)),
-                  if (onExchangeTap != null)
+                  if (hasActions)
                     Expanded(
-                      flex: 1,
-                      child: Center(
-                        child: IconButton(
-                          icon: const Icon(Icons.swap_horiz_outlined, size: 20),
-                          tooltip: 'Exchange',
-                          onPressed: () => onExchangeTap!(inv),
-                        ),
+                      flex: 2,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          if (onExchangeTap != null)
+                            IconButton(
+                              icon: const Icon(Icons.swap_horiz_outlined, size: 20),
+                              tooltip: 'Exchange',
+                              onPressed: () => onExchangeTap!(inv),
+                            ),
+                        ],
                       ),
                     ),
                 ]),
@@ -257,11 +281,14 @@ class _MobileInvoiceList extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(inv.invoiceNumber,
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: Theme.of(context).colorScheme.primary)),
+                    Flexible(
+                      child: Text(inv.invoiceNumber,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.primary)),
+                    ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -272,6 +299,10 @@ class _MobileInvoiceList extends StatelessWidget {
                       child: Text(inv.paymentTypeLabel.toUpperCase(),
                           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
                     ),
+                    if (inv.hasReturn || inv.hasExchange) ...[
+                      const SizedBox(width: 6),
+                      _StatusBadges(hasReturn: inv.hasReturn, hasExchange: inv.hasExchange),
+                    ],
                     const Spacer(),
                     Text(_formatDate(inv.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     if (onExchangeTap != null)
@@ -318,4 +349,40 @@ class _MobileInvoiceList extends StatelessWidget {
 
   String _formatDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+}
+
+// ── Status badges (Returned / Exchanged) ────────────────────────────────────
+
+/// Invoice ke against koi sale_return ya sale_exchange record hai to yahan
+/// badge dikhta hai — is se cashier/manager ko dono jagah (invoice list ke
+/// tor par "sale report" aur exchange ka invoice-picker, chunke wo yehi
+/// widget reuse karta hai) foran pata chal jata hai ke ye invoice
+/// return/exchange ho chuka hai.
+class _StatusBadges extends StatelessWidget {
+  final bool hasReturn;
+  final bool hasExchange;
+  const _StatusBadges({required this.hasReturn, required this.hasExchange});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasReturn) _badge('Returned', Colors.red),
+        if (hasReturn && hasExchange) const SizedBox(width: 4),
+        if (hasExchange) _badge('Exchanged', Colors.blue),
+      ],
+    );
+  }
+
+  Widget _badge(String label, MaterialColor color) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.shade50,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.shade200),
+        ),
+        child: Text(label,
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color.shade700)),
+      );
 }

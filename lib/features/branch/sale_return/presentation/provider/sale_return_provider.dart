@@ -5,8 +5,10 @@ import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../shared/current_branch_provider.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
 import '../../../customer/data/model/customer_model.dart';
+import '../../../sale_exchange/data/model/sale_exchange_model.dart' show ReturnCartItem;
+import '../../../sale_invoice/data/model/sale_invoice_model.dart' show SaleInvoiceModel;
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
-    show customersForSaleProvider;
+    show customersForSaleProvider, salesmenProvider, saleInvoiceRepositoryProvider;
 import '../../data/datasource/sale_return_datasource.dart';
 import '../../data/model/sale_return_model.dart';
 import '../../data/repository/sale_return_repository.dart';
@@ -90,6 +92,9 @@ class SaleReturnState {
   final PrinterLookupItem? printer;
   final String note;
   final List<SaleCartItem> cartItems;
+  final SaleInvoiceModel? originalInvoice;
+  final bool originalInvoiceLoading;
+  final List<ReturnCartItem> invoiceReturnItems;
   final bool isSaving;
   final String? error;
   final SaleReturnModel? lastSavedReturn;
@@ -105,17 +110,31 @@ class SaleReturnState {
     this.printer,
     this.note = '',
     this.cartItems = const [],
+    this.originalInvoice,
+    this.originalInvoiceLoading = false,
+    this.invoiceReturnItems = const [],
     this.isSaving = false,
     this.error,
     this.lastSavedReturn,
   });
 
-  double get subtotal =>
-      cartItems.fold(0, (sum, i) => sum + (i.salePrice * i.quantity));
-  double get totalDiscount =>
-      cartItems.fold(0, (sum, i) => sum + (i.discountAmount * i.quantity));
-  double get totalAmount => cartItems.fold(0, (sum, i) => sum + i.lineTotal);
-  int get totalQuantity => cartItems.fold(0, (sum, i) => sum + i.quantity);
+  /// Invoice se link hui return mein items `invoiceReturnItems` (checkbox se
+  /// opt-in) se aate hain, warna free-form `cartItems` se (invoice ke bina
+  /// wala purana flow).
+  bool get isInvoiceLinked => originalInvoice != null;
+
+  double get subtotal => isInvoiceLinked
+      ? invoiceReturnItems.where((i) => i.quantity > 0).fold(0.0, (s, i) => s + (i.salePrice * i.quantity))
+      : cartItems.fold(0, (sum, i) => sum + (i.salePrice * i.quantity));
+  double get totalDiscount => isInvoiceLinked
+      ? invoiceReturnItems.where((i) => i.quantity > 0).fold(0.0, (s, i) => s + (i.discountAmount * i.quantity))
+      : cartItems.fold(0, (sum, i) => sum + (i.discountAmount * i.quantity));
+  double get totalAmount => isInvoiceLinked
+      ? invoiceReturnItems.where((i) => i.quantity > 0).fold(0.0, (s, i) => s + i.lineTotal)
+      : cartItems.fold(0, (sum, i) => sum + i.lineTotal);
+  int get totalQuantity => isInvoiceLinked
+      ? invoiceReturnItems.fold(0, (s, i) => s + i.quantity)
+      : cartItems.fold(0, (sum, i) => sum + i.quantity);
 
   /// 'cash_card' ke liye card portion = total - cash.
   double get cardAmount => (totalAmount - cashAmount).clamp(0, double.infinity);
@@ -135,6 +154,10 @@ class SaleReturnState {
     bool clearPrinter = false,
     String? note,
     List<SaleCartItem>? cartItems,
+    SaleInvoiceModel? originalInvoice,
+    bool clearOriginalInvoice = false,
+    bool? originalInvoiceLoading,
+    List<ReturnCartItem>? invoiceReturnItems,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -151,6 +174,9 @@ class SaleReturnState {
         printer: clearPrinter ? null : printer ?? this.printer,
         note: note ?? this.note,
         cartItems: cartItems ?? this.cartItems,
+        originalInvoice: clearOriginalInvoice ? null : originalInvoice ?? this.originalInvoice,
+        originalInvoiceLoading: originalInvoiceLoading ?? this.originalInvoiceLoading,
+        invoiceReturnItems: invoiceReturnItems ?? this.invoiceReturnItems,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
         lastSavedReturn: lastSavedReturn ?? this.lastSavedReturn,
@@ -199,6 +225,109 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
         state = state.copyWith(returnNumber: 'RET-000001', numberLoading: false);
       }
     }
+  }
+
+  /// Invoice list se select hone par uski poori detail (items sahit) load
+  /// karta hai aur return items ko us invoice ki lines se seed karta hai
+  /// (sab quantity 0 se shuru — cashier explicitly line opt-in karega,
+  /// bilkul SaleExchangeNotifier.selectOriginalInvoice jaisa). Customer aur
+  /// salesman bhi original invoice se resolve ho jate hain.
+  Future<void> selectOriginalInvoice(SaleInvoiceModel summary) async {
+    if (!mounted) return;
+    state = state.copyWith(originalInvoiceLoading: true, clearError: true);
+    try {
+      final detail =
+          await _ref.read(saleInvoiceRepositoryProvider).getInvoiceDetail(summary.id);
+
+      final returnItems = detail.items
+          .map((i) => ReturnCartItem(
+                originalItemId: i.id,
+                branchStockId: i.branchStockId,
+                barcode: i.barcode ?? '',
+                productId: i.productId,
+                productName: i.productName ?? '',
+                sizeId: i.sizeId ?? '',
+                sizeName: i.sizeName ?? '',
+                colorId: i.colorId ?? '',
+                colorName: i.colorName ?? '',
+                brandId: i.brandId ?? '',
+                brandName: i.brandName ?? '',
+                categoryId: i.categoryId ?? '',
+                categoryName: i.categoryName ?? '',
+                typeId: i.typeId ?? '',
+                typeName: i.typeName ?? '',
+                maxQuantity: i.quantity,
+                quantity: 0,
+                salePrice: i.salePrice,
+                purchasePrice: i.purchasePrice,
+                discountPct: i.discountPct,
+              ))
+          .toList();
+
+      CustomerModel? resolvedCustomer;
+      if (detail.customerId != null) {
+        try {
+          final customers = await _ref.read(customersForSaleProvider.future);
+          final matches = customers.where((c) => c.id == detail.customerId);
+          resolvedCustomer = matches.isEmpty ? null : matches.first;
+        } catch (_) {
+          // customer list load na ho to bhi return continue ho sakta hai
+        }
+      }
+
+      EmployeeLookupItem? resolvedSalesman;
+      if (detail.salesmanId != null) {
+        try {
+          final salesmen = await _ref.read(salesmenProvider.future);
+          final matches = salesmen.where((s) => s.id == detail.salesmanId);
+          resolvedSalesman = matches.isEmpty ? null : matches.first;
+        } catch (_) {
+          // salesmen list load na ho to bhi return continue ho sakta hai
+        }
+      }
+
+      if (!mounted) return;
+      state = state.copyWith(
+        originalInvoice: detail,
+        originalInvoiceLoading: false,
+        invoiceReturnItems: returnItems,
+        cartItems: const [],
+        customer: resolvedCustomer,
+        clearCustomer: resolvedCustomer == null,
+        salesman: resolvedSalesman,
+        clearSalesman: resolvedSalesman == null,
+      );
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(
+          originalInvoiceLoading: false,
+          error: e.toString().replaceAll('Exception: ', ''),
+        );
+      }
+    }
+  }
+
+  /// Dropdown se invoice selection clear karke wapas free-form (invoice ke
+  /// bina) return mode par le jata hai.
+  void clearOriginalInvoice() {
+    state = state.copyWith(
+      clearOriginalInvoice: true,
+      invoiceReturnItems: const [],
+      clearError: true,
+    );
+  }
+
+  void toggleReturnItem(String originalItemId, bool selected) {
+    setReturnQuantity(originalItemId, selected ? 1 : 0);
+  }
+
+  void setReturnQuantity(String originalItemId, int quantity) {
+    final updated = state.invoiceReturnItems.map((i) {
+      if (i.originalItemId != originalItemId) return i;
+      final capped = quantity.clamp(0, i.maxQuantity);
+      return i.copyWith(quantity: capped);
+    }).toList();
+    state = state.copyWith(invoiceReturnItems: updated, clearError: true);
   }
 
   void selectPaymentType(String type) => state = state.copyWith(
@@ -318,8 +447,44 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
     }
   }
 
+  /// Invoice-linked mode mein selected `ReturnCartItem`s ko `SaleCartItem`
+  /// mein convert karta hai (datasource ka insert shape yahi expect karta
+  /// hai) — free-form mode mein `state.cartItems` seedha use ho jata hai.
+  List<SaleCartItem> _buildCartItemsPayload() {
+    if (!state.isInvoiceLinked) return state.cartItems;
+    return state.invoiceReturnItems.where((i) => i.quantity > 0).map((i) {
+      return SaleCartItem(
+        branchStockId: i.branchStockId,
+        barcode: i.barcode,
+        productId: i.productId,
+        productName: i.productName,
+        sizeId: i.sizeId,
+        sizeName: i.sizeName,
+        colorId: i.colorId,
+        colorName: i.colorName,
+        brandId: i.brandId,
+        brandName: i.brandName,
+        categoryId: i.categoryId,
+        categoryName: i.categoryName,
+        typeId: i.typeId,
+        typeName: i.typeName,
+        availableStock: 0,
+        quantity: i.quantity,
+        salePrice: i.salePrice,
+        purchasePrice: i.purchasePrice,
+        discountPct: i.discountPct,
+      );
+    }).toList();
+  }
+
   Future<String?> saveReturn() async {
-    if (state.cartItems.isEmpty) return 'Cart is empty';
+    if (state.isInvoiceLinked) {
+      if (!state.invoiceReturnItems.any((i) => i.quantity > 0)) {
+        return 'Select at least one item the customer is returning';
+      }
+    } else if (state.cartItems.isEmpty) {
+      return 'Cart is empty';
+    }
     if (state.customer == null) return 'Select a customer';
     if (state.salesman == null) return 'Select a salesman';
     if (state.printer == null) return 'Select a printer';
@@ -336,10 +501,12 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
     state = state.copyWith(isSaving: true, clearError: true);
 
     final cashierId = _ref.read(authProvider).user?.id;
+    final cartItemsPayload = _buildCartItemsPayload();
 
     Future<SaleReturnModel> attemptSave(String number) => _repo.saveSaleReturn(
           returnNumber: number,
           branchId: _branchId,
+          originalInvoiceId: state.originalInvoice?.id,
           printerId: state.printer?.id,
           cashierId: cashierId,
           customerId: state.customer!.id,
@@ -348,7 +515,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
           totalDiscount: state.totalDiscount,
           totalAmount: state.totalAmount,
           note: state.note.trim().isEmpty ? null : state.note.trim(),
-          cartItems: state.cartItems,
+          cartItems: cartItemsPayload,
           payments: _buildPayments(),
         );
 
@@ -383,7 +550,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
   }
 
   SaleReturnModel _withReceiptDetails(SaleReturnModel saved) {
-    final items = state.cartItems
+    final items = _buildCartItemsPayload()
         .map((c) => SaleReturnItemModel(
               id: '',
               saleReturnId: saved.id,
@@ -426,6 +593,8 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       id: saved.id,
       returnNumber: saved.returnNumber,
       branchId: saved.branchId,
+      originalInvoiceId: state.originalInvoice?.id,
+      originalInvoiceNumber: state.originalInvoice?.invoiceNumber,
       printerId: saved.printerId,
       cashierId: saved.cashierId,
       customerId: saved.customerId,

@@ -219,11 +219,15 @@ class SidebarShell extends StatelessWidget {
               children: [
                 Icon(item.icon, size: 19, color: active ? _accent : _textDim),
                 const SizedBox(width: 12),
-                Text(item.label,
-                    style: TextStyle(
-                        color: active ? _textDark : _textDim,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500)),
+                Expanded(
+                  child: Text(item.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: active ? _textDark : _textDim,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500)),
+                ),
               ],
             ),
           ),

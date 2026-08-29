@@ -5,10 +5,13 @@ class SaleReturnModel {
   final String id;
   final String returnNumber;
   final String branchId;
+  final String? originalInvoiceId;
+  final String? originalInvoiceNumber;
   final String? printerId;
   final String? cashierId;
   final String? customerId;
   final String? customerName;
+  final String? branchName;
   final String? salesmanId;
   final String? salesmanName;
   final double subtotal;
@@ -23,10 +26,13 @@ class SaleReturnModel {
     required this.id,
     required this.returnNumber,
     required this.branchId,
+    this.originalInvoiceId,
+    this.originalInvoiceNumber,
     this.printerId,
     this.cashierId,
     this.customerId,
     this.customerName,
+    this.branchName,
     this.salesmanId,
     this.salesmanName,
     required this.subtotal,
@@ -60,15 +66,25 @@ class SaleReturnModel {
         : ((json['sale_return_payments'] as List?) ?? const [])
             .map((e) => SaleReturnPaymentModel.fromJson(e as Map<String, dynamic>))
             .toList();
+    final itemsJson = items.isNotEmpty
+        ? items
+        : ((json['sale_return_items'] as List?) ?? const [])
+            .map((e) => SaleReturnItemModel.fromJson(e as Map<String, dynamic>))
+            .toList();
     final customer = json['customers'] as Map<String, dynamic>?;
+    final originalInvoice = json['sale_invoices'] as Map<String, dynamic>?;
+    final branch = json['branches'] as Map<String, dynamic>?;
     return SaleReturnModel(
       id: json['id']?.toString() ?? '',
       returnNumber: json['return_number']?.toString() ?? '',
       branchId: json['branch_id']?.toString() ?? '',
+      originalInvoiceId: json['original_invoice_id']?.toString(),
+      originalInvoiceNumber: originalInvoice?['invoice_number']?.toString(),
       printerId: json['printer_id']?.toString(),
       cashierId: json['cashier_id']?.toString(),
       customerId: json['customer_id']?.toString(),
       customerName: customer?['name']?.toString(),
+      branchName: branch?['branch_name']?.toString(),
       salesmanId: json['salesman_id']?.toString(),
       subtotal: _toDouble(json['subtotal']),
       totalDiscount: _toDouble(json['total_discount']),
@@ -77,7 +93,7 @@ class SaleReturnModel {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),
-      items: items,
+      items: itemsJson,
       payments: paymentsJson,
     );
   }

@@ -5,6 +5,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import '../../../features/branch/sale_exchange/data/model/sale_exchange_model.dart';
 import '../../../features/branch/sale_invoice/data/model/sale_invoice_model.dart';
 import '../../../features/branch/sale_return/data/model/sale_return_model.dart';
 
@@ -115,6 +116,186 @@ class ThermalPrintService {
     '2) No exchange on worn or used footwear.',
     '3) Exchange within 7 days with tag intact.',
   ];
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SALE EXCHANGE (returned items + new items on one receipt)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  static Future<void> printSaleExchange(
+    SaleExchangeModel exchange, {
+    PrinterLookupItem? printer,
+    String? shopName,
+  }) async {
+    final doc = await _buildExchangeDoc(
+      shopName: shopName ?? _defaultShopName,
+      printer: printer,
+      exchange: exchange,
+    );
+    await _dispatch(doc, jobName: 'Exchange_${exchange.exchangeNumber}', printer: printer);
+  }
+
+  static Future<pw.Document> _buildExchangeDoc({
+    required String shopName,
+    required PrinterLookupItem? printer,
+    required SaleExchangeModel exchange,
+  }) async {
+    final doc = pw.Document();
+    final hasCustomer = (exchange.customerName ?? '').isNotEmpty;
+    final hasSalesman = (exchange.salesmanName ?? '').isNotEmpty;
+    final logo = await _fetchLogo(printer?.imageUrl);
+
+    final returnLines = exchange.returnItems
+        .map((i) => _ReceiptLine(
+              name: i.productName ?? '-',
+              sizeName: i.sizeName,
+              colorName: i.colorName,
+              quantity: i.quantity,
+              unitPrice: i.salePrice,
+              discount: i.discount,
+              total: i.totalPrice,
+            ))
+        .toList();
+    final newLines = exchange.newItems
+        .map((i) => _ReceiptLine(
+              name: i.productName ?? '-',
+              sizeName: i.sizeName,
+              colorName: i.colorName,
+              quantity: i.quantity,
+              unitPrice: i.salePrice,
+              discount: i.discount,
+              total: i.totalPrice,
+            ))
+        .toList();
+
+    final diffLabel = exchange.differenceAmount > 0
+        ? 'COLLECT FROM CUSTOMER'
+        : exchange.differenceAmount < 0
+            ? 'REFUND TO CUSTOMER'
+            : 'EVEN EXCHANGE';
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80,
+        build: (pw.Context ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            if (logo != null)
+              pw.Center(
+                child: pw.Container(
+                  width: 55,
+                  height: 55,
+                  margin: const pw.EdgeInsets.only(bottom: 4),
+                  child: pw.Image(logo, fit: pw.BoxFit.contain),
+                ),
+              ),
+            pw.Center(
+              child: pw.Text(
+                shopName.toUpperCase(),
+                style: pw.TextStyle(font: _boldFont, fontSize: 14, letterSpacing: 1.5),
+              ),
+            ),
+            if (printer != null && printer.address.isNotEmpty)
+              pw.Center(
+                child: pw.Text(printer.address,
+                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+              ),
+            if (printer != null && printer.phoneNumber.isNotEmpty)
+              pw.Center(
+                child: pw.Text(printer.phoneNumber,
+                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+              ),
+            pw.SizedBox(height: 4),
+            pw.Center(
+              child: pw.Text('SALE EXCHANGE',
+                  style: pw.TextStyle(font: _boldFont, fontSize: 9, letterSpacing: 1)),
+            ),
+            pw.SizedBox(height: 4),
+            _dashedDivider(),
+            pw.SizedBox(height: 4),
+
+            _kv('Exchange #', exchange.exchangeNumber),
+            if ((exchange.originalInvoiceNumber ?? '').isNotEmpty)
+              _kv('Against Invoice', exchange.originalInvoiceNumber!),
+            _kv('Date', _formatDateTime(exchange.createdAt)),
+            if (hasCustomer) _kv('Customer', exchange.customerName!),
+            if (hasSalesman) _kv('Salesman', exchange.salesmanName!),
+
+            if (returnLines.isNotEmpty) ...[
+              pw.SizedBox(height: 4),
+              _dashedDivider(),
+              pw.SizedBox(height: 4),
+              pw.Text('RETURNED ITEMS',
+                  style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
+              pw.SizedBox(height: 2),
+              _itemsHeader(),
+              _dashedDivider(),
+              pw.SizedBox(height: 2),
+              for (final line in returnLines) _itemRow(line),
+              pw.SizedBox(height: 4),
+              _kv('Return Sub Total', _fmt(exchange.returnSubtotal)),
+              if (exchange.returnDiscount > 0) _kv('Return Discount', '-${_fmt(exchange.returnDiscount)}'),
+              _kv('Return Total', _fmt(exchange.returnTotal)),
+            ],
+
+            pw.SizedBox(height: 4),
+            _dashedDivider(),
+            pw.SizedBox(height: 4),
+            pw.Text('NEW ITEMS',
+                style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
+            pw.SizedBox(height: 2),
+            _itemsHeader(),
+            _dashedDivider(),
+            pw.SizedBox(height: 2),
+            for (final line in newLines) _itemRow(line),
+            pw.SizedBox(height: 4),
+            _kv('New Sub Total', _fmt(exchange.newSubtotal)),
+            if (exchange.newDiscount > 0) _kv('New Discount', '-${_fmt(exchange.newDiscount)}'),
+            _kv('New Total', _fmt(exchange.newTotal)),
+
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(diffLabel, style: pw.TextStyle(font: _boldFont, fontSize: 10)),
+                pw.Text(_fmt(exchange.differenceAmount.abs()),
+                    style: pw.TextStyle(font: _boldFont, fontSize: 12)),
+              ],
+            ),
+
+            if (exchange.payments.any((p) => p.amount > 0.01)) ...[
+              pw.SizedBox(height: 6),
+              _dashedDivider(),
+              pw.SizedBox(height: 4),
+              pw.Text('PAYMENT',
+                  style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
+              pw.SizedBox(height: 2),
+              for (final p in exchange.payments.where((p) => p.amount > 0.01))
+                _kv(
+                    '${p.direction == 'refund' ? 'Refunded' : 'Collected'} (${_payLabel(p.paymentType)})',
+                    _fmt(p.amount)),
+            ],
+
+            pw.SizedBox(height: 8),
+            _dashedDivider(),
+            pw.SizedBox(height: 6),
+
+            pw.Text('Exchanged pairs are subject to inspection before acceptance.',
+                style: pw.TextStyle(font: _regularFont, fontSize: 6.5, color: PdfColors.grey700)),
+
+            pw.SizedBox(height: 6),
+            pw.Center(
+              child: pw.Text(
+                'Thank you for shopping with us!',
+                style: pw.TextStyle(font: _regularFont, fontSize: 8, color: PdfColors.grey700),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return doc;
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // Shared PDF builder
