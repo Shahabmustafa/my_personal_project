@@ -7,6 +7,7 @@ import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../superadmin/branch/presentation/screens/branch_discount_access_screen.dart';
 import '../superadmin/branch/presentation/screens/branches_screen.dart';
+import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
 import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
@@ -21,10 +22,11 @@ import '../warehouse/color/presentation/screens/colors_screen.dart';
 import '../warehouse/brand/presentation/screens/brands_screen.dart';
 import '../warehouse/category/presentation/screens/categorys_screen.dart';
 import '../warehouse/type/presentation/screens/types_screen.dart';
-import '../warehouse/stock_inventory/presentation/screens/admin_stock_screen.dart';
-import '../warehouse/purchase_invoice/presentation/screens/purchase_invoice_screen.dart';
-import '../warehouse/purchase_invoice/presentation/screens/purchase_return_screen.dart';
-import '../warehouse/shared/warehouse_context_gate.dart';
+import '../superadmin/head_office_stock/presentation/screens/head_office_stock_screen.dart';
+import '../superadmin/head_office_assign_stock/presentation/screens/ho_assign_stock_screen.dart';
+import '../superadmin/overview/presentation/screens/overview_screen.dart';
+import '../superadmin/head_office_purchase/presentation/screens/purchase_invoice_screen.dart';
+import '../superadmin/head_office_purchase/presentation/screens/purchase_return_screen.dart';
 
 
 // Roles: superadmin, admin
@@ -41,10 +43,12 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
   int _index = 0;
 
   static const _navItems = [
+    SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
     SidebarItem(icon: Icons.people_outline, label: 'Users'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Branches'),
     SidebarItem(icon: Icons.percent_outlined, label: 'Invoice Discount Access'),
     SidebarItem(icon: Icons.warehouse_outlined, label: 'Warehouse'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Head Office'),
     SidebarItem(icon: Icons.account_balance_outlined, label: 'Bank Head', group: 'Bank'),
     SidebarItem(icon: Icons.account_balance_wallet_outlined, label: 'Bank Entry', group: 'Bank'),
     SidebarItem(icon: Icons.print_outlined, label: 'Print', group: 'Printer'),
@@ -62,13 +66,16 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: Icons.receipt_long_outlined, label: 'Purchase Invoice', group: 'Purchase'),
     SidebarItem(icon: Icons.assignment_return_outlined, label: 'Purchase Return', group: 'Purchase'),
     SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Assign Stock To Branch'),
   ];
 
   static const _pages = [
+    OverviewScreen(),
     UsersScreen(),
     BranchesScreen(),
     BranchDiscountAccessScreen(),
     WarehouseScreen(),
+    HeadOfficeScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),
     PrinterHeadsScreen(),
@@ -87,10 +94,12 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // Admin ko pehle warehouse choose karni hoti hai (khud koi warehouse
     // assign nahi hoti), phir wahi invoice/return screens jo warehouse
     // dashboard mein hain.
-    WarehouseContextGate(child: PurchaseInvoiceScreen()),
-    WarehouseContextGate(child: PurchaseReturnScreen()),
+    PurchaseInvoiceScreen(),
+    PurchaseReturnScreen(),
     // Sab warehouses ka stock — add ho sakta hai, edit/delete nahi.
-    AdminStockScreen(),
+    HeadOfficeStockScreen(),
+    // Head office se branch ko stock assign — head_office_id ke sath.
+    HoAssignStockScreen(),
   ];
 
   @override

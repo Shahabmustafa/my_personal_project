@@ -7,6 +7,7 @@ class UserModel {
   final bool isActive;
   final List<String> branchIds;
   final List<String> warehouseIds;
+  final List<String> headOfficeIds;
 
   const UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     this.isActive = true,
     this.branchIds = const [],
     this.warehouseIds = const [],
+    this.headOfficeIds = const [],
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -42,6 +44,17 @@ class UserModel {
       return [];
     }
 
+    List<String> parseHeadOfficeIds(dynamic raw) {
+      if (raw == null) return [];
+      if (raw is List) {
+        return raw
+            .map((e) => e is Map ? e['head_office_id']?.toString() ?? '' : e.toString())
+            .where((id) => id.isNotEmpty)
+            .toList();
+      }
+      return [];
+    }
+
     return UserModel(
       id: json['id']?.toString() ?? '',
       username: json['username'] ?? '',
@@ -51,6 +64,7 @@ class UserModel {
       isActive: json['is_active'] ?? true,
       branchIds: parseBranchIds(json['user_branches']),
       warehouseIds: parseWarehouseIds(json['user_warehouses']),
+      headOfficeIds: parseHeadOfficeIds(json['user_head_offices']),
     );
   }
 
@@ -72,6 +86,7 @@ class UserModel {
     bool? isActive,
     List<String>? branchIds,
     List<String>? warehouseIds,
+    List<String>? headOfficeIds,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -81,13 +96,13 @@ class UserModel {
       role: role ?? this.role,
       isActive: isActive ?? this.isActive,
       branchIds: branchIds ?? this.branchIds,
+      headOfficeIds: headOfficeIds ?? this.headOfficeIds,
       warehouseIds: warehouseIds ?? this.warehouseIds,
     );
   }
 
   // ── Role checks ──────────────────────────────────────────────────────────
   bool get isSuperAdmin => role == 'superadmin';
-  bool get isAdmin => role == 'admin';
   bool get isManager => role == 'manager';
   bool get isSupervisor => role == 'supervisor';
   bool get isWarehouseManager => role == 'warehouse_manager';
@@ -95,23 +110,23 @@ class UserModel {
   bool get isCashier => role == 'cashier';
   bool get isSalesman => role == 'salesman';
 
-  // Supervisor ko branches/warehouses assign ho sakte hain (superadmin/admin
-  // ke zariye), lekin supervisor khud kisi user ko manage/assign nahi kar sakta.
-  bool get canManageUsers => isSuperAdmin || isAdmin;
-  bool get canManageBranches => isSuperAdmin || isAdmin;
-  bool get canManageWarehouses => isSuperAdmin || isAdmin;
+  // Supervisor ko branches/warehouses assign ho sakte hain (superadmin ke
+  // zariye), lekin supervisor khud kisi user ko manage/assign nahi kar sakta.
+  bool get canManageUsers => isSuperAdmin;
+  bool get canManageBranches => isSuperAdmin;
+  bool get canManageWarehouses => isSuperAdmin;
+  bool get canManageHeadOffice => isSuperAdmin;
   bool get canManageStock =>
-      isSuperAdmin || isAdmin || isManager || isWarehouseManager || isInventoryManager;
+      isSuperAdmin || isManager || isWarehouseManager || isInventoryManager;
   bool get canProcessPayment =>
-      isSuperAdmin || isAdmin || isManager || isCashier;
+      isSuperAdmin || isManager || isCashier;
   bool get canCreateSales =>
-      isSuperAdmin || isAdmin || isManager || isCashier || isSalesman;
-  bool get canViewReports => isSuperAdmin || isAdmin || isManager;
+      isSuperAdmin || isManager || isCashier || isSalesman;
+  bool get canViewReports => isSuperAdmin || isManager;
 
   String get roleDisplayName {
     const map = {
       'superadmin': 'Super Admin',
-      'admin': 'Admin',
       'manager': 'Manager',
       'supervisor': 'Supervisor',
       'warehouse_manager': 'Warehouse Manager',

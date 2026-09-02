@@ -116,7 +116,7 @@ class UserCard extends StatelessWidget {
 
 String _displayRole(String role) {
   const map = {
-    'superadmin': 'Super Admin', 'admin': 'Admin', 'manager': 'Manager',
+    'superadmin': 'Super Admin', 'manager': 'Manager',
     'supervisor': 'Supervisor',
     'warehouse_manager': 'Warehouse Mgr', 'inventory_manager': 'Inventory Mgr',
     'cashier': 'Cashier', 'salesman': 'Salesman',

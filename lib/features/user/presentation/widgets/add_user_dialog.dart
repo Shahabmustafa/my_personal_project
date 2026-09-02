@@ -23,15 +23,14 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
   // Roles jo branch dashboard users add kar sakte hain
   static const _branchRoles = ['cashier', 'salesman'];
 
-  // Superadmin/Admin ke liye saare roles
+  // Superadmin ke liye saare roles
   static const _adminRoles = [
-    'superadmin', 'admin', 'manager', 'supervisor',
+    'superadmin', 'manager', 'supervisor',
     'warehouse_manager', 'inventory_manager', 'cashier', 'salesman',
   ];
 
   static const _roleLabels = {
     'superadmin': 'Super Admin',
-    'admin': 'Admin',
     'manager': 'Manager',
     'supervisor': 'Supervisor',
     'warehouse_manager': 'Warehouse Manager',
@@ -47,10 +46,9 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
   void initState() {
     super.initState();
     final currentUser = ref.read(authProvider).user;
-    final isSuperOrAdmin =
-        currentUser?.isSuperAdmin == true || currentUser?.isAdmin == true;
+    final isSuper = currentUser?.isSuperAdmin == true;
 
-    _availableRoles = isSuperOrAdmin ? _adminRoles : _branchRoles;
+    _availableRoles = isSuper ? _adminRoles : _branchRoles;
     _role = _availableRoles.first;
   }
 
@@ -116,8 +114,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
   Widget build(BuildContext context) {
     final currentUser = ref.watch(authProvider).user;
     final branchIds = currentUser?.branchIds ?? [];
-    final isSuperOrAdmin =
-        currentUser?.isSuperAdmin == true || currentUser?.isAdmin == true;
+    final isSuper = currentUser?.isSuperAdmin == true;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -236,7 +233,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          isSuperOrAdmin
+                          isSuper
                               ? 'Branch assign after creation via Assign button'
                               : branchIds.isNotEmpty
                                   ? 'Auto-assigned to ${branchIds.length} branch(es)'

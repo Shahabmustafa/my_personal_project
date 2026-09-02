@@ -30,7 +30,7 @@ class _WarehouseContextGateState extends ConsumerState<WarehouseContextGate> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final isAdmin = user?.isSuperAdmin == true || user?.isAdmin == true;
+    final isAdmin = user?.isSuperAdmin == true;
     if (!isAdmin) return widget.child;
 
     final selected = ref.watch(selectedWarehouseIdProvider);

@@ -4,6 +4,7 @@ import '../../../auth/data/model/user_model.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../superadmin/warehouse/presentation/providers/warehouse_provider.dart';
+import '../../../superadmin/head_office/presentation/providers/head_office_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/user_state.dart';
 import '../widgets/user_card.dart';
@@ -21,7 +22,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   String _searchQuery = '';
 
   static const _roles = [
-    'superadmin', 'admin', 'manager', 'supervisor',
+    'superadmin', 'manager', 'supervisor',
     'warehouse_manager', 'inventory_manager', 'cashier', 'salesman',
   ];
 
@@ -32,6 +33,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
       ref.read(userProvider.notifier).loadAllUsers();
       ref.read(branchProvider.notifier).loadAllBranches();
       ref.read(warehouseProvider.notifier).loadAllWarehouses();
+      ref.read(headOfficeProvider.notifier).loadAllHeadOffices();
     });
   }
 
@@ -633,7 +635,7 @@ class _EmptyView extends StatelessWidget {
 
 String _roleLabel(String role) {
   const map = {
-    'superadmin': 'Super Admin', 'admin': 'Admin', 'manager': 'Manager',
+    'superadmin': 'Super Admin', 'manager': 'Manager',
     'supervisor': 'Supervisor',
     'warehouse_manager': 'WH Manager', 'inventory_manager': 'Inv Manager',
     'cashier': 'Cashier', 'salesman': 'Salesman',

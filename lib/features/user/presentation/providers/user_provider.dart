@@ -141,6 +141,24 @@ class UserNotifier extends StateNotifier<UserState> {
           errorMessage: e.toString().replaceAll('Exception: ', ''));
     }
   }
+
+  Future<void> assignHeadOfficesToUser({
+    required String userId,
+    required List<String> headOfficeIds,
+  }) async {
+    try {
+      await _repo.assignHeadOfficesToUser(
+          userId: userId, headOfficeIds: headOfficeIds);
+      final updated = await _repo.getUserById(userId);
+      final list =
+          state.users.map((u) => u.id == updated.id ? updated : u).toList();
+      state = state.copyWith(users: list);
+    } catch (e) {
+      state = state.copyWith(
+          status: UserStatus.error,
+          errorMessage: e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }
 
 final userProvider =

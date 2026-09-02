@@ -421,7 +421,6 @@ class _EmptyView extends StatelessWidget {
 String _roleLabel(String role) {
   const map = {
     'superadmin': 'Super Admin',
-    'admin': 'Admin',
     'manager': 'Manager',
     'supervisor': 'Supervisor',
     'warehouse_manager': 'WH Manager',

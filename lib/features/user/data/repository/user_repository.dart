@@ -61,4 +61,11 @@ class UserRepository {
   }) =>
       remoteDatasource.assignWarehousesToUser(
           userId: userId, warehouseIds: warehouseIds);
+
+  Future<void> assignHeadOfficesToUser({
+    required String userId,
+    required List<String> headOfficeIds,
+  }) =>
+      remoteDatasource.assignHeadOfficesToUser(
+          userId: userId, headOfficeIds: headOfficeIds);
 }

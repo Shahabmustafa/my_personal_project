@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/data/model/user_model.dart';
 import '../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../superadmin/warehouse/presentation/providers/warehouse_provider.dart';
+import '../../../superadmin/head_office/presentation/providers/head_office_provider.dart';
 import '../providers/user_provider.dart';
 
 class AssignDialog extends ConsumerStatefulWidget {
@@ -16,28 +17,33 @@ class AssignDialog extends ConsumerStatefulWidget {
 class _AssignDialogState extends ConsumerState<AssignDialog> {
   late List<String> _selectedBranches;
   late List<String> _selectedWarehouses;
+  late List<String> _selectedHeadOffices;
 
   // Sirf superadmin/admin/supervisor multiple branches + warehouses (dono
   // types) rakh sakte hain. Baaki roles apne role-type tak limited hain aur
   // sirf 1 hi le sakte hain — DB trigger bhi isi ko enforce karta hai.
   bool get _isUnrestricted =>
-      widget.user.isSuperAdmin || widget.user.isAdmin || widget.user.isSupervisor;
+      widget.user.isSuperAdmin || widget.user.isSupervisor;
   bool get _showBranches =>
       _isUnrestricted || !(widget.user.isWarehouseManager || widget.user.isInventoryManager);
   bool get _showWarehouses =>
       _isUnrestricted || (widget.user.isWarehouseManager || widget.user.isInventoryManager);
+  // Head office sirf superadmin ko assign hota hai.
+  bool get _showHeadOffices => widget.user.isSuperAdmin;
 
   @override
   void initState() {
     super.initState();
     _selectedBranches = List.from(widget.user.branchIds);
     _selectedWarehouses = List.from(widget.user.warehouseIds);
+    _selectedHeadOffices = List.from(widget.user.headOfficeIds);
   }
 
   @override
   Widget build(BuildContext context) {
     final branches = ref.watch(branchProvider).branches;
     final warehouses = ref.watch(warehouseProvider).warehouses;
+    final headOffices = ref.watch(headOfficeProvider).headOffices;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -123,6 +129,39 @@ class _AssignDialogState extends ConsumerState<AssignDialog> {
                         }),
                       )),
               ],
+
+              if (_showHeadOffices && (_showBranches || _showWarehouses))
+                const Divider(height: 24),
+
+              // Head Offices section (sirf superadmin)
+              if (_showHeadOffices) ...[
+                const Text('Head Offices',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 6),
+                if (headOffices.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text('No head offices available',
+                        style: TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
+                  )
+                else
+                  ...headOffices.map((h) => CheckboxListTile(
+                        dense: true,
+                        title: Text(h.headOfficeName,
+                            style: const TextStyle(fontSize: 13)),
+                        subtitle: Text(h.city,
+                            style: const TextStyle(fontSize: 11)),
+                        value: _selectedHeadOffices.contains(h.id),
+                        activeColor: const Color(0xFF3E63DD),
+                        onChanged: (v) => setState(() {
+                          if (v == true) {
+                            _selectedHeadOffices.add(h.id);
+                          } else {
+                            _selectedHeadOffices.remove(h.id);
+                          }
+                        }),
+                      )),
+              ],
             ],
           ),
         ),
@@ -147,6 +186,12 @@ class _AssignDialogState extends ConsumerState<AssignDialog> {
               await notifier.assignWarehousesToUser(
                 userId: widget.user.id,
                 warehouseIds: _selectedWarehouses,
+              );
+            }
+            if (_showHeadOffices) {
+              await notifier.assignHeadOfficesToUser(
+                userId: widget.user.id,
+                headOfficeIds: _selectedHeadOffices,
               );
             }
             if (!context.mounted) return;

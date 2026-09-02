@@ -38,9 +38,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _getDashboard(AuthState state) {
     final user = state.user!;
     switch (user.role) {
-      // ── Superadmin & Admin → sab kuch
+      // ── Superadmin → sab kuch
       case 'superadmin':
-      case 'admin':
         return const SuperAdminDashboard();
 
       // ── Branch sidebar → cashier, manager, salesman
@@ -82,7 +81,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (next.status == AuthStatus.success && next.user != null) {
         final user = next.user!;
         final needsWorkspaceSelection = !user.isSuperAdmin &&
-            !user.isAdmin &&
             (user.branchIds.length + user.warehouseIds.length) > 1;
 
         final destination = needsWorkspaceSelection

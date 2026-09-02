@@ -7,7 +7,8 @@ class UserRemoteDatasource {
   static const _userSelect = '''
     id, username, email, phone_number, role, is_active,
     user_branches(branch_id),
-    user_warehouses(warehouse_id)
+    user_warehouses(warehouse_id),
+    user_head_offices(head_office_id)
   ''';
 
   Future<List<UserModel>> getAllUsers() async {
@@ -149,6 +150,20 @@ class UserRemoteDatasource {
       await _client.from('user_warehouses').insert(
             warehouseIds
                 .map((wid) => {'user_id': userId, 'warehouse_id': wid})
+                .toList(),
+          );
+    }
+  }
+
+  Future<void> assignHeadOfficesToUser({
+    required String userId,
+    required List<String> headOfficeIds,
+  }) async {
+    await _client.from('user_head_offices').delete().eq('user_id', userId);
+    if (headOfficeIds.isNotEmpty) {
+      await _client.from('user_head_offices').insert(
+            headOfficeIds
+                .map((hid) => {'user_id': userId, 'head_office_id': hid})
                 .toList(),
           );
     }

@@ -17,22 +17,48 @@ class BarcodePrintService {
   static const String _shopName = 'Safi Shoe';
 
   /// Opens the system print dialog with a thermal-sized PDF label.
-  static Future<void> printLabel(WarehouseStockModel stock) async {
+  static Future<void> printLabel(WarehouseStockModel stock) => printLabelFields(
+        barcode: stock.barcode,
+        sizeName: stock.sizeName,
+        colorName: stock.colorName,
+        categoryName: stock.categoryName,
+        typeName: stock.typeName,
+      );
+
+  /// Same label, but from plain fields — usable with any stock model.
+  static Future<void> printLabelFields({
+    required String barcode,
+    String? sizeName,
+    String? colorName,
+    String? categoryName,
+    String? typeName,
+  }) async {
     await Printing.layoutPdf(
-      name: 'Barcode_${stock.barcode}',
+      name: 'Barcode_$barcode',
       format: PdfPageFormat(
         _labelWidthMm * PdfPageFormat.mm,
         _labelHeightMm * PdfPageFormat.mm,
       ),
-      onLayout: (format) => _buildPdf(format, stock),
+      onLayout: (format) => _buildPdf(
+        format,
+        barcode: barcode,
+        sizeName: sizeName,
+        colorName: colorName,
+        categoryName: categoryName,
+        typeName: typeName,
+      ),
     );
   }
 
   // ── PDF builder ──────────────────────────────────────────────────────
   static Future<Uint8List> _buildPdf(
-      PdfPageFormat format,
-      WarehouseStockModel stock,
-      ) async {
+      PdfPageFormat format, {
+    required String barcode,
+    String? sizeName,
+    String? colorName,
+    String? categoryName,
+    String? typeName,
+  }) async {
     final doc = pw.Document();
 
     // Use built-in fonts — no network call, works on web + mobile + desktop
@@ -62,7 +88,7 @@ class BarcodePrintService {
             // Code128 barcode bars
             pw.BarcodeWidget(
               barcode: pw.Barcode.code128(),
-              data: stock.barcode,
+              data: barcode,
               width: double.infinity,
               height: 28,
               drawText: false,
@@ -72,7 +98,7 @@ class BarcodePrintService {
 
             // Barcode digits
             pw.Text(
-              stock.barcode,
+              barcode,
               style: pw.TextStyle(
                 font: monoFont,
                 fontSize: 7,
@@ -88,8 +114,8 @@ class BarcodePrintService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
               children: [
-                _detail('Size', stock.sizeName ?? '—', regularFont, boldFont),
-                _detail('Color', stock.colorName ?? '—', regularFont, boldFont),
+                _detail('Size', sizeName ?? '—', regularFont, boldFont),
+                _detail('Color', colorName ?? '—', regularFont, boldFont),
               ],
             ),
             pw.SizedBox(height: 3),
@@ -98,8 +124,8 @@ class BarcodePrintService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceEvenly,
               children: [
-                _detail('Category', stock.categoryName ?? '—', regularFont, boldFont),
-                _detail('Type', stock.typeName ?? '—', regularFont, boldFont),
+                _detail('Category', categoryName ?? '—', regularFont, boldFont),
+                _detail('Type', typeName ?? '—', regularFont, boldFont),
               ],
             ),
           ],

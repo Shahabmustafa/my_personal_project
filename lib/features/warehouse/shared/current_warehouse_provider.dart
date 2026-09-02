@@ -15,7 +15,7 @@ final currentWarehouseIdProvider = Provider<String>((ref) {
   // Admin/superadmin don't own a warehouse assignment — they explicitly
   // pick which warehouse to act on (via WarehouseContextGate), so whatever
   // they've selected is used as-is, without the `warehouseIds` ownership check.
-  if (user.isSuperAdmin || user.isAdmin) return selected;
+  if (user.isSuperAdmin) return selected;
 
   if (selected.isNotEmpty && user.warehouseIds.contains(selected)) {
     return selected;
