@@ -42,6 +42,21 @@ final salesmenProvider = FutureProvider<List<EmployeeLookupItem>>(
       .getSalesmen(ref.watch(currentBranchIdProvider)),
 );
 
+/// Current branch ke cashiers (employee_salary → role='cashier').
+final cashiersProvider = FutureProvider<List<EmployeeLookupItem>>(
+  (ref) => ref
+      .read(saleInvoiceRepositoryProvider)
+      .getCashiers(ref.watch(currentBranchIdProvider)),
+);
+
+/// Current branch ke managers (employee_salary → role='manager').
+/// Khali list = branch ko koi manager assign nahi → sale block ho jati hai.
+final managersProvider = FutureProvider<List<EmployeeLookupItem>>(
+  (ref) => ref
+      .read(saleInvoiceRepositoryProvider)
+      .getManagers(ref.watch(currentBranchIdProvider)),
+);
+
 final customersForSaleProvider = FutureProvider<List<CustomerModel>>(
   (ref) => ref
       .read(customerRepositoryProvider)
@@ -60,13 +75,15 @@ final printersForSaleProvider = FutureProvider<List<PrinterLookupItem>>(
       .getPrinters(ref.watch(currentBranchIdProvider)),
 );
 
-/// Superadmin ki "Invoice Discount Access" screen se decide hota hai —
-/// false hone par Sale Invoice screen par discount field dikhta hi nahi.
-final currentBranchAllowsInvoiceDiscountProvider = FutureProvider<bool>((ref) async {
+/// Superadmin ki "Discount → Branch Invoice Discount" screen se set hota hai —
+/// is branch ka cashier sale invoice par max kitne % tak extra (invoice-wise)
+/// discount laga sakta hai. 0 hone par discount field dikhta hi nahi.
+final currentBranchMaxInvoiceDiscountPctProvider =
+    FutureProvider<double>((ref) async {
   final branchId = ref.watch(currentBranchIdProvider);
-  if (branchId.isEmpty) return false;
+  if (branchId.isEmpty) return 0;
   final branch = await ref.read(branchRepositoryProvider).getBranchById(branchId);
-  return branch.canApplyInvoiceDiscount;
+  return branch.maxInvoiceDiscountPct;
 });
 
 // ── Invoice list ──────────────────────────────────────────────────────────
@@ -134,11 +151,17 @@ class SaleInvoiceState {
   final double cashAmount; // only used when paymentType == 'cash_card'
   final CustomerModel? customer;
   final EmployeeLookupItem? salesman;
+  final EmployeeLookupItem? cashier;
+  final EmployeeLookupItem? manager;
   final BankEntryLookupItem? bankEntry;
   final PrinterLookupItem? printer;
   final String note;
   final List<SaleCartItem> cartItems;
-  final double invoiceDiscount;
+
+  /// Invoice-wise extra discount as a percentage of [itemsTotal]. Branch ke
+  /// max % (superadmin set) tak clamp hota hai. Rupees amount [invoiceDiscount]
+  /// getter se nikalta hai taaki cart badalne par apne aap recalculate ho.
+  final double invoiceDiscountPct;
   final bool isSaving;
   final String? error;
   final SaleInvoiceModel? lastSavedInvoice;
@@ -150,15 +173,20 @@ class SaleInvoiceState {
     this.cashAmount = 0,
     this.customer,
     this.salesman,
+    this.cashier,
+    this.manager,
     this.bankEntry,
     this.printer,
     this.note = '',
     this.cartItems = const [],
-    this.invoiceDiscount = 0,
+    this.invoiceDiscountPct = 0,
     this.isSaving = false,
     this.error,
     this.lastSavedInvoice,
   });
+
+  /// Invoice-wise extra discount, rupees mein — % of items total.
+  double get invoiceDiscount => itemsTotal * invoiceDiscountPct / 100;
 
   /// 'cash_card' ke liye card portion = total - cash (0 se kam nahi ho sakta).
   double get cardAmount => (totalAmount - cashAmount).clamp(0, double.infinity);
@@ -181,13 +209,17 @@ class SaleInvoiceState {
     bool clearCustomer = false,
     EmployeeLookupItem? salesman,
     bool clearSalesman = false,
+    EmployeeLookupItem? cashier,
+    bool clearCashier = false,
+    EmployeeLookupItem? manager,
+    bool clearManager = false,
     BankEntryLookupItem? bankEntry,
     bool clearBankEntry = false,
     PrinterLookupItem? printer,
     bool clearPrinter = false,
     String? note,
     List<SaleCartItem>? cartItems,
-    double? invoiceDiscount,
+    double? invoiceDiscountPct,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -200,11 +232,13 @@ class SaleInvoiceState {
         cashAmount: cashAmount ?? this.cashAmount,
         customer: clearCustomer ? null : customer ?? this.customer,
         salesman: clearSalesman ? null : salesman ?? this.salesman,
+        cashier: clearCashier ? null : cashier ?? this.cashier,
+        manager: clearManager ? null : manager ?? this.manager,
         bankEntry: clearBankEntry ? null : bankEntry ?? this.bankEntry,
         printer: clearPrinter ? null : printer ?? this.printer,
         note: note ?? this.note,
         cartItems: cartItems ?? this.cartItems,
-        invoiceDiscount: invoiceDiscount ?? this.invoiceDiscount,
+        invoiceDiscountPct: invoiceDiscountPct ?? this.invoiceDiscountPct,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
         lastSavedInvoice: lastSavedInvoice ?? this.lastSavedInvoice,
@@ -220,6 +254,31 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       : super(const SaleInvoiceState()) {
     _loadInvoiceNumber();
     _loadDefaultCustomer();
+    _loadDefaultEmployees();
+  }
+
+  /// Manager auto-select (agar branch mein sirf 1 manager ho) aur cashier
+  /// auto-select (logged-in user ka cashier record ho, warna agar sirf 1
+  /// cashier ho). Manager na milne par state.manager null rehta hai →
+  /// UI banner dikhata hai aur Save disable.
+  Future<void> _loadDefaultEmployees() async {
+    try {
+      final managers = await _ref.read(managersProvider.future);
+      if (mounted && state.manager == null && managers.length == 1) {
+        state = state.copyWith(manager: managers.first);
+      }
+    } catch (_) {}
+    try {
+      final cashiers = await _ref.read(cashiersProvider.future);
+      if (!mounted || state.cashier != null) return;
+      final myId = _ref.read(authProvider).user?.id;
+      final mine = cashiers.where((c) => c.userId == myId);
+      if (mine.isNotEmpty) {
+        state = state.copyWith(cashier: mine.first);
+      } else if (cashiers.length == 1) {
+        state = state.copyWith(cashier: cashiers.first);
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadInvoiceNumber() async {
@@ -274,6 +333,22 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       state = state.copyWith(clearSalesman: true);
     } else {
       state = state.copyWith(salesman: emp);
+    }
+  }
+
+  void selectCashier(EmployeeLookupItem? emp) {
+    if (emp == null) {
+      state = state.copyWith(clearCashier: true);
+    } else {
+      state = state.copyWith(cashier: emp);
+    }
+  }
+
+  void selectManager(EmployeeLookupItem? emp) {
+    if (emp == null) {
+      state = state.copyWith(clearManager: true);
+    } else {
+      state = state.copyWith(manager: emp);
     }
   }
 
@@ -364,13 +439,14 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     );
   }
 
-  void clearCart() => state = state.copyWith(cartItems: [], invoiceDiscount: 0);
+  void clearCart() =>
+      state = state.copyWith(cartItems: [], invoiceDiscountPct: 0);
 
-  /// 0..itemsTotal tak clamp — branch ki permission check UI (footer field
-  /// ki visibility) mein hoti hai, yahan sirf value sanity clamp hai.
-  void setInvoiceDiscount(double amount) {
-    final capped = amount.clamp(0, state.itemsTotal);
-    state = state.copyWith(invoiceDiscount: capped.toDouble());
+  /// Invoice-wise extra discount %, 0..[maxPct] tak clamp. [maxPct] superadmin
+  /// ki "Branch Invoice Discount" screen se aata hai (0 = allowed nahi).
+  void setInvoiceDiscountPct(double pct, {required double maxPct}) {
+    final capped = pct.clamp(0, maxPct <= 0 ? 0 : maxPct);
+    state = state.copyWith(invoiceDiscountPct: capped.toDouble());
   }
 
   /// Current state se payment legs banata hai — cash/card ek row, cash_card do rows.
@@ -412,17 +488,20 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     }
 
     // Har invoice ka commission/accountability kisi na kisi manager ke
-    // against jana chahiye — branch me manager assign na ho to sale hi
-    // create nahi hone dete (Employee Salary se role='manager' record
-    // banwana zaroori hai).
-    final manager = await _repo.getBranchManager(_branchId);
+    // against jana chahiye — branch me manager assign na ho (ya select na
+    // kiya ho) to sale hi create nahi hone dete. UI upfront check + banner
+    // dikhata hai; ye last-line guard hai.
+    final manager = state.manager;
     if (manager == null) {
-      return 'This branch has no manager assigned. Add a manager under Employees before creating invoices.';
+      return 'Select a manager for this invoice. If none is listed, add a manager for this branch under Employees.';
     }
 
     state = state.copyWith(isSaving: true, clearError: true);
 
-    final cashierId = _ref.read(authProvider).user?.id;
+    final cashierId =
+        state.cashier?.userId.isNotEmpty == true
+            ? state.cashier!.userId
+            : _ref.read(authProvider).user?.id;
     final managerCommissionPercent = manager.commissionPercent;
     final managerCommissionAmount = state.totalAmount * managerCommissionPercent / 100;
     final salesmanCommissionPercent = state.salesman?.commissionPercent ?? 0;
@@ -553,6 +632,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     state = const SaleInvoiceState(invoiceLoading: true);
     await _loadInvoiceNumber();
     await _loadDefaultCustomer();
+    await _loadDefaultEmployees();
   }
 }
 

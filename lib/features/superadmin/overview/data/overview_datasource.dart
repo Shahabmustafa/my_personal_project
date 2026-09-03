@@ -22,6 +22,17 @@ class OverviewStats {
   /// Aaj ki sale har branch ke hisaab se.
   final List<BranchSaleToday> todaySaleByBranch;
 
+  /// Sab branches ka lifetime total (RPC `superadmin_dashboard_stats` se).
+  final double totalSale;
+  final double totalReturn;
+  final double totalProfit;
+
+  /// Pichle 7 din (Asia/Karachi) ki daily sale — line graph ke liye.
+  final List<DaySale> weeklySale;
+
+  /// Sab se zyada bikne wala article.
+  final TopArticle? topArticle;
+
   const OverviewStats({
     this.totalArticles = 0,
     this.totalBranches = 0,
@@ -38,6 +49,30 @@ class OverviewStats {
     this.warehouseStockPairs = 0,
     this.branchStockPairs = 0,
     this.todaySaleByBranch = const [],
+    this.totalSale = 0,
+    this.totalReturn = 0,
+    this.totalProfit = 0,
+    this.weeklySale = const [],
+    this.topArticle,
+  });
+}
+
+class DaySale {
+  final DateTime day;
+  final double amount;
+  const DaySale({required this.day, required this.amount});
+}
+
+class TopArticle {
+  final String productId;
+  final String articleName;
+  final int quantity;
+  final double amount;
+  const TopArticle({
+    required this.productId,
+    required this.articleName,
+    required this.quantity,
+    required this.amount,
   });
 }
 
@@ -91,6 +126,10 @@ class OverviewDatasource {
   Future<OverviewStats> fetchStats() async {
     final todayUtc = _startOfTodayUtc();
     final monthUtc = _startOfMonthUtc();
+
+    // Lifetime totals / weekly series / top article — sab ek RPC call mein
+    // (server-side aggregate, indexes ke sath).
+    final extrasFuture = _client.rpc('superadmin_dashboard_stats');
 
     final results = await Future.wait<List<dynamic>>([
       _client.from('products').select('id'),
@@ -164,6 +203,24 @@ class OverviewDatasource {
     final todayByBranch = perBranch.values.toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
+    final extras = (await extrasFuture) as Map<String, dynamic>? ?? const {};
+    final weekly = <DaySale>[
+      for (final r in (extras['weekly_sale'] as List? ?? const []))
+        DaySale(
+          day: DateTime.tryParse('${(r as Map)['day']}') ?? DateTime.now(),
+          amount: _toDouble(r['amount']),
+        ),
+    ];
+    final topRaw = extras['top_article'] as Map<String, dynamic>?;
+    final topArticle = topRaw == null
+        ? null
+        : TopArticle(
+            productId: '${topRaw['product_id']}',
+            articleName: '${topRaw['article_name'] ?? '—'}',
+            quantity: _toInt(topRaw['quantity']),
+            amount: _toDouble(topRaw['amount']),
+          );
+
     return OverviewStats(
       totalArticles: results[0].length,
       totalBranches: branches.length,
@@ -180,6 +237,11 @@ class OverviewDatasource {
       monthSale: sumAmount(results[11]),
       todaySaleReturn: sumAmount(results[12]),
       todaySaleByBranch: todayByBranch,
+      totalSale: _toDouble(extras['total_sale']),
+      totalReturn: _toDouble(extras['total_return']),
+      totalProfit: _toDouble(extras['total_profit']),
+      weeklySale: weekly,
+      topArticle: topArticle,
     );
   }
 }

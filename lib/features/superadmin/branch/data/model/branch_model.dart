@@ -6,6 +6,12 @@ class BranchModel {
   final String city;
   final String status;
   final bool canApplyInvoiceDiscount;
+
+  /// Max percentage (0..100) is branch ka cashier sale invoice par extra
+  /// (invoice-wise) discount ke taur par laga sakta hai. Superadmin isko
+  /// "Discount → Branch Invoice Discount" screen se set karta hai.
+  /// 0 = branch koi invoice discount nahi laga sakta.
+  final double maxInvoiceDiscountPct;
   final DateTime? createdAt;
 
   const BranchModel({
@@ -16,6 +22,7 @@ class BranchModel {
     this.city = '',
     this.status = 'active',
     this.canApplyInvoiceDiscount = false,
+    this.maxInvoiceDiscountPct = 0,
     this.createdAt,
   });
 
@@ -28,6 +35,8 @@ class BranchModel {
       city: json['city'] ?? '',
       status: json['status'] ?? 'active',
       canApplyInvoiceDiscount: json['can_apply_invoice_discount'] as bool? ?? false,
+      maxInvoiceDiscountPct:
+          (json['max_invoice_discount_pct'] as num?)?.toDouble() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -42,6 +51,7 @@ class BranchModel {
         'city': city,
         'status': status,
         'can_apply_invoice_discount': canApplyInvoiceDiscount,
+        'max_invoice_discount_pct': maxInvoiceDiscountPct,
       };
 
   bool get isActive => status == 'active';
@@ -54,6 +64,7 @@ class BranchModel {
     String? city,
     String? status,
     bool? canApplyInvoiceDiscount,
+    double? maxInvoiceDiscountPct,
   }) {
     return BranchModel(
       id: id ?? this.id,
@@ -63,6 +74,7 @@ class BranchModel {
       city: city ?? this.city,
       status: status ?? this.status,
       canApplyInvoiceDiscount: canApplyInvoiceDiscount ?? this.canApplyInvoiceDiscount,
+      maxInvoiceDiscountPct: maxInvoiceDiscountPct ?? this.maxInvoiceDiscountPct,
       createdAt: createdAt,
     );
   }

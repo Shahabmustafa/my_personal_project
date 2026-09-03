@@ -5,8 +5,9 @@ import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_
 import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_heads_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
-import '../superadmin/branch/presentation/screens/branch_discount_access_screen.dart';
 import '../superadmin/branch/presentation/screens/branches_screen.dart';
+import '../superadmin/discount/presentation/screens/branch_invoice_discount_screen.dart';
+import '../superadmin/discount/presentation/screens/branch_stock_discount_screen.dart';
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
@@ -15,6 +16,7 @@ import '../superadmin/report/presentation/screens/sale_exchange_report_screen.da
 import '../superadmin/report/presentation/screens/sale_invoice_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_return_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
+import '../warehouse/company/presentation/screens/companies_screen.dart';
 import '../user/presentation/screens/users_screen.dart';
 import '../warehouse/product/presentation/screens/products_screen.dart';
 import '../warehouse/size/presentation/screens/sizes_screen.dart';
@@ -24,6 +26,7 @@ import '../warehouse/category/presentation/screens/categorys_screen.dart';
 import '../warehouse/type/presentation/screens/types_screen.dart';
 import '../superadmin/head_office_stock/presentation/screens/head_office_stock_screen.dart';
 import '../superadmin/head_office_assign_stock/presentation/screens/ho_assign_stock_screen.dart';
+import '../superadmin/head_office_assign_stock/presentation/screens/ho_assign_stock_list_screen.dart';
 import '../superadmin/overview/presentation/screens/overview_screen.dart';
 import '../superadmin/head_office_purchase/presentation/screens/purchase_invoice_screen.dart';
 import '../superadmin/head_office_purchase/presentation/screens/purchase_return_screen.dart';
@@ -46,9 +49,11 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
     SidebarItem(icon: Icons.people_outline, label: 'Users'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Branches'),
-    SidebarItem(icon: Icons.percent_outlined, label: 'Invoice Discount Access'),
+    SidebarItem(icon: Icons.percent_outlined, label: 'Branch Invoice Discount', group: 'Discount'),
+    SidebarItem(icon: Icons.sell_outlined, label: 'Branch Stock Discount', group: 'Discount'),
     SidebarItem(icon: Icons.warehouse_outlined, label: 'Warehouse'),
     SidebarItem(icon: Icons.business_outlined, label: 'Head Office'),
+    SidebarItem(icon: Icons.storefront_outlined, label: 'Company'),
     SidebarItem(icon: Icons.account_balance_outlined, label: 'Bank Head', group: 'Bank'),
     SidebarItem(icon: Icons.account_balance_wallet_outlined, label: 'Bank Entry', group: 'Bank'),
     SidebarItem(icon: Icons.print_outlined, label: 'Print', group: 'Printer'),
@@ -66,16 +71,23 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: Icons.receipt_long_outlined, label: 'Purchase Invoice', group: 'Purchase'),
     SidebarItem(icon: Icons.assignment_return_outlined, label: 'Purchase Return', group: 'Purchase'),
     SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
-    SidebarItem(icon: Icons.business_outlined, label: 'Assign Stock To Branch'),
+    SidebarItem(
+        icon: Icons.local_shipping_outlined,
+        label: 'Assign Stock To Branch',
+        group: 'Assign Stock'),
+    SidebarItem(
+        icon: Icons.history, label: 'History', group: 'Assign Stock'),
   ];
 
   static const _pages = [
     OverviewScreen(),
     UsersScreen(),
     BranchesScreen(),
-    BranchDiscountAccessScreen(),
+    BranchInvoiceDiscountScreen(),
+    BranchStockDiscountScreen(),
     WarehouseScreen(),
     HeadOfficeScreen(),
+    CompaniesScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),
     PrinterHeadsScreen(),
@@ -100,6 +112,8 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     HeadOfficeStockScreen(),
     // Head office se branch ko stock assign — head_office_id ke sath.
     HoAssignStockScreen(),
+    // Assignment history — alag page (sidebar "Assign Stock" group ke andar).
+    HoAssignStockListScreen(),
   ];
 
   @override

@@ -9,7 +9,10 @@ class ReportDetailPanel extends StatelessWidget {
   final String subtitle;
   final Color accent;
   final VoidCallback onClose;
-  final VoidCallback onPrint;
+
+  /// Null hone par print button hide ho jata hai (e.g. assignment detail —
+  /// print karne ko kuch nahi hota).
+  final VoidCallback? onPrint;
   final Widget child;
 
   const ReportDetailPanel({
@@ -18,19 +21,25 @@ class ReportDetailPanel extends StatelessWidget {
     required this.subtitle,
     required this.accent,
     required this.onClose,
-    required this.onPrint,
+    this.onPrint,
     required this.child,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 380,
-      margin: const EdgeInsets.only(left: 16),
+      width: 400,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE7E9F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x1A1B1F3B),
+            blurRadius: 24,
+            offset: Offset(-6, 0),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,13 +66,14 @@ class ReportDetailPanel extends StatelessWidget {
                     ],
                   ),
                 ),
-                Tooltip(
-                  message: 'Print',
-                  child: IconButton(
-                    icon: const Icon(Icons.print_outlined, size: 20),
-                    onPressed: onPrint,
+                if (onPrint != null)
+                  Tooltip(
+                    message: 'Print',
+                    child: IconButton(
+                      icon: const Icon(Icons.print_outlined, size: 20),
+                      onPressed: onPrint,
+                    ),
                   ),
-                ),
                 Tooltip(
                   message: 'Close',
                   child: IconButton(
@@ -78,6 +88,65 @@ class ReportDetailPanel extends StatelessWidget {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// [ReportDetailPanel] ko table ke upar right-side overlay ki tarah dikhata
+/// hai — peeche scrim (tap se close), panel poori height right par slide-in.
+/// Table ab full width leti hai; detail sirf "View" par overlay hoti hai.
+class ReportDetailOverlay extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onClose;
+  final VoidCallback? onPrint;
+  final Widget child;
+
+  const ReportDetailOverlay({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.onClose,
+    this.onPrint,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: Stack(
+        children: [
+          GestureDetector(
+            onTap: onClose,
+            child: Container(color: const Color(0x33101223)),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FractionallySizedBox(
+              heightFactor: 1,
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOut,
+                tween: Tween(begin: 1, end: 0),
+                builder: (context, t, panel) => Transform.translate(
+                  offset: Offset(t * 32, 0),
+                  child: Opacity(opacity: 1 - t, child: panel),
+                ),
+                child: ReportDetailPanel(
+                  title: title,
+                  subtitle: subtitle,
+                  accent: accent,
+                  onClose: onClose,
+                  onPrint: onPrint,
+                  child: child,
+                ),
+              ),
             ),
           ),
         ],

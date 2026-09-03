@@ -3,9 +3,17 @@
 class AssignStockModel {
   final String id;
   final String assignmentNumber;
-  final String warehouseId;
+
+  /// Head office se aayi assignment mein null hota hai (source warehouse nahi,
+  /// head office hai). Warehouse se aayi assignment mein set hota hai.
+  final String? warehouseId;
   final String branchId;
   final String? branchName;
+
+  /// Head office se aayi assignment mein set hota hai.
+  final String? headOfficeId;
+  final String? headOfficeName;
+
   final String status; // pending | accepted | rejected
   final String? notes;
   final DateTime assignedAt;
@@ -13,29 +21,52 @@ class AssignStockModel {
   final DateTime createdAt;
   final List<AssignStockItemModel> items;
 
+  /// "Kis ne assign kiya" — resolved source ka naam (head office / warehouse /
+  /// bhejnе wali branch). Datasource set karta hai.
+  final String? sourceName;
+
+  /// 'head_office' | 'warehouse' | 'branch' | null
+  final String? sourceType;
+
+  /// Jis user ne assign kiya (agar `assigned_by` set ho).
+  final String? assignedByName;
+
   const AssignStockModel({
     required this.id,
     required this.assignmentNumber,
-    required this.warehouseId,
+    this.warehouseId,
     required this.branchId,
     this.branchName,
+    this.headOfficeId,
+    this.headOfficeName,
     required this.status,
     this.notes,
     required this.assignedAt,
     this.acceptedAt,
     required this.createdAt,
     this.items = const [],
+    this.sourceName,
+    this.sourceType,
+    this.assignedByName,
   });
 
-  factory AssignStockModel.fromJson(Map<String, dynamic> json,
-      {List<AssignStockItemModel> items = const []}) {
+  factory AssignStockModel.fromJson(
+    Map<String, dynamic> json, {
+    List<AssignStockItemModel> items = const [],
+    String? sourceName,
+    String? sourceType,
+    String? assignedByName,
+  }) {
     return AssignStockModel(
       id: json['id'] as String,
       assignmentNumber: json['assignment_number'] as String,
-      warehouseId: json['warehouse_id'] as String,
+      warehouseId: json['warehouse_id'] as String?,
       branchId: json['branch_id'] as String,
       branchName:
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
+      headOfficeId: json['head_office_id'] as String?,
+      headOfficeName: (json['head_offices'] as Map<String, dynamic>?)?['head_office_name']
+          as String?,
       status: json['status'] as String? ?? 'pending',
       notes: json['notes'] as String?,
       assignedAt: DateTime.parse(json['assigned_at'] as String),
@@ -44,7 +75,18 @@ class AssignStockModel {
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       items: items,
+      sourceName: sourceName,
+      sourceType: sourceType,
+      assignedByName: assignedByName,
     );
+  }
+
+  /// UI ke liye ready label — "Head Office", warehouse ya branch ka naam.
+  String get sourceLabel {
+    if (sourceName != null && sourceName!.trim().isNotEmpty) return sourceName!;
+    if (headOfficeName != null) return headOfficeName!;
+    if (headOfficeId != null) return 'Head Office';
+    return '—';
   }
 }
 

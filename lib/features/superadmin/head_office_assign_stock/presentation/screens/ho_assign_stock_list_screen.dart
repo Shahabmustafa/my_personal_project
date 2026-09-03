@@ -54,6 +54,8 @@ class _HoAssignStockListScreenState
             ],
           ),
           const SizedBox(height: 14),
+          _SummaryCards(assignments: listState.assignments),
+          const SizedBox(height: 14),
           Row(
             children: [
               _filterChip('All', 'all', listState.assignments.length),
@@ -96,6 +98,7 @@ class _HoAssignStockListScreenState
                 _th('#', flex: 1),
                 _th('Assignment No', flex: 3),
                 _th('Branch', flex: 4),
+                _th('Pairs', flex: 2),
                 _th('Date', flex: 2),
                 _th('Status', flex: 2),
                 _th('Actions', flex: 3),
@@ -244,6 +247,122 @@ class _HoAssignStockListScreenState
       );
 }
 
+/// History list ke upar summary — total assignments, total pairs assigned,
+/// aur status wise counts.
+class _SummaryCards extends StatelessWidget {
+  final List<HoAssignStockModel> assignments;
+  const _SummaryCards({required this.assignments});
+
+  @override
+  Widget build(BuildContext context) {
+    final totalPairs =
+        assignments.fold<int>(0, (s, a) => s + a.totalPairs);
+    final pending =
+        assignments.where((a) => a.status == 'pending').length;
+    final accepted =
+        assignments.where((a) => a.status == 'accepted').length;
+
+    final cards = <Widget>[
+      _SummaryCard(
+        label: 'Total Assignments',
+        value: '${assignments.length}',
+        icon: Icons.assignment_outlined,
+        color: const Color(0xFF1565C0),
+      ),
+      _SummaryCard(
+        label: 'Total Pairs Assigned',
+        value: '$totalPairs',
+        icon: Icons.inventory_2_outlined,
+        color: const Color(0xFF6A1B9A),
+      ),
+      _SummaryCard(
+        label: 'Pending',
+        value: '$pending',
+        icon: Icons.hourglass_empty_outlined,
+        color: const Color(0xFFEF6C00),
+      ),
+      _SummaryCard(
+        label: 'Accepted',
+        value: '$accepted',
+        icon: Icons.check_circle_outline,
+        color: const Color(0xFF2E7D32),
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth > 820 ? 4 : (c.maxWidth > 460 ? 2 : 1);
+        const gap = 12.0;
+        final w = (c.maxWidth - gap * (cols - 1)) / cols;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [
+            for (final card in cards) SizedBox(width: w, child: card),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  const _SummaryCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 19),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1B1F3B))),
+                const SizedBox(height: 2),
+                Text(label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 11.5, color: Colors.grey.shade500)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ListRow extends ConsumerWidget {
   final HoAssignStockModel assignment;
   final int index;
@@ -293,6 +412,31 @@ class _ListRow extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                const Icon(Icons.inventory_2_outlined,
+                    size: 13, color: Color(0xFF6A1B9A)),
+                const SizedBox(width: 4),
+                Text(
+                  '${assignment.totalPairs}',
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF6A1B9A)),
+                ),
+                if (assignment.lineCount > 0) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '(${assignment.lineCount})',
+                    style: TextStyle(
+                        fontSize: 10, color: Colors.grey.shade400),
+                  ),
+                ],
               ],
             ),
           ),

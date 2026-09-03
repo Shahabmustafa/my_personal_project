@@ -5,6 +5,7 @@ import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart';
 import '../providers/sale_invoice_report_provider.dart';
 import '../widgets/report_date_filter_dialog.dart';
 import '../widgets/report_detail_panel.dart';
+import '../widgets/report_table_shell.dart';
 import '../widgets/report_pagination_bar.dart';
 import '../widgets/report_summary_card.dart';
 
@@ -104,10 +105,9 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
           ]),
           const SizedBox(height: 16),
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: [
-                Expanded(
+                Positioned.fill(
                   child: state.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : state.error != null
@@ -116,74 +116,59 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
                                   style: const TextStyle(color: Colors.red)))
                           : state.rows.isEmpty
                               ? const Center(child: Text('No sale invoices found'))
-                              : Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFE7E9F0)),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: DataTable(
-                                        headingRowColor:
-                                            WidgetStateProperty.all(const Color(0xFFF7F8FC)),
-                                        columns: const [
-                                          DataColumn(label: Text('Invoice #')),
-                                          DataColumn(label: Text('Branch')),
-                                          DataColumn(label: Text('Customer')),
-                                          DataColumn(label: Text('Date')),
-                                          DataColumn(label: Text('Sub Total'), numeric: true),
-                                          DataColumn(label: Text('Discount'), numeric: true),
-                                          DataColumn(label: Text('Total'), numeric: true),
-                                          DataColumn(label: Text('Actions')),
-                                        ],
-                                        rows: state.rows
-                                            .map((inv) => DataRow(
-                                                  selected: _selected?.id == inv.id,
-                                                  cells: [
-                                                    DataCell(Text(inv.invoiceNumber,
-                                                        style: const TextStyle(
-                                                            fontWeight: FontWeight.w600))),
-                                                    DataCell(Text(inv.branchName ?? '—')),
-                                                    DataCell(Text(inv.customerName ?? '—')),
-                                                    DataCell(Text(_fmtDate(inv.createdAt))),
-                                                    DataCell(Text(inv.subtotal.toStringAsFixed(0))),
-                                                    DataCell(Text(
-                                                        '- ${inv.totalDiscount.toStringAsFixed(0)}')),
-                                                    DataCell(Text(inv.totalAmount.toStringAsFixed(0),
-                                                        style: const TextStyle(
-                                                            fontWeight: FontWeight.w700,
-                                                            color: Colors.green))),
-                                                    DataCell(Row(
-                                                      mainAxisSize: MainAxisSize.min,
-                                                      children: [
-                                                        IconButton(
-                                                          icon: const Icon(Icons.visibility_outlined,
-                                                              size: 19),
-                                                          tooltip: 'View',
-                                                          onPressed: () =>
-                                                              setState(() => _selected = inv),
-                                                        ),
-                                                        IconButton(
-                                                          icon: const Icon(Icons.print_outlined,
-                                                              size: 19),
-                                                          tooltip: 'Print',
-                                                          onPressed: () => _print(inv),
-                                                        ),
-                                                      ],
-                                                    )),
-                                                  ],
-                                                ))
-                                            .toList(),
-                                      ),
-                                    ),
-                                  ),
+                              : ReportTableShell(
+                                  columns: const [
+                                    DataColumn(label: Text('Invoice #')),
+                                    DataColumn(label: Text('Branch')),
+                                    DataColumn(label: Text('Customer')),
+                                    DataColumn(label: Text('Date')),
+                                    DataColumn(label: Text('Sub Total'), numeric: true),
+                                    DataColumn(label: Text('Discount'), numeric: true),
+                                    DataColumn(label: Text('Total'), numeric: true),
+                                    DataColumn(label: Text('Actions')),
+                                  ],
+                                  rows: state.rows
+                                      .map((inv) => DataRow(
+                                            selected: _selected?.id == inv.id,
+                                            cells: [
+                                              DataCell(Text(inv.invoiceNumber,
+                                                  style: const TextStyle(
+                                                      fontWeight: FontWeight.w600))),
+                                              DataCell(Text(inv.branchName ?? '—')),
+                                              DataCell(Text(inv.customerName ?? '—')),
+                                              DataCell(Text(_fmtDate(inv.createdAt))),
+                                              DataCell(Text(inv.subtotal.toStringAsFixed(0))),
+                                              DataCell(Text(
+                                                  '- ${inv.totalDiscount.toStringAsFixed(0)}')),
+                                              DataCell(Text(inv.totalAmount.toStringAsFixed(0),
+                                                  style: const TextStyle(
+                                                      fontWeight: FontWeight.w700,
+                                                      color: Colors.green))),
+                                              DataCell(Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(Icons.visibility_outlined,
+                                                        size: 19),
+                                                    tooltip: 'View',
+                                                    onPressed: () =>
+                                                        setState(() => _selected = inv),
+                                                  ),
+                                                  IconButton(
+                                                    icon: const Icon(Icons.print_outlined,
+                                                        size: 19),
+                                                    tooltip: 'Print',
+                                                    onPressed: () => _print(inv),
+                                                  ),
+                                                ],
+                                              )),
+                                            ],
+                                          ))
+                                      .toList(),
                                 ),
                 ),
                 if (_selected != null)
-                  ReportDetailPanel(
+                  ReportDetailOverlay(
                     title: _selected!.invoiceNumber,
                     subtitle: '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.createdAt)}',
                     accent: _accent,

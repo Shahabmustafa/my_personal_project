@@ -84,7 +84,10 @@ class SaleInvoiceScreen extends ConsumerWidget {
 
           const SizedBox(height: 12),
 
-          // ── Salesman / Printer / Bank ─────────────────────────────────
+          // ── Manager missing warning ──────────────────────────────────
+          const _ManagerWarningBanner(),
+
+          // ── Customer / Salesman / Cashier / Manager / Printer / Bank ──
           const _InvoiceMetaRow(),
 
           const SizedBox(height: 12),
@@ -186,6 +189,8 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
     final notifier = ref.read(saleInvoiceProvider.notifier);
     final customersAsync = ref.watch(customersForSaleProvider);
     final salesmenAsync = ref.watch(salesmenProvider);
+    final cashiersAsync = ref.watch(cashiersProvider);
+    final managersAsync = ref.watch(managersProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
 
@@ -196,105 +201,204 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
         children: [
-          Expanded(
-            flex: 3,
-            child: customersAsync.when(
-              loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-              data: (list) {
-                final active = list.where((c) => c.isActive).toList();
-                return DropdownSearch<CustomerModel>(
-                  items: (f, _) => active.where((c) => c.name.toLowerCase().contains(f.toLowerCase())).toList(),
-                  selectedItem: state.customer,
-                  itemAsString: (c) => c.name,
-                  compareFn: (a, b) => a.id == b.id,
-                  onSelected: notifier.selectCustomer,
-                  decoratorProps: DropDownDecoratorProps(decoration: _decor('Customer', required: true)),
-                  popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          Expanded(
-            flex: 3,
-            child: salesmenAsync.when(
-              loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-              data: (list) => DropdownSearch<EmployeeLookupItem>(
-                items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
-                selectedItem: state.salesman,
-                itemAsString: (e) => e.name,
-                compareFn: (a, b) => a.id == b.id,
-                onSelected: notifier.selectSalesman,
-                decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman', required: true)),
-                popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          Expanded(
-            flex: 3,
-            child: printersAsync.when(
-              loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-              data: (list) => DropdownSearch<PrinterLookupItem>(
-                items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
-                selectedItem: state.printer,
-                itemAsString: (e) => e.label,
-                compareFn: (a, b) => a.id == b.id,
-                onSelected: notifier.selectPrinter,
-                decoratorProps: DropDownDecoratorProps(decoration: _decor('Printer', required: true)),
-                popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
-              ),
-            ),
-          ),
-
-          if (state.paymentType == 'card' || state.paymentType == 'cash_card') ...[
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 3,
-              child: bankAsync.when(
-                loading: () => const _FieldLoading(),
-                error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-                data: (list) => DropdownSearch<BankEntryLookupItem>(
-                  items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
-                  selectedItem: state.bankEntry,
-                  itemAsString: (e) => e.label,
-                  compareFn: (a, b) => a.id == b.id,
-                  onSelected: notifier.selectBankEntry,
-                  decoratorProps: DropDownDecoratorProps(
-                      decoration: _decor('Bank Account', required: true)),
-                  popupProps:
-                      const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+          // ── Row 1: Customer / Salesman / Cashier / Manager ──────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: customersAsync.when(
+                  loading: () => const _FieldLoading(),
+                  error: (e, _) => Text('Error: $e',
+                      style: const TextStyle(fontSize: 11, color: Colors.red)),
+                  data: (list) {
+                    final active = list.where((c) => c.isActive).toList();
+                    return DropdownSearch<CustomerModel>(
+                      items: (f, _) => active
+                          .where((c) => c.name
+                              .toLowerCase()
+                              .contains(f.toLowerCase()))
+                          .toList(),
+                      selectedItem: state.customer,
+                      itemAsString: (c) => c.name,
+                      compareFn: (a, b) => a.id == b.id,
+                      onSelected: notifier.selectCustomer,
+                      decoratorProps: DropDownDecoratorProps(
+                          decoration: _decor('Customer', required: true)),
+                      popupProps: const PopupProps.menu(
+                          showSearchBox: true,
+                          constraints: BoxConstraints(maxHeight: 260)),
+                    );
+                  },
                 ),
               ),
-            ),
-          ],
-
-          if (state.paymentType == 'cash_card') ...[
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: TextField(
-                controller: _cashAmountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (v) =>
-                    notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
-                decoration: _decor('Cash Amount *').copyWith(
-                  helperText: 'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
-                  helperStyle: const TextStyle(fontSize: 11),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _empDropdown(
+                  label: 'Salesman',
+                  required: true,
+                  async: salesmenAsync,
+                  selected: state.salesman,
+                  onSelected: notifier.selectSalesman,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: _empDropdown(
+                  label: 'Cashier',
+                  async: cashiersAsync,
+                  selected: state.cashier,
+                  onSelected: notifier.selectCashier,
+                  emptyHint: 'Logged-in user',
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _empDropdown(
+                  label: 'Manager',
+                  required: true,
+                  async: managersAsync,
+                  selected: state.manager,
+                  onSelected: notifier.selectManager,
+                  emptyHint: 'No manager — add in Employees',
+                  emptyIsError: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // ── Row 2: Printer / Bank / Cash Amount ─────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: printersAsync.when(
+                  loading: () => const _FieldLoading(),
+                  error: (e, _) => Text('Error: $e',
+                      style: const TextStyle(fontSize: 11, color: Colors.red)),
+                  data: (list) => DropdownSearch<PrinterLookupItem>(
+                    items: (f, _) => list
+                        .where((e) =>
+                            e.label.toLowerCase().contains(f.toLowerCase()))
+                        .toList(),
+                    selectedItem: state.printer,
+                    itemAsString: (e) => e.label,
+                    compareFn: (a, b) => a.id == b.id,
+                    onSelected: notifier.selectPrinter,
+                    decoratorProps: DropDownDecoratorProps(
+                        decoration: _decor('Printer', required: true)),
+                    popupProps: const PopupProps.menu(
+                        showSearchBox: true,
+                        constraints: BoxConstraints(maxHeight: 260)),
+                  ),
+                ),
+              ),
+              if (state.paymentType == 'card' ||
+                  state.paymentType == 'cash_card') ...[
+                const SizedBox(width: 16),
+                Expanded(
+                  child: bankAsync.when(
+                    loading: () => const _FieldLoading(),
+                    error: (e, _) => Text('Error: $e',
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.red)),
+                    data: (list) => DropdownSearch<BankEntryLookupItem>(
+                      items: (f, _) => list
+                          .where((e) =>
+                              e.label.toLowerCase().contains(f.toLowerCase()))
+                          .toList(),
+                      selectedItem: state.bankEntry,
+                      itemAsString: (e) => e.label,
+                      compareFn: (a, b) => a.id == b.id,
+                      onSelected: notifier.selectBankEntry,
+                      decoratorProps: DropDownDecoratorProps(
+                          decoration: _decor('Bank Account', required: true)),
+                      popupProps: const PopupProps.menu(
+                          showSearchBox: true,
+                          constraints: BoxConstraints(maxHeight: 260)),
+                    ),
+                  ),
+                ),
+              ],
+              if (state.paymentType == 'cash_card') ...[
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _cashAmountCtrl,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (v) =>
+                        notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
+                    decoration: _decor('Cash Amount *').copyWith(
+                      helperText:
+                          'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
+                      helperStyle: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ),
+              ] else
+                const Spacer(),
+            ],
+          ),
         ],
       ),
+    );
+  }
+
+  /// employee_salary se aaye salesman/cashier/manager ke liye ek jaisa
+  /// dropdown. List khali ho to (required na ho to) hint dikhata hai;
+  /// [emptyIsError] true hone par red hint (Manager ke liye).
+  Widget _empDropdown({
+    required String label,
+    required AsyncValue<List<EmployeeLookupItem>> async,
+    required EmployeeLookupItem? selected,
+    required void Function(EmployeeLookupItem?) onSelected,
+    bool required = false,
+    String? emptyHint,
+    bool emptyIsError = false,
+  }) {
+    return async.when(
+      loading: () => const _FieldLoading(),
+      error: (e, _) =>
+          Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+      data: (list) {
+        if (list.isEmpty) {
+          return InputDecorator(
+            decoration: _decor(label, required: required).copyWith(
+              helperText: emptyHint,
+              helperStyle: TextStyle(
+                fontSize: 11,
+                color: emptyIsError ? Colors.red.shade700 : Colors.grey,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                    color: emptyIsError
+                        ? Colors.red.shade300
+                        : Colors.grey.shade300),
+              ),
+            ),
+            child: Text('—',
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade500)),
+          );
+        }
+        return DropdownSearch<EmployeeLookupItem>(
+          items: (f, _) => list
+              .where((e) => e.name.toLowerCase().contains(f.toLowerCase()))
+              .toList(),
+          selectedItem: selected,
+          itemAsString: (e) => e.name,
+          compareFn: (a, b) => a.id == b.id,
+          onSelected: onSelected,
+          decoratorProps:
+              DropDownDecoratorProps(decoration: _decor(label, required: required)),
+          popupProps: const PopupProps.menu(
+              showSearchBox: true,
+              constraints: BoxConstraints(maxHeight: 260)),
+        );
+      },
     );
   }
 
@@ -339,8 +443,9 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
   Widget build(BuildContext context) {
     final state = ref.watch(saleInvoiceProvider);
     final theme = Theme.of(context);
-    final allowDiscountAsync = ref.watch(currentBranchAllowsInvoiceDiscountProvider);
-    final allowDiscount = allowDiscountAsync.value ?? false;
+    final maxDiscountPct =
+        ref.watch(currentBranchMaxInvoiceDiscountPctProvider).value ?? 0;
+    final allowDiscount = maxDiscountPct > 0;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -357,14 +462,20 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
           if (allowDiscount) ...[
             const SizedBox(width: 20),
             SizedBox(
-              width: 130,
+              width: 150,
               child: TextField(
                 controller: _discountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                onChanged: (v) =>
-                    ref.read(saleInvoiceProvider.notifier).setInvoiceDiscount(double.tryParse(v.trim()) ?? 0),
+                onChanged: (v) => ref
+                    .read(saleInvoiceProvider.notifier)
+                    .setInvoiceDiscountPct(double.tryParse(v.trim()) ?? 0,
+                        maxPct: maxDiscountPct),
                 decoration: InputDecoration(
-                  labelText: 'Extra Discount',
+                  labelText: 'Extra Discount %',
+                  suffixText: '%',
+                  helperText:
+                      'Max ${_fmtPct(maxDiscountPct)}%  •  - Rs. ${state.invoiceDiscount.toStringAsFixed(0)}',
+                  helperStyle: const TextStyle(fontSize: 10),
                   isDense: true,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -410,23 +521,34 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
                 : () => ref.read(saleInvoiceProvider.notifier).clearCart(),
           ),
           const SizedBox(width: 10),
-          FilledButton.icon(
-            icon: state.isSaving
-                ? const SizedBox(
-                    width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.receipt_long, size: 18),
-            label: const Text('Sale Invoice'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          Tooltip(
+            message: state.manager == null
+                ? 'Select a manager first (branch manager missing — add under Employees)'
+                : '',
+            child: FilledButton.icon(
+              icon: state.isSaving
+                  ? const SizedBox(
+                      width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.receipt_long, size: 18),
+              label: const Text('Sale Invoice'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: state.isSaving ||
+                      state.cartItems.isEmpty ||
+                      state.manager == null
+                  ? null
+                  : () => _onSaveTap(context, ref),
             ),
-            onPressed:
-                state.isSaving || state.cartItems.isEmpty ? null : () => _onSaveTap(context, ref),
           ),
         ],
       ),
     );
   }
+
+  String _fmtPct(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
   Widget _stat(String label, String value, {Color? color}) {
     return Column(
@@ -546,6 +668,47 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Manager missing / not selected warning ───────────────────────────────
+
+class _ManagerWarningBanner extends ConsumerWidget {
+  const _ManagerWarningBanner();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final managers = ref.watch(managersProvider).value;
+    final manager = ref.watch(saleInvoiceProvider.select((s) => s.manager));
+
+    if (managers == null || manager != null) return const SizedBox.shrink();
+
+    final noManager = managers.isEmpty;
+    final bg = noManager ? const Color(0xFFFDECEC) : const Color(0xFFFFF6E5);
+    final fg = noManager ? const Color(0xFFC62828) : const Color(0xFF9A6700);
+    final text = noManager
+        ? 'This branch has no manager assigned. Add a manager under Employees before creating an invoice.'
+        : 'Select a manager for this invoice.';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: fg.withValues(alpha: 0.35)),
+      ),
+      child: Row(children: [
+        Icon(noManager ? Icons.error_outline : Icons.info_outline,
+            size: 18, color: fg),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text,
+              style: TextStyle(
+                  fontSize: 12.5, color: fg, fontWeight: FontWeight.w600)),
+        ),
+      ]),
     );
   }
 }

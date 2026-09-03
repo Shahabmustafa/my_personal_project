@@ -334,13 +334,15 @@ class SaleCartItem {
 
 /// Lightweight employee lookup (salesman / manager) with default commission %
 class EmployeeLookupItem {
-  final String id;
+  final String id; // employee_salary.id
+  final String userId; // users.id — cashier_id is a users FK, not employee_salary
   final String name;
   final String role;
   final double commissionPercent;
 
   const EmployeeLookupItem({
     required this.id,
+    this.userId = '',
     required this.name,
     required this.role,
     required this.commissionPercent,

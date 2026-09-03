@@ -91,6 +91,12 @@ class _BranchFormDialogState extends State<BranchFormDialog> {
                 phoneNumber: _phone.text.trim(),
                 city: _city.text.trim(),
                 status: _status,
+                // Discount settings is dialog se edit nahi hote — jo pehle
+                // set the (Discount screens se) unhe preserve karo.
+                canApplyInvoiceDiscount:
+                    widget.branch?.canApplyInvoiceDiscount ?? false,
+                maxInvoiceDiscountPct:
+                    widget.branch?.maxInvoiceDiscountPct ?? 0,
               ));
               Navigator.pop(context);
             }

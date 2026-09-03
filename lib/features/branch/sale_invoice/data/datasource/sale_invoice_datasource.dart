@@ -18,13 +18,14 @@ class SaleInvoiceDatasource {
       String branchId, String role) async {
     final res = await _client
         .from('employee_salary')
-        .select('id, commission_percent, users!inner(username, role)')
+        .select('id, user_id, commission_percent, users!inner(username, role)')
         .eq('branch_id', branchId)
         .eq('users.role', role);
     return (res as List).map((e) {
       final user = e['users'] as Map<String, dynamic>?;
       return EmployeeLookupItem(
         id: e['id'].toString(),
+        userId: e['user_id']?.toString() ?? '',
         name: user?['username']?.toString() ?? '',
         role: user?['role']?.toString() ?? role,
         commissionPercent:

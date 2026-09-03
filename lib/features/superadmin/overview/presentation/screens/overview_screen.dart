@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/overview_datasource.dart';
@@ -94,15 +96,19 @@ class _Content extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = <_StatCardData>[
-      _StatCardData('Today Sale (All Branches)', _pkr(stats.todaySale),
-          Icons.point_of_sale_outlined, const Color(0xFF2E7D32),
-          subtitle: '${stats.todayInvoiceCount} invoices'),
+      _StatCardData('Total Sale (All Branches)', _pkr(stats.totalSale),
+          Icons.trending_up_outlined, const Color(0xFF2E7D32)),
+      _StatCardData('Total Profit (All Branches)', _pkr(stats.totalProfit),
+          Icons.savings_outlined, const Color(0xFF00796B)),
       _StatCardData('Total Articles', '${stats.totalArticles}',
           Icons.inventory_2_outlined, const Color(0xFF3E63DD)),
       _StatCardData('Total Branches', '${stats.totalBranches}',
           Icons.apartment_outlined, const Color(0xFF00838F)),
       _StatCardData('Total Warehouses', '${stats.totalWarehouses}',
           Icons.warehouse_outlined, const Color(0xFF6A1B9A)),
+      _StatCardData('Today Sale (All Branches)', _pkr(stats.todaySale),
+          Icons.point_of_sale_outlined, const Color(0xFF388E3C),
+          subtitle: '${stats.todayInvoiceCount} invoices'),
       _StatCardData('This Month Sale', _pkr(stats.monthSale),
           Icons.calendar_month_outlined, const Color(0xFF1565C0)),
       _StatCardData('Today Sale Return', _pkr(stats.todaySaleReturn),
@@ -147,8 +153,228 @@ class _Content extends StatelessWidget {
           );
         }),
         const SizedBox(height: 28),
+        _WeeklySaleChart(rows: stats.weeklySale),
+        const SizedBox(height: 20),
+        _TopArticleCard(article: stats.topArticle),
+        const SizedBox(height: 20),
         _TodayByBranch(rows: stats.todaySaleByBranch),
       ],
+    );
+  }
+}
+
+/// Pichle 7 din ki daily sale — simple line graph (koi package nahi).
+class _WeeklySaleChart extends StatelessWidget {
+  final List<DaySale> rows;
+  const _WeeklySaleChart({required this.rows});
+
+  static String _pkrShort(double v) {
+    if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
+    return v.toStringAsFixed(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final total = rows.fold<double>(0, (s, r) => s + r.amount);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Weekly Sale — Last 7 Days',
+                    style:
+                        TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+              ),
+              Text('PKR ${_pkrShort(total)}',
+                  style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2E7D32))),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (rows.isEmpty)
+            const SizedBox(
+              height: 160,
+              child: Center(
+                child: Text('Data nahi',
+                    style: TextStyle(color: Color(0xFF8A8FA3))),
+              ),
+            )
+          else
+            SizedBox(
+              height: 170,
+              child: CustomPaint(
+                painter: _LineChartPainter(rows),
+                size: Size.infinite,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LineChartPainter extends CustomPainter {
+  final List<DaySale> rows;
+  _LineChartPainter(this.rows);
+
+  static const _accent = Color(0xFF3E63DD);
+  static const _weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const leftPad = 8.0;
+    const rightPad = 8.0;
+    const topPad = 8.0;
+    const bottomPad = 22.0;
+    final chartW = size.width - leftPad - rightPad;
+    final chartH = size.height - topPad - bottomPad;
+
+    final maxVal = rows.map((r) => r.amount).fold<double>(0, (a, b) => a > b ? a : b);
+    final maxY = maxVal <= 0 ? 1.0 : maxVal;
+
+    final gridPaint = Paint()
+      ..color = const Color(0xFFEDEFF5)
+      ..strokeWidth = 1;
+    for (var i = 0; i <= 3; i++) {
+      final y = topPad + chartH * i / 3;
+      canvas.drawLine(Offset(leftPad, y), Offset(size.width - rightPad, y), gridPaint);
+    }
+
+    Offset pointFor(int i) {
+      final x = rows.length == 1
+          ? leftPad + chartW / 2
+          : leftPad + chartW * i / (rows.length - 1);
+      final y = topPad + chartH * (1 - rows[i].amount / maxY);
+      return Offset(x, y);
+    }
+
+    final linePath = Path();
+    final fillPath = Path();
+    for (var i = 0; i < rows.length; i++) {
+      final p = pointFor(i);
+      if (i == 0) {
+        linePath.moveTo(p.dx, p.dy);
+        fillPath.moveTo(p.dx, topPad + chartH);
+        fillPath.lineTo(p.dx, p.dy);
+      } else {
+        linePath.lineTo(p.dx, p.dy);
+        fillPath.lineTo(p.dx, p.dy);
+      }
+    }
+    fillPath.lineTo(pointFor(rows.length - 1).dx, topPad + chartH);
+    fillPath.close();
+
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0x333E63DD), Color(0x003E63DD)],
+        ).createShader(Rect.fromLTWH(0, topPad, size.width, chartH)),
+    );
+    canvas.drawPath(
+      linePath,
+      Paint()
+        ..color = _accent
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    final labelStyle = ui.TextStyle(color: const Color(0xFF8A8FA3), fontSize: 10);
+    for (var i = 0; i < rows.length; i++) {
+      final p = pointFor(i);
+      canvas.drawCircle(p, 3, Paint()..color = _accent);
+      canvas.drawCircle(p, 3, Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5);
+
+      final pb = ui.ParagraphBuilder(
+        ui.ParagraphStyle(textAlign: TextAlign.center, fontSize: 10),
+      )
+        ..pushStyle(labelStyle)
+        ..addText(_weekday[rows[i].day.weekday - 1]);
+      final para = pb.build()..layout(const ui.ParagraphConstraints(width: 40));
+      canvas.drawParagraph(para, Offset(p.dx - 20, size.height - bottomPad + 6));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineChartPainter old) => old.rows != rows;
+}
+
+class _TopArticleCard extends StatelessWidget {
+  final TopArticle? article;
+  const _TopArticleCard({required this.article});
+
+  @override
+  Widget build(BuildContext context) {
+    final a = article;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Sab Se Zyada Bikne Wala Article',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 14),
+          if (a == null)
+            const Text('Abhi tak koi sale nahi',
+                style: TextStyle(color: Color(0xFF8A8FA3)))
+          else
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF6C00).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.emoji_events_outlined,
+                      color: Color(0xFFEF6C00), size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(a.articleName,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w800)),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${a.quantity} pairs',
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFFEF6C00))),
+                    Text('PKR ${a.amount.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                            fontSize: 11, color: Color(0xFF8A8FA3))),
+                  ],
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }

@@ -5,43 +5,16 @@ import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 import '../widgets/ho_assign_cart_table.dart';
 import '../widgets/ho_assign_product_selector.dart';
-import 'ho_assign_stock_list_screen.dart';
 
-/// SuperAdmin — Head Office se Branch ko stock assign karna.
+/// SuperAdmin — Head Office se Branch ko stock assign karna (form only).
+/// History ab alag sidebar item hai ([HoAssignStockListScreen]).
 /// Warehouse ke "Assign Stock to Branch" jaisa hi, bas source head office
 /// ka stock_inventory hai aur record par head_office_id save hota hai.
 class HoAssignStockScreen extends StatelessWidget {
   const HoAssignStockScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Material(
-            color: Colors.white,
-            child: const TabBar(
-              labelColor: Color(0xFF1565C0),
-              indicatorColor: Color(0xFF1565C0),
-              tabs: [
-                Tab(text: 'Assign Stock'),
-                Tab(text: 'History'),
-              ],
-            ),
-          ),
-          const Expanded(
-            child: TabBarView(
-              children: [
-                _AssignStockTab(),
-                HoAssignStockListScreen(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const _AssignStockTab();
 }
 
 class _AssignStockTab extends ConsumerWidget {

@@ -14,6 +14,12 @@ class HoAssignStockModel {
   final DateTime createdAt;
   final List<HoAssignStockItemModel> items;
 
+  /// Assignment ki total pairs / kitni product lines — list screen ke
+  /// summary cards ke liye. `assign_stock_to_branch_items(quantity)` embed
+  /// se aata hai (ya poore items load hon to unse).
+  final int totalPairs;
+  final int lineCount;
+
   const HoAssignStockModel({
     required this.id,
     required this.assignmentNumber,
@@ -26,10 +32,22 @@ class HoAssignStockModel {
     this.acceptedAt,
     required this.createdAt,
     this.items = const [],
+    this.totalPairs = 0,
+    this.lineCount = 0,
   });
 
   factory HoAssignStockModel.fromJson(Map<String, dynamic> json,
       {List<HoAssignStockItemModel> items = const []}) {
+    final embedded =
+        (json['assign_stock_to_branch_items'] as List?) ?? const [];
+    final resolvedPairs = items.isNotEmpty
+        ? items.fold<int>(0, (s, it) => s + it.quantity)
+        : embedded.fold<int>(
+            0,
+            (s, it) =>
+                s + ((it as Map)['quantity'] as num? ?? 0).toInt(),
+          );
+    final resolvedLines = items.isNotEmpty ? items.length : embedded.length;
     return HoAssignStockModel(
       id: json['id'] as String,
       assignmentNumber: json['assignment_number'] as String,
@@ -45,6 +63,8 @@ class HoAssignStockModel {
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       items: items,
+      totalPairs: resolvedPairs,
+      lineCount: resolvedLines,
     );
   }
 }

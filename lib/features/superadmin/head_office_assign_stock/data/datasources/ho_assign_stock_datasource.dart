@@ -197,7 +197,7 @@ class HoAssignStockDatasource {
   Future<List<HoAssignStockModel>> fetchAssignments(String headOfficeId) async {
     final res = await _client
         .from('assign_stock_to_branch')
-        .select('*, branches(branch_name)')
+        .select('*, branches(branch_name), assign_stock_to_branch_items(quantity)')
         .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 

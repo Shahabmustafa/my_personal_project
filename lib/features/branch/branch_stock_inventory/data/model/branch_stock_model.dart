@@ -58,6 +58,39 @@ class BranchStockModel {
     return 0.0;
   }
 
+  BranchStockModel copyWith({
+    int? quantity,
+    double? salePrice,
+    double? purchasePrice,
+    double? discount,
+    DateTime? updatedAt,
+  }) {
+    return BranchStockModel(
+      id: id,
+      branchId: branchId,
+      stockId: stockId,
+      barcode: barcode,
+      productId: productId,
+      sizeId: sizeId,
+      colorId: colorId,
+      brandId: brandId,
+      categoryId: categoryId,
+      typeId: typeId,
+      quantity: quantity ?? this.quantity,
+      salePrice: salePrice ?? this.salePrice,
+      purchasePrice: purchasePrice ?? this.purchasePrice,
+      discount: discount ?? this.discount,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      productName: productName,
+      sizeName: sizeName,
+      colorName: colorName,
+      brandName: brandName,
+      categoryName: categoryName,
+      typeName: typeName,
+    );
+  }
+
   factory BranchStockModel.fromJson(Map<String, dynamic> json) {
     return BranchStockModel(
       id:          json['id'] as String,

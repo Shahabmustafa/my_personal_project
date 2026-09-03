@@ -10,6 +10,12 @@ class SaleInvoiceRepository {
   Future<List<EmployeeLookupItem>> getSalesmen(String branchId) =>
       _datasource.fetchEmployees(branchId, 'salesman');
 
+  Future<List<EmployeeLookupItem>> getCashiers(String branchId) =>
+      _datasource.fetchEmployees(branchId, 'cashier');
+
+  Future<List<EmployeeLookupItem>> getManagers(String branchId) =>
+      _datasource.fetchEmployees(branchId, 'manager');
+
   Future<EmployeeLookupItem?> getBranchManager(String branchId) =>
       _datasource.fetchBranchManager(branchId);
 
