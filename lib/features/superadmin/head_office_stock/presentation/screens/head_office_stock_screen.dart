@@ -362,42 +362,90 @@ class _RowActions extends ConsumerWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const Icon(Icons.edit_outlined,
-              size: 18, color: Color(0xFF3E63DD)),
+        _actionBtn(
+          icon: Icons.edit_outlined,
+          color: const Color(0xFF3E63DD),
           tooltip: 'Edit',
           onPressed: () => _showEditDialog(context, ref, stock),
         ),
-        IconButton(
-          icon: const Icon(Icons.copy_outlined,
-              size: 18, color: Colors.blueGrey),
+        _actionBtn(
+          icon: Icons.copy_outlined,
+          color: Colors.blueGrey,
           tooltip: 'Copy barcode',
           onPressed: () => _copyBarcode(context, stock.barcode),
         ),
-        IconButton(
-          icon: const Icon(Icons.print_outlined,
-              size: 18, color: Color(0xFF3E63DD)),
+        _actionBtn(
+          icon: Icons.print_outlined,
+          color: const Color(0xFF3E63DD),
           tooltip: 'Print label',
           onPressed: () => _showPrintDialog(context, stock),
         ),
-        IconButton(
-          icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+        _actionBtn(
+          icon: Icons.delete_outline,
+          color: Colors.red,
           tooltip: 'Delete',
           onPressed: () => _confirmDelete(context, ref, stock),
         ),
       ],
     );
   }
+
+  Widget _actionBtn({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onPressed,
+  }) {
+    return IconButton(
+      icon: Icon(icon, size: 18, color: color),
+      tooltip: tooltip,
+      onPressed: onPressed,
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+      splashRadius: 18,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+    );
+  }
 }
 
 // ── Desktop table ────────────────────────────────────────────────────────
 
-class _DesktopTable extends StatelessWidget {
+/// Fixed column widths — table horizontally scrolls jab screen choti ho,
+/// aur bachi hui jagah trailing filler kha jaata hai (no overflow).
+const _kColWidths = <double>[
+  210, // Barcode
+  180, // Article
+  90, // Size
+  120, // Color
+  150, // Brand
+  150, // Category
+  130, // Type
+  70, // Qty
+  80, // Discount
+  190, // Actions
+];
+const _kTableMinWidth = 1410; // sum(_kColWidths) 1370 + row padding 32 + slack
+
+class _DesktopTable extends StatefulWidget {
   final List<StockInventoryModel> items;
   const _DesktopTable({required this.items});
 
   @override
+  State<_DesktopTable> createState() => _DesktopTableState();
+}
+
+class _DesktopTableState extends State<_DesktopTable> {
+  final _hScroll = ScrollController();
+
+  @override
+  void dispose() {
+    _hScroll.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final items = widget.items;
     const headerStyle = TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -405,7 +453,7 @@ class _DesktopTable extends StatelessWidget {
         letterSpacing: 0.3);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -414,84 +462,118 @@ class _DesktopTable extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Column(
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFF7F8FC),
-                  border:
-                      Border(bottom: BorderSide(color: Color(0xFFE7E9F0))),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final tableWidth =
+                  constraints.maxWidth > _kTableMinWidth
+                      ? constraints.maxWidth
+                      : _kTableMinWidth.toDouble();
+              return Scrollbar(
+                controller: _hScroll,
+                thumbVisibility: true,
+                child: SingleChildScrollView(
+                  controller: _hScroll,
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFF7F8FC),
+                            border: Border(
+                                bottom:
+                                    BorderSide(color: Color(0xFFE7E9F0))),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: const Row(children: [
+                            _TH('Barcode', w: 0, style: headerStyle),
+                            _TH('Article', w: 1, style: headerStyle),
+                            _TH('Size', w: 2, style: headerStyle),
+                            _TH('Color', w: 3, style: headerStyle),
+                            _TH('Brand', w: 4, style: headerStyle),
+                            _TH('Category', w: 5, style: headerStyle),
+                            _TH('Type', w: 6, style: headerStyle),
+                            _TH('Qty', w: 7, style: headerStyle),
+                            _TH('Discount', w: 8, style: headerStyle),
+                            _TH('Actions', w: 9, style: headerStyle),
+                            Expanded(child: SizedBox()),
+                          ]),
+                        ),
+                        Expanded(
+                          child: ListView.separated(
+                            itemCount: items.length,
+                            separatorBuilder: (_, __) => const Divider(
+                                height: 1, color: Color(0xFFE7E9F0)),
+                            itemBuilder: (_, i) {
+                              final s = items[i];
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 10),
+                                child: Row(children: [
+                                  _cell(s.barcode, i: 0, mono: true),
+                                  _cell(s.productName ?? '—',
+                                      i: 1, bold: true),
+                                  _cell(s.sizeName ?? '—', i: 2),
+                                  _cell(s.colorName ?? '—', i: 3),
+                                  _cell(s.brandName ?? '—', i: 4),
+                                  _cell(s.categoryName ?? '—', i: 5),
+                                  _cell(s.typeName ?? '—', i: 6),
+                                  _cell('${s.quantity}', i: 7),
+                                  _cell('${s.discount.toStringAsFixed(0)}%',
+                                      i: 8),
+                                  SizedBox(
+                                      width: _kColWidths[9],
+                                      child: _RowActions(stock: s)),
+                                  const Expanded(child: SizedBox()),
+                                ]),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: const Row(children: [
-                  _TH('Barcode', flex: 3, style: headerStyle),
-                  _TH('Article', flex: 2, style: headerStyle),
-                  _TH('Size', flex: 1, style: headerStyle),
-                  _TH('Color', flex: 1, style: headerStyle),
-                  _TH('Brand', flex: 1, style: headerStyle),
-                  _TH('Category', flex: 1, style: headerStyle),
-                  _TH('Type', flex: 1, style: headerStyle),
-                  _TH('Qty', flex: 1, style: headerStyle),
-                  _TH('Discount', flex: 1, style: headerStyle),
-                  _TH('Actions', flex: 3, style: headerStyle),
-                ]),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: items.length,
-                  separatorBuilder: (_, __) =>
-                      const Divider(height: 1, color: Color(0xFFE7E9F0)),
-                  itemBuilder: (_, i) {
-                    final s = items[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      child: Row(children: [
-                        _cell(s.barcode, flex: 3),
-                        _cell(s.productName ?? '—', flex: 2, bold: true),
-                        _cell(s.sizeName ?? '—', flex: 1),
-                        _cell(s.colorName ?? '—', flex: 1),
-                        _cell(s.brandName ?? '—', flex: 1),
-                        _cell(s.categoryName ?? '—', flex: 1),
-                        _cell(s.typeName ?? '—', flex: 1),
-                        _cell('${s.quantity}', flex: 1),
-                        _cell('${s.discount.toStringAsFixed(0)}%', flex: 1),
-                        Expanded(flex: 3, child: _RowActions(stock: s)),
-                      ]),
-                    );
-                  },
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _cell(String text, {int flex = 1, bool bold = false}) => Expanded(
-        flex: flex,
-        child: Text(text,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-                fontSize: 13,
-                color: const Color(0xFF1A1D2E),
-                fontWeight: bold ? FontWeight.w600 : FontWeight.normal)),
+  Widget _cell(String text,
+          {required int i, bool bold = false, bool mono = false}) =>
+      SizedBox(
+        width: _kColWidths[i],
+        child: Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Text(text,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: const Color(0xFF1A1D2E),
+                  fontFamily: mono ? 'monospace' : null,
+                  fontWeight: bold ? FontWeight.w600 : FontWeight.normal)),
+        ),
       );
 }
 
 class _TH extends StatelessWidget {
   final String text;
-  final int flex;
+  final int w;
   final TextStyle style;
-  const _TH(this.text, {required this.flex, required this.style});
+  const _TH(this.text, {required this.w, required this.style});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
+    return SizedBox(
+      width: _kColWidths[w],
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Text(text, style: style),
+        padding: const EdgeInsets.only(right: 12),
+        child: Text(text, style: style, overflow: TextOverflow.ellipsis),
       ),
     );
   }

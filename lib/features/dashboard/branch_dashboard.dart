@@ -57,9 +57,18 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     SidebarItem(icon: Icons.apartment_outlined, label: 'Stock Inventory'),
     SidebarItem(icon: Icons.point_of_sale_outlined, label: 'Cash Counter'),
     SidebarItem(icon: Icons.receipt_long_outlined, label: 'Expense'),
-    SidebarItem(icon: Icons.shopping_cart_checkout_outlined, label: 'Sale Invoice'),
-    SidebarItem(icon: Icons.assignment_return_outlined, label: 'Sale Return'),
-    SidebarItem(icon: Icons.swap_horiz_outlined, label: 'Sale Exchange'),
+    SidebarItem(
+        icon: Icons.shopping_cart_checkout_outlined,
+        label: 'Sale Invoice',
+        group: 'Sales'),
+    SidebarItem(
+        icon: Icons.assignment_return_outlined,
+        label: 'Sale Return',
+        group: 'Sales'),
+    SidebarItem(
+        icon: Icons.swap_horiz_outlined,
+        label: 'Sale Exchange',
+        group: 'Sales'),
   ];
 
   static const _pages = [

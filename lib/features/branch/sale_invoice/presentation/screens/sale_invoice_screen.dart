@@ -250,7 +250,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
       ),
       child: Column(
         children: [
-          // ── Row 1: Customer / Salesman ───────────────────────────────
+          // ── Row 1: Customer / Salesman / Printer ─────────────────────
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -295,14 +295,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                   onSelected: notifier.selectSalesman,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // ── Row 2: Printer / Bank / Cash Amount ─────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+              const SizedBox(width: 16),
               Expanded(
                 child: printersAsync.when(
                   loading: () => const _FieldLoading(),
@@ -331,9 +324,16 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                   ),
                 ),
               ),
-              if (state.paymentType == 'card' ||
-                  state.paymentType == 'cash_card') ...[
-                const SizedBox(width: 16),
+            ],
+          ),
+
+          // ── Row 2: Bank / Cash Amount ──────────────────────────────
+          if (state.paymentType == 'card' ||
+              state.paymentType == 'cash_card') ...[
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Expanded(
                   child: bankAsync.when(
                     loading: () => const _FieldLoading(),
@@ -362,28 +362,28 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                     ),
                   ),
                 ),
-              ],
-              if (state.paymentType == 'cash_card') ...[
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: _cashAmountCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    onChanged: (v) =>
-                        notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
-                    decoration: _decor('Cash Amount *').copyWith(
-                      helperText:
-                          'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
-                      helperStyle: const TextStyle(fontSize: 11),
+                if (state.paymentType == 'cash_card') ...[
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextField(
+                      controller: _cashAmountCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: (v) => notifier
+                          .setCashAmount(double.tryParse(v.trim()) ?? 0),
+                      decoration: _decor('Cash Amount *').copyWith(
+                        helperText:
+                            'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
+                        helperStyle: const TextStyle(fontSize: 11),
+                      ),
                     ),
                   ),
-                ),
-              ] else
-                const Spacer(),
-            ],
-          ),
+                ] else
+                  const Spacer(),
+              ],
+            ),
+          ],
         ],
       ),
     );

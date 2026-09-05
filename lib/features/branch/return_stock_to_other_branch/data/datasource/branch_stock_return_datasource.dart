@@ -77,17 +77,52 @@ class BranchStockReturnDatasource {
       '*, from_branch:branches!branch_stock_returns_from_branch_id_fkey(branch_name), '
       'to_branch:branches!branch_stock_returns_to_branch_id_fkey(branch_name)';
 
-  /// Is branch ne doosri branches ko jo returns bheje hain.
+  /// Is branch ne doosri branches ko jo returns bheje hain. Items ko bhi
+  /// embed karte hain taake list screen par total quantity / total value
+  /// jaisi summary cards bina extra per-row calls ke ban sakein.
   Future<List<BranchStockReturnModel>> fetchSentReturns(String fromBranchId) async {
     final res = await _client
         .from('branch_stock_returns')
-        .select(_returnSelect)
+        .select('$_returnSelect, branch_stock_return_items(*)')
         .eq('from_branch_id', fromBranchId)
         .order('created_at', ascending: false);
 
-    return (res as List)
-        .map((e) => BranchStockReturnModel.fromJson(e as Map<String, dynamic>))
+    return (res as List).map((e) {
+      final json = e as Map<String, dynamic>;
+      final itemsJson = (json['branch_stock_return_items'] as List?) ?? const [];
+      final items = itemsJson
+          .map((i) => BranchStockReturnItemModel.fromJson(i as Map<String, dynamic>))
+          .toList();
+      return BranchStockReturnModel.fromJson(json, items: items);
+    }).toList();
+  }
+
+  /// Ek return ki poori detail — items product/size/color naam ke sath.
+  Future<BranchStockReturnModel> fetchReturnDetail(String returnId) async {
+    final headerRes = await _client
+        .from('branch_stock_returns')
+        .select(_returnSelect)
+        .eq('id', returnId)
+        .single();
+
+    final itemsRes = await _client
+        .from('branch_stock_return_items')
+        .select('''
+          *,
+          products   ( article_name ),
+          sizes      ( number ),
+          colors     ( name ),
+          brands     ( name ),
+          categories ( name ),
+          types      ( name )
+        ''')
+        .eq('return_id', returnId);
+
+    final items = (itemsRes as List)
+        .map((e) => BranchStockReturnItemModel.fromJson(e as Map<String, dynamic>))
         .toList();
+
+    return BranchStockReturnModel.fromJson(headerRes, items: items);
   }
 
   /// Is branch ko doosri branches se jo returns aaye hain (accept/reject ke liye).

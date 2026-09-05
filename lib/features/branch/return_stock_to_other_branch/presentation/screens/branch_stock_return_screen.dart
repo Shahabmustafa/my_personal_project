@@ -1,6 +1,8 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../superadmin/report/presentation/widgets/report_detail_panel.dart';
+import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 import '../../data/model/branch_stock_return_model.dart';
 import '../providers/branch_stock_return_provider.dart';
 import '../widgets/branch_return_cart_table.dart';
@@ -8,16 +10,62 @@ import '../widgets/branch_return_product_selector.dart';
 
 const _primary = Color(0xFF1565C0);
 
+String _fmtAmt(double v) =>
+    v == v.truncate() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
 /// Sending branch's screen for returning stock directly to another branch —
 /// own tables (branch_stock_returns) so it's tracked as a distinct
 /// transaction type from a plain assign/transfer. Default view is the sent
 /// list; "New Return" in the header pushes the return-building form as its
 /// own page.
-class BranchStockReturnScreen extends ConsumerWidget {
+class BranchStockReturnScreen extends ConsumerStatefulWidget {
   const BranchStockReturnScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BranchStockReturnScreen> createState() =>
+      _BranchStockReturnScreenState();
+}
+
+class _BranchStockReturnScreenState
+    extends ConsumerState<BranchStockReturnScreen> {
+  String _filterStatus = 'all';
+
+  BranchStockReturnModel? _selected; // list row (brief)
+  BranchStockReturnModel? _detail; // loaded detail (items with names)
+  bool _loadingDetail = false;
+
+  Future<void> _openDetail(BranchStockReturnModel r) async {
+    setState(() {
+      _selected = r;
+      _detail = null;
+      _loadingDetail = true;
+    });
+    BranchStockReturnModel? d;
+    try {
+      d = await ref
+          .read(branchStockReturnRepositoryProvider)
+          .getReturnDetail(r.id);
+    } catch (_) {
+      d = null;
+    }
+    if (!mounted) return;
+    setState(() {
+      _detail = d;
+      _loadingDetail = false;
+    });
+    if (d == null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not load items. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final returnsAsync = ref.watch(sentStockReturnsProvider);
 
     return Padding(
@@ -46,6 +94,7 @@ class BranchStockReturnScreen extends ConsumerWidget {
                   icon: const Icon(Icons.refresh),
                 ),
               ),
+              const SizedBox(width: 8),
               FilledButton.icon(
                 icon: const Icon(Icons.add),
                 label: const Text('New Return'),
@@ -66,65 +115,456 @@ class BranchStockReturnScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Expanded(
-            child: returnsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              error: (e, _) =>
-                  Center(child: Text('Error: $e', style: const TextStyle(color: Colors.red))),
-              data: (returns) {
-                if (returns.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
-                        const SizedBox(height: 12),
-                        Text('No returns sent yet',
-                            style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-                        const SizedBox(height: 4),
-                        Text('Tap "New Return" to return stock to another branch.',
-                            style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
-                      ],
-                    ),
-                  );
-                }
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          returnsAsync.when(
+            loading: () => const SizedBox.shrink(),
+            error: (e, _) => const SizedBox.shrink(),
+            data: (returns) {
+              final filtered = returns.where((t) {
+                if (_filterStatus == 'all') return true;
+                return t.status == _filterStatus;
+              }).toList();
+              final filteredItems = filtered.expand((t) => t.items);
+              final totalQuantity =
+                  filteredItems.fold<int>(0, (s, i) => s + i.quantity);
+              final totalValue = filteredItems.fold<double>(
+                0,
+                (s, i) => s + (i.salePrice * i.quantity),
+              );
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Summary cards ────────────────────────────────────
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ReportSummaryCard(
+                          label: 'Total Returns',
+                          value: '${filtered.length}',
+                          icon: Icons.assignment_return_outlined,
                           color: _primary,
-                          child: const Row(children: [
-                            _Th('Return No', flex: 3),
-                            _Th('To Branch', flex: 4),
-                            _Th('Date', flex: 2),
-                            _Th('Status', flex: 2),
-                          ]),
                         ),
-                        Expanded(
-                          child: ListView.separated(
-                            itemCount: returns.length,
-                            separatorBuilder: (_, __) =>
-                                Divider(height: 1, color: Colors.grey.shade100),
-                            itemBuilder: (_, i) => _HistoryRow(item: returns[i], index: i),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: ReportSummaryCard(
+                          label: 'Total Quantity',
+                          value: '$totalQuantity',
+                          icon: Icons.inventory_2_outlined,
+                          color: const Color(0xFFE56A00),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: ReportSummaryCard(
+                          label: 'Total Value',
+                          value: 'Rs. ${_fmtAmt(totalValue)}',
+                          icon: Icons.sell_outlined,
+                          color: const Color(0xFF22A06B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Status filter chips ──────────────────────────────
+                  Row(
+                    children: [
+                      _chip('All', 'all', returns.length),
+                      const SizedBox(width: 8),
+                      _chip(
+                        'Pending',
+                        'pending',
+                        returns.where((t) => t.status == 'pending').length,
+                      ),
+                      const SizedBox(width: 8),
+                      _chip(
+                        'Accepted',
+                        'accepted',
+                        returns.where((t) => t.status == 'accepted').length,
+                      ),
+                      const SizedBox(width: 8),
+                      _chip(
+                        'Rejected',
+                        'rejected',
+                        returns.where((t) => t.status == 'rejected').length,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
+
+          // ── Table + detail panel ───────────────────────────────────────
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: returnsAsync.when(
+                    loading: () => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (e, _) => Center(
+                      child: Text('Error: $e',
+                          style: const TextStyle(color: Colors.red)),
+                    ),
+                    data: (returns) {
+                      final filtered = returns.where((t) {
+                        if (_filterStatus == 'all') return true;
+                        return t.status == _filterStatus;
+                      }).toList();
+
+                      if (filtered.isEmpty) {
+                        return Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.inbox_outlined,
+                                  size: 64, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              Text(
+                                _filterStatus == 'all'
+                                    ? 'No returns sent yet'
+                                    : 'No $_filterStatus returns found',
+                                style: TextStyle(
+                                    color: Colors.grey.shade500, fontSize: 16),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Tap "New Return" to return stock to another branch.',
+                                style: TextStyle(
+                                    color: Colors.grey.shade400, fontSize: 12),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        );
+                      }
+                      return _ReturnTable(
+                        rows: filtered,
+                        selectedId: _selected?.id,
+                        onView: _openDetail,
+                      );
+                    },
+                  ),
+                ),
+                if (_selected != null)
+                  ReportDetailPanel(
+                    title: _selected!.returnNumber,
+                    subtitle:
+                        '${_selected!.toBranchName ?? '—'} · ${_fmtDate(_selected!.returnedAt)}',
+                    accent: _primary,
+                    onClose: () => setState(() {
+                      _selected = null;
+                      _detail = null;
+                    }),
+                    child: _ReturnDetailBody(
+                      brief: _selected!,
+                      detail: _detail,
+                      loading: _loadingDetail,
                     ),
                   ),
-                );
-              },
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _chip(String label, String value, int count) {
+    final isSelected = _filterStatus == value;
+    Color chipColor;
+    IconData chipIcon;
+    switch (value) {
+      case 'pending':
+        chipColor = Colors.orange;
+        chipIcon = Icons.hourglass_empty_outlined;
+        break;
+      case 'accepted':
+        chipColor = Colors.green;
+        chipIcon = Icons.check_circle_outline;
+        break;
+      case 'rejected':
+        chipColor = Colors.red;
+        chipIcon = Icons.cancel_outlined;
+        break;
+      default:
+        chipColor = _primary;
+        chipIcon = Icons.list_outlined;
+    }
+    return GestureDetector(
+      onTap: () => setState(() => _filterStatus = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: isSelected ? chipColor : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? chipColor : const Color(0xFFE7E9F0),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(chipIcon,
+                size: 15, color: isSelected ? Colors.white : chipColor),
+            const SizedBox(width: 6),
+            Text(
+              '$label ($count)',
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF5A5F73),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _fmtDate(DateTime dt) =>
+    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+
+Color _statusColor(String status) {
+  switch (status) {
+    case 'accepted':
+      return const Color(0xFF2E7D32);
+    case 'rejected':
+      return const Color(0xFFC62828);
+    default:
+      return const Color(0xFFE65100);
+  }
+}
+
+// ── History table + detail body ────────────────────────────────────────────
+
+const _colFlex = <int>[1, 3, 5, 3, 2, 2, 3, 2];
+const _colLabels = <String>[
+  '#',
+  'Return #',
+  'To Branch',
+  'Date',
+  'Items',
+  'Qty',
+  'Status',
+  'Actions',
+];
+
+class _ReturnTable extends StatelessWidget {
+  final List<BranchStockReturnModel> rows;
+  final String? selectedId;
+  final void Function(BranchStockReturnModel) onView;
+
+  const _ReturnTable({
+    required this.rows,
+    required this.selectedId,
+    required this.onView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          children: [
+            Container(
+              color: const Color(0xFFF7F8FC),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(
+                children: [
+                  for (var c = 0; c < _colLabels.length; c++)
+                    Expanded(
+                      flex: _colFlex[c],
+                      child: Text(
+                        _colLabels[c],
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF5A5F73),
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFEEF0F6)),
+            Expanded(
+              child: ListView.separated(
+                itemCount: rows.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: Color(0xFFEEF0F6)),
+                itemBuilder: (context, i) => _row(rows[i], i),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _row(BranchStockReturnModel r, int index) {
+    final qty = r.items.fold<int>(0, (s, it) => s + it.quantity);
+    final selected = selectedId == r.id;
+    return InkWell(
+      onTap: () => onView(r),
+      child: Container(
+        color: selected
+            ? const Color(0xFFEAEFFD)
+            : (index.isEven ? const Color(0xFFFAFBFF) : Colors.white),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              flex: _colFlex[0],
+              child: Text('${index + 1}',
+                  style: const TextStyle(color: Color(0xFF8A8FA3))),
+            ),
+            Expanded(
+              flex: _colFlex[1],
+              child: Text(
+                r.returnNumber,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: _primary,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ),
+            Expanded(
+              flex: _colFlex[2],
+              child: Row(
+                children: [
+                  const Icon(Icons.store_outlined,
+                      size: 14, color: Color(0xFF8A8FA3)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      r.toBranchName ?? r.toBranchId,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: _colFlex[3],
+              child: Text(
+                _fmtDate(r.returnedAt),
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF5A5F73)),
+              ),
+            ),
+            Expanded(flex: _colFlex[4], child: Text('${r.items.length}')),
+            Expanded(flex: _colFlex[5], child: Text('$qty')),
+            Expanded(
+              flex: _colFlex[6],
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: StatusChip(r.status),
+              ),
+            ),
+            Expanded(
+              flex: _colFlex[7],
+              child: Tooltip(
+                message: 'View',
+                child: InkWell(
+                  onTap: () => onView(r),
+                  borderRadius: BorderRadius.circular(6),
+                  child: const Padding(
+                    padding: EdgeInsets.all(5),
+                    child: Icon(Icons.visibility_outlined,
+                        size: 19, color: _primary),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReturnDetailBody extends StatelessWidget {
+  final BranchStockReturnModel brief;
+  final BranchStockReturnModel? detail;
+  final bool loading;
+
+  const _ReturnDetailBody({
+    required this.brief,
+    required this.detail,
+    required this.loading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = detail?.items ?? const [];
+    final totalQty = items.fold<int>(0, (s, i) => s + i.quantity);
+    final totalValue =
+        items.fold<double>(0, (s, i) => s + (i.salePrice * i.quantity));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailKV('To Branch', brief.toBranchName ?? '—'),
+        DetailKV('Sent On', _fmtDate(brief.returnedAt)),
+        DetailKV(
+          'Status',
+          brief.status[0].toUpperCase() + brief.status.substring(1),
+          valueColor: _statusColor(brief.status),
+        ),
+        if (brief.status == 'accepted' && brief.acceptedAt != null)
+          DetailKV('Accepted On', _fmtDate(brief.acceptedAt!)),
+        if ((brief.notes ?? '').isNotEmpty) DetailKV('Notes', brief.notes!),
+        const DetailDivider(),
+        if (loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (detail == null)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text('Could not load items.',
+                style: TextStyle(color: Color(0xFF8A8FA3))),
+          )
+        else ...[
+          DetailSectionLabel('ITEMS (${items.length})'),
+          for (final item in items)
+            DetailProductRow(
+              name: item.productName ?? 'Item',
+              sizeName: item.sizeName,
+              colorName: item.colorName,
+              quantity: item.quantity,
+              total: item.salePrice * item.quantity,
+            ),
+          const DetailDivider(),
+          DetailKV('Total Pairs', '$totalQty'),
+          DetailKV(
+            'Total Value',
+            'Rs. ${_fmtAmt(totalValue)}',
+            bold: true,
+            valueColor: Colors.green.shade700,
+          ),
+        ],
+      ],
     );
   }
 }
@@ -480,68 +920,6 @@ class _ConfirmSendDialog extends StatelessWidget {
           Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
       );
-}
-
-// ── Shared row/table widgets ────────────────────────────────────────────────
-
-class _Th extends StatelessWidget {
-  final String text;
-  final int flex;
-  const _Th(this.text, {this.flex = 2});
-
-  @override
-  Widget build(BuildContext context) => Expanded(
-        flex: flex,
-        child: Text(text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
-      );
-}
-
-class _HistoryRow extends StatelessWidget {
-  final BranchStockReturnModel item;
-  final int index;
-  const _HistoryRow({required this.item, required this.index});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: index.isEven ? Colors.grey.shade50 : Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(item.returnNumber,
-                style: const TextStyle(
-                    fontFamily: 'monospace', fontWeight: FontWeight.w700, fontSize: 13, color: _primary)),
-          ),
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                const Icon(Icons.store_outlined, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(item.toBranchName ?? item.toBranchId,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(_fmtDate(item.returnedAt),
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-          ),
-          Expanded(flex: 2, child: StatusChip(item.status)),
-        ],
-      ),
-    );
-  }
-
-  String _fmtDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
 
 /// Shared pending/accepted/rejected badge — also used by the receiving

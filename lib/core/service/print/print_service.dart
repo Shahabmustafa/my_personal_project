@@ -509,9 +509,18 @@ class ThermalPrintService {
         ),
       );
 
-  static pw.Widget _dashedDivider() => pw.Text(
-        '--------------------------------',
-        style: pw.TextStyle(font: pw.Font.courier(), fontSize: 8, color: PdfColors.grey600),
+  static pw.Widget _dashedDivider() => pw.Container(
+        width: double.infinity,
+        height: 0.7,
+        decoration: const pw.BoxDecoration(
+          border: pw.Border(
+            bottom: pw.BorderSide(
+              color: PdfColors.grey600,
+              width: 0.7,
+              style: pw.BorderStyle.dashed,
+            ),
+          ),
+        ),
       );
 
   static String _formatDateTime(DateTime dt) {

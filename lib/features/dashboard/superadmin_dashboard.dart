@@ -47,8 +47,59 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
 
   static const _navItems = [
     SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
-    SidebarItem(icon: Icons.people_outline, label: 'Users'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Branches'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Warehouse'),
+    SidebarItem(icon: Icons.people_outline, label: 'Users'),
+    SidebarItem(
+      icon: Icons.inventory_2_outlined,
+      label: 'Products',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.format_size_outlined,
+      label: 'Sizes',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.color_lens_outlined,
+      label: 'Colors',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.branding_watermark_outlined,
+      label: 'Brands',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.category_outlined,
+      label: 'Categories',
+      group: 'Catalog',
+    ),
+    SidebarItem(icon: Icons.style_outlined, label: 'Types', group: 'Catalog'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
+    SidebarItem(
+      icon: Icons.receipt_long_outlined,
+      label: 'Purchase Invoice',
+      group: 'Purchase',
+    ),
+    SidebarItem(
+      icon: Icons.assignment_return_outlined,
+      label: 'Purchase Return',
+      group: 'Purchase',
+    ),
+    SidebarItem(icon: Icons.storefront_outlined, label: 'Company'),
+    SidebarItem(
+      icon: Icons.local_shipping_outlined,
+      label: 'Assign Stock To Branch',
+      group: 'Assign Stock',
+    ),
+    SidebarItem(icon: Icons.history, label: 'History', group: 'Assign Stock'),
+    SidebarItem(
+      icon: Icons.move_to_inbox_outlined,
+      label: 'Incoming Branch Returns',
+      group: 'Assign Stock',
+    ),
+    SidebarItem(icon: Icons.business_outlined, label: 'Head Office'),
     SidebarItem(
       icon: Icons.percent_outlined,
       label: 'Branch Invoice Discount',
@@ -59,9 +110,6 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       label: 'Branch Stock Discount',
       group: 'Discount',
     ),
-    SidebarItem(icon: Icons.warehouse_outlined, label: 'Warehouse'),
-    SidebarItem(icon: Icons.business_outlined, label: 'Head Office'),
-    SidebarItem(icon: Icons.storefront_outlined, label: 'Company'),
     SidebarItem(
       icon: Icons.account_balance_outlined,
       label: 'Bank Head',
@@ -94,65 +142,37 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       label: 'Sale Exchange Report',
       group: 'Reports',
     ),
-    SidebarItem(
-      icon: Icons.inventory_2_outlined,
-      label: 'Products',
-      group: 'Catalog',
-    ),
-    SidebarItem(
-      icon: Icons.format_size_outlined,
-      label: 'Sizes',
-      group: 'Catalog',
-    ),
-    SidebarItem(
-      icon: Icons.color_lens_outlined,
-      label: 'Colors',
-      group: 'Catalog',
-    ),
-    SidebarItem(
-      icon: Icons.branding_watermark_outlined,
-      label: 'Brands',
-      group: 'Catalog',
-    ),
-    SidebarItem(
-      icon: Icons.category_outlined,
-      label: 'Categories',
-      group: 'Catalog',
-    ),
-    SidebarItem(icon: Icons.style_outlined, label: 'Types', group: 'Catalog'),
-    SidebarItem(
-      icon: Icons.receipt_long_outlined,
-      label: 'Purchase Invoice',
-      group: 'Purchase',
-    ),
-    SidebarItem(
-      icon: Icons.assignment_return_outlined,
-      label: 'Purchase Return',
-      group: 'Purchase',
-    ),
-    SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
-    SidebarItem(
-      icon: Icons.local_shipping_outlined,
-      label: 'Assign Stock To Branch',
-      group: 'Assign Stock',
-    ),
-    SidebarItem(icon: Icons.history, label: 'History', group: 'Assign Stock'),
-    SidebarItem(
-      icon: Icons.move_to_inbox_outlined,
-      label: 'Incoming Branch Returns',
-      group: 'Assign Stock',
-    ),
   ];
 
   static const _pages = [
     OverviewScreen(),
-    UsersScreen(),
     BranchesScreen(),
+    WarehouseScreen(),
+    UsersScreen(),
+    // Admin sirf add kar sakta hai — edit/delete options hidden.
+    ProductsScreen(readOnly: true),
+    SizesScreen(readOnly: true),
+    ColorsScreen(readOnly: true),
+    BrandsScreen(readOnly: true),
+    CategorysScreen(readOnly: true),
+    TypesScreen(readOnly: true),
+    // Sab warehouses ka stock — add ho sakta hai, edit/delete nahi.
+    HeadOfficeStockScreen(),
+    // Admin ko pehle warehouse choose karni hoti hai (khud koi warehouse
+    // assign nahi hoti), phir wahi invoice/return screens jo warehouse
+    // dashboard mein hain.
+    PurchaseInvoiceScreen(),
+    PurchaseReturnScreen(),
+    CompaniesScreen(),
+    // Head office se branch ko stock assign — head_office_id ke sath.
+    HoAssignStockScreen(),
+    // Assignment history — alag page (sidebar "Assign Stock" group ke andar).
+    HoAssignStockListScreen(),
+    // Branches se Admin (Head Office) ko jo stock returns aate hain — accept/reject.
+    IncomingBranchReturnsScreen(),
+    HeadOfficeScreen(),
     BranchInvoiceDiscountScreen(),
     BranchStockDiscountScreen(),
-    WarehouseScreen(),
-    HeadOfficeScreen(),
-    CompaniesScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),
     PrinterHeadsScreen(),
@@ -161,26 +181,6 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SaleInvoiceReportScreen(),
     SaleReturnReportScreen(),
     SaleExchangeReportScreen(),
-    // Admin sirf add kar sakta hai — edit/delete options hidden.
-    ProductsScreen(readOnly: true),
-    SizesScreen(readOnly: true),
-    ColorsScreen(readOnly: true),
-    BrandsScreen(readOnly: true),
-    CategorysScreen(readOnly: true),
-    TypesScreen(readOnly: true),
-    // Admin ko pehle warehouse choose karni hoti hai (khud koi warehouse
-    // assign nahi hoti), phir wahi invoice/return screens jo warehouse
-    // dashboard mein hain.
-    PurchaseInvoiceScreen(),
-    PurchaseReturnScreen(),
-    // Sab warehouses ka stock — add ho sakta hai, edit/delete nahi.
-    HeadOfficeStockScreen(),
-    // Head office se branch ko stock assign — head_office_id ke sath.
-    HoAssignStockScreen(),
-    // Assignment history — alag page (sidebar "Assign Stock" group ke andar).
-    HoAssignStockListScreen(),
-    // Branches se Admin (Head Office) ko jo stock returns aate hain — accept/reject.
-    IncomingBranchReturnsScreen(),
   ];
 
   @override

@@ -29,6 +29,9 @@ class BranchStockReturnRepository {
   Future<List<BranchStockReturnModel>> getSentReturns(String fromBranchId) =>
       _datasource.fetchSentReturns(fromBranchId);
 
+  Future<BranchStockReturnModel> getReturnDetail(String returnId) =>
+      _datasource.fetchReturnDetail(returnId);
+
   Future<List<BranchStockReturnModel>> getIncomingReturns(String toBranchId) =>
       _datasource.fetchIncomingReturns(toBranchId);
 
