@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../superadmin/head_office/data/model/head_office_model.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
     show branchStockCacheProvider;
@@ -13,34 +14,39 @@ import '../../data/repository/branch_warehouse_return_repository.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
-final branchWarehouseReturnDatasourceProvider = Provider<BranchWarehouseReturnDatasource>(
-  (_) => BranchWarehouseReturnDatasource(Supabase.instance.client),
-);
+final branchWarehouseReturnDatasourceProvider =
+    Provider<BranchWarehouseReturnDatasource>(
+      (_) => BranchWarehouseReturnDatasource(Supabase.instance.client),
+    );
 
-final branchWarehouseReturnRepositoryProvider = Provider<BranchWarehouseReturnRepository>(
-  (ref) => BranchWarehouseReturnRepository(ref.read(branchWarehouseReturnDatasourceProvider)),
-);
+final branchWarehouseReturnRepositoryProvider =
+    Provider<BranchWarehouseReturnRepository>(
+      (ref) => BranchWarehouseReturnRepository(
+        ref.read(branchWarehouseReturnDatasourceProvider),
+      ),
+    );
 
-// ── Destination warehouses ──────────────────────────────────────────────────
+// ── Destination — Admin (Head Office), auto-resolved, koi dropdown nahi ────
 
-final activeWarehousesForReturnProvider = FutureProvider<List<WarehouseModel>>(
-  (ref) => ref.watch(branchWarehouseReturnRepositoryProvider).getActiveWarehouses(),
+final returnHeadOfficeProvider = FutureProvider<HeadOfficeModel?>(
+  (ref) => ref.watch(branchWarehouseReturnRepositoryProvider).getHeadOffice(),
 );
 
 // ── Sent returns (branch side) ──────────────────────────────────────────────
 
-final sentWarehouseReturnsProvider = FutureProvider<List<BranchWarehouseReturnModel>>(
-  (ref) => ref
-      .watch(branchWarehouseReturnRepositoryProvider)
-      .getSentReturns(ref.watch(currentBranchIdProvider)),
-);
+final sentWarehouseReturnsProvider =
+    FutureProvider<List<BranchWarehouseReturnModel>>(
+      (ref) => ref
+          .watch(branchWarehouseReturnRepositoryProvider)
+          .getSentReturns(ref.watch(currentBranchIdProvider)),
+    );
 
 // ── Cart / active return state ─────────────────────────────────────────────
 
 class BranchWarehouseReturnState {
   final String returnNumber;
   final bool numberLoading;
-  final WarehouseModel? destinationWarehouse;
+  final HeadOfficeModel? destinationHeadOffice;
   final List<BranchWarehouseReturnCartItem> cartItems;
   final bool isSaving;
   final String? error;
@@ -48,7 +54,7 @@ class BranchWarehouseReturnState {
   const BranchWarehouseReturnState({
     this.returnNumber = '',
     this.numberLoading = false,
-    this.destinationWarehouse,
+    this.destinationHeadOffice,
     this.cartItems = const [],
     this.isSaving = false,
     this.error,
@@ -59,32 +65,34 @@ class BranchWarehouseReturnState {
   BranchWarehouseReturnState copyWith({
     String? returnNumber,
     bool? numberLoading,
-    WarehouseModel? destinationWarehouse,
+    HeadOfficeModel? destinationHeadOffice,
     bool clearDestination = false,
     List<BranchWarehouseReturnCartItem>? cartItems,
     bool? isSaving,
     String? error,
     bool clearError = false,
-  }) =>
-      BranchWarehouseReturnState(
-        returnNumber: returnNumber ?? this.returnNumber,
-        numberLoading: numberLoading ?? this.numberLoading,
-        destinationWarehouse:
-            clearDestination ? null : destinationWarehouse ?? this.destinationWarehouse,
-        cartItems: cartItems ?? this.cartItems,
-        isSaving: isSaving ?? this.isSaving,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => BranchWarehouseReturnState(
+    returnNumber: returnNumber ?? this.returnNumber,
+    numberLoading: numberLoading ?? this.numberLoading,
+    destinationHeadOffice: clearDestination
+        ? null
+        : destinationHeadOffice ?? this.destinationHeadOffice,
+    cartItems: cartItems ?? this.cartItems,
+    isSaving: isSaving ?? this.isSaving,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
-class BranchWarehouseReturnNotifier extends StateNotifier<BranchWarehouseReturnState> {
+class BranchWarehouseReturnNotifier
+    extends StateNotifier<BranchWarehouseReturnState> {
   final Ref _ref;
   final BranchWarehouseReturnRepository _repo;
   final String _branchId;
 
   BranchWarehouseReturnNotifier(this._ref, this._repo, this._branchId)
-      : super(const BranchWarehouseReturnState()) {
+    : super(const BranchWarehouseReturnState()) {
     _loadNumber();
+    _loadHeadOffice();
   }
 
   Future<void> _loadNumber() async {
@@ -97,17 +105,25 @@ class BranchWarehouseReturnNotifier extends StateNotifier<BranchWarehouseReturnS
       }
     } catch (_) {
       if (mounted) {
-        state = state.copyWith(returnNumber: 'RTW-000001', numberLoading: false);
+        state = state.copyWith(
+          returnNumber: 'RTW-000001',
+          numberLoading: false,
+        );
       }
     }
   }
 
-  void selectDestinationWarehouse(WarehouseModel? warehouse) {
-    if (warehouse == null) {
-      state = state.copyWith(clearDestination: true);
-    } else {
-      state = state.copyWith(destinationWarehouse: warehouse);
-    }
+  /// Admin (Head Office) auto-resolve hota hai — koi dropdown/selection nahi.
+  Future<void> _loadHeadOffice() async {
+    try {
+      final headOffice = await _repo.getHeadOffice();
+      if (mounted) {
+        state = state.copyWith(
+          destinationHeadOffice: headOffice,
+          clearDestination: headOffice == null,
+        );
+      }
+    } catch (_) {}
   }
 
   /// Returns null = success | error message = validation failed.
@@ -162,7 +178,10 @@ class BranchWarehouseReturnNotifier extends StateNotifier<BranchWarehouseReturnS
       discount: stock.discount,
     );
 
-    state = state.copyWith(cartItems: [...state.cartItems, item], clearError: true);
+    state = state.copyWith(
+      cartItems: [...state.cartItems, item],
+      clearError: true,
+    );
     return null;
   }
 
@@ -189,7 +208,9 @@ class BranchWarehouseReturnNotifier extends StateNotifier<BranchWarehouseReturnS
 
   Future<String?> saveReturn({String? notes}) async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
-    if (state.destinationWarehouse == null) return 'Please select a destination warehouse';
+    if (state.destinationHeadOffice == null) {
+      return 'Admin (Head Office) not found. Please add one first.';
+    }
 
     state = state.copyWith(isSaving: true, clearError: true);
     try {
@@ -197,7 +218,7 @@ class BranchWarehouseReturnNotifier extends StateNotifier<BranchWarehouseReturnS
 
       await _repo.saveReturn(
         branchId: _branchId,
-        warehouseId: state.destinationWarehouse!.id,
+        headOfficeId: state.destinationHeadOffice!.id,
         returnedBy: returnedBy,
         notes: notes,
         cartItems: state.cartItems,
@@ -221,14 +242,18 @@ class BranchWarehouseReturnNotifier extends StateNotifier<BranchWarehouseReturnS
     if (!mounted) return;
     state = const BranchWarehouseReturnState(numberLoading: true);
     await _loadNumber();
+    await _loadHeadOffice();
   }
 }
 
 final branchWarehouseReturnProvider =
-    StateNotifierProvider<BranchWarehouseReturnNotifier, BranchWarehouseReturnState>(
-  (ref) => BranchWarehouseReturnNotifier(
-    ref,
-    ref.read(branchWarehouseReturnRepositoryProvider),
-    ref.watch(currentBranchIdProvider),
-  ),
-);
+    StateNotifierProvider<
+      BranchWarehouseReturnNotifier,
+      BranchWarehouseReturnState
+    >(
+      (ref) => BranchWarehouseReturnNotifier(
+        ref,
+        ref.read(branchWarehouseReturnRepositoryProvider),
+        ref.watch(currentBranchIdProvider),
+      ),
+    );

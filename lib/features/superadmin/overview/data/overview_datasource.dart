@@ -5,27 +5,13 @@ class OverviewStats {
   final int totalArticles;
   final int totalBranches;
   final int totalWarehouses;
-  final int totalUsers;
-  final int totalCustomers;
-  final int totalCompanies;
-  final int pendingAssignments;
-
-  final double todaySale; // all branches
-  final int todayInvoiceCount;
-  final double todaySaleReturn;
-  final double monthSale;
-
-  final int headOfficeStockPairs;
-  final int warehouseStockPairs;
   final int branchStockPairs;
+
+  /// Aaj ka profit (RPC `superadmin_dashboard_stats` se, server-side).
+  final double todayProfit;
 
   /// Aaj ki sale har branch ke hisaab se.
   final List<BranchSaleToday> todaySaleByBranch;
-
-  /// Sab branches ka lifetime total (RPC `superadmin_dashboard_stats` se).
-  final double totalSale;
-  final double totalReturn;
-  final double totalProfit;
 
   /// Pichle 7 din (Asia/Karachi) ki daily sale — line graph ke liye.
   final List<DaySale> weeklySale;
@@ -37,21 +23,9 @@ class OverviewStats {
     this.totalArticles = 0,
     this.totalBranches = 0,
     this.totalWarehouses = 0,
-    this.totalUsers = 0,
-    this.totalCustomers = 0,
-    this.totalCompanies = 0,
-    this.pendingAssignments = 0,
-    this.todaySale = 0,
-    this.todayInvoiceCount = 0,
-    this.todaySaleReturn = 0,
-    this.monthSale = 0,
-    this.headOfficeStockPairs = 0,
-    this.warehouseStockPairs = 0,
     this.branchStockPairs = 0,
+    this.todayProfit = 0,
     this.todaySaleByBranch = const [],
-    this.totalSale = 0,
-    this.totalReturn = 0,
-    this.totalProfit = 0,
     this.weeklySale = const [],
     this.topArticle,
   });
@@ -111,91 +85,41 @@ class OverviewDatasource {
   /// Karachi (UTC+5) calendar date ke liye din ki shuruat ka UTC instant.
   static String _startOfTodayUtc() {
     final now = DateTime.now();
-    return DateTime.utc(now.year, now.month, now.day)
-        .subtract(const Duration(hours: 5))
-        .toIso8601String();
-  }
-
-  static String _startOfMonthUtc() {
-    final now = DateTime.now();
-    return DateTime.utc(now.year, now.month, 1)
-        .subtract(const Duration(hours: 5))
-        .toIso8601String();
+    return DateTime.utc(
+      now.year,
+      now.month,
+      now.day,
+    ).subtract(const Duration(hours: 5)).toIso8601String();
   }
 
   Future<OverviewStats> fetchStats() async {
     final todayUtc = _startOfTodayUtc();
-    final monthUtc = _startOfMonthUtc();
 
-    // Lifetime totals / weekly series / top article — sab ek RPC call mein
-    // (server-side aggregate, indexes ke sath).
-    final extrasFuture = _client.rpc('superadmin_dashboard_stats');
-
-    final results = await Future.wait<List<dynamic>>([
-      _client.from('products').select('id'),
-      _client.from('branches').select('id, branch_name'),
-      _client.from('warehouses').select('id'),
-      _client.from('users').select('id'),
-      _client.from('customers').select('id'),
-      _client.from('companies').select('id'),
-      _client
-          .from('assign_stock_to_branch')
-          .select('id')
-          .eq('status', 'pending'),
-      _client.from('stock_inventory').select('quantity'),
-      _client.from('warehouse_stock_inventory').select('quantity'),
-      _client.from('branch_stock_inventory').select('quantity'),
+    // Counts, sums, profit, weekly series, top article — sab ek RPC call
+    // mein server-side aggregate hote hain (indexes ke sath), poori tables
+    // client tak fetch nahi hoti.
+    final results = await Future.wait([
+      _client.rpc('superadmin_dashboard_stats'),
       _client
           .from('sale_invoices')
-          .select('total_amount, branch_id')
-          .gte('created_at', todayUtc),
-      _client
-          .from('sale_invoices')
-          .select('total_amount')
-          .gte('created_at', monthUtc),
-      _client
-          .from('sale_returns')
-          .select('total_amount')
+          .select('total_amount, branch_id, branches(branch_name)')
           .gte('created_at', todayUtc),
     ]);
 
-    int sumQty(List<dynamic> rows) {
-      var total = 0;
-      for (final r in rows) {
-        total += _toInt((r as Map<String, dynamic>)['quantity']);
-      }
-      return total;
-    }
-
-    double sumAmount(List<dynamic> rows) {
-      var total = 0.0;
-      for (final r in rows) {
-        total += _toDouble((r as Map<String, dynamic>)['total_amount']);
-      }
-      return total;
-    }
-
-    final branches = results[1];
-    final branchNameMap = <String, String>{};
-    for (final r in branches) {
-      final m = r as Map<String, dynamic>;
-      branchNameMap[m['id'] as String] =
-          (m['branch_name'] as String?) ?? 'Branch';
-    }
+    final extras = results[0] as Map<String, dynamic>? ?? const {};
+    final todayInvoices = results[1] as List<dynamic>;
 
     final perBranch = <String, BranchSaleToday>{};
-    var todaySaleTotal = 0.0;
-    var todayInvoiceCount = 0;
-    for (final r in results[10]) {
+    for (final r in todayInvoices) {
       final m = r as Map<String, dynamic>;
       final bid = m['branch_id'] as String? ?? '';
+      final branchName =
+          (m['branches'] as Map<String, dynamic>?)?['branch_name'] as String?;
       final amt = _toDouble(m['total_amount']);
-      todaySaleTotal += amt;
-      todayInvoiceCount++;
       final existing = perBranch[bid];
       perBranch[bid] = BranchSaleToday(
         branchId: bid,
-        branchName: branchNameMap[bid] ?? 'Branch',
+        branchName: branchName ?? existing?.branchName ?? 'Branch',
         amount: (existing?.amount ?? 0) + amt,
         invoiceCount: (existing?.invoiceCount ?? 0) + 1,
       );
@@ -203,7 +127,6 @@ class OverviewDatasource {
     final todayByBranch = perBranch.values.toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final extras = (await extrasFuture) as Map<String, dynamic>? ?? const {};
     final weekly = <DaySale>[
       for (final r in (extras['weekly_sale'] as List? ?? const []))
         DaySale(
@@ -222,24 +145,12 @@ class OverviewDatasource {
           );
 
     return OverviewStats(
-      totalArticles: results[0].length,
-      totalBranches: branches.length,
-      totalWarehouses: results[2].length,
-      totalUsers: results[3].length,
-      totalCustomers: results[4].length,
-      totalCompanies: results[5].length,
-      pendingAssignments: results[6].length,
-      headOfficeStockPairs: sumQty(results[7]),
-      warehouseStockPairs: sumQty(results[8]),
-      branchStockPairs: sumQty(results[9]),
-      todaySale: todaySaleTotal,
-      todayInvoiceCount: todayInvoiceCount,
-      monthSale: sumAmount(results[11]),
-      todaySaleReturn: sumAmount(results[12]),
+      totalArticles: _toInt(extras['total_articles']),
+      totalBranches: _toInt(extras['total_branches']),
+      totalWarehouses: _toInt(extras['total_warehouses']),
+      branchStockPairs: _toInt(extras['branch_stock_pairs']),
+      todayProfit: _toDouble(extras['today_profit']),
       todaySaleByBranch: todayByBranch,
-      totalSale: _toDouble(extras['total_sale']),
-      totalReturn: _toDouble(extras['total_return']),
-      totalProfit: _toDouble(extras['total_profit']),
       weeklySale: weekly,
       topArticle: topArticle,
     );

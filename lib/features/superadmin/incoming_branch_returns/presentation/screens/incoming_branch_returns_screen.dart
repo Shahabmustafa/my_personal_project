@@ -7,11 +7,11 @@ import '../../../../branch/return_stock_to_warehouse/presentation/providers/bran
     show branchWarehouseReturnRepositoryProvider;
 import '../providers/incoming_branch_return_provider.dart';
 
-const _primary = Color(0xFF1565C0);
+const _primary = Color(0xFF3E63DD);
 
-/// Warehouse's screen for accepting/rejecting stock returns sent by
-/// branches — same accept/reject pattern as the warehouse->branch
-/// assignment screen, backed by branch_return_to_warehouse instead.
+/// Admin's screen for accepting/rejecting stock returns sent by branches —
+/// same accept/reject pattern as the head-office->branch assignment screen,
+/// backed by branch_return_to_warehouse (head_office_id destination).
 class IncomingBranchReturnsScreen extends ConsumerStatefulWidget {
   const IncomingBranchReturnsScreen({super.key});
 
@@ -35,10 +35,16 @@ class _IncomingBranchReturnsScreenState
         children: [
           Row(
             children: [
-              const Icon(Icons.move_to_inbox_outlined, color: _primary, size: 24),
+              const Icon(
+                Icons.move_to_inbox_outlined,
+                color: _primary,
+                size: 24,
+              ),
               const SizedBox(width: 8),
-              const Text('Incoming Branch Returns',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text(
+                'Incoming Branch Returns',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
               const Spacer(),
               IconButton(
                 onPressed: () => ref.invalidate(incomingBranchReturnsProvider),
@@ -55,30 +61,49 @@ class _IncomingBranchReturnsScreenState
               children: [
                 _filterChip('All', 'all', returns.length),
                 const SizedBox(width: 8),
-                _filterChip('Pending', 'pending',
-                    returns.where((r) => r.status == 'pending').length),
+                _filterChip(
+                  'Pending',
+                  'pending',
+                  returns.where((r) => r.status == 'pending').length,
+                ),
                 const SizedBox(width: 8),
-                _filterChip('Accepted', 'accepted',
-                    returns.where((r) => r.status == 'accepted').length),
+                _filterChip(
+                  'Accepted',
+                  'accepted',
+                  returns.where((r) => r.status == 'accepted').length,
+                ),
                 const SizedBox(width: 8),
-                _filterChip('Rejected', 'rejected',
-                    returns.where((r) => r.status == 'rejected').length),
+                _filterChip(
+                  'Rejected',
+                  'rejected',
+                  returns.where((r) => r.status == 'rejected').length,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 12),
           Expanded(
             child: returnsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              loading: () => const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
               error: (e, _) => Center(
-                  child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.red, size: 40),
-                  const SizedBox(height: 8),
-                  Text('Error: $e', style: const TextStyle(color: Colors.red)),
-                ],
-              )),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Error: $e',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
               data: (returns) {
                 final filtered = _filterStatus == 'all'
                     ? returns
@@ -95,16 +120,21 @@ class _IncomingBranchReturnsScreenState
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           color: _primary,
-                          child: const Row(children: [
-                            _Th('Return No', flex: 3),
-                            _Th('From Branch', flex: 4),
-                            _Th('Date', flex: 2),
-                            _Th('Items', flex: 1),
-                            _Th('Status', flex: 2),
-                            _Th('Actions', flex: 3),
-                          ]),
+                          child: const Row(
+                            children: [
+                              _Th('Return No', flex: 3),
+                              _Th('From Branch', flex: 4),
+                              _Th('Date', flex: 2),
+                              _Th('Items', flex: 1),
+                              _Th('Status', flex: 2),
+                              _Th('Actions', flex: 3),
+                            ],
+                          ),
                         ),
                         Expanded(
                           child: filtered.isEmpty
@@ -112,22 +142,30 @@ class _IncomingBranchReturnsScreenState
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.inbox_outlined,
-                                          size: 64, color: Colors.grey.shade300),
+                                      Icon(
+                                        Icons.inbox_outlined,
+                                        size: 64,
+                                        color: Colors.grey.shade300,
+                                      ),
                                       const SizedBox(height: 12),
                                       Text(
-                                          _filterStatus == 'all'
-                                              ? 'No returns received yet'
-                                              : 'No $_filterStatus returns',
-                                          style: TextStyle(
-                                              color: Colors.grey.shade500, fontSize: 16)),
+                                        _filterStatus == 'all'
+                                            ? 'No returns received yet'
+                                            : 'No $_filterStatus returns',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 16,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 )
                               : ListView.separated(
                                   itemCount: filtered.length,
-                                  separatorBuilder: (_, __) =>
-                                      Divider(height: 1, color: Colors.grey.shade100),
+                                  separatorBuilder: (_, __) => Divider(
+                                    height: 1,
+                                    color: Colors.grey.shade100,
+                                  ),
                                   itemBuilder: (_, i) =>
                                       _ListRow(item: filtered[i], index: i),
                                 ),
@@ -169,30 +207,38 @@ class _IncomingBranchReturnsScreenState
         decoration: BoxDecoration(
           color: isSelected ? chipColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? chipColor : Colors.grey.shade300),
+          border: Border.all(
+            color: isSelected ? chipColor : Colors.grey.shade300,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                )),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+              ),
+            ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withOpacity(0.25) : Colors.grey.shade100,
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text('$count',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? Colors.white : Colors.grey.shade600,
-                  )),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : Colors.grey.shade600,
+                ),
+              ),
             ),
           ],
         ),
@@ -208,10 +254,16 @@ class _Th extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-        flex: flex,
-        child: Text(text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
-      );
+    flex: flex,
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+    ),
+  );
 }
 
 class _ListRow extends ConsumerWidget {
@@ -228,12 +280,15 @@ class _ListRow extends ConsumerWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(item.returnNumber,
-                style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: _primary)),
+            child: Text(
+              item.returnNumber,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: _primary,
+              ),
+            ),
           ),
           Expanded(
             flex: 4,
@@ -242,22 +297,31 @@ class _ListRow extends ConsumerWidget {
                 const Icon(Icons.store_outlined, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(item.branchName ?? item.branchId,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    item.branchName ?? item.branchId,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(_fmtDate(item.returnedAt),
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            child: Text(
+              _fmtDate(item.returnedAt),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
           ),
           Expanded(
             flex: 1,
-            child: Text('${item.items.fold<int>(0, (s, i) => s + i.quantity)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            child: Text(
+              '${item.items.fold<int>(0, (s, i) => s + i.quantity)}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
           ),
           Expanded(flex: 2, child: StatusChip(item.status)),
           Expanded(
@@ -272,11 +336,16 @@ class _ListRow extends ConsumerWidget {
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.green,
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Accept', style: TextStyle(fontSize: 12)),
+                          child: const Text(
+                            'Accept',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -288,11 +357,16 @@ class _ListRow extends ConsumerWidget {
                             foregroundColor: Colors.red,
                             side: const BorderSide(color: Colors.red),
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Reject', style: TextStyle(fontSize: 12)),
+                          child: const Text(
+                            'Reject',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                     ],
@@ -327,10 +401,13 @@ class _ListRow extends ConsumerWidget {
           ],
         ),
         content: const Text(
-          'Stock will be added to warehouse inventory.\n\nThis action cannot be undone.',
+          'Stock will be added to Head Office inventory.\n\nThis action cannot be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.green),
@@ -342,7 +419,9 @@ class _ListRow extends ConsumerWidget {
 
     if (confirm == true) {
       try {
-        await ref.read(branchWarehouseReturnRepositoryProvider).acceptReturn(item.id);
+        await ref
+            .read(branchWarehouseReturnRepositoryProvider)
+            .acceptReturn(item.id);
         ref.invalidate(incomingBranchReturnsProvider);
       } catch (e) {
         if (context.mounted) {
@@ -370,7 +449,10 @@ class _ListRow extends ConsumerWidget {
           'This return will be marked as rejected. Stock goes back to the branch.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -382,7 +464,9 @@ class _ListRow extends ConsumerWidget {
 
     if (confirm == true) {
       try {
-        await ref.read(branchWarehouseReturnRepositoryProvider).rejectReturn(item.id);
+        await ref
+            .read(branchWarehouseReturnRepositoryProvider)
+            .rejectReturn(item.id);
         ref.invalidate(incomingBranchReturnsProvider);
       } catch (e) {
         if (context.mounted) {

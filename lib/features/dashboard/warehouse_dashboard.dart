@@ -7,7 +7,6 @@ import 'package:safishoe_app/features/warehouse/purchase_invoice/presentation/sc
 import 'package:safishoe_app/features/warehouse/warehouse_cash_counter/presentation/screens/warehouse_cash_counter_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../warehouse/assign_stock_to_branch/presentation/screens/assign_stock_screen.dart';
-import '../warehouse/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
 import '../warehouse/brand/presentation/screens/brands_screen.dart';
 import '../warehouse/category/presentation/screens/categorys_screen.dart';
 import '../warehouse/color/presentation/screens/colors_screen.dart';
@@ -23,34 +22,51 @@ class WarehouseDashboard extends ConsumerStatefulWidget {
   const WarehouseDashboard({super.key});
 
   @override
-  ConsumerState<WarehouseDashboard> createState() =>
-      _WarehouseDashboardState();
+  ConsumerState<WarehouseDashboard> createState() => _WarehouseDashboardState();
 }
 
 class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
   int _index = 0;
 
   static const _navItems = [
-    SidebarItem(icon: Icons.business_outlined,           label: 'Purchase Invoice'),
-    SidebarItem(icon: Icons.business_outlined,           label: 'Purchase Return'),
-    SidebarItem(icon: Icons.business_outlined,           label: 'Assign Stock To Branch'),
-    SidebarItem(icon: Icons.move_to_inbox_outlined,      label: 'Incoming Branch Returns'),
-    SidebarItem(icon: Icons.business_outlined,           label: 'Warehouse Cash Counter'),
-    SidebarItem(icon: Icons.business_outlined,           label: 'Company'),
-    SidebarItem(icon: Icons.inventory_2_outlined,        label: 'Products', group: 'Catalog'),
-    SidebarItem(icon: Icons.branding_watermark_outlined, label: 'Brands', group: 'Catalog'),
-    SidebarItem(icon: Icons.format_size_outlined,        label: 'Sizes', group: 'Catalog'),
-    SidebarItem(icon: Icons.color_lens_outlined,         label: 'Colors', group: 'Catalog'),
-    SidebarItem(icon: Icons.category_outlined,           label: 'Categories', group: 'Catalog'),
-    SidebarItem(icon: Icons.style_outlined,              label: 'Types', group: 'Catalog'),
-    SidebarItem(icon: Icons.warehouse_outlined,          label: 'Stock Inventory'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Purchase Invoice'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Purchase Return'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Assign Stock To Branch'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Warehouse Cash Counter'),
+    SidebarItem(icon: Icons.business_outlined, label: 'Company'),
+    SidebarItem(
+      icon: Icons.inventory_2_outlined,
+      label: 'Products',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.branding_watermark_outlined,
+      label: 'Brands',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.format_size_outlined,
+      label: 'Sizes',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.color_lens_outlined,
+      label: 'Colors',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: Icons.category_outlined,
+      label: 'Categories',
+      group: 'Catalog',
+    ),
+    SidebarItem(icon: Icons.style_outlined, label: 'Types', group: 'Catalog'),
+    SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
   ];
 
   static const _pages = [
     PurchaseInvoiceScreen(),
     PurchaseReturnScreen(),
     AssignStockScreen(),
-    IncomingBranchReturnsScreen(),
     WarehouseCashCounterScreen(),
     CompaniesScreen(),
     ProductsScreen(),
@@ -59,7 +75,7 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
     ColorsScreen(),
     CategorysScreen(),
     TypesScreen(),
-    StockScreen(),   // warehouseId is now a constant inside the feature
+    StockScreen(), // warehouseId is now a constant inside the feature
   ];
 
   @override

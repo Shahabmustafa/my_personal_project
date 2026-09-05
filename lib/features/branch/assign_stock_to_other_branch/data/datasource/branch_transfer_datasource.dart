@@ -59,7 +59,8 @@ class BranchTransferDatasource {
 
     await _client
         .from('branch_stock_inventory')
-        .update({'quantity': newQty}).eq('id', stockId);
+        .update({'quantity': newQty})
+        .eq('id', stockId);
   }
 
   Future<AssignStockModel> saveTransfer({
@@ -84,21 +85,23 @@ class BranchTransferDatasource {
     final assignmentId = headerRes['id'] as String;
 
     final itemRows = cartItems
-        .map((item) => {
-              'assignment_id': assignmentId,
-              'stock_id': item.stockId,
-              'barcode': item.barcode,
-              'product_id': item.productId,
-              'size_id': item.sizeId,
-              'color_id': item.colorId,
-              'brand_id': item.brandId,
-              'category_id': item.categoryId,
-              'type_id': item.typeId,
-              'quantity': item.quantity,
-              'sale_price': item.salePrice,
-              'purchase_price': item.purchasePrice,
-              'discount': item.discount,
-            })
+        .map(
+          (item) => {
+            'assignment_id': assignmentId,
+            'stock_id': item.stockId,
+            'barcode': item.barcode,
+            'product_id': item.productId,
+            'size_id': item.sizeId,
+            'color_id': item.colorId,
+            'brand_id': item.brandId,
+            'category_id': item.categoryId,
+            'type_id': item.typeId,
+            'quantity': item.quantity,
+            'sale_price': item.salePrice,
+            'purchase_price': item.purchasePrice,
+            'discount': item.discount,
+          },
+        )
         .toList();
 
     await _client.from('assign_stock_to_branch_items').insert(itemRows);
@@ -111,15 +114,51 @@ class BranchTransferDatasource {
   }
 
   /// Is branch ne doosri branches ko jo transfer bheje hain, unki history.
+  /// Items ko bhi embed karte hain taake list screen par total quantity /
+  /// total value jaisi summary cards bina extra per-row calls ke ban sakein.
   Future<List<AssignStockModel>> fetchSentTransfers(String fromBranchId) async {
     final res = await _client
         .from('assign_stock_to_branch')
-        .select('*, branches(branch_name)')
+        .select('*, branches(branch_name), assign_stock_to_branch_items(*)')
         .eq('warehouse_id', fromBranchId)
         .order('created_at', ascending: false);
 
-    return (res as List)
-        .map((e) => AssignStockModel.fromJson(e as Map<String, dynamic>))
+    return (res as List).map((e) {
+      final json = e as Map<String, dynamic>;
+      final itemsJson =
+          (json['assign_stock_to_branch_items'] as List?) ?? const [];
+      final items = itemsJson
+          .map((i) => AssignStockItemModel.fromJson(i as Map<String, dynamic>))
+          .toList();
+      return AssignStockModel.fromJson(json, items: items);
+    }).toList();
+  }
+
+  /// Ek transfer ki poori detail — items product/size/color naam ke sath.
+  Future<AssignStockModel> fetchTransferDetail(String transferId) async {
+    final headerRes = await _client
+        .from('assign_stock_to_branch')
+        .select('*, branches(branch_name)')
+        .eq('id', transferId)
+        .single();
+
+    final itemsRes = await _client
+        .from('assign_stock_to_branch_items')
+        .select('''
+          *,
+          products   ( article_name ),
+          sizes      ( number ),
+          colors     ( name ),
+          brands     ( name ),
+          categories ( name ),
+          types      ( name )
+        ''')
+        .eq('assignment_id', transferId);
+
+    final items = (itemsRes as List)
+        .map((e) => AssignStockItemModel.fromJson(e as Map<String, dynamic>))
         .toList();
+
+    return AssignStockModel.fromJson(headerRes, items: items);
   }
 }

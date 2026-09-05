@@ -18,15 +18,17 @@ class BranchTransferRepository {
     required String toBranchId,
     required List<BranchTransferCartItem> cartItems,
     String? notes,
-  }) =>
-      _datasource.saveTransfer(
-        assignmentNumber: assignmentNumber,
-        fromBranchId: fromBranchId,
-        toBranchId: toBranchId,
-        cartItems: cartItems,
-        notes: notes,
-      );
+  }) => _datasource.saveTransfer(
+    assignmentNumber: assignmentNumber,
+    fromBranchId: fromBranchId,
+    toBranchId: toBranchId,
+    cartItems: cartItems,
+    notes: notes,
+  );
 
   Future<List<AssignStockModel>> getSentTransfers(String fromBranchId) =>
       _datasource.fetchSentTransfers(fromBranchId);
+
+  Future<AssignStockModel> getTransferDetail(String transferId) =>
+      _datasource.fetchTransferDetail(transferId);
 }

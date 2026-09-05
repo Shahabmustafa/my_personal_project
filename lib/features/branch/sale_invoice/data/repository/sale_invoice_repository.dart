@@ -10,12 +10,6 @@ class SaleInvoiceRepository {
   Future<List<EmployeeLookupItem>> getSalesmen(String branchId) =>
       _datasource.fetchEmployees(branchId, 'salesman');
 
-  Future<List<EmployeeLookupItem>> getCashiers(String branchId) =>
-      _datasource.fetchEmployees(branchId, 'cashier');
-
-  Future<List<EmployeeLookupItem>> getManagers(String branchId) =>
-      _datasource.fetchEmployees(branchId, 'manager');
-
   Future<EmployeeLookupItem?> getBranchManager(String branchId) =>
       _datasource.fetchBranchManager(branchId);
 
@@ -44,27 +38,26 @@ class SaleInvoiceRepository {
     String? note,
     required List<SaleCartItem> cartItems,
     required List<PaymentInput> payments,
-  }) =>
-      _datasource.saveSaleInvoice(
-        invoiceNumber: invoiceNumber,
-        branchId: branchId,
-        printerId: printerId,
-        cashierId: cashierId,
-        customerId: customerId,
-        salesmanId: salesmanId,
-        managerId: managerId,
-        subtotal: subtotal,
-        totalDiscount: totalDiscount,
-        invoiceDiscount: invoiceDiscount,
-        totalAmount: totalAmount,
-        salesmanCommissionPercent: salesmanCommissionPercent,
-        salesmanCommissionAmount: salesmanCommissionAmount,
-        managerCommissionPercent: managerCommissionPercent,
-        managerCommissionAmount: managerCommissionAmount,
-        note: note,
-        cartItems: cartItems,
-        payments: payments,
-      );
+  }) => _datasource.saveSaleInvoice(
+    invoiceNumber: invoiceNumber,
+    branchId: branchId,
+    printerId: printerId,
+    cashierId: cashierId,
+    customerId: customerId,
+    salesmanId: salesmanId,
+    managerId: managerId,
+    subtotal: subtotal,
+    totalDiscount: totalDiscount,
+    invoiceDiscount: invoiceDiscount,
+    totalAmount: totalAmount,
+    salesmanCommissionPercent: salesmanCommissionPercent,
+    salesmanCommissionAmount: salesmanCommissionAmount,
+    managerCommissionPercent: managerCommissionPercent,
+    managerCommissionAmount: managerCommissionAmount,
+    note: note,
+    cartItems: cartItems,
+    payments: payments,
+  );
 
   Future<List<SaleInvoiceModel>> getInvoices(String branchId) =>
       _datasource.fetchInvoices(branchId);
