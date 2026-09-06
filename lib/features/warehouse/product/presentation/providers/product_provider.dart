@@ -40,6 +40,17 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
     }
   }
 
+  /// Case-insensitive duplicate check. Returns true if another product already
+  /// uses this article name. Falls back to false on network errors so the write
+  /// path (which re-checks) stays the source of truth.
+  Future<bool> articleNameExists(String articleName, {String? excludeId}) async {
+    try {
+      return await _repo.articleNameExists(articleName, excludeId: excludeId);
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String?> create(ProductModel model) async {
     try {
       await _repo.create(model);

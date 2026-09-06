@@ -55,7 +55,24 @@ class ProductRemoteDatasource {
     return result.map(ProductModel.fromJson);
   }
 
+  /// Case-insensitive check for an existing article name, optionally ignoring
+  /// one row (used when editing). Escapes LIKE metacharacters so names such as
+  /// `50%_off` match literally.
+  Future<bool> articleNameExists(String articleName, {String? excludeId}) async {
+    final needle = articleName.trim().replaceAllMapped(
+        RegExp(r'[\\%_]'), (m) => '\\${m[0]}');
+    var query = _client.from('products').select('id').ilike('article_name', needle);
+    if (excludeId != null && excludeId.isNotEmpty) {
+      query = query.neq('id', excludeId);
+    }
+    return (await query.maybeSingle()) != null;
+  }
+
   Future<ProductModel> create(ProductModel model) async {
+    if (await articleNameExists(model.articleName)) {
+      throw Exception(
+          'A product with the article "${model.articleName.trim()}" already exists');
+    }
     final data = await _client
         .from('products')
         .insert(model.toJson())
@@ -65,6 +82,10 @@ class ProductRemoteDatasource {
   }
 
   Future<ProductModel> update(ProductModel model) async {
+    if (await articleNameExists(model.articleName, excludeId: model.id)) {
+      throw Exception(
+          'Another product with the article "${model.articleName.trim()}" already exists');
+    }
     final data = await _client
         .from('products')
         .update(model.toJson())

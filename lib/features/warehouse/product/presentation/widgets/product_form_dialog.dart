@@ -31,6 +31,10 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
   String? _existingImageUrl;
   bool _isLoading = false;
 
+  /// Server-side "article already exists" message, shown inline under the
+  /// Article Name field. Cleared as soon as the name is edited.
+  String? _duplicateNameError;
+
   @override
   void initState() {
     super.initState();
@@ -81,6 +85,24 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isLoading = true);
 
+    // Check for a duplicate article name up front, before uploading any image,
+    // so a rejected save never leaves an orphaned file in storage.
+    final duplicate = await ref.read(productProvider.notifier).articleNameExists(
+          _nameCtrl.text.trim(),
+          excludeId: widget.product?.id,
+        );
+    if (!mounted) return;
+    if (duplicate) {
+      setState(() {
+        _isLoading = false;
+        _duplicateNameError = widget.product == null
+            ? 'A product with this article already exists'
+            : 'Another product with this article already exists';
+      });
+      _formKey.currentState?.validate();
+      return;
+    }
+
     String imageUrl = _existingImageUrl ?? '';
 
     if (_imageBytes != null && _imageFileName != null) {
@@ -117,12 +139,20 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
 
     if (!mounted) return;
     if (error != null) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(error),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-      ));
+      final isDuplicate = error.toLowerCase().contains('already exists');
+      setState(() {
+        _isLoading = false;
+        if (isDuplicate) _duplicateNameError = error;
+      });
+      if (isDuplicate) {
+        _formKey.currentState?.validate();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(error),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
       return;
     }
     Navigator.pop(context);
@@ -201,9 +231,18 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   label: 'Article Name *',
                   hint: 'e.g. Sports Shoe 001',
                   icon: Icons.inventory_2_outlined,
-                  validator: (v) => (v == null || v.trim().isEmpty)
-                      ? 'Article name is required'
-                      : null,
+                  onChanged: (_) {
+                    if (_duplicateNameError != null) {
+                      setState(() => _duplicateNameError = null);
+                    }
+                  },
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Article name is required';
+                    }
+                    if (_duplicateNameError != null) return _duplicateNameError;
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 14),
                 _Field(
@@ -288,6 +327,7 @@ class _Field extends StatelessWidget {
   final IconData icon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
+  final void Function(String)? onChanged;
 
   const _Field({
     required this.controller,
@@ -296,6 +336,7 @@ class _Field extends StatelessWidget {
     required this.icon,
     this.keyboardType = TextInputType.text,
     this.validator,
+    this.onChanged,
   });
 
   @override
@@ -304,6 +345,8 @@ class _Field extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       validator: validator,
+      onChanged: onChanged,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

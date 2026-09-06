@@ -18,6 +18,8 @@ class ProductRepository {
   Future<List<ProductModel>> getAll() => remoteDatasource.getAll();
   Future<PageResult<ProductModel>> fetchPage(PageRequest request) =>
       remoteDatasource.fetchPage(request);
+  Future<bool> articleNameExists(String articleName, {String? excludeId}) =>
+      remoteDatasource.articleNameExists(articleName, excludeId: excludeId);
   Future<ProductModel> create(ProductModel model) => remoteDatasource.create(model);
   Future<ProductModel> update(ProductModel model) => remoteDatasource.update(model);
   Future<void> delete(String id, String imageUrl) =>
