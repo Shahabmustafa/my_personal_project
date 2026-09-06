@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/providers/stock_provider.dart'
+    show stockCompaniesProvider;
 import '../../data/datasource/company_remote_datasource.dart';
 import '../../data/model/company_model.dart';
 import '../../data/repository/company_repository.dart';
@@ -15,7 +17,13 @@ final companyRepositoryProvider = Provider<CompanyRepository>((ref) {
 
 class CompanyNotifier extends StateNotifier<CompanyState> {
   final CompanyRepository _repo;
-  CompanyNotifier(this._repo) : super(const CompanyState());
+  final Ref _ref;
+  CompanyNotifier(this._repo, this._ref) : super(const CompanyState());
+
+  /// Stock dialogs cache the company lookup in a plain [FutureProvider]; bust it
+  /// after any write so new companies show in their dropdowns without a page
+  /// reload.
+  void _invalidateLookups() => _ref.invalidate(stockCompaniesProvider);
 
   Future<void> loadAllCompanies() async {
     state = state.copyWith(status: CompanyStatus.loading, errorMessage: null);
@@ -66,6 +74,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
         status: CompanyStatus.success,
         companies: companies,
       );
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
@@ -82,6 +91,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
           .toList();
       state =
           state.copyWith(status: CompanyStatus.success, companies: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
@@ -96,6 +106,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
       final list = state.companies.where((c) => c.id != id).toList();
       state =
           state.copyWith(status: CompanyStatus.success, companies: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
@@ -106,5 +117,5 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
 
 final companyProvider =
     StateNotifierProvider<CompanyNotifier, CompanyState>((ref) {
-  return CompanyNotifier(ref.read(companyRepositoryProvider));
+  return CompanyNotifier(ref.read(companyRepositoryProvider), ref);
 });
