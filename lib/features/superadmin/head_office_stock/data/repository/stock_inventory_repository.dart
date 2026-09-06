@@ -1,3 +1,4 @@
+import '../../../../../core/pagination/pagination.dart';
 import '../datasource/stock_inventory_datasource.dart';
 import '../model/stock_inventory_model.dart';
 
@@ -7,6 +8,9 @@ class StockInventoryRepository {
   StockInventoryRepository(this._datasource);
 
   Future<List<StockInventoryModel>> getAllStock() => _datasource.fetchAll();
+
+  Future<PageResult<StockInventoryModel>> fetchStockPage(PageRequest request) =>
+      _datasource.fetchPage(request);
 
   Future<bool> barcodeExists(String barcode) =>
       _datasource.barcodeExists(barcode);

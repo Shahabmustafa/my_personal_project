@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../model/stock_inventory_model.dart';
 
 class StockInventoryDatasource {
@@ -7,6 +8,37 @@ class StockInventoryDatasource {
   StockInventoryDatasource(this._client);
 
   static const _table = 'stock_inventory';
+
+  static StockInventoryModel _fromViewRow(Map<String, dynamic> r) =>
+      StockInventoryModel.fromJson({
+        ...r,
+        'products': {'article_name': r['product_name']},
+        'sizes': {'number': r['size_name']},
+        'colors': {'name': r['color_name']},
+        'brands': {'name': r['brand_name']},
+        'categories': {'name': r['category_name']},
+        'types': {'name': r['type_name']},
+        'companies': {'name': r['company_name']},
+      });
+
+  /// Server-paginated + searched page of head-office stock (via
+  /// `v_head_office_stock`).
+  Future<PageResult<StockInventoryModel>> fetchPage(PageRequest request) async {
+    var query = _client.from('v_head_office_stock').select();
+    if (request.search.isNotEmpty) {
+      query = query.ilike('search_text', '%${request.search.toLowerCase()}%');
+    }
+    if (request.filters['low_stock'] == true) {
+      query = query.lte('quantity', 5);
+    }
+    final result = await runSupabasePage(
+      query
+          .order('product_name', ascending: true)
+          .order('quantity', ascending: false),
+      request: request,
+    );
+    return result.map(_fromViewRow);
+  }
   static const _joins = '''
     *,
     products(article_name),

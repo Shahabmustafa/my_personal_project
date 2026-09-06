@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../../data/datasource/stock_inventory_datasource.dart';
 import '../../data/model/stock_inventory_model.dart';
 import '../../data/repository/stock_inventory_repository.dart';
@@ -13,9 +15,46 @@ final stockInventoryRepositoryProvider = Provider<StockInventoryRepository>(
   (ref) => StockInventoryRepository(ref.read(stockInventoryDatasourceProvider)),
 );
 
-// ── Read-only stock list (head office) ────────────────────────────────────
-final headOfficeStockProvider = FutureProvider<List<StockInventoryModel>>(
-    (ref) => ref.read(stockInventoryRepositoryProvider).getAllStock());
+// ── Server-paginated stock list (head office) ─────────────────────────────
+class HeadOfficeStockNotifier
+    extends PaginatedListNotifier<StockInventoryModel> {
+  final StockInventoryRepository _repo;
+  HeadOfficeStockNotifier(this._repo);
+
+  @override
+  Future<PageResult<StockInventoryModel>> fetchPage(PageRequest request) =>
+      _repo.fetchStockPage(request);
+}
+
+final headOfficeStockProvider = StateNotifierProvider<HeadOfficeStockNotifier,
+    PaginatedListState<StockInventoryModel>>(
+  (ref) => HeadOfficeStockNotifier(ref.read(stockInventoryRepositoryProvider)),
+);
+
+class HeadOfficeStockStats {
+  final int totalSkus;
+  final int totalQty;
+  final double totalValue;
+  final int lowStockCount;
+  const HeadOfficeStockStats(
+      {this.totalSkus = 0,
+      this.totalQty = 0,
+      this.totalValue = 0,
+      this.lowStockCount = 0});
+}
+
+final headOfficeStockStatsProvider =
+    FutureProvider.autoDispose<HeadOfficeStockStats>((ref) async {
+  final res =
+      await Supabase.instance.client.rpc('head_office_stock_stats');
+  final j = (res as Map).cast<String, dynamic>();
+  return HeadOfficeStockStats(
+    totalSkus: (j['total_skus'] as num?)?.toInt() ?? 0,
+    totalQty: (j['total_qty'] as num?)?.toInt() ?? 0,
+    totalValue: (j['total_value'] as num?)?.toDouble() ?? 0,
+    lowStockCount: (j['low_stock_count'] as num?)?.toInt() ?? 0,
+  );
+});
 
 // ── Add action helper ────────────────────────────────────────────────────
 final headOfficeStockActionsProvider = Provider<HeadOfficeStockActions>(

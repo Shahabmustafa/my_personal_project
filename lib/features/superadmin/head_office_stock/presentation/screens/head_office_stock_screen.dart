@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/pagination/pagination.dart';
 import 'package:safishoe_app/features/warehouse/stock_inventory/data/barcode_printer_service.dart';
 import '../../data/model/stock_inventory_model.dart';
 import '../providers/stock_inventory_provider.dart';
@@ -17,20 +18,21 @@ class HeadOfficeStockScreen extends ConsumerStatefulWidget {
 }
 
 class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
-  String _search = '';
-
   Future<void> _openAddStock() async {
     await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => const AddStockInventoryDialog(),
     );
-    ref.invalidate(headOfficeStockProvider);
+    ref.read(headOfficeStockProvider.notifier).refresh();
+    ref.invalidate(headOfficeStockStatsProvider);
   }
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(headOfficeStockProvider);
+    final state = ref.watch(headOfficeStockProvider);
+    final notifier = ref.read(headOfficeStockProvider.notifier);
+    final stats = ref.watch(headOfficeStockStatsProvider);
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
@@ -49,9 +51,11 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                         style: TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold)),
                     Text(
-                      async.maybeWhen(
-                        data: (items) => '${items.length} SKUs',
-                        orElse: () => 'Head office stock',
+                      stats.maybeWhen(
+                        data: (s) =>
+                            'Total SKUs: ${groupThousands(state.totalCount)}  •  ${groupThousands(s.totalQty)} units  •  ${groupThousands(s.lowStockCount)} low',
+                        orElse: () =>
+                            'Total SKUs: ${groupThousands(state.totalCount)}',
                       ),
                       style: const TextStyle(
                           fontSize: 13, color: Color(0xFF8A8FA3)),
@@ -60,7 +64,10 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: () => ref.invalidate(headOfficeStockProvider),
+                  onPressed: () {
+                    notifier.refresh();
+                    ref.invalidate(headOfficeStockStatsProvider);
+                  },
                   icon: const Icon(Icons.refresh),
                   tooltip: 'Refresh',
                   color: const Color(0xFF3E63DD),
@@ -86,7 +93,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: TextField(
-              onChanged: (v) => setState(() => _search = v),
+              onChanged: notifier.setSearch,
               decoration: InputDecoration(
                 hintText: 'Search by barcode, article, brand...',
                 hintStyle:
@@ -109,65 +116,9 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
             ),
           ),
           Expanded(
-            child: async.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: Colors.redAccent),
-                    const SizedBox(height: 12),
-                    Text('$e',
-                        style: const TextStyle(color: Color(0xFF8A8FA3))),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () =>
-                          ref.invalidate(headOfficeStockProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-              data: (items) {
-                final q = _search.toLowerCase();
-                final filtered = q.isEmpty
-                    ? items
-                    : items
-                        .where((s) =>
-                            (s.productName ?? '').toLowerCase().contains(q) ||
-                            s.barcode.toLowerCase().contains(q) ||
-                            (s.brandName ?? '').toLowerCase().contains(q) ||
-                            (s.colorName ?? '').toLowerCase().contains(q) ||
-                            (s.sizeName ?? '').toLowerCase().contains(q) ||
-                            (s.categoryName ?? '').toLowerCase().contains(q) ||
-                            (s.typeName ?? '').toLowerCase().contains(q))
-                        .toList();
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inventory_2_outlined,
-                            size: 48, color: Colors.grey[300]),
-                        const SizedBox(height: 12),
-                        Text(
-                          _search.isEmpty
-                              ? 'No stock entries found'
-                              : 'No results for "$_search"',
-                          style: const TextStyle(color: Color(0xFF8A8FA3)),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return isMobile
-                    ? _MobileList(items: filtered)
-                    : _DesktopTable(items: filtered);
-              },
-            ),
+            child: isMobile
+                ? _MobileList(state: state, notifier: notifier)
+                : _DesktopTable(state: state, notifier: notifier),
           ),
         ],
       ),
@@ -177,8 +128,10 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
 
 // ── Shared actions ───────────────────────────────────────────────────────
 
-Future<void> _refresh(WidgetRef ref) async =>
-    ref.invalidate(headOfficeStockProvider);
+Future<void> _refresh(WidgetRef ref) async {
+  await ref.read(headOfficeStockProvider.notifier).refresh();
+  ref.invalidate(headOfficeStockStatsProvider);
+}
 
 void _copyBarcode(BuildContext context, String barcode) {
   Clipboard.setData(ClipboardData(text: barcode));
@@ -427,8 +380,9 @@ const _kColWidths = <double>[
 const _kTableMinWidth = 1410; // sum(_kColWidths) 1370 + row padding 32 + slack
 
 class _DesktopTable extends StatefulWidget {
-  final List<StockInventoryModel> items;
-  const _DesktopTable({required this.items});
+  final PaginatedListState<StockInventoryModel> state;
+  final HeadOfficeStockNotifier notifier;
+  const _DesktopTable({required this.state, required this.notifier});
 
   @override
   State<_DesktopTable> createState() => _DesktopTableState();
@@ -445,7 +399,6 @@ class _DesktopTableState extends State<_DesktopTable> {
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.items;
     const headerStyle = TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
@@ -502,12 +455,15 @@ class _DesktopTableState extends State<_DesktopTable> {
                           ]),
                         ),
                         Expanded(
-                          child: ListView.separated(
-                            itemCount: items.length,
+                          child: PaginatedListView<StockInventoryModel>(
+                            state: widget.state,
+                            padding: EdgeInsets.zero,
+                            onLoadMore: widget.notifier.loadMore,
+                            onRefresh: widget.notifier.refresh,
+                            emptyText: 'No stock entries found',
                             separatorBuilder: (_, __) => const Divider(
                                 height: 1, color: Color(0xFFE7E9F0)),
-                            itemBuilder: (_, i) {
-                              final s = items[i];
+                            itemBuilder: (_, s, __) {
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 10),
@@ -580,16 +536,19 @@ class _TH extends StatelessWidget {
 }
 
 class _MobileList extends StatelessWidget {
-  final List<StockInventoryModel> items;
-  const _MobileList({required this.items});
+  final PaginatedListState<StockInventoryModel> state;
+  final HeadOfficeStockNotifier notifier;
+  const _MobileList({required this.state, required this.notifier});
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return PaginatedListView<StockInventoryModel>(
+      state: state,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: items.length,
-      itemBuilder: (_, i) {
-        final s = items[i];
+      onLoadMore: notifier.loadMore,
+      onRefresh: notifier.refresh,
+      emptyText: 'No stock entries found',
+      itemBuilder: (_, s, __) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
