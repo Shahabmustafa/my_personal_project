@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../../core/pagination/pagination.dart';
 import '../model/product_model.dart';
 
 class ProductRemoteDatasource {
@@ -39,6 +40,19 @@ class ProductRemoteDatasource {
         .select()
         .order('created_at', ascending: false);
     return (data as List).map((e) => ProductModel.fromJson(e)).toList();
+  }
+
+  /// Server-side paginated + searched page of products.
+  Future<PageResult<ProductModel>> fetchPage(PageRequest request) async {
+    var query = _client.from('products').select();
+    if (request.search.isNotEmpty) {
+      query = query.ilike('article_name', '%${request.search}%');
+    }
+    final result = await runSupabasePage(
+      query.order('created_at', ascending: false),
+      request: request,
+    );
+    return result.map(ProductModel.fromJson);
   }
 
   Future<ProductModel> create(ProductModel model) async {

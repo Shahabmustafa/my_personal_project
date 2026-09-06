@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import '../../../../../core/pagination/pagination.dart';
 import '../datasource/product_remote_datasource.dart';
 import '../model/product_model.dart';
 
@@ -15,6 +16,8 @@ class ProductRepository {
           fileName: fileName, bytes: bytes, mimeType: mimeType);
 
   Future<List<ProductModel>> getAll() => remoteDatasource.getAll();
+  Future<PageResult<ProductModel>> fetchPage(PageRequest request) =>
+      remoteDatasource.fetchPage(request);
   Future<ProductModel> create(ProductModel model) => remoteDatasource.create(model);
   Future<ProductModel> update(ProductModel model) => remoteDatasource.update(model);
   Future<void> delete(String id, String imageUrl) =>

@@ -90,7 +90,14 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
             mimeType: _imageMime ?? 'image/jpeg',
           );
       if (url == null) {
-        setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Image upload failed'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ));
+        }
         return;
       }
       imageUrl = url;
@@ -104,16 +111,22 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
       imageUrl: imageUrl,
     );
 
-    if (widget.product == null) {
-      await ref.read(productProvider.notifier).create(model);
-    } else {
-      await ref.read(productProvider.notifier).update(model);
-    }
+    final error = widget.product == null
+        ? await ref.read(productProvider.notifier).create(model)
+        : await ref.read(productProvider.notifier).update(model);
 
-    if (mounted) {
-      Navigator.pop(context);
-      widget.onSaved?.call();
+    if (!mounted) return;
+    if (error != null) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(error),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
     }
+    Navigator.pop(context);
+    widget.onSaved?.call();
   }
 
   @override

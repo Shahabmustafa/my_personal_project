@@ -1,7 +1,8 @@
 import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:safishoe_app/features/warehouse/product/presentation/providers/product_state.dart';
+
+import '../../../../../core/pagination/pagination.dart';
 import '../../data/datasource/product_remote_datasource.dart';
 import '../../data/model/product_model.dart';
 import '../../data/repository/product_repository.dart';
@@ -14,22 +15,18 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
       remoteDatasource: ref.read(productRemoteDatasourceProvider));
 });
 
-class ProductNotifier extends StateNotifier<ProductState> {
+/// Server-paginated products list. Search runs as a PostgreSQL `ilike` on
+/// `article_name` (trigram index); the total comes from a single `COUNT` on the
+/// first page / refresh only.
+class ProductNotifier extends PaginatedListNotifier<ProductModel> {
   final ProductRepository _repo;
-  ProductNotifier(this._repo) : super(const ProductState());
+  ProductNotifier(this._repo);
 
-  Future<void> loadAll() async {
-    state = state.copyWith(status: ProductStatus.loading, errorMessage: null);
-    try {
-      final items = await _repo.getAll();
-      state = state.copyWith(status: ProductStatus.success, items: items);
-    } catch (e) {
-      state = state.copyWith(
-          status: ProductStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
-    }
-  }
+  @override
+  Future<PageResult<ProductModel>> fetchPage(PageRequest request) =>
+      _repo.fetchPage(request);
 
+  /// Returns the public URL, or null on failure.
   Future<String?> uploadImage({
     required String fileName,
     required Uint8List bytes,
@@ -38,56 +35,42 @@ class ProductNotifier extends StateNotifier<ProductState> {
     try {
       return await _repo.uploadImage(
           fileName: fileName, bytes: bytes, mimeType: mimeType);
-    } catch (e) {
-      state = state.copyWith(
-          status: ProductStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+    } catch (_) {
       return null;
     }
   }
 
-  Future<void> create(ProductModel model) async {
-    state = state.copyWith(status: ProductStatus.loading, errorMessage: null);
+  Future<String?> create(ProductModel model) async {
     try {
       await _repo.create(model);
-      final items = await _repo.getAll();
-      state = state.copyWith(status: ProductStatus.success, items: items);
+      await refresh();
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: ProductStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return e.toString().replaceAll('Exception: ', '');
     }
   }
 
-  Future<void> update(ProductModel model) async {
-    state = state.copyWith(status: ProductStatus.loading, errorMessage: null);
+  Future<String?> update(ProductModel model) async {
     try {
       final updated = await _repo.update(model);
-      final list =
-          state.items.map((i) => i.id == updated.id ? updated : i).toList();
-      state = state.copyWith(status: ProductStatus.success, items: list);
+      replaceRow((p) => p.id == updated.id, updated);
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: ProductStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return e.toString().replaceAll('Exception: ', '');
     }
   }
 
-  Future<void> delete(String id, String imageUrl) async {
-    state = state.copyWith(status: ProductStatus.loading, errorMessage: null);
+  Future<String?> delete(String id, String imageUrl) async {
     try {
       await _repo.delete(id, imageUrl);
-      final list = state.items.where((i) => i.id != id).toList();
-      state = state.copyWith(status: ProductStatus.success, items: list);
+      removeRow((p) => p.id == id);
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: ProductStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return e.toString().replaceAll('Exception: ', '');
     }
   }
 }
 
 final productProvider =
-    StateNotifierProvider<ProductNotifier, ProductState>((ref) {
-  return ProductNotifier(ref.read(productRepositoryProvider));
-});
+    StateNotifierProvider<ProductNotifier, PaginatedListState<ProductModel>>(
+        (ref) => ProductNotifier(ref.read(productRepositoryProvider)));
