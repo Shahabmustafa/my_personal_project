@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../head_office_purchase/data/models/warehouse_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
@@ -223,6 +224,7 @@ class _HoAssignProductSelectorState
         final stock = _selectedStock;
         final totalQty = stock?.quantity ?? 0;
         final salePrice = stock?.salePrice ?? 0.0;
+        final purchasePrice = stock?.purchasePrice ?? 0.0;
         final discountPct = stock?.discountPct ?? 0.0;
 
         return Container(
@@ -394,9 +396,11 @@ class _HoAssignProductSelectorState
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                crossAxisAlignment: WrapCrossAlignment.end,
                 children: [
                   _InfoBox(
                     label: 'Head Office Stock',
@@ -405,7 +409,13 @@ class _HoAssignProductSelectorState
                         ? Colors.green.shade700
                         : Colors.red.shade700,
                   ),
-                  const SizedBox(width: 10),
+                  _InfoBox(
+                    label: 'Purchase Price',
+                    value: stock != null
+                        ? 'PKR ${purchasePrice.toStringAsFixed(0)}'
+                        : null,
+                    valueColor: Colors.blueGrey.shade700,
+                  ),
                   _InfoBox(
                     label: 'Sale Price',
                     value: stock != null
@@ -413,7 +423,6 @@ class _HoAssignProductSelectorState
                         : null,
                     valueColor: primary,
                   ),
-                  const SizedBox(width: 10),
                   _InfoBox(
                     label: 'Discount',
                     value: stock != null
@@ -421,9 +430,14 @@ class _HoAssignProductSelectorState
                         : null,
                     valueColor: Colors.orange.shade800,
                   ),
-                  const Spacer(),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
                   SizedBox(
-                    width: 140,
+                    width: 230,
                     child: _QtyStepperInput(
                       controller: _qtyCtrl,
                       enabled: stock != null && totalQty > 0,
@@ -432,7 +446,7 @@ class _HoAssignProductSelectorState
                       onSubmit: (_) => _addToCart(),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const Spacer(),
                   SizedBox(
                     height: 48,
                     child: FilledButton.icon(
@@ -579,7 +593,11 @@ class _InfoBox extends StatelessWidget {
 
 // ── Qty Stepper Input ─────────────────────────────────────────────────────
 
-class _QtyStepperInput extends StatelessWidget {
+/// Quantity picker for "how many pairs to assign". Rebuilds as the value
+/// changes so the −/+ buttons dim at their bounds, the field turns red if a
+/// typed value exceeds stock, and a helper line shows what will be left in the
+/// head office.
+class _QtyStepperInput extends StatefulWidget {
   final TextEditingController controller;
   final bool enabled;
   final int max;
@@ -594,34 +612,78 @@ class _QtyStepperInput extends StatelessWidget {
     required this.onSubmit,
   });
 
-  void _inc() {
-    final v = int.tryParse(controller.text) ?? 0;
-    if (v < max) controller.text = '${v + 1}';
+  @override
+  State<_QtyStepperInput> createState() => _QtyStepperInputState();
+}
+
+class _QtyStepperInputState extends State<_QtyStepperInput> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onChange);
   }
 
-  void _dec() {
-    final v = int.tryParse(controller.text) ?? 2;
-    if (v > 1) controller.text = '${v - 1}';
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onChange);
+    super.dispose();
+  }
+
+  void _onChange() {
+    if (mounted) setState(() {});
+  }
+
+  int get _value => int.tryParse(widget.controller.text) ?? 0;
+  int get _maxOr1 => widget.max < 1 ? 1 : widget.max;
+
+  void _setValue(int v) {
+    final safe = v.clamp(1, _maxOr1);
+    widget.controller.text = '$safe';
+    widget.controller.selection =
+        TextSelection.collapsed(offset: widget.controller.text.length);
   }
 
   @override
   Widget build(BuildContext context) {
+    final enabled = widget.enabled;
+    final color = widget.primaryColor;
+    final over = _value > widget.max;
+    final canDec = enabled && _value > 1;
+    final canInc = enabled && _value < widget.max;
+    final remaining = (widget.max - _value).clamp(0, widget.max);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Quantity',
-            style:
-                TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Quantity to assign',
+                style:
+                    TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+            if (enabled) ...[
+              const SizedBox(width: 6),
+              Text('max ${widget.max}',
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: color)),
+            ],
+          ],
+        ),
         const SizedBox(height: 4),
         Container(
           height: 48,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: enabled
-                  ? primaryColor.withOpacity(0.5)
-                  : Colors.grey.shade200,
+              color: !enabled
+                  ? Colors.grey.shade200
+                  : over
+                      ? Colors.red
+                      : color.withValues(alpha: 0.5),
+              width: 1.4,
             ),
             color: enabled ? Colors.white : Colors.grey.shade50,
           ),
@@ -629,48 +691,69 @@ class _QtyStepperInput extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _btn(
-                icon: Icons.remove,
-                color: enabled
-                    ? primaryColor.withOpacity(0.08)
+                icon: Icons.remove_rounded,
+                bg: canDec
+                    ? color.withValues(alpha: 0.10)
                     : Colors.grey.shade100,
-                iconColor: enabled ? primaryColor : Colors.grey.shade400,
+                fg: canDec ? color : Colors.grey.shade400,
                 radius: const BorderRadius.horizontal(
-                    left: Radius.circular(7)),
-                onTap: enabled ? _dec : null,
+                    left: Radius.circular(9)),
+                onTap: canDec ? () => _setValue(_value - 1) : null,
               ),
               SizedBox(
-                width: 48,
+                width: 58,
                 child: TextField(
-                  controller: controller,
+                  controller: widget.controller,
                   enabled: enabled,
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
                   style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: enabled
-                        ? primaryColor
-                        : Colors.grey.shade400,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: !enabled
+                        ? Colors.grey.shade400
+                        : over
+                            ? Colors.red
+                            : color,
                   ),
                   decoration: const InputDecoration(
                     isDense: true,
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 13),
+                    contentPadding: EdgeInsets.symmetric(vertical: 13),
                   ),
-                  onSubmitted: onSubmit,
+                  onSubmitted: widget.onSubmit,
+                  onTapOutside: (_) {
+                    if (!enabled) return;
+                    if (_value < 1 || _value > widget.max) {
+                      _setValue(_value);
+                    }
+                  },
                 ),
               ),
               _btn(
-                icon: Icons.add,
-                color: enabled ? primaryColor : Colors.grey.shade100,
-                iconColor:
-                    enabled ? Colors.white : Colors.grey.shade400,
+                icon: Icons.add_rounded,
+                bg: canInc ? color : Colors.grey.shade100,
+                fg: canInc ? Colors.white : Colors.grey.shade400,
                 radius: const BorderRadius.horizontal(
-                    right: Radius.circular(7)),
-                onTap: enabled ? _inc : null,
+                    right: Radius.circular(9)),
+                onTap: canInc ? () => _setValue(_value + 1) : null,
               ),
             ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          !enabled
+              ? 'Select a product to set quantity'
+              : over
+                  ? 'Only ${widget.max} pairs in stock'
+                  : '$remaining pairs will stay in head office',
+          style: TextStyle(
+            fontSize: 10.5,
+            color: over ? Colors.red.shade600 : Colors.grey.shade500,
           ),
         ),
       ],
@@ -679,8 +762,8 @@ class _QtyStepperInput extends StatelessWidget {
 
   Widget _btn({
     required IconData icon,
-    required Color color,
-    required Color iconColor,
+    required Color bg,
+    required Color fg,
     required BorderRadius radius,
     required VoidCallback? onTap,
   }) =>
@@ -688,11 +771,11 @@ class _QtyStepperInput extends StatelessWidget {
         onTap: onTap,
         borderRadius: radius,
         child: Container(
-          width: 36,
+          width: 42,
           height: double.infinity,
-          decoration: BoxDecoration(color: color, borderRadius: radius),
+          decoration: BoxDecoration(color: bg, borderRadius: radius),
           alignment: Alignment.center,
-          child: Icon(icon, size: 16, color: iconColor),
+          child: Icon(icon, size: 18, color: fg),
         ),
       );
 }

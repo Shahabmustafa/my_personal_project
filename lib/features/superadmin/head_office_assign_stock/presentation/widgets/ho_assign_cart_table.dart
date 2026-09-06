@@ -69,6 +69,7 @@ class _DesktopTable extends ConsumerWidget {
             _h('Color', flex: 2),
             _h('Type', flex: 2),
             _h('Category', flex: 2),
+            _h('Purchase Price', flex: 2),
             _h('Sale Price', flex: 2),
             _h('Discount', flex: 2),
             _h('In Stock', flex: 2),
@@ -154,6 +155,12 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
           _c(item.colorName, flex: 2),
           _c(item.typeName, flex: 2),
           _c(item.categoryName, flex: 2),
+          _c(item.purchasePrice.toStringAsFixed(0),
+              flex: 2,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blueGrey.shade700)),
           _c(item.salePrice.toStringAsFixed(0),
               flex: 2,
               style: TextStyle(
@@ -387,7 +394,7 @@ class _Footer extends StatelessWidget {
       child: Row(
         children: [
           const Expanded(
-            flex: 17,
+            flex: 19,
             child: Text('TOTALS',
                 style: TextStyle(
                     fontWeight: FontWeight.w700, fontSize: 12)),
@@ -459,19 +466,28 @@ class _MobileList extends ConsumerWidget {
                     '${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 6,
                   children: [
                     _lbl('In Stock', '${item.headOfficeStock}',
                         color: Colors.green.shade700),
-                    const SizedBox(width: 12),
-                    _lbl('S.Price',
-                        item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
+                    _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
+                        color: Colors.blueGrey.shade700),
+                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
                     _lbl('Discount',
                         item.discount > 0
                             ? '${item.discount.toStringAsFixed(0)}%'
                             : '—',
                         color: Colors.orange.shade800),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Text('Qty to send',
+                        style: TextStyle(
+                            fontSize: 12, color: Colors.grey.shade600)),
                     const Spacer(),
                     _QtyStepper(
                       value: item.quantity,
