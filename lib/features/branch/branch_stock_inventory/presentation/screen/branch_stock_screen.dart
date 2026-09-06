@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/pagination/pagination.dart';
 import '../../data/model/branch_stock_model.dart';
 import '../povider/branch_stock_provider.dart';
 
@@ -17,21 +18,22 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
   static const _primary = Color(0xFF1565C0);
 
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-            () => ref.read(branchStockProvider.notifier).loadStock());
-  }
-
-  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
   }
 
+  void _refresh() {
+    ref.read(branchStockProvider.notifier).refresh();
+    ref.invalidate(branchStockStatsProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(branchStockProvider);
+    final notifier = ref.read(branchStockProvider.notifier);
+    final stats = ref.watch(branchStockStatsProvider).asData?.value ??
+        const BranchStockStats();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
@@ -65,10 +67,9 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1A1A2E)),
                       ),
-                      Text(
-                        '${state.totalProducts} products in inventory',
-                        style: const TextStyle(
-                            fontSize: 13, color: Color(0xFF8A8FA3)),
+                      TotalCountLabel(
+                        label: 'Products',
+                        count: state.totalCount,
                       ),
                     ],
                   ),
@@ -76,8 +77,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                 Tooltip(
                   message: 'Refresh',
                   child: InkWell(
-                    onTap: () =>
-                        ref.read(branchStockProvider.notifier).loadStock(),
+                    onTap: _refresh,
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -96,51 +96,48 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
             const SizedBox(height: 20),
 
             // ── Summary Cards ─────────────────────────────────────────────
-            if (!state.isLoading && state.error == null) ...[
-              Row(
-                children: [
-                  _SummaryCard(
-                    label: 'Total Products',
-                    value: '${state.totalProducts}',
-                    icon: Icons.inventory_2_outlined,
-                    color: _primary,
-                  ),
-                  const SizedBox(width: 12),
-                  _SummaryCard(
-                    label: 'Total Pairs',
-                    value: '${state.totalQuantity}',
-                    icon: Icons.straighten_outlined,
-                    color: Colors.green.shade700,
-                  ),
-                  const SizedBox(width: 12),
-                  _SummaryCard(
-                    label: 'Low Stock (≤5)',
-                    value: '${state.lowStockCount}',
-                    icon: Icons.warning_amber_outlined,
-                    color: state.lowStockCount > 0
-                        ? Colors.orange.shade700
-                        : Colors.grey.shade400,
-                  ),
-                  const SizedBox(width: 12),
-                  _SummaryCard(
-                    label: 'Total Sale Price',
-                    value: 'Rs. ${state.totalSalePrice.toStringAsFixed(0)}',
-                    icon: Icons.sell_outlined,
-                    color: const Color(0xFF6C4DE0),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-            ],
+            Row(
+              children: [
+                _SummaryCard(
+                  label: 'Total Products',
+                  value: groupThousands(state.totalCount),
+                  icon: Icons.inventory_2_outlined,
+                  color: _primary,
+                ),
+                const SizedBox(width: 12),
+                _SummaryCard(
+                  label: 'Total Pairs',
+                  value: groupThousands(stats.totalQuantity),
+                  icon: Icons.straighten_outlined,
+                  color: Colors.green.shade700,
+                ),
+                const SizedBox(width: 12),
+                _SummaryCard(
+                  label: 'Low Stock (≤5)',
+                  value: groupThousands(stats.lowStockCount),
+                  icon: Icons.warning_amber_outlined,
+                  color: stats.lowStockCount > 0
+                      ? Colors.orange.shade700
+                      : Colors.grey.shade400,
+                ),
+                const SizedBox(width: 12),
+                _SummaryCard(
+                  label: 'Total Sale Price',
+                  value: 'Rs. ${groupThousands(stats.totalSalePrice.round())}',
+                  icon: Icons.sell_outlined,
+                  color: const Color(0xFF6C4DE0),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
             // ── Search Bar ────────────────────────────────────────────────
-            if (!state.isLoading && state.error == null) ...[
+            ...[
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 300),
                 child: TextField(
                   controller: _searchCtrl,
-                  onChanged: (v) =>
-                      ref.read(branchStockProvider.notifier).search(v),
+                  onChanged: notifier.setSearch,
                   decoration: InputDecoration(
                     hintText:
                     'Search by article, barcode, size, color, brand...',
@@ -154,9 +151,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                           size: 18, color: Color(0xFF8A8FA3)),
                       onPressed: () {
                         _searchCtrl.clear();
-                        ref
-                            .read(branchStockProvider.notifier)
-                            .search('');
+                        notifier.setSearch('');
                       },
                     )
                         : null,
@@ -185,23 +180,11 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
 
             // ── Table ─────────────────────────────────────────────────────
             Expanded(
-              child: state.isLoading
-                  ? const Center(
-                  child:
-                  CircularProgressIndicator(strokeWidth: 2))
-                  : state.error != null
-                  ? _ErrorView(
-                error: state.error!,
-                onRetry: () => ref
-                    .read(branchStockProvider.notifier)
-                    .loadStock(),
-              )
-                  : Container(
+              child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border:
-                  Border.all(color: const Color(0xFFE7E9F0)),
+                  border: Border.all(color: const Color(0xFFE7E9F0)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.04),
@@ -237,20 +220,17 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                       ),
                       // Table Body
                       Expanded(
-                        child: state.filtered.isEmpty
-                            ? _EmptyView(
-                            isSearch:
-                            state.searchQuery.isNotEmpty)
-                            : ListView.separated(
-                          itemCount: state.filtered.length,
-                          separatorBuilder: (_, __) =>
-                          const Divider(
-                              height: 1,
-                              color: Color(0xFFEEF0F6)),
-                          itemBuilder: (_, i) => _StockRow(
-                            item: state.filtered[i],
-                            index: i,
-                          ),
+                        child: PaginatedListView<BranchStockModel>(
+                          state: state,
+                          padding: EdgeInsets.zero,
+                          onLoadMore: notifier.loadMore,
+                          onRefresh: () async => _refresh(),
+                          emptyState:
+                              _EmptyView(isSearch: state.search.isNotEmpty),
+                          separatorBuilder: (_, __) => const Divider(
+                              height: 1, color: Color(0xFFEEF0F6)),
+                          itemBuilder: (_, item, i) =>
+                              _StockRow(item: item, index: i),
                         ),
                       ),
                     ],
@@ -260,9 +240,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
             ),
 
             // ── Footer ────────────────────────────────────────────────────
-            if (!state.isLoading &&
-                state.error == null &&
-                state.filtered.isNotEmpty)
+            if (state.rows.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(top: 10),
                 padding: const EdgeInsets.symmetric(
@@ -278,7 +256,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                         size: 14, color: Color(0xFF8A8FA3)),
                     const SizedBox(width: 6),
                     Text(
-                      'Showing ${state.filtered.length} of ${state.totalProducts} products',
+                      'Showing ${state.rows.length} of ${groupThousands(state.totalCount)} products',
                       style: const TextStyle(
                           fontSize: 12, color: Color(0xFF8A8FA3)),
                     ),
@@ -291,7 +269,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Total: ${state.filtered.fold(0, (s, i) => s + i.quantity)} pairs',
+                        'Total: ${groupThousands(stats.totalQuantity)} pairs',
                         style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -572,53 +550,6 @@ class _TH extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: Colors.white,
           letterSpacing: 0.3),
-    );
-  }
-}
-
-// ── Error View ────────────────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  final String error;
-  final VoidCallback onRetry;
-
-  const _ErrorView({required this.error, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.error_outline,
-                color: Colors.red.shade400, size: 36),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Error: $error',
-            style: const TextStyle(
-                color: Color(0xFF8A8FA3), fontSize: 13),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Retry'),
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF1565C0),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
