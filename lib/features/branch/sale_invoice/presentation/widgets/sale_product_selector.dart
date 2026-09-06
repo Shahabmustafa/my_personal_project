@@ -225,9 +225,6 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
         final stock = _selectedStock;
         final totalQty = stock?.quantity ?? 0;
         final salePrice = stock?.salePrice ?? 0.0;
-        final discountPct = stock?.discount ?? 0.0;
-        final discountAmt = salePrice * discountPct / 100;
-        final netPrice = salePrice - discountAmt;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -426,26 +423,6 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                       value: stock != null ? '$totalQty' : null,
                       valueColor:
                           (stock != null && totalQty == 0) ? Colors.red : Colors.green.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 3,
-                    child: _InfoBox(
-                      label: 'Discount',
-                      value: stock != null
-                          ? '${discountPct.toStringAsFixed(0)}%  (- ${discountAmt.toStringAsFixed(0)})'
-                          : null,
-                      valueColor: Colors.orange.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: _InfoBox(
-                      label: 'Net Price',
-                      value: stock != null ? netPrice.toStringAsFixed(0) : null,
-                      valueColor: Colors.green.shade700,
                     ),
                   ),
                   const SizedBox(width: 10),

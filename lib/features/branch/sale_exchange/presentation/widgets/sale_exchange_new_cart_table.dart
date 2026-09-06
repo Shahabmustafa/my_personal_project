@@ -71,8 +71,6 @@ class _DesktopTable extends ConsumerWidget {
             _h('Color', flex: 2),
             _h('Category', flex: 2),
             _h('S.Price', flex: 2),
-            _h('Disc%', flex: 2),
-            _h('Net Price', flex: 2),
             _h('Stock', flex: 2),
             _h('Qty', flex: 3),
             _h('Total', flex: 2),
@@ -122,11 +120,6 @@ class _CartRow extends ConsumerWidget {
           _c(item.colorName, flex: 2),
           _c(item.categoryName, flex: 2),
           _c(item.salePrice.toStringAsFixed(0), flex: 2),
-          _c(item.discountPct > 0 ? '${item.discountPct.toStringAsFixed(0)}%' : '—',
-              flex: 2, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
-          _c(item.netPrice.toStringAsFixed(0),
-              flex: 2,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green.shade700)),
           _c('${item.availableStock}',
               flex: 2,
               style: TextStyle(
@@ -305,7 +298,6 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalQty = items.fold(0, (s, i) => s + i.quantity);
     final totalAmt = items.fold(0.0, (s, i) => s + i.salePrice * i.quantity);
-    final totalDisc = items.fold(0.0, (s, i) => s + i.discountAmount * i.quantity);
     final net = items.fold(0.0, (s, i) => s + i.lineTotal);
     final primary = Theme.of(context).colorScheme.primary;
 
@@ -325,16 +317,6 @@ class _Footer extends StatelessWidget {
             flex: 2,
             child: Text(totalAmt.toStringAsFixed(0),
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text('- ${totalDisc.toStringAsFixed(0)}',
-                style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(net.toStringAsFixed(0),
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.green.shade700)),
           ),
           const Expanded(flex: 2, child: SizedBox()),
           Expanded(

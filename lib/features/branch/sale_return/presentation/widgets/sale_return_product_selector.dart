@@ -209,9 +209,6 @@ class _SaleReturnProductSelectorState
         final stock = _selectedStock;
         final currentQty = stock?.quantity ?? 0;
         final salePrice = stock?.salePrice ?? 0.0;
-        final discountPct = stock?.discount ?? 0.0;
-        final discountAmt = salePrice * discountPct / 100;
-        final netPrice = salePrice - discountAmt;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -409,26 +406,6 @@ class _SaleReturnProductSelectorState
                       label: 'Current Stock',
                       value: stock != null ? '$currentQty' : null,
                       valueColor: Colors.grey.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 3,
-                    child: _InfoBox(
-                      label: 'Discount',
-                      value: stock != null
-                          ? '${discountPct.toStringAsFixed(0)}%  (- ${discountAmt.toStringAsFixed(0)})'
-                          : null,
-                      valueColor: Colors.orange.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: _InfoBox(
-                      label: 'Net Price',
-                      value: stock != null ? netPrice.toStringAsFixed(0) : null,
-                      valueColor: Colors.green.shade700,
                     ),
                   ),
                   const SizedBox(width: 10),

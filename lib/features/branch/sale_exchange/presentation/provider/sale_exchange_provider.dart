@@ -261,7 +261,9 @@ class SaleExchangeNotifier extends StateNotifier<SaleExchangeState> {
       quantity: cappedQty,
       salePrice: stock.salePrice,
       purchasePrice: stock.purchasePrice,
-      discountPct: stock.discount,
+      // Per-article branch stock discount is disabled — only the invoice-wise
+      // Branch Invoice Discount is allowed now.
+      discountPct: 0,
     );
 
     state = state.copyWith(newCartItems: [...state.newCartItems, item], clearError: true);

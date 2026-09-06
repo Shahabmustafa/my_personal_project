@@ -404,7 +404,9 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       quantity: qty,
       salePrice: stock.salePrice,
       purchasePrice: stock.purchasePrice,
-      discountPct: stock.discount,
+      // Per-article branch stock discount is disabled — only the invoice-wise
+      // Branch Invoice Discount is allowed now.
+      discountPct: 0,
     );
 
     state = state.copyWith(

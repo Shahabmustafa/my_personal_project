@@ -7,11 +7,12 @@
 --    "Discount → Branch Invoice Discount" screen se set karta hai.
 --    0  = branch koi invoice discount nahi laga sakta.
 --
--- 2) Branch Stock Discount
---    Per-article discount % already `branch_stock_inventory.discount` column
---    mein hai (discount_rename_migration.sql se). Yahan sirf superadmin ko
---    us column ko har branch ke liye edit karne ki screen di gayi hai —
---    koi naya column nahi chahiye.
+-- 2) Branch Stock Discount  — REMOVED (2026-09-07)
+--    Per-article branch discount ab support nahi. Screen/provider/datasource
+--    delete kar diye; sale invoice/return/exchange ab `stock.discount` ko
+--    apply nahi karte (hamesha 0). `branch_stock_inventory.discount` column
+--    chhor di gayi hai (kuch nahi parhta), aur mojood values ek dafa 0 kar
+--    di gayi hain. Sirf Branch Invoice Discount reh gaya hai.
 -- =============================================================================
 
 -- 1. branches: max invoice-wise discount percentage per branch
