@@ -80,15 +80,55 @@ class BranchWarehouseReturnDatasource {
   ) async {
     final res = await _client
         .from('branch_return_to_warehouse')
-        .select(_returnSelect)
+        .select('$_returnSelect, branch_return_to_warehouse_items(*)')
         .eq('branch_id', branchId)
         .order('created_at', ascending: false);
 
-    return (res as List)
+    return (res as List).map((e) {
+      final json = e as Map<String, dynamic>;
+      final itemsJson =
+          (json['branch_return_to_warehouse_items'] as List?) ?? const [];
+      final items = itemsJson
+          .map(
+            (i) => BranchWarehouseReturnItemModel.fromJson(
+              i as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+      return BranchWarehouseReturnModel.fromJson(json, items: items);
+    }).toList();
+  }
+
+  /// Ek return ki poori detail — items product/size/color naam ke sath.
+  Future<BranchWarehouseReturnModel> fetchReturnDetail(String returnId) async {
+    final headerRes = await _client
+        .from('branch_return_to_warehouse')
+        .select(_returnSelect)
+        .eq('id', returnId)
+        .single();
+
+    final itemsRes = await _client
+        .from('branch_return_to_warehouse_items')
+        .select('''
+          *,
+          products   ( article_name ),
+          sizes      ( number ),
+          colors     ( name ),
+          brands     ( name ),
+          categories ( name ),
+          types      ( name )
+        ''')
+        .eq('return_id', returnId);
+
+    final items = (itemsRes as List)
         .map(
-          (e) => BranchWarehouseReturnModel.fromJson(e as Map<String, dynamic>),
+          (e) => BranchWarehouseReturnItemModel.fromJson(
+            e as Map<String, dynamic>,
+          ),
         )
         .toList();
+
+    return BranchWarehouseReturnModel.fromJson(headerRes, items: items);
   }
 
   /// Head office ko branches se jo returns aaye hain (accept/reject ke liye).

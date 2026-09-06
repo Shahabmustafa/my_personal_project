@@ -28,6 +28,9 @@ class BranchWarehouseReturnRepository {
   Future<List<BranchWarehouseReturnModel>> getSentReturns(String branchId) =>
       _datasource.fetchSentReturns(branchId);
 
+  Future<BranchWarehouseReturnModel> getReturnDetail(String returnId) =>
+      _datasource.fetchReturnDetail(returnId);
+
   Future<List<BranchWarehouseReturnModel>> getIncomingReturns(
     String headOfficeId,
   ) => _datasource.fetchIncomingReturns(headOfficeId);
