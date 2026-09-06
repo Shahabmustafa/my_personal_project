@@ -103,6 +103,11 @@ final hoAssignListProvider =
   ),
 );
 
+/// One assignment with its full item breakdown — for the history detail panel.
+final hoAssignmentDetailProvider =
+    FutureProvider.family<HoAssignStockModel, String>((ref, id) =>
+        ref.read(hoAssignStockRepositoryProvider).getAssignmentDetail(id));
+
 // ── Cart / active assignment state ────────────────────────────────────────
 
 class HoAssignStockState {

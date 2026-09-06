@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
+import '../../../report/presentation/widgets/report_detail_panel.dart';
+import '../../../report/presentation/widgets/report_pagination_bar.dart';
+import '../../../report/presentation/widgets/report_summary_card.dart';
+import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 
+/// Head office → branch stock assignment history. Lays the data out the same
+/// way as the sale reports: summary cards, a scrollable [ReportTableShell]
+/// table, a right slide-in detail panel on "View", and a pagination bar.
 class HoAssignStockListScreen extends ConsumerStatefulWidget {
   const HoAssignStockListScreen({super.key});
 
@@ -13,7 +21,14 @@ class HoAssignStockListScreen extends ConsumerStatefulWidget {
 
 class _HoAssignStockListScreenState
     extends ConsumerState<HoAssignStockListScreen> {
+  static const _accent = Color(0xFF1565C0);
+  static const _pageSize = 20;
+
   String _filterStatus = 'all';
+  DateTime? _startDate;
+  DateTime? _endDate;
+  int _page = 1;
+  HoAssignStockModel? _selected;
 
   @override
   void initState() {
@@ -22,14 +37,37 @@ class _HoAssignStockListScreenState
         () => ref.read(hoAssignListProvider.notifier).loadAssignments());
   }
 
+  bool get _hasDateFilter => _startDate != null || _endDate != null;
+
+  List<HoAssignStockModel> _applyFilters(List<HoAssignStockModel> all) {
+    DateTime dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
+    final from = _startDate == null ? null : dayOf(_startDate!);
+    final to = _endDate == null ? null : dayOf(_endDate!);
+    return all.where((a) {
+      if (_filterStatus != 'all' && a.status != _filterStatus) return false;
+      final d = dayOf(a.assignedAt);
+      if (from != null && d.isBefore(from)) return false;
+      if (to != null && d.isAfter(to)) return false;
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final listState = ref.watch(hoAssignListProvider);
+    final notifier = ref.read(hoAssignListProvider.notifier);
 
-    final filtered = listState.assignments.where((a) {
-      if (_filterStatus == 'all') return true;
-      return a.status == _filterStatus;
-    }).toList();
+    final filtered = _applyFilters(listState.assignments);
+    final totalCount = filtered.length;
+    final totalPages = totalCount == 0 ? 1 : ((totalCount - 1) ~/ _pageSize) + 1;
+    final page = _page.clamp(1, totalPages);
+    final pageRows =
+        filtered.skip((page - 1) * _pageSize).take(_pageSize).toList();
+
+    final totalPairs = filtered.fold<int>(0, (s, a) => s + a.totalPairs);
+    final totalValue = filtered.fold<double>(0, (s, a) => s + a.totalValue);
+    final pendingCount =
+        filtered.where((a) => a.status == 'pending').length;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -38,139 +76,297 @@ class _HoAssignStockListScreenState
         children: [
           Row(
             children: [
-              const Icon(Icons.history, color: Color(0xFF1565C0), size: 24),
+              const Icon(Icons.history, color: _accent, size: 24),
               const SizedBox(width: 8),
-              const Text(
-                'Assignment History',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              const Expanded(
+                child: Text('Assignment History',
+                    style:
+                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),
-              const Spacer(),
+              if (_hasDateFilter)
+                TextButton.icon(
+                  onPressed: () => setState(() {
+                    _startDate = null;
+                    _endDate = null;
+                    _page = 1;
+                  }),
+                  icon: const Icon(Icons.clear, size: 16),
+                  label: Text(_rangeLabel(_startDate, _endDate)),
+                ),
+              const SizedBox(width: 8),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.filter_alt_outlined, size: 18),
+                label: const Text('Filter'),
+                onPressed: () async {
+                  final result = await showDialog<(DateTime?, DateTime?)?>(
+                    context: context,
+                    builder: (_) => ReportDateFilterDialog(
+                        initialStart: _startDate, initialEnd: _endDate),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _startDate = result.$1;
+                      _endDate = result.$2;
+                      _page = 1;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
               IconButton(
-                onPressed: () =>
-                    ref.read(hoAssignListProvider.notifier).loadAssignments(),
-                icon: const Icon(Icons.refresh, color: Color(0xFF1565C0)),
+                icon: const Icon(Icons.refresh),
                 tooltip: 'Refresh',
+                onPressed: notifier.loadAssignments,
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          _SummaryCards(assignments: listState.assignments),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
+          Row(children: [
+            Expanded(
+              child: ReportSummaryCard(
+                label: 'Total Assignments',
+                value: '$totalCount',
+                icon: Icons.assignment_outlined,
+                color: _accent,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: ReportSummaryCard(
+                label: 'Pairs Assigned',
+                value: '$totalPairs',
+                icon: Icons.inventory_2_outlined,
+                color: const Color(0xFF6A1B9A),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: ReportSummaryCard(
+                label: 'Total Purchase Value',
+                value: 'Rs. ${_money(totalValue)}',
+                icon: Icons.account_balance_wallet_outlined,
+                color: const Color(0xFF22A06B),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: ReportSummaryCard(
+                label: 'Pending',
+                value: '$pendingCount',
+                icon: Icons.hourglass_empty_outlined,
+                color: const Color(0xFFE56A00),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 16),
           Row(
             children: [
               _filterChip('All', 'all', listState.assignments.length),
               const SizedBox(width: 8),
               _filterChip(
-                'Pending',
-                'pending',
-                listState.assignments
-                    .where((a) => a.status == 'pending')
-                    .length,
-              ),
+                  'Pending',
+                  'pending',
+                  listState.assignments
+                      .where((a) => a.status == 'pending')
+                      .length),
               const SizedBox(width: 8),
               _filterChip(
-                'Accepted',
-                'accepted',
-                listState.assignments
-                    .where((a) => a.status == 'accepted')
-                    .length,
-              ),
+                  'Accepted',
+                  'accepted',
+                  listState.assignments
+                      .where((a) => a.status == 'accepted')
+                      .length),
               const SizedBox(width: 8),
               _filterChip(
-                'Rejected',
-                'rejected',
-                listState.assignments
-                    .where((a) => a.status == 'rejected')
-                    .length,
-              ),
+                  'Rejected',
+                  'rejected',
+                  listState.assignments
+                      .where((a) => a.status == 'rejected')
+                      .length),
             ],
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1565C0),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
+          const SizedBox(height: 16),
+          Expanded(
+            child: Stack(
               children: [
-                _th('#', flex: 1),
-                _th('Assignment No', flex: 3),
-                _th('Branch', flex: 4),
-                _th('Pairs', flex: 2),
-                _th('Date', flex: 2),
-                _th('Status', flex: 2),
-                _th('Actions', flex: 3),
+                Positioned.fill(
+                  child: listState.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : listState.error != null
+                          ? _ErrorView(
+                              message: listState.error!,
+                              onRetry: notifier.loadAssignments,
+                            )
+                          : pageRows.isEmpty
+                              ? Center(
+                                  child: Text(
+                                    _filterStatus == 'all' && !_hasDateFilter
+                                        ? 'No assignments yet'
+                                        : 'No assignments match this filter',
+                                    style: TextStyle(
+                                        color: Colors.grey.shade500,
+                                        fontSize: 15),
+                                  ),
+                                )
+                              : ReportTableShell(
+                                  columns: const [
+                                    DataColumn(label: Text('Assignment No')),
+                                    DataColumn(label: Text('Branch')),
+                                    DataColumn(
+                                        label: Text('Pairs'), numeric: true),
+                                    DataColumn(
+                                        label: Text('Purchase Value'),
+                                        numeric: true),
+                                    DataColumn(label: Text('Date')),
+                                    DataColumn(label: Text('Status')),
+                                    DataColumn(label: Text('Actions')),
+                                  ],
+                                  rows: [
+                                    for (final a in pageRows)
+                                      DataRow(
+                                        selected: _selected?.id == a.id,
+                                        cells: [
+                                          DataCell(Text(a.assignmentNumber,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.w700,
+                                                  fontFamily: 'monospace',
+                                                  color: _accent))),
+                                          DataCell(Text(
+                                              a.branchName ?? a.branchId)),
+                                          DataCell(Text('${a.totalPairs}')),
+                                          DataCell(Text(
+                                              a.totalValue.toStringAsFixed(0))),
+                                          DataCell(
+                                              Text(_fmtDate(a.assignedAt))),
+                                          DataCell(_StatusChip(a.status)),
+                                          DataCell(_rowActions(a)),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                ),
+                if (_selected != null)
+                  ReportDetailOverlay(
+                    title: _selected!.assignmentNumber,
+                    subtitle:
+                        '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.assignedAt)}',
+                    accent: _accent,
+                    onClose: () => setState(() => _selected = null),
+                    child: _AssignmentDetailBody(assignmentId: _selected!.id),
+                  ),
               ],
             ),
           ),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(12)),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: listState.isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : listState.error != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.error_outline,
-                                  color: Colors.red, size: 40),
-                              const SizedBox(height: 8),
-                              Text('Error: ${listState.error}',
-                                  style: const TextStyle(color: Colors.red)),
-                              const SizedBox(height: 12),
-                              FilledButton.icon(
-                                onPressed: () => ref
-                                    .read(hoAssignListProvider.notifier)
-                                    .loadAssignments(),
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        )
-                      : filtered.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.inbox_outlined,
-                                      size: 64,
-                                      color: Colors.grey.shade300),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    _filterStatus == 'all'
-                                        ? 'No assignments yet'
-                                        : 'No $_filterStatus assignments',
-                                    style: TextStyle(
-                                        color: Colors.grey.shade500,
-                                        fontSize: 16),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.separated(
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, __) => Divider(
-                                  height: 1, color: Colors.grey.shade100),
-                              itemBuilder: (_, i) => _ListRow(
-                                assignment: filtered[i],
-                                index: i,
-                              ),
-                            ),
-            ),
+          const SizedBox(height: 12),
+          ReportPaginationBar(
+            page: page,
+            totalPages: totalPages,
+            totalCount: totalCount,
+            pageSize: _pageSize,
+            onPageChange: (p) => setState(() => _page = p),
           ),
         ],
       ),
     );
+  }
+
+  Widget _rowActions(HoAssignStockModel a) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.visibility_outlined, size: 19),
+          tooltip: 'View',
+          onPressed: () => setState(() => _selected = a),
+        ),
+        if (a.status == 'pending') ...[
+          IconButton(
+            icon: Icon(Icons.check_circle_outline,
+                size: 19, color: Colors.green.shade600),
+            tooltip: 'Accept',
+            onPressed: () => _onAccept(a),
+          ),
+          IconButton(
+            icon: Icon(Icons.cancel_outlined,
+                size: 19, color: Colors.red.shade600),
+            tooltip: 'Reject',
+            onPressed: () => _onReject(a),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _onAccept(HoAssignStockModel a) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+            SizedBox(width: 8),
+            Text('Accept Assignment?'),
+          ],
+        ),
+        content: const Text(
+          'Stock branch inventory mein add ho jayega.\n\nYe action undo nahi ho sakta.',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Accept'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await ref.read(hoAssignListProvider.notifier).acceptAssignment(a.id);
+    if (!mounted) return;
+    ref.invalidate(hoAssignStockListProvider);
+    ref.invalidate(hoAssignmentDetailProvider(a.id));
+    setState(() => _selected = null);
+  }
+
+  Future<void> _onReject(HoAssignStockModel a) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Row(
+          children: [
+            Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+            SizedBox(width: 8),
+            Text('Reject Assignment?'),
+          ],
+        ),
+        content: const Text(
+          'Assignment rejected ho jayegi aur stock wapas head office mein aa jayega.',
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await ref.read(hoAssignListProvider.notifier).rejectAssignment(a.id);
+    if (!mounted) return;
+    ref.invalidate(hoAssignStockListProvider);
+    ref.invalidate(hoAssignmentDetailProvider(a.id));
+    setState(() => _selected = null);
   }
 
   Widget _filterChip(String label, String value, int count) {
@@ -187,11 +383,14 @@ class _HoAssignStockListScreenState
         chipColor = Colors.red;
         break;
       default:
-        chipColor = const Color(0xFF1565C0);
+        chipColor = _accent;
     }
 
     return GestureDetector(
-      onTap: () => setState(() => _filterStatus = value),
+      onTap: () => setState(() {
+        _filterStatus = value;
+        _page = 1;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -214,11 +413,11 @@ class _HoAssignStockListScreenState
             ),
             const SizedBox(width: 6),
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 6, vertical: 2),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? Colors.white.withOpacity(0.25)
+                    ? Colors.white.withValues(alpha: 0.25)
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -237,68 +436,65 @@ class _HoAssignStockListScreenState
     );
   }
 
-  Widget _th(String text, {int flex = 2}) => Expanded(
-        flex: flex,
-        child: Text(text,
-            style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white)),
-      );
+  String _rangeLabel(DateTime? start, DateTime? end) {
+    final s = start == null ? '…' : _fmtDate(start);
+    final e = end == null ? '…' : _fmtDate(end);
+    return '$s – $e';
+  }
 }
 
-/// History list ke upar summary — total assignments, total pairs assigned,
-/// aur status wise counts.
-class _SummaryCards extends StatelessWidget {
-  final List<HoAssignStockModel> assignments;
-  const _SummaryCards({required this.assignments});
+// ── Detail panel body ─────────────────────────────────────────────────────
+
+class _AssignmentDetailBody extends ConsumerWidget {
+  final String assignmentId;
+  const _AssignmentDetailBody({required this.assignmentId});
 
   @override
-  Widget build(BuildContext context) {
-    final totalPairs =
-        assignments.fold<int>(0, (s, a) => s + a.totalPairs);
-    final pending =
-        assignments.where((a) => a.status == 'pending').length;
-    final accepted =
-        assignments.where((a) => a.status == 'accepted').length;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final detail = ref.watch(hoAssignmentDetailProvider(assignmentId));
+    return detail.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (e, _) =>
+          Text('Error: $e', style: const TextStyle(color: Colors.red)),
+      data: (a) {
+        final items = a.items;
+        final pairs = items.fold<int>(0, (s, it) => s + it.quantity);
+        final purchaseVal = items.fold<double>(
+            0, (s, it) => s + it.purchasePrice * it.quantity);
+        final saleVal = items.fold<double>(
+            0, (s, it) => s + it.salePrice * it.quantity);
 
-    final cards = <Widget>[
-      _SummaryCard(
-        label: 'Total Assignments',
-        value: '${assignments.length}',
-        icon: Icons.assignment_outlined,
-        color: const Color(0xFF1565C0),
-      ),
-      _SummaryCard(
-        label: 'Total Pairs Assigned',
-        value: '$totalPairs',
-        icon: Icons.inventory_2_outlined,
-        color: const Color(0xFF6A1B9A),
-      ),
-      _SummaryCard(
-        label: 'Pending',
-        value: '$pending',
-        icon: Icons.hourglass_empty_outlined,
-        color: const Color(0xFFEF6C00),
-      ),
-      _SummaryCard(
-        label: 'Accepted',
-        value: '$accepted',
-        icon: Icons.check_circle_outline,
-        color: const Color(0xFF2E7D32),
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        final cols = c.maxWidth > 820 ? 4 : (c.maxWidth > 460 ? 2 : 1);
-        const gap = 12.0;
-        final w = (c.maxWidth - gap * (cols - 1)) / cols;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final card in cards) SizedBox(width: w, child: card),
+            DetailKV('Branch', a.branchName ?? '—'),
+            DetailKV('Assigned', _fmtDate(a.assignedAt)),
+            DetailKV(
+              'Status',
+              a.status[0].toUpperCase() + a.status.substring(1),
+              valueColor: _statusColor(a.status),
+            ),
+            if (a.acceptedAt != null)
+              DetailKV('Accepted', _fmtDate(a.acceptedAt!)),
+            if ((a.notes ?? '').isNotEmpty) DetailKV('Notes', a.notes!),
+            const DetailDivider(),
+            DetailSectionLabel('ITEMS (${items.length})'),
+            for (final it in items)
+              DetailProductRow(
+                name: it.productName ?? 'Item',
+                sizeName: it.sizeName,
+                colorName: it.colorName,
+                quantity: it.quantity,
+                total: it.purchasePrice * it.quantity,
+              ),
+            const DetailDivider(),
+            DetailKV('Total Pairs', '$pairs'),
+            DetailKV('Purchase Value', 'Rs. ${purchaseVal.toStringAsFixed(0)}',
+                bold: true, valueColor: const Color(0xFF22A06B)),
+            DetailKV('Sale Value', 'Rs. ${saleVal.toStringAsFixed(0)}'),
           ],
         );
       },
@@ -306,301 +502,33 @@ class _SummaryCards extends StatelessWidget {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-  const _SummaryCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.color,
-  });
+// ── Small shared bits ─────────────────────────────────────────────────────
+
+class _ErrorView extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorView({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 19),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(value,
-                    style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1B1F3B))),
-                const SizedBox(height: 2),
-                Text(label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontSize: 11.5, color: Colors.grey.shade500)),
-              ],
-            ),
+          const Icon(Icons.error_outline, color: Colors.red, size: 40),
+          const SizedBox(height: 8),
+          Text('Error: $message',
+              style: const TextStyle(color: Colors.red)),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: const Text('Retry'),
           ),
         ],
       ),
     );
   }
-}
-
-class _ListRow extends ConsumerWidget {
-  final HoAssignStockModel assignment;
-  final int index;
-
-  const _ListRow({required this.assignment, required this.index});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(hoAssignListProvider.notifier);
-    final isEven = index.isEven;
-
-    return Container(
-      color: isEven ? Colors.grey.shade50 : Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 1,
-            child: Text('${index + 1}',
-                style: TextStyle(
-                    fontSize: 12, color: Colors.grey.shade400)),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              assignment.assignmentNumber,
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: Color(0xFF1565C0),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: Row(
-              children: [
-                const Icon(Icons.store_outlined,
-                    size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    assignment.branchName ?? assignment.branchId,
-                    style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                const Icon(Icons.inventory_2_outlined,
-                    size: 13, color: Color(0xFF6A1B9A)),
-                const SizedBox(width: 4),
-                Text(
-                  '${assignment.totalPairs}',
-                  style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF6A1B9A)),
-                ),
-                if (assignment.lineCount > 0) ...[
-                  const SizedBox(width: 4),
-                  Text(
-                    '(${assignment.lineCount})',
-                    style: TextStyle(
-                        fontSize: 10, color: Colors.grey.shade400),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              _fmtDate(assignment.assignedAt),
-              style: TextStyle(
-                  fontSize: 12, color: Colors.grey.shade600),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: _StatusChip(assignment.status),
-          ),
-          Expanded(
-            flex: 3,
-            child: assignment.status == 'pending'
-                ? Row(
-                    children: [
-                      SizedBox(
-                        height: 32,
-                        child: FilledButton(
-                          onPressed: () =>
-                              _onAccept(context, ref, notifier),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6)),
-                            minimumSize: Size.zero,
-                            tapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text('Accept',
-                              style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        height: 32,
-                        child: OutlinedButton(
-                          onPressed: () =>
-                              _onReject(context, ref, notifier),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red,
-                            side: const BorderSide(color: Colors.red),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(6)),
-                            minimumSize: Size.zero,
-                            tapTargetSize:
-                                MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text('Reject',
-                              style: TextStyle(fontSize: 12)),
-                        ),
-                      ),
-                    ],
-                  )
-                : Text(
-                    assignment.status == 'accepted'
-                        ? 'Accepted ${_fmtDate(assignment.acceptedAt ?? assignment.assignedAt)}'
-                        : 'Rejected',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: assignment.status == 'accepted'
-                          ? Colors.green.shade700
-                          : Colors.red.shade700,
-                    ),
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _onAccept(
-    BuildContext context,
-    WidgetRef ref,
-    HoAssignListNotifier notifier,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
-          children: [
-            Icon(Icons.check_circle_outline,
-                color: Colors.green, size: 22),
-            SizedBox(width: 8),
-            Text('Accept Assignment?'),
-          ],
-        ),
-        content: const Text(
-          'Stock branch inventory mein add ho jayega.\n\nYe action undo nahi ho sakta.',
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Accept'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await notifier.acceptAssignment(assignment.id);
-      ref.invalidate(hoAssignStockListProvider);
-    }
-  }
-
-  Future<void> _onReject(
-    BuildContext context,
-    WidgetRef ref,
-    HoAssignListNotifier notifier,
-  ) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
-          children: [
-            Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
-            SizedBox(width: 8),
-            Text('Reject Assignment?'),
-          ],
-        ),
-        content: const Text(
-          'Assignment rejected ho jayegi aur stock wapas head office mein aa jayega.',
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style:
-                FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Reject'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await notifier.rejectAssignment(assignment.id);
-      ref.invalidate(hoAssignStockListProvider);
-    }
-  }
-
-  String _fmtDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
 }
 
 class _StatusChip extends StatelessWidget {
@@ -639,7 +567,7 @@ class _StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: fg.withOpacity(0.3)),
+        border: Border.all(color: fg.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -648,11 +576,36 @@ class _StatusChip extends StatelessWidget {
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: fg)),
+                  fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
         ],
       ),
     );
   }
+}
+
+Color _statusColor(String s) {
+  switch (s) {
+    case 'accepted':
+      return Colors.green.shade700;
+    case 'rejected':
+      return Colors.red.shade700;
+    default:
+      return Colors.orange.shade700;
+  }
+}
+
+String _fmtDate(DateTime dt) =>
+    '${dt.day.toString().padLeft(2, '0')}/'
+    '${dt.month.toString().padLeft(2, '0')}/'
+    '${dt.year}';
+
+/// Whole-rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
+String _money(double v) {
+  final s = v.round().toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i != 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
 }
