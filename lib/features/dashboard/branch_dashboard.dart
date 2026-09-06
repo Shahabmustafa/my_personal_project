@@ -52,7 +52,7 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         group: 'Stock Returns'),
     SidebarItem(
         icon: Icons.warehouse_outlined,
-        label: 'Return to Warehouse',
+        label: 'Return to Admin',
         group: 'Stock Returns'),
     SidebarItem(icon: Icons.apartment_outlined, label: 'Stock Inventory'),
     SidebarItem(icon: Icons.point_of_sale_outlined, label: 'Cash Counter'),
