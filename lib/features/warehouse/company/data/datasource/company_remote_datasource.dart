@@ -40,6 +40,9 @@ class CompanyRemoteDatasource {
 
   /// Create new company — duplicate name check per warehouse
   Future<CompanyModel> createCompany(CompanyModel company) async {
+    if (company.warehouseId.isEmpty) {
+      throw Exception('Select a working warehouse before adding a company');
+    }
     final existing = await _client
         .from('companies')
         .select('id')
@@ -62,6 +65,9 @@ class CompanyRemoteDatasource {
 
   /// Update company info — duplicate name check excluding current record
   Future<CompanyModel> updateCompany(CompanyModel company) async {
+    if (company.warehouseId.isEmpty) {
+      throw Exception('This company has no warehouse assigned');
+    }
     final existing = await _client
         .from('companies')
         .select('id')

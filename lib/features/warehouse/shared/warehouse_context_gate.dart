@@ -37,6 +37,18 @@ class _WarehouseContextGateState extends ConsumerState<WarehouseContextGate> {
     final warehouseState = ref.watch(warehouseProvider);
     final warehouses = warehouseState.warehouses;
 
+    // Only one warehouse in the system → nothing to choose. Adopt it silently
+    // so warehouse-scoped screens work without an extra click.
+    if (selected.isEmpty && warehouses.length == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && ref.read(selectedWarehouseIdProvider).isEmpty) {
+          ref
+              .read(selectedWarehouseIdProvider.notifier)
+              .select(warehouses.first.id);
+        }
+      });
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
