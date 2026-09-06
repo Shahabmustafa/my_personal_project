@@ -1,9 +1,16 @@
+import '../../../../../core/pagination/pagination.dart';
 import '../datasource/customer_remote_datasource.dart';
 import '../model/customer_model.dart';
 
 class CustomerRepository {
   final CustomerRemoteDatasource remoteDatasource;
   CustomerRepository({required this.remoteDatasource});
+
+  Future<PageResult<CustomerModel>> fetchPage(
+    PageRequest request, {
+    List<String>? branchIds,
+  }) =>
+      remoteDatasource.fetchPage(request, branchIds: branchIds);
 
   Future<List<CustomerModel>> getAllCustomers() =>
       remoteDatasource.getAllCustomers();

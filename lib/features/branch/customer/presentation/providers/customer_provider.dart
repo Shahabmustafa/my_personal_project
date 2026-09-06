@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../../../../../core/pagination/pagination.dart';
+import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/datasource/customer_remote_datasource.dart';
 import '../../data/model/customer_model.dart';
 import '../../data/repository/customer_repository.dart';
-import 'customer_state.dart';
 
 final customerRemoteDatasourceProvider =
     Provider<CustomerRemoteDatasource>((_) => CustomerRemoteDatasource());
@@ -13,152 +14,94 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
       remoteDatasource: ref.read(customerRemoteDatasourceProvider));
 });
 
-class CustomerNotifier extends StateNotifier<CustomerState> {
+/// Server-paginated customers. Scope is resolved from the signed-in user:
+/// branch/warehouse staff see their branches' customers (+ walk-in); admins
+/// see every customer. Search runs as PostgreSQL `ilike` over
+/// name/phone/email/address.
+class CustomerNotifier extends PaginatedListNotifier<CustomerModel> {
   final CustomerRepository _repo;
-  CustomerNotifier(this._repo) : super(const CustomerState());
+  final List<String>? _scopeBranchIds;
 
-  Future<void> loadAllCustomers() async {
-    state = state.copyWith(status: CustomerStatus.loading, errorMessage: null);
-    try {
-      final customers = await _repo.getAllCustomers();
-      state =
-          state.copyWith(status: CustomerStatus.success, customers: customers);
-    } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
-    }
-  }
+  CustomerNotifier(this._repo, this._scopeBranchIds);
 
-  Future<void> loadCustomersByBranch(String branchId) async {
-    state = state.copyWith(status: CustomerStatus.loading, errorMessage: null);
-    try {
-      final customers = await _repo.getCustomersByBranch(branchId);
-      state =
-          state.copyWith(status: CustomerStatus.success, customers: customers);
-    } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
-    }
-  }
+  @override
+  Future<PageResult<CustomerModel>> fetchPage(PageRequest request) =>
+      _repo.fetchPage(request, branchIds: _scopeBranchIds);
 
-  Future<void> loadCustomersForBranches(List<String> branchIds) async {
-    state = state.copyWith(status: CustomerStatus.loading, errorMessage: null);
-    try {
-      final customers = await _repo.getCustomersForBranches(branchIds);
-      state =
-          state.copyWith(status: CustomerStatus.success, customers: customers);
-    } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
-    }
-  }
+  static String _msg(Object e) => e.toString().replaceAll('Exception: ', '');
 
-  Future<void> createCustomer(CustomerModel customer) async {
-    state = state.copyWith(status: CustomerStatus.loading, errorMessage: null);
+  Future<String?> createCustomer(CustomerModel customer) async {
     try {
       await _repo.createCustomer(customer);
-      // Fresh reload karo taake duplicate na ho
-      final customers = await _repo.getAllCustomers();
-      state = state.copyWith(
-        status: CustomerStatus.success,
-        customers: customers,
-      );
+      await refresh();
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return _msg(e);
     }
   }
 
-  Future<void> updateCustomer(CustomerModel customer) async {
-    state = state.copyWith(status: CustomerStatus.loading, errorMessage: null);
+  Future<String?> updateCustomer(CustomerModel customer) async {
     try {
       final updated = await _repo.updateCustomer(customer);
-      final list = state.customers
-          .map((c) => c.id == updated.id ? updated : c)
-          .toList();
-      state =
-          state.copyWith(status: CustomerStatus.success, customers: list);
+      replaceRow((c) => c.id == updated.id, updated);
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return _msg(e);
     }
   }
 
-  Future<void> addLoyaltyPoints({
-    required String customerId,
-    required int points,
-  }) async {
+  Future<String?> deleteCustomer(String id) async {
+    try {
+      await _repo.deleteCustomer(id);
+      removeRow((c) => c.id == id);
+      return null;
+    } catch (e) {
+      return _msg(e);
+    }
+  }
+
+  Future<String?> addLoyaltyPoints(
+      {required String customerId, required int points}) async {
     try {
       final updated = await _repo.addLoyaltyPoints(
           customerId: customerId, points: points);
-      final list = state.customers
-          .map((c) => c.id == updated.id ? updated : c)
-          .toList();
-      state = state.copyWith(customers: list);
+      replaceRow((c) => c.id == updated.id, updated);
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return _msg(e);
     }
   }
 
-  Future<void> redeemLoyaltyPoints({
-    required String customerId,
-    required int points,
-  }) async {
+  Future<String?> redeemLoyaltyPoints(
+      {required String customerId, required int points}) async {
     try {
       final updated = await _repo.redeemLoyaltyPoints(
           customerId: customerId, points: points);
-      final list = state.customers
-          .map((c) => c.id == updated.id ? updated : c)
-          .toList();
-      state = state.copyWith(customers: list);
+      replaceRow((c) => c.id == updated.id, updated);
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return _msg(e);
     }
   }
 
-  Future<void> deleteCustomer(String id) async {
-    state = state.copyWith(status: CustomerStatus.loading, errorMessage: null);
-    try {
-      await _repo.deleteCustomer(id);
-      final list = state.customers.where((c) => c.id != id).toList();
-      state =
-          state.copyWith(status: CustomerStatus.success, customers: list);
-    } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
-    }
-  }
-
-  Future<void> toggleActive({
-    required String customerId,
-    required bool isActive,
-  }) async {
+  Future<String?> toggleActive(
+      {required String customerId, required bool isActive}) async {
     try {
       final updated = await _repo.toggleActive(
           customerId: customerId, isActive: isActive);
-      final list = state.customers
-          .map((c) => c.id == updated.id ? updated : c)
-          .toList();
-      state = state.copyWith(customers: list);
+      replaceRow((c) => c.id == updated.id, updated);
+      return null;
     } catch (e) {
-      state = state.copyWith(
-          status: CustomerStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return _msg(e);
     }
   }
 }
 
-final customerProvider =
-    StateNotifierProvider<CustomerNotifier, CustomerState>((ref) {
-  return CustomerNotifier(ref.read(customerRepositoryProvider));
+final customerProvider = StateNotifierProvider<CustomerNotifier,
+    PaginatedListState<CustomerModel>>((ref) {
+  final user = ref.watch(authProvider).user;
+  final scope = (user?.canManageBranches ?? false)
+      ? null
+      : (user?.branchIds ?? const <String>[]);
+  return CustomerNotifier(ref.read(customerRepositoryProvider), scope);
 });

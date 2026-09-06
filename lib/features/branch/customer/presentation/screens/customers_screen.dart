@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../../../shared/current_branch_provider.dart';
 import '../../data/model/customer_model.dart';
 import '../providers/customer_provider.dart';
-import '../providers/customer_state.dart';
 import '../widgets/customer_form_dialog.dart';
 import '../widgets/loyalty_dialog.dart';
 
@@ -16,40 +15,13 @@ class CustomersScreen extends ConsumerStatefulWidget {
 }
 
 class _CustomersScreenState extends ConsumerState<CustomersScreen> {
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final user = ref.read(authProvider).user;
-      if (user == null) return;
-      if (user.canManageBranches) {
-        // Admin/Superadmin: load all
-        ref.read(customerProvider.notifier).loadAllCustomers();
-      } else if (user.branchIds.isNotEmpty) {
-        // Others: load their branches' customers
-        ref
-            .read(customerProvider.notifier)
-            .loadCustomersForBranches(user.branchIds);
-      }
-    });
-  }
-
   String get _currentBranchId => ref.read(currentBranchIdProvider);
 
   @override
   Widget build(BuildContext context) {
-    final customerState = ref.watch(customerProvider);
+    final state = ref.watch(customerProvider);
+    final notifier = ref.read(customerProvider.notifier);
     final isMobile = MediaQuery.of(context).size.width < 768;
-
-    final filtered = customerState.customers.where((c) {
-      final q = _searchQuery.toLowerCase();
-      return c.name.toLowerCase().contains(q) ||
-          c.phoneNumber.toLowerCase().contains(q) ||
-          c.email.toLowerCase().contains(q) ||
-          c.address.toLowerCase().contains(q);
-    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
@@ -67,9 +39,8 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                     const Text('Customers',
                         style: TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold)),
-                    Text('${customerState.customers.length} total customers',
-                        style: const TextStyle(
-                            fontSize: 13, color: Color(0xFF8A8FA3))),
+                    TotalCountLabel(
+                        label: 'Customers', count: state.totalCount),
                   ],
                 ),
                 const Spacer(),
@@ -95,40 +66,42 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: _searchDecor('Search by name, phone, email or address...'),
+              onChanged: notifier.setSearch,
+              decoration: _searchDecor(
+                  'Search by name, phone, email or address...'),
             ),
           ),
 
           // Content
           Expanded(
-            child: customerState.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : customerState.status == CustomerStatus.error
-                ? _ErrorView(
-              message: customerState.errorMessage ?? 'Error',
-              onRetry: () =>
-                  ref.read(customerProvider.notifier).loadAllCustomers(),
-            )
-                : filtered.isEmpty
-                ? const _EmptyView()
-                : isMobile
+            child: isMobile
                 ? _MobileList(
-              customers: filtered,
-              onEdit: (c) => _showForm(context, customer: c),
-              onDelete: (c) => _confirmDelete(context, c),
-              onLoyalty: (c) => _showLoyalty(context, c),
-            )
+                    state: state,
+                    notifier: notifier,
+                    onEdit: (c) => _showForm(context, customer: c),
+                    onDelete: (c) => _confirmDelete(context, c),
+                    onLoyalty: (c) => _showLoyalty(context, c),
+                  )
                 : _DesktopTable(
-              customers: filtered,
-              onEdit: (c) => _showForm(context, customer: c),
-              onDelete: (c) => _confirmDelete(context, c),
-              onLoyalty: (c) => _showLoyalty(context, c),
-            ),
+                    state: state,
+                    notifier: notifier,
+                    onEdit: (c) => _showForm(context, customer: c),
+                    onDelete: (c) => _confirmDelete(context, c),
+                    onLoyalty: (c) => _showLoyalty(context, c),
+                  ),
           ),
         ],
       ),
     );
+  }
+
+  void _snack(String msg, {bool error = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: error ? Colors.redAccent : Colors.green,
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 
   void _showForm(BuildContext context, {CustomerModel? customer}) {
@@ -137,9 +110,12 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
       builder: (_) => CustomerFormDialog(
         customer: customer,
         branchId: customer?.branchId ?? _currentBranchId,
-        onSave: (c) => customer == null
-            ? ref.read(customerProvider.notifier).createCustomer(c)
-            : ref.read(customerProvider.notifier).updateCustomer(c),
+        onSave: (c) async {
+          final error = customer == null
+              ? await ref.read(customerProvider.notifier).createCustomer(c)
+              : await ref.read(customerProvider.notifier).updateCustomer(c);
+          if (error != null) _snack(error, error: true);
+        },
       ),
     );
   }
@@ -170,11 +146,12 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () {
-              ref
+            onPressed: () async {
+              Navigator.pop(context);
+              final error = await ref
                   .read(customerProvider.notifier)
                   .deleteCustomer(customer.id);
-              Navigator.pop(context);
+              if (error != null) _snack(error, error: true);
             },
             child: const Text('Delete'),
           ),
@@ -187,13 +164,15 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
 // ── Desktop Table ─────────────────────────────────────────────────────────────
 
 class _DesktopTable extends StatelessWidget {
-  final List<CustomerModel> customers;
+  final PaginatedListState<CustomerModel> state;
+  final CustomerNotifier notifier;
   final Function(CustomerModel) onEdit;
   final Function(CustomerModel) onDelete;
   final Function(CustomerModel) onLoyalty;
 
   const _DesktopTable({
-    required this.customers,
+    required this.state,
+    required this.notifier,
     required this.onEdit,
     required this.onDelete,
     required this.onLoyalty,
@@ -231,18 +210,17 @@ class _DesktopTable extends StatelessWidget {
               ),
               // Rows
               Expanded(
-                child: ListView.builder(
-                  itemCount: customers.length,
-                  itemBuilder: (_, i) {
-                    final c = customers[i];
-                    final isLast = i == customers.length - 1;
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: isLast
-                            ? null
-                            : const Border(
-                            bottom: BorderSide(color: Color(0xFFE7E9F0))),
-                      ),
+                child: PaginatedListView<CustomerModel>(
+                  state: state,
+                  padding: EdgeInsets.zero,
+                  onLoadMore: notifier.loadMore,
+                  onRefresh: notifier.refresh,
+                  emptyText: 'No customers found',
+                  separatorBuilder: (_, __) => const Divider(
+                      height: 1, color: Color(0xFFE7E9F0)),
+                  itemBuilder: (_, c, __) {
+                    return DecoratedBox(
+                      decoration: const BoxDecoration(),
                       child: Row(children: [
                         // Name + avatar
                         Expanded(
@@ -379,13 +357,15 @@ class _DesktopTable extends StatelessWidget {
 // ── Mobile List ───────────────────────────────────────────────────────────────
 
 class _MobileList extends StatelessWidget {
-  final List<CustomerModel> customers;
+  final PaginatedListState<CustomerModel> state;
+  final CustomerNotifier notifier;
   final Function(CustomerModel) onEdit;
   final Function(CustomerModel) onDelete;
   final Function(CustomerModel) onLoyalty;
 
   const _MobileList({
-    required this.customers,
+    required this.state,
+    required this.notifier,
     required this.onEdit,
     required this.onDelete,
     required this.onLoyalty,
@@ -393,11 +373,13 @@ class _MobileList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return PaginatedListView<CustomerModel>(
+      state: state,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: customers.length,
-      itemBuilder: (_, i) {
-        final c = customers[i];
+      onLoadMore: notifier.loadMore,
+      onRefresh: notifier.refresh,
+      emptyText: 'No customers found',
+      itemBuilder: (_, c, __) {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -585,67 +567,6 @@ class _SharedBadge extends StatelessWidget {
       child: const Text('Shared',
           style: TextStyle(
               color: Color(0xFF3E63DD), fontSize: 10, fontWeight: FontWeight.w600)),
-    );
-  }
-}
-
-class _TierBadge extends StatelessWidget {
-  final String tier;
-  const _TierBadge({required this.tier});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = {
-      'Gold': (const Color(0xFFFFF8E7), const Color(0xFFD4A017)),
-      'Silver': (const Color(0xFFF5F5F5), const Color(0xFF757575)),
-      'Bronze': (const Color(0xFFFBEEE6), const Color(0xFF8B4513)),
-    };
-    final pair = colors[tier] ?? (const Color(0xFFF5F5F5), const Color(0xFF757575));
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: pair.$1,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(tier,
-          style: TextStyle(
-              color: pair.$2, fontSize: 11, fontWeight: FontWeight.w600)),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
-        const SizedBox(height: 12),
-        Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-        const SizedBox(height: 16),
-        ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-      ]),
-    );
-  }
-}
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.people_outline, size: 48, color: Colors.grey[300]),
-        const SizedBox(height: 12),
-        const Text('No customers found',
-            style: TextStyle(color: Color(0xFF8A8FA3))),
-      ]),
     );
   }
 }

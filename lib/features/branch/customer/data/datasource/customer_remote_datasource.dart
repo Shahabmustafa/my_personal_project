@@ -1,8 +1,37 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../model/customer_model.dart';
 
 class CustomerRemoteDatasource {
   final SupabaseClient _client = Supabase.instance.client;
+
+  /// Server-paginated customers. [branchIds] null = every customer (admin);
+  /// otherwise the given branches' customers plus the shared walk-in customer.
+  /// Searches name / phone / email / address via PostgreSQL `ilike`.
+  Future<PageResult<CustomerModel>> fetchPage(
+    PageRequest request, {
+    List<String>? branchIds,
+  }) async {
+    var query = _client.from('customers').select();
+    if (branchIds != null) {
+      if (branchIds.isEmpty) {
+        query = query.eq('is_walkin', true);
+      } else {
+        query = query.or(
+            'branch_id.in.(${branchIds.join(',')}),is_walkin.eq.true');
+      }
+    }
+    if (request.search.isNotEmpty) {
+      final q = request.search;
+      query = query.or(
+          'name.ilike.%$q%,phone_number.ilike.%$q%,email.ilike.%$q%,address.ilike.%$q%');
+    }
+    final result = await runSupabasePage(
+      query.order('is_walkin', ascending: false).order('name'),
+      request: request,
+    );
+    return result.map(CustomerModel.fromJson);
+  }
 
   /// Fetch all customers for a specific branch, plus the one shared
   /// Walk-in Customer (branch_id is null, is_walkin true) that every
