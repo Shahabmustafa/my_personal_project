@@ -1,0 +1,42 @@
+-- ============================================================================
+-- Large-dataset optimization — applied to Supabase as migrations:
+--   large_dataset_pagination_indexes   (pg_trgm + ~90 indexes)
+--   large_dataset_pagination_rpcs      (stock stats + report totals functions)
+--   large_dataset_stock_views          (v_branch_stock / v_warehouse_stock /
+--                                       v_head_office_stock flattened views)
+--
+-- This file mirrors those migrations for source control. See
+-- lib/core/pagination/ for the Dart side (PaginatedListNotifier etc.).
+-- The authoritative copies live in Supabase migration history.
+-- ============================================================================
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- Trigram GIN (server-side ILIKE '%term%'):
+--   products.article_name, customers.name, customers.phone_number,
+--   {stock_inventory, warehouse_stock_inventory, branch_stock_inventory}.barcode,
+--   {sale_invoices, sale_returns, sale_exchanges, purchase_invoices,
+--    ho_purchase_invoices, purchase_returns, ho_purchase_returns,
+--    assign_stock_to_branch, branch_stock_returns,
+--    branch_return_to_warehouse}.<number column>
+--
+-- B-tree (sort / WHERE / FK / filter): created_at on every list table;
+--   warehouse_id / branch_id / company_id composite with created_at;
+--   quantity (low-stock); every stock FK column (size/color/brand/category/
+--   type/company/product); customer_id / cashier_id / salesman_id on sales;
+--   *_items parent-FK + product_id.
+--
+-- Functions (SECURITY: STABLE, search_path=public, GRANT EXECUTE authenticated):
+--   warehouse_stock_stats(p_warehouse_id uuid) -> json
+--     { total_skus, total_qty, total_value, low_stock_count }
+--   head_office_stock_stats() -> json  (same shape, over stock_inventory)
+--   branch_stock_stats(p_branch_id uuid) -> json  (same shape)
+--   sale_invoice_report_totals(p_start timestamptz, p_end timestamptz) -> json
+--     { total_count, total_qty, total_amount }
+--   sale_return_report_totals(...)  / sale_exchange_report_totals(...)
+--
+-- Views (read-only; GRANT SELECT authenticated):
+--   v_branch_stock, v_warehouse_stock, v_head_office_stock
+--     = base columns + product_name/size_name/color_name/brand_name/
+--       category_name/type_name[/company_name][/warehouse_name] + sale_price/
+--       purchase_price + search_text (lowercased concat for ILIKE).
