@@ -2,6 +2,9 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
+import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/providers/stock_provider.dart'
+    show stockProductsProvider;
+
 import '../../../../../core/pagination/pagination.dart';
 import '../../data/datasource/product_remote_datasource.dart';
 import '../../data/model/product_model.dart';
@@ -20,7 +23,13 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 /// first page / refresh only.
 class ProductNotifier extends PaginatedListNotifier<ProductModel> {
   final ProductRepository _repo;
-  ProductNotifier(this._repo);
+  final Ref _ref;
+  ProductNotifier(this._repo, this._ref);
+
+  /// Stock/purchase dialogs cache the product lookup list in a plain
+  /// [FutureProvider]. Bust that cache after any write so newly added products
+  /// appear in their dropdowns without a full page refresh.
+  void _invalidateLookups() => _ref.invalidate(stockProductsProvider);
 
   @override
   Future<PageResult<ProductModel>> fetchPage(PageRequest request) =>
@@ -55,6 +64,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
     try {
       await _repo.create(model);
       await refresh();
+      _invalidateLookups();
       return null;
     } catch (e) {
       return e.toString().replaceAll('Exception: ', '');
@@ -65,6 +75,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
     try {
       final updated = await _repo.update(model);
       replaceRow((p) => p.id == updated.id, updated);
+      _invalidateLookups();
       return null;
     } catch (e) {
       return e.toString().replaceAll('Exception: ', '');
@@ -75,6 +86,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
     try {
       await _repo.delete(id, imageUrl);
       removeRow((p) => p.id == id);
+      _invalidateLookups();
       return null;
     } catch (e) {
       return e.toString().replaceAll('Exception: ', '');
@@ -84,4 +96,4 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
 
 final productProvider =
     StateNotifierProvider<ProductNotifier, PaginatedListState<ProductModel>>(
-        (ref) => ProductNotifier(ref.read(productRepositoryProvider)));
+        (ref) => ProductNotifier(ref.read(productRepositoryProvider), ref));
