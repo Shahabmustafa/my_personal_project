@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
-import '../../../shared/current_warehouse_provider.dart';
+import '../../../../superadmin/shared/current_head_office_provider.dart';
 import '../../data/model/company_model.dart';
 import '../providers/company_provider.dart';
 import '../providers/company_state.dart';
@@ -27,11 +27,14 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
     });
   }
 
-  String get _currentWarehouseId => ref.read(currentWarehouseIdProvider);
+  String get _currentHeadOfficeId => ref.read(currentHeadOfficeIdProvider);
 
   @override
   Widget build(BuildContext context) {
     final companyState = ref.watch(companyProvider);
+    // Keep the singleton head-office id resolving while this screen is open so
+    // the Add/Edit dialog always has it ready.
+    ref.watch(headOfficeIdProvider);
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     // Show snackbar on error
@@ -145,7 +148,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
       context: context,
       builder: (_) => CompanyFormDialog(
         company: company,
-        warehouseId: company?.warehouseId ?? _currentWarehouseId,
+        headOfficeId: company?.headOfficeId ?? _currentHeadOfficeId,
         onSave: (c) => company == null
             ? ref.read(companyProvider.notifier).createCompany(c)
             : ref.read(companyProvider.notifier).updateCompany(c),

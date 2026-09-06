@@ -8,12 +8,8 @@ class CompanyRepository {
   Future<List<CompanyModel>> getAllCompanies() =>
       remoteDatasource.getAllCompanies();
 
-  Future<List<CompanyModel>> getCompaniesByWarehouse(String warehouseId) =>
-      remoteDatasource.getCompaniesByWarehouse(warehouseId);
-
-  Future<List<CompanyModel>> getCompaniesForWarehouses(
-          List<String> warehouseIds) =>
-      remoteDatasource.getCompaniesForWarehouses(warehouseIds);
+  Future<List<CompanyModel>> getCompaniesByHeadOffice(String headOfficeId) =>
+      remoteDatasource.getCompaniesByHeadOffice(headOfficeId);
 
   Future<CompanyModel> createCompany(CompanyModel company) =>
       remoteDatasource.createCompany(company);

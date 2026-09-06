@@ -18,7 +18,6 @@ import '../superadmin/report/presentation/screens/sale_invoice_report_screen.dar
 import '../superadmin/report/presentation/screens/sale_return_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
 import '../warehouse/company/presentation/screens/companies_screen.dart';
-import '../warehouse/shared/warehouse_context_gate.dart';
 import '../user/presentation/screens/users_screen.dart';
 import '../warehouse/product/presentation/screens/products_screen.dart';
 import '../warehouse/size/presentation/screens/sizes_screen.dart';
@@ -164,7 +163,9 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // dashboard mein hain.
     PurchaseInvoiceScreen(),
     PurchaseReturnScreen(),
-    WarehouseContextGate(child: CompaniesScreen()),
+    // Companies head-office se juri hain (system mein ek hi head office) —
+    // koi warehouse choose karne ki zaroorat nahi.
+    CompaniesScreen(),
     // Head office se branch ko stock assign — head_office_id ke sath.
     HoAssignStockScreen(),
     // Assignment history — alag page (sidebar "Assign Stock" group ke andar).

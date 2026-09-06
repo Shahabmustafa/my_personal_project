@@ -3,13 +3,13 @@ import '../../data/model/company_model.dart';
 
 class CompanyFormDialog extends StatefulWidget {
   final CompanyModel? company;
-  final String warehouseId;
+  final String headOfficeId;
   final ValueChanged<CompanyModel> onSave;
 
   const CompanyFormDialog({
     super.key,
     this.company,
-    required this.warehouseId,
+    required this.headOfficeId,
     required this.onSave,
   });
 
@@ -155,7 +155,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
             if (_formKey.currentState?.validate() ?? false) {
               widget.onSave(CompanyModel(
                 id: widget.company?.id ?? '',
-                warehouseId: widget.warehouseId,
+                headOfficeId: widget.headOfficeId,
                 name: _nameCtrl.text.trim(),
                 phoneNumber: _phoneCtrl.text.trim(),
                 email: _emailCtrl.text.trim(),

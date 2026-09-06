@@ -38,23 +38,10 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     }
   }
 
-  Future<void> loadCompaniesByWarehouse(String warehouseId) async {
+  Future<void> loadCompaniesByHeadOffice(String headOfficeId) async {
     state = state.copyWith(status: CompanyStatus.loading, errorMessage: null);
     try {
-      final companies = await _repo.getCompaniesByWarehouse(warehouseId);
-      state =
-          state.copyWith(status: CompanyStatus.success, companies: companies);
-    } catch (e) {
-      state = state.copyWith(
-          status: CompanyStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
-    }
-  }
-
-  Future<void> loadCompaniesForWarehouses(List<String> warehouseIds) async {
-    state = state.copyWith(status: CompanyStatus.loading, errorMessage: null);
-    try {
-      final companies = await _repo.getCompaniesForWarehouses(warehouseIds);
+      final companies = await _repo.getCompaniesByHeadOffice(headOfficeId);
       state =
           state.copyWith(status: CompanyStatus.success, companies: companies);
     } catch (e) {

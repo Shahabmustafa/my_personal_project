@@ -13,46 +13,32 @@ class CompanyRemoteDatasource {
     return (data as List).map((e) => CompanyModel.fromJson(e)).toList();
   }
 
-  /// Fetch all companies for a specific warehouse
-  Future<List<CompanyModel>> getCompaniesByWarehouse(
-      String warehouseId) async {
-    if (warehouseId.isEmpty) return [];
+  /// Fetch all companies for a specific head office
+  Future<List<CompanyModel>> getCompaniesByHeadOffice(
+      String headOfficeId) async {
+    if (headOfficeId.isEmpty) return [];
     final data = await _client
         .from('companies')
         .select()
-        .eq('warehouse_id', warehouseId)
+        .eq('head_office_id', headOfficeId)
         .order('name');
     return (data as List).map((e) => CompanyModel.fromJson(e)).toList();
   }
 
-  /// Fetch companies for multiple warehouses
-  Future<List<CompanyModel>> getCompaniesForWarehouses(
-      List<String> warehouseIds) async {
-    final validIds = warehouseIds.where((id) => id.isNotEmpty).toList();
-    if (validIds.isEmpty) return [];
-    final data = await _client
-        .from('companies')
-        .select()
-        .inFilter('warehouse_id', validIds)
-        .order('name');
-    return (data as List).map((e) => CompanyModel.fromJson(e)).toList();
-  }
-
-  /// Create new company — duplicate name check per warehouse
+  /// Create new company — duplicate name check per head office
   Future<CompanyModel> createCompany(CompanyModel company) async {
-    if (company.warehouseId.isEmpty) {
-      throw Exception('Select a working warehouse before adding a company');
+    if (company.headOfficeId.isEmpty) {
+      throw Exception('No head office found — add a head office first');
     }
     final existing = await _client
         .from('companies')
         .select('id')
-        .eq('warehouse_id', company.warehouseId)
+        .eq('head_office_id', company.headOfficeId)
         .ilike('name', company.name.trim())
         .maybeSingle();
 
     if (existing != null) {
-      throw Exception(
-          'A company with this name already exists in this warehouse');
+      throw Exception('A company with this name already exists');
     }
 
     final data = await _client
@@ -65,20 +51,19 @@ class CompanyRemoteDatasource {
 
   /// Update company info — duplicate name check excluding current record
   Future<CompanyModel> updateCompany(CompanyModel company) async {
-    if (company.warehouseId.isEmpty) {
-      throw Exception('This company has no warehouse assigned');
+    if (company.headOfficeId.isEmpty) {
+      throw Exception('This company has no head office assigned');
     }
     final existing = await _client
         .from('companies')
         .select('id')
-        .eq('warehouse_id', company.warehouseId)
+        .eq('head_office_id', company.headOfficeId)
         .ilike('name', company.name.trim())
         .neq('id', company.id)
         .maybeSingle();
 
     if (existing != null) {
-      throw Exception(
-          'Another company with this name already exists in this warehouse');
+      throw Exception('Another company with this name already exists');
     }
 
     final data = await _client

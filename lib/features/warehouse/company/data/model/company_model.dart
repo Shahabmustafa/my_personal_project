@@ -1,6 +1,6 @@
 class CompanyModel {
   final String id;
-  final String warehouseId;
+  final String headOfficeId;
   final String name;
   final String phoneNumber;
   final String email;
@@ -10,7 +10,7 @@ class CompanyModel {
 
   const CompanyModel({
     required this.id,
-    required this.warehouseId,
+    required this.headOfficeId,
     required this.name,
     this.phoneNumber = '',
     this.email = '',
@@ -22,7 +22,7 @@ class CompanyModel {
   factory CompanyModel.fromJson(Map<String, dynamic> json) {
     return CompanyModel(
       id: json['id']?.toString() ?? '',
-      warehouseId: json['warehouse_id']?.toString() ?? '',
+      headOfficeId: json['head_office_id']?.toString() ?? '',
       name: json['name'] ?? '',
       phoneNumber: json['phone_number'] ?? '',
       email: json['email'] ?? '',
@@ -35,7 +35,7 @@ class CompanyModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'warehouse_id': warehouseId,
+        'head_office_id': headOfficeId,
         'name': name,
         'phone_number': phoneNumber,
         'email': email,
@@ -45,7 +45,7 @@ class CompanyModel {
 
   CompanyModel copyWith({
     String? id,
-    String? warehouseId,
+    String? headOfficeId,
     String? name,
     String? phoneNumber,
     String? email,
@@ -54,7 +54,7 @@ class CompanyModel {
   }) {
     return CompanyModel(
       id: id ?? this.id,
-      warehouseId: warehouseId ?? this.warehouseId,
+      headOfficeId: headOfficeId ?? this.headOfficeId,
       name: name ?? this.name,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
