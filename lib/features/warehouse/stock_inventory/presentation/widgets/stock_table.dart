@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../../data/barcode_printer_service.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/stock_provider.dart';
@@ -11,53 +12,12 @@ class StockTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(stockProvider);
-
-    if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (state.error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
-            const SizedBox(height: 8),
-            Text('Error: ${state.error}',
-                style: const TextStyle(color: Colors.red)),
-          ],
-        ),
-      );
-    }
-
-    final items = state.filtered;
-
-    if (items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.inventory_2_outlined,
-                size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 12),
-            Text(
-              state.searchQuery.isEmpty
-                  ? 'No stock entries found'
-                  : 'No results for "${state.searchQuery}"',
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
-            ),
-          ],
-        ),
-      );
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 700;
         return isWide
-            ? _DesktopTable(items: items, readOnly: readOnly)
-            : _MobileList(items: items, readOnly: readOnly);
+            ? _DesktopTable(readOnly: readOnly)
+            : _MobileList(readOnly: readOnly);
       },
     );
   }
@@ -66,14 +26,15 @@ class StockTable extends ConsumerWidget {
 // ── Desktop: horizontal data table ───────────────────────────────────────
 
 class _DesktopTable extends ConsumerWidget {
-  final List<WarehouseStockModel> items;
   final bool readOnly;
-  const _DesktopTable({required this.items, this.readOnly = false});
+  const _DesktopTable({this.readOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const headerStyle = TextStyle(
         fontWeight: FontWeight.w600, fontSize: 13, color: Colors.white);
+    final state = ref.watch(stockProvider);
+    final notifier = ref.read(stockProvider.notifier);
 
     return Column(
       children: [
@@ -102,13 +63,14 @@ class _DesktopTable extends ConsumerWidget {
         ),
         // Rows
         Expanded(
-          child: ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (context, i) {
-              final stock = items[i];
-              return _DesktopRow(
-                  stock: stock, isEven: i.isEven, readOnly: readOnly);
-            },
+          child: PaginatedListView<WarehouseStockModel>(
+            state: state,
+            padding: EdgeInsets.zero,
+            onLoadMore: notifier.loadMore,
+            onRefresh: notifier.refresh,
+            emptyText: 'No stock entries found',
+            itemBuilder: (context, stock, i) => _DesktopRow(
+                stock: stock, isEven: i.isEven, readOnly: readOnly),
           ),
         ),
       ],
@@ -651,18 +613,20 @@ class _LabelDetail extends StatelessWidget {
 // ── Mobile: card list ─────────────────────────────────────────────────────
 
 class _MobileList extends ConsumerWidget {
-  final List<WarehouseStockModel> items;
   final bool readOnly;
-  const _MobileList({required this.items, this.readOnly = false});
+  const _MobileList({this.readOnly = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return ListView.separated(
+    final state = ref.watch(stockProvider);
+    final notifier = ref.read(stockProvider.notifier);
+    return PaginatedListView<WarehouseStockModel>(
+      state: state,
       padding: const EdgeInsets.all(12),
-      itemCount: items.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, i) {
-        final stock = items[i];
+      onLoadMore: notifier.loadMore,
+      onRefresh: notifier.refresh,
+      emptyText: 'No stock entries found',
+      itemBuilder: (context, stock, i) {
         return Card(
           elevation: 1,
           shape:

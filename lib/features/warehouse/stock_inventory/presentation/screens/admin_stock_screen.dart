@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../../../../auth/presentation/providers/workspace_selection_provider.dart';
 import '../../../../superadmin/warehouse/data/model/warehouse_model.dart';
 import '../../../../superadmin/warehouse/presentation/providers/warehouse_provider.dart';
@@ -9,8 +10,8 @@ import '../widgets/add_stock_dialog.dart';
 
 /// Admin-only stock view — shows inventory across ALL warehouses (unlike
 /// [StockScreen] which is scoped to the logged-in user's single assigned
-/// warehouse). Admin can add new stock (picking which warehouse it goes
-/// into); edit/delete stay off-limits here.
+/// warehouse). Server-paginated; admin can add new stock (picking which
+/// warehouse it goes into); edit/delete stay off-limits here.
 class AdminStockScreen extends ConsumerStatefulWidget {
   const AdminStockScreen({super.key});
 
@@ -19,8 +20,6 @@ class AdminStockScreen extends ConsumerStatefulWidget {
 }
 
 class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
-  String _search = '';
-
   @override
   void initState() {
     super.initState();
@@ -34,7 +33,6 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
     final currentSelection = ref.read(selectedWarehouseIdProvider);
     var targetWarehouseId = currentSelection;
 
-    // Agar pehle se koi valid warehouse chuna hua nahi hai, to pehle pick karwao.
     if (targetWarehouseId.isEmpty ||
         !warehouses.any((w) => w.id == targetWarehouseId)) {
       final picked = await showDialog<String>(
@@ -45,7 +43,9 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
       targetWarehouseId = picked;
     }
 
-    await ref.read(selectedWarehouseIdProvider.notifier).select(targetWarehouseId);
+    await ref
+        .read(selectedWarehouseIdProvider.notifier)
+        .select(targetWarehouseId);
     if (!mounted) return;
 
     await showDialog(
@@ -54,12 +54,13 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
       builder: (_) => const AddStockDialog(),
     );
 
-    ref.invalidate(adminStockProvider);
+    ref.read(adminStockProvider.notifier).refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    final async = ref.watch(adminStockProvider);
+    final state = ref.watch(adminStockProvider);
+    final notifier = ref.read(adminStockProvider.notifier);
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
@@ -77,20 +78,14 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
                     const Text('Stock Inventory',
                         style: TextStyle(
                             fontSize: 22, fontWeight: FontWeight.bold)),
-                    Text(
-                      async.maybeWhen(
-                        data: (items) =>
-                            '${items.length} SKUs across all warehouses',
-                        orElse: () => 'All warehouses',
-                      ),
-                      style: const TextStyle(
-                          fontSize: 13, color: Color(0xFF8A8FA3)),
-                    ),
+                    TotalCountLabel(
+                        label: 'SKUs (all warehouses)',
+                        count: state.totalCount),
                   ],
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: () => ref.invalidate(adminStockProvider),
+                  onPressed: notifier.refresh,
                   icon: const Icon(Icons.refresh),
                   tooltip: 'Refresh',
                   color: const Color(0xFF3E63DD),
@@ -116,12 +111,13 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: TextField(
-              onChanged: (v) => setState(() => _search = v),
+              onChanged: notifier.setSearch,
               decoration: InputDecoration(
                 hintText: 'Search by barcode, article, brand, warehouse...',
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+                prefixIcon:
+                    const Icon(Icons.search, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -139,63 +135,9 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
             ),
           ),
           Expanded(
-            child: async.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline,
-                        size: 48, color: Colors.redAccent),
-                    const SizedBox(height: 12),
-                    Text('$e',
-                        style: const TextStyle(color: Color(0xFF8A8FA3))),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () => ref.invalidate(adminStockProvider),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-              data: (items) {
-                final q = _search.toLowerCase();
-                final filtered = q.isEmpty
-                    ? items
-                    : items.where((s) =>
-                        (s.productName ?? '').toLowerCase().contains(q) ||
-                        s.barcode.toLowerCase().contains(q) ||
-                        (s.brandName ?? '').toLowerCase().contains(q) ||
-                        (s.colorName ?? '').toLowerCase().contains(q) ||
-                        (s.sizeName ?? '').toLowerCase().contains(q) ||
-                        (s.categoryName ?? '').toLowerCase().contains(q) ||
-                        (s.typeName ?? '').toLowerCase().contains(q) ||
-                        (s.warehouseName ?? '').toLowerCase().contains(q)).toList();
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inventory_2_outlined,
-                            size: 48, color: Colors.grey[300]),
-                        const SizedBox(height: 12),
-                        Text(
-                          _search.isEmpty
-                              ? 'No stock entries found'
-                              : 'No results for "$_search"',
-                          style: const TextStyle(color: Color(0xFF8A8FA3)),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                return isMobile
-                    ? _MobileList(items: filtered)
-                    : _DesktopTable(items: filtered);
-              },
-            ),
+            child: isMobile
+                ? _MobileList(state: state, notifier: notifier)
+                : _DesktopTable(state: state, notifier: notifier),
           ),
         ],
       ),
@@ -204,8 +146,9 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
 }
 
 class _DesktopTable extends StatelessWidget {
-  final List<WarehouseStockModel> items;
-  const _DesktopTable({required this.items});
+  final PaginatedListState<WarehouseStockModel> state;
+  final AdminStockNotifier notifier;
+  const _DesktopTable({required this.state, required this.notifier});
 
   @override
   Widget build(BuildContext context) {
@@ -247,29 +190,30 @@ class _DesktopTable extends StatelessWidget {
                 ]),
               ),
               Expanded(
-                child: ListView.separated(
-                  itemCount: items.length,
+                child: PaginatedListView<WarehouseStockModel>(
+                  state: state,
+                  padding: EdgeInsets.zero,
+                  onLoadMore: notifier.loadMore,
+                  onRefresh: notifier.refresh,
+                  emptyText: 'No stock entries found',
                   separatorBuilder: (_, __) =>
                       const Divider(height: 1, color: Color(0xFFE7E9F0)),
-                  itemBuilder: (_, i) {
-                    final s = items[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Row(children: [
-                        _cell(s.warehouseName ?? '—', flex: 2, bold: true),
-                        _cell(s.barcode, flex: 2),
-                        _cell(s.productName ?? '—', flex: 2),
-                        _cell(s.sizeName ?? '—', flex: 1),
-                        _cell(s.colorName ?? '—', flex: 1),
-                        _cell(s.brandName ?? '—', flex: 1),
-                        _cell(s.categoryName ?? '—', flex: 1),
-                        _cell(s.typeName ?? '—', flex: 1),
-                        _cell('${s.quantity}', flex: 1),
-                        _cell('${s.discount.toStringAsFixed(0)}%', flex: 1),
-                      ]),
-                    );
-                  },
+                  itemBuilder: (_, s, __) => Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(children: [
+                      _cell(s.warehouseName ?? '—', flex: 2, bold: true),
+                      _cell(s.barcode, flex: 2),
+                      _cell(s.productName ?? '—', flex: 2),
+                      _cell(s.sizeName ?? '—', flex: 1),
+                      _cell(s.colorName ?? '—', flex: 1),
+                      _cell(s.brandName ?? '—', flex: 1),
+                      _cell(s.categoryName ?? '—', flex: 1),
+                      _cell(s.typeName ?? '—', flex: 1),
+                      _cell('${s.quantity}', flex: 1),
+                      _cell('${s.discount.toStringAsFixed(0)}%', flex: 1),
+                    ]),
+                  ),
                 ),
               ),
             ],
@@ -309,74 +253,75 @@ class _TH extends StatelessWidget {
 }
 
 class _MobileList extends StatelessWidget {
-  final List<WarehouseStockModel> items;
-  const _MobileList({required this.items});
+  final PaginatedListState<WarehouseStockModel> state;
+  final AdminStockNotifier notifier;
+  const _MobileList({required this.state, required this.notifier});
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return PaginatedListView<WarehouseStockModel>(
+      state: state,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: items.length,
-      itemBuilder: (_, i) {
-        final s = items[i];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE7E9F0)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(s.productName ?? s.barcode,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14)),
+      onLoadMore: notifier.loadMore,
+      onRefresh: notifier.refresh,
+      emptyText: 'No stock entries found',
+      itemBuilder: (_, s, __) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7E9F0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(s.productName ?? s.barcode,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 14)),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAEFFD),
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAEFFD),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(s.warehouseName ?? '—',
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF3E63DD))),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(s.barcode,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF8A8FA3),
-                      fontFamily: 'monospace')),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  _chip('Size', s.sizeName ?? '—'),
-                  _chip('Color', s.colorName ?? '—'),
-                  _chip('Brand', s.brandName ?? '—'),
-                  _chip('Category', s.categoryName ?? '—'),
-                  _chip('Type', s.typeName ?? '—'),
-                  _chip('Qty', '${s.quantity}', color: const Color(0xFF2E7D32)),
-                  _chip('Discount', '${s.discount.toStringAsFixed(0)}%',
-                      color: Colors.orange.shade800),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
+                  child: Text(s.warehouseName ?? '—',
+                      style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF3E63DD))),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(s.barcode,
+                style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF8A8FA3),
+                    fontFamily: 'monospace')),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                _chip('Size', s.sizeName ?? '—'),
+                _chip('Color', s.colorName ?? '—'),
+                _chip('Brand', s.brandName ?? '—'),
+                _chip('Category', s.categoryName ?? '—'),
+                _chip('Type', s.typeName ?? '—'),
+                _chip('Qty', '${s.quantity}', color: const Color(0xFF2E7D32)),
+                _chip('Discount', '${s.discount.toStringAsFixed(0)}%',
+                    color: Colors.orange.shade800),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -422,7 +367,8 @@ class _PickWarehouseDialog extends StatelessWidget {
             ? const Padding(
                 padding: EdgeInsets.symmetric(vertical: 12),
                 child: Text('No warehouses available',
-                    style: TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
+                    style:
+                        TextStyle(color: Color(0xFF8A8FA3), fontSize: 13)),
               )
             : SingleChildScrollView(
                 child: Column(

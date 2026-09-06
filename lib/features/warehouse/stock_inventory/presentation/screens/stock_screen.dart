@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../providers/stock_provider.dart';
 import '../widgets/add_stock_dialog.dart';
 import '../widgets/stock_table.dart';
@@ -16,14 +17,6 @@ class _StockScreenState extends ConsumerState<StockScreen> {
   final _searchCtrl = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(stockProvider.notifier).loadStock();
-    });
-  }
-
-  @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
@@ -34,15 +27,14 @@ class _StockScreenState extends ConsumerState<StockScreen> {
       context: context,
       barrierDismissible: false,
       builder: (_) => const AddStockDialog(),
-    );
+    ).then((_) => ref.invalidate(warehouseStockStatsProvider));
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(stockProvider);
-    final total = state.items.length;
-    final totalQty =
-        state.items.fold<int>(0, (sum, s) => sum + s.quantity);
+    final notifier = ref.read(stockProvider.notifier);
+    final stats = ref.watch(warehouseStockStatsProvider);
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -61,7 +53,12 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             fontSize: 24, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
                     Text(
-                      '$total SKUs  •  $totalQty total units',
+                      stats.maybeWhen(
+                        data: (s) =>
+                            'Total SKUs: ${groupThousands(state.totalCount)}  •  ${groupThousands(s.totalQty)} units  •  ${groupThousands(s.lowStockCount)} low',
+                        orElse: () =>
+                            'Total SKUs: ${groupThousands(state.totalCount)}',
+                      ),
                       style: TextStyle(
                           color: Colors.grey.shade600, fontSize: 13),
                     ),
@@ -87,7 +84,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           // ── Search ───────────────────────────────────────────────────
           TextField(
             controller: _searchCtrl,
-            onChanged: (v) => ref.read(stockProvider.notifier).search(v),
+            onChanged: notifier.setSearch,
             decoration: InputDecoration(
               hintText:
                   'Search by barcode, article, brand, size, color...',
@@ -97,7 +94,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                       icon: const Icon(Icons.clear),
                       onPressed: () {
                         _searchCtrl.clear();
-                        ref.read(stockProvider.notifier).search('');
+                        notifier.setSearch('');
                         setState(() {});
                       },
                     )

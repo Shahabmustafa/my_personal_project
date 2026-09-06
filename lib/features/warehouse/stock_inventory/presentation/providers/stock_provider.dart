@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../../data/datasources/stock_datasource.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/stock_repository.dart';
@@ -15,101 +16,74 @@ final stockRepositoryProvider = Provider<StockRepository>(
   (ref) => StockRepository(ref.read(stockDatasourceProvider)),
 );
 
-// ── Lookup providers ──────────────────────────────────────────────────────
+// ── Lookup providers (small reference tables — unchanged) ──────────────────
 final stockProductsProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getProducts());
-
 final stockSizesProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getSizes());
-
 final stockBrandsProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getBrands());
-
 final stockCompaniesProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getCompanies());
-
 final stockColorsProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getColors());
-
 final stockCategoriesProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getCategories());
-
 final stockTypesProvider = FutureProvider<List<StockLookupItem>>(
     (ref) => ref.read(stockRepositoryProvider).getTypes());
 
-// ── Admin: read-only stock across ALL warehouses ────────────────────────────
-final adminStockProvider = FutureProvider<List<WarehouseStockModel>>(
-    (ref) => ref.read(stockRepositoryProvider).getAllStock());
+// ── Aggregate stats (server-side RPC — no full-table download) ─────────────
+class StockStats {
+  final int totalSkus;
+  final int totalQty;
+  final double totalValue;
+  final int lowStockCount;
+  const StockStats(
+      {this.totalSkus = 0,
+      this.totalQty = 0,
+      this.totalValue = 0,
+      this.lowStockCount = 0});
 
-// ── Stock list state ──────────────────────────────────────────────────────
-class StockState {
-  final List<WarehouseStockModel> items;
-  final bool isLoading;
-  final String? error;
-  final String searchQuery;
-
-  const StockState({
-    this.items = const [],
-    this.isLoading = false,
-    this.error,
-    this.searchQuery = '',
-  });
-
-  StockState copyWith({
-    List<WarehouseStockModel>? items,
-    bool? isLoading,
-    String? error,
-    String? searchQuery,
-  }) =>
-      StockState(
-        items: items ?? this.items,
-        isLoading: isLoading ?? this.isLoading,
-        error: error,
-        searchQuery: searchQuery ?? this.searchQuery,
+  factory StockStats.fromJson(Map<String, dynamic> j) => StockStats(
+        totalSkus: (j['total_skus'] as num?)?.toInt() ?? 0,
+        totalQty: (j['total_qty'] as num?)?.toInt() ?? 0,
+        totalValue: (j['total_value'] as num?)?.toDouble() ?? 0,
+        lowStockCount: (j['low_stock_count'] as num?)?.toInt() ?? 0,
       );
-
-  List<WarehouseStockModel> get filtered {
-    if (searchQuery.isEmpty) return items;
-    final q = searchQuery.toLowerCase();
-    return items.where((s) =>
-        (s.productName ?? '').toLowerCase().contains(q) ||
-        s.barcode.toLowerCase().contains(q) ||
-        (s.brandName ?? '').toLowerCase().contains(q) ||
-        (s.colorName ?? '').toLowerCase().contains(q) ||
-        (s.sizeName ?? '').toLowerCase().contains(q) ||
-        (s.categoryName ?? '').toLowerCase().contains(q) ||
-        (s.typeName ?? '').toLowerCase().contains(q)).toList();
-  }
 }
 
-class StockNotifier extends StateNotifier<StockState> {
+/// Own-warehouse stats. Invalidate after stock mutations to refresh.
+final warehouseStockStatsProvider =
+    FutureProvider.autoDispose<StockStats>((ref) async {
+  final wid = ref.watch(currentWarehouseIdProvider);
+  if (wid.isEmpty) return const StockStats();
+  final res = await Supabase.instance.client
+      .rpc('warehouse_stock_stats', params: {'p_warehouse_id': wid});
+  return StockStats.fromJson((res as Map).cast<String, dynamic>());
+});
+
+// ── Own-warehouse paginated stock list ────────────────────────────────────
+class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
   final StockRepository _repository;
   final String _warehouseId;
 
-  StockNotifier(this._repository, this._warehouseId)
-      : super(const StockState());
+  StockNotifier(this._repository, this._warehouseId);
 
-  Future<void> loadStock() async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final items = await _repository.getStockByWarehouse(_warehouseId);
-      state = state.copyWith(items: items, isLoading: false);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
-    }
-  }
+  @override
+  Future<PageResult<WarehouseStockModel>> fetchPage(PageRequest request) =>
+      _repository.fetchStockPage(request, warehouseId: _warehouseId);
 
-  /// Returns: list of skipped (duplicate) barcode/sku labels, or empty if all saved
+  void toggleLowStock(bool value) =>
+      setFilters({'low_stock': value ? true : null});
+
+  /// Returns: list of skipped (duplicate) barcode/sku labels.
   Future<({String? error, List<String> skipped})> addBatchStock(
       List<WarehouseStockModel> stocks) async {
     try {
-      // Check each entry for barcode + SKU duplicates before inserting
       final toInsert = <WarehouseStockModel>[];
       final skipped = <String>[];
-
       for (final s in stocks) {
-        final bcExists = await _repository.barcodeExists(s.barcode);
-        if (bcExists) {
+        if (await _repository.barcodeExists(s.barcode)) {
           skipped.add('Barcode ${s.barcode} already exists');
           continue;
         }
@@ -129,12 +103,10 @@ class StockNotifier extends StateNotifier<StockState> {
         }
         toInsert.add(s);
       }
-
       if (toInsert.isNotEmpty) {
         await _repository.addBatchStock(toInsert);
-        await loadStock();
+        await refresh();
       }
-
       return (error: null, skipped: skipped);
     } catch (e) {
       return (error: e.toString(), skipped: <String>[]);
@@ -144,9 +116,7 @@ class StockNotifier extends StateNotifier<StockState> {
   Future<String?> updateQuantity(String stockId, int qty) async {
     try {
       final updated = await _repository.updateQuantity(stockId, qty);
-      state = state.copyWith(
-        items: state.items.map((s) => s.id == stockId ? updated : s).toList(),
-      );
+      replaceRow((s) => s.id == stockId, updated);
       return null;
     } catch (e) {
       return e.toString();
@@ -156,9 +126,7 @@ class StockNotifier extends StateNotifier<StockState> {
   Future<String?> updateDiscount(String stockId, double discount) async {
     try {
       final updated = await _repository.updateDiscount(stockId, discount);
-      state = state.copyWith(
-        items: state.items.map((s) => s.id == stockId ? updated : s).toList(),
-      );
+      replaceRow((s) => s.id == stockId, updated);
       return null;
     } catch (e) {
       return e.toString();
@@ -168,21 +136,33 @@ class StockNotifier extends StateNotifier<StockState> {
   Future<String?> deleteStock(String stockId) async {
     try {
       await _repository.deleteStock(stockId);
-      state = state.copyWith(
-          items: state.items.where((s) => s.id != stockId).toList());
+      removeRow((s) => s.id == stockId);
       return null;
     } catch (e) {
       return e.toString();
     }
   }
-
-  void search(String query) => state = state.copyWith(searchQuery: query);
 }
 
-final stockProvider =
-    StateNotifierProvider<StockNotifier, StockState>((ref) {
+final stockProvider = StateNotifierProvider<StockNotifier,
+    PaginatedListState<WarehouseStockModel>>((ref) {
   return StockNotifier(
     ref.read(stockRepositoryProvider),
     ref.watch(currentWarehouseIdProvider),
   );
 });
+
+// ── Admin: paginated stock across ALL warehouses (read-only) ───────────────
+class AdminStockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
+  final StockRepository _repository;
+  AdminStockNotifier(this._repository);
+
+  @override
+  Future<PageResult<WarehouseStockModel>> fetchPage(PageRequest request) =>
+      _repository.fetchStockPage(request);
+}
+
+final adminStockProvider = StateNotifierProvider<AdminStockNotifier,
+    PaginatedListState<WarehouseStockModel>>(
+  (ref) => AdminStockNotifier(ref.read(stockRepositoryProvider)),
+);

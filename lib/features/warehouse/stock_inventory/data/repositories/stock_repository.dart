@@ -1,3 +1,4 @@
+import '../../../../../core/pagination/pagination.dart';
 import '../datasources/stock_datasource.dart';
 import '../models/warehouse_stock_model.dart';
 
@@ -10,6 +11,12 @@ class StockRepository {
       _datasource.fetchByWarehouse(warehouseId);
 
   Future<List<WarehouseStockModel>> getAllStock() => _datasource.fetchAll();
+
+  Future<PageResult<WarehouseStockModel>> fetchStockPage(
+    PageRequest request, {
+    String? warehouseId,
+  }) =>
+      _datasource.fetchPage(request, warehouseId: warehouseId);
 
   Future<bool> barcodeExists(String barcode) =>
       _datasource.barcodeExists(barcode);

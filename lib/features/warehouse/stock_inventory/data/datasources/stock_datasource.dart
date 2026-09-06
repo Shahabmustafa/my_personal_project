@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../models/warehouse_stock_model.dart';
 
 class StockDatasource {
@@ -7,6 +8,48 @@ class StockDatasource {
   StockDatasource(this._client);
 
   static const _table = 'warehouse_stock_inventory';
+
+  /// Flat `v_warehouse_stock` row -> the nested shape `WarehouseStockModel`
+  /// expects (so the existing `fromJson` is reused untouched).
+  static WarehouseStockModel _fromViewRow(Map<String, dynamic> r) =>
+      WarehouseStockModel.fromJson({
+        ...r,
+        'products': {'article_name': r['product_name']},
+        'sizes': {'number': r['size_name']},
+        'colors': {'name': r['color_name']},
+        'brands': {'name': r['brand_name']},
+        'categories': {'name': r['category_name']},
+        'types': {'name': r['type_name']},
+        'companies': {'name': r['company_name']},
+        'warehouses': {'warehouse_name': r['warehouse_name']},
+      });
+
+  /// Server-paginated page of warehouse stock. [warehouseId] null = all
+  /// warehouses (admin view). Searches `product_name`/barcode/attributes via the
+  /// view's precomputed `search_text` (trigram-indexed). `filters['low_stock']`
+  /// = true restricts to `quantity <= 5`.
+  Future<PageResult<WarehouseStockModel>> fetchPage(
+    PageRequest request, {
+    String? warehouseId,
+  }) async {
+    var query = _client.from('v_warehouse_stock').select();
+    if (warehouseId != null && warehouseId.isNotEmpty) {
+      query = query.eq('warehouse_id', warehouseId);
+    }
+    if (request.search.isNotEmpty) {
+      query = query.ilike('search_text', '%${request.search.toLowerCase()}%');
+    }
+    if (request.filters['low_stock'] == true) {
+      query = query.lte('quantity', 5);
+    }
+    final result = await runSupabasePage(
+      query
+          .order('product_name', ascending: true)
+          .order('quantity', ascending: false),
+      request: request,
+    );
+    return result.map(_fromViewRow);
+  }
 
   // ── Fetch all stock for a given warehouse — sorted A-Z by product, then qty desc
   Future<List<WarehouseStockModel>> fetchByWarehouse(String warehouseId) async {
