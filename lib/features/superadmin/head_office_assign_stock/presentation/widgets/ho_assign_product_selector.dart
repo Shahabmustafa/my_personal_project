@@ -396,48 +396,50 @@ class _HoAssignProductSelectorState
                   ),
                 ],
               ),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                crossAxisAlignment: WrapCrossAlignment.end,
-                children: [
-                  _InfoBox(
-                    label: 'Head Office Stock',
-                    value: stock != null ? '$totalQty pairs' : null,
-                    valueColor: totalQty > 0
-                        ? Colors.green.shade700
-                        : Colors.red.shade700,
-                  ),
-                  _InfoBox(
-                    label: 'Purchase Price',
-                    value: stock != null
-                        ? 'PKR ${purchasePrice.toStringAsFixed(0)}'
-                        : null,
-                    valueColor: Colors.blueGrey.shade700,
-                  ),
-                  _InfoBox(
-                    label: 'Sale Price',
-                    value: stock != null
-                        ? 'PKR ${salePrice.toStringAsFixed(0)}'
-                        : null,
-                    valueColor: primary,
-                  ),
-                  _InfoBox(
-                    label: 'Discount',
-                    value: stock != null
-                        ? '${discountPct.toStringAsFixed(0)}%'
-                        : null,
-                    valueColor: Colors.orange.shade800,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
+                  Expanded(
+                    child: Wrap(
+                      spacing: 18,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.end,
+                      children: [
+                        _MiniStat(
+                          label: 'Head Office Stock',
+                          value: stock != null ? '$totalQty pairs' : '—',
+                          color: totalQty > 0
+                              ? Colors.green.shade700
+                              : Colors.red.shade700,
+                        ),
+                        _MiniStat(
+                          label: 'Purchase Price',
+                          value: stock != null
+                              ? 'PKR ${purchasePrice.toStringAsFixed(0)}'
+                              : '—',
+                          color: Colors.blueGrey.shade700,
+                        ),
+                        _MiniStat(
+                          label: 'Sale Price',
+                          value: stock != null
+                              ? 'PKR ${salePrice.toStringAsFixed(0)}'
+                              : '—',
+                          color: primary,
+                        ),
+                        _MiniStat(
+                          label: 'Discount',
+                          value: stock != null
+                              ? '${discountPct.toStringAsFixed(0)}%'
+                              : '—',
+                          color: Colors.orange.shade800,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   SizedBox(
-                    width: 230,
+                    width: 208,
                     child: _QtyStepperInput(
                       controller: _qtyCtrl,
                       enabled: stock != null && totalQty > 0,
@@ -446,9 +448,9 @@ class _HoAssignProductSelectorState
                       onSubmit: (_) => _addToCart(),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 10),
                   SizedBox(
-                    height: 48,
+                    height: 46,
                     child: FilledButton.icon(
                       icon: const Icon(Icons.add_shopping_cart, size: 18),
                       label: const Text('Add Product'),
@@ -544,46 +546,38 @@ class _ProductItem {
   int get hashCode => id.hashCode;
 }
 
-// ── Info Box ──────────────────────────────────────────────────────────────
+// ── Mini stat ─────────────────────────────────────────────────────────────
 
-class _InfoBox extends StatelessWidget {
+/// Compact label + value pair. Replaces the old tall bordered info boxes so
+/// stock / price / discount fit on one row beside the quantity input, leaving
+/// more vertical room for the cart below.
+class _MiniStat extends StatelessWidget {
   final String label;
-  final String? value;
-  final Color? valueColor;
+  final String value;
+  final Color color;
 
-  const _InfoBox({required this.label, this.value, this.valueColor});
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isEmpty = value == null || value!.isEmpty;
+    final isEmpty = value == '—';
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style:
-                TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-        const SizedBox(height: 4),
-        Container(
-          width: 130,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Text(
-            isEmpty ? '—' : value!,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: (!isEmpty && valueColor != null)
-                  ? FontWeight.w600
-                  : FontWeight.normal,
-              color: isEmpty
-                  ? Colors.grey.shade400
-                  : (valueColor ?? Colors.black87),
-            ),
+            style: TextStyle(fontSize: 10.5, color: Colors.grey.shade500)),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: isEmpty ? Colors.grey.shade400 : color,
           ),
         ),
       ],
@@ -594,9 +588,8 @@ class _InfoBox extends StatelessWidget {
 // ── Qty Stepper Input ─────────────────────────────────────────────────────
 
 /// Quantity picker for "how many pairs to assign". Rebuilds as the value
-/// changes so the −/+ buttons dim at their bounds, the field turns red if a
-/// typed value exceeds stock, and a helper line shows what will be left in the
-/// head office.
+/// changes so the −/+ buttons dim at their bounds and the field + "max N"
+/// hint turn red when a typed value exceeds stock.
 class _QtyStepperInput extends StatefulWidget {
   final TextEditingController controller;
   final bool enabled;
@@ -650,31 +643,33 @@ class _QtyStepperInputState extends State<_QtyStepperInput> {
     final over = _value > widget.max;
     final canDec = enabled && _value > 1;
     final canInc = enabled && _value < widget.max;
-    final remaining = (widget.max - _value).clamp(0, widget.max);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Quantity to assign',
-                style:
-                    TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-            if (enabled) ...[
-              const SizedBox(width: 6),
-              Text('max ${widget.max}',
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: color)),
+        SizedBox(
+          height: 16,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Quantity to assign',
+                  style:
+                      TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              if (enabled) ...[
+                const SizedBox(width: 6),
+                Text(over ? 'only ${widget.max} in stock' : 'max ${widget.max}',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: over ? Colors.red.shade600 : color)),
+              ],
             ],
-          ],
+          ),
         ),
         const SizedBox(height: 4),
         Container(
-          height: 48,
+          height: 44,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
@@ -742,18 +737,6 @@ class _QtyStepperInputState extends State<_QtyStepperInput> {
                 onTap: canInc ? () => _setValue(_value + 1) : null,
               ),
             ],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          !enabled
-              ? 'Select a product to set quantity'
-              : over
-                  ? 'Only ${widget.max} pairs in stock'
-                  : '$remaining pairs will stay in head office',
-          style: TextStyle(
-            fontSize: 10.5,
-            color: over ? Colors.red.shade600 : Colors.grey.shade500,
           ),
         ),
       ],

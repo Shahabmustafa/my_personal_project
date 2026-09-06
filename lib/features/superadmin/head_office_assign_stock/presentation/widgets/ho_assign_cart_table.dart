@@ -63,7 +63,6 @@ class _DesktopTable extends ConsumerWidget {
           ),
           child: Row(children: [
             _h('#', flex: 1),
-            _h('Barcode', flex: 3),
             _h('Article', flex: 3),
             _h('Size', flex: 1),
             _h('Color', flex: 2),
@@ -72,7 +71,6 @@ class _DesktopTable extends ConsumerWidget {
             _h('Purchase Price', flex: 2),
             _h('Sale Price', flex: 2),
             _h('Discount', flex: 2),
-            _h('In Stock', flex: 2),
             _h('Qty to Send', flex: 3),
             _h('', flex: 1),
           ]),
@@ -146,10 +144,6 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
           _c('${widget.index + 1}',
               flex: 1,
               style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          _c(item.barcode,
-              flex: 3,
-              style:
-                  const TextStyle(fontSize: 11, fontFamily: 'monospace')),
           _c(item.productName, flex: 3),
           _c(item.sizeName, flex: 1),
           _c(item.colorName, flex: 2),
@@ -173,37 +167,6 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Colors.orange.shade800)),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: item.headOfficeStock > 0
-                      ? Colors.green.shade50
-                      : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: item.headOfficeStock > 0
-                        ? Colors.green.shade200
-                        : Colors.red.shade200,
-                  ),
-                ),
-                child: Text(
-                  '${item.headOfficeStock}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: item.headOfficeStock > 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700),
-                ),
-              ),
-            ),
-          ),
           Expanded(
             flex: 3,
             child: Padding(
@@ -394,12 +357,11 @@ class _Footer extends StatelessWidget {
       child: Row(
         children: [
           const Expanded(
-            flex: 19,
+            flex: 17,
             child: Text('TOTALS',
                 style: TextStyle(
                     fontWeight: FontWeight.w700, fontSize: 12)),
           ),
-          const Expanded(flex: 2, child: SizedBox()),
           Expanded(
             flex: 3,
             child: Text(
@@ -447,11 +409,10 @@ class _MobileList extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                        child: Text(item.barcode,
+                        child: Text(item.productName,
                             style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                                fontFamily: 'monospace'))),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13))),
                     IconButton(
                       icon: const Icon(Icons.delete_outline,
                           color: Colors.red, size: 18),
@@ -463,15 +424,13 @@ class _MobileList extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                    '${item.productName} · ${item.sizeName} · ${item.colorName}',
+                    '${item.sizeName} · ${item.colorName} · ${item.typeName}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 14,
                   runSpacing: 6,
                   children: [
-                    _lbl('In Stock', '${item.headOfficeStock}',
-                        color: Colors.green.shade700),
                     _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
                         color: Colors.blueGrey.shade700),
                     _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
