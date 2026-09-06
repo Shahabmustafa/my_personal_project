@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/providers/stock_provider.dart'
+    show stockTypesProvider;
 import '../../data/datasource/type_remote_datasource.dart';
 import '../../data/model/type_model.dart';
 import '../../data/repository/type_repository.dart';
@@ -15,7 +17,12 @@ final typeRepositoryProvider = Provider<TypeRepository>((ref) {
 
 class TypeNotifier extends StateNotifier<TypeState> {
   final TypeRepository _repo;
-  TypeNotifier(this._repo) : super(const TypeState());
+  final Ref _ref;
+  TypeNotifier(this._repo, this._ref) : super(const TypeState());
+
+  /// Stock dialogs cache the type lookup in a plain [FutureProvider]; bust it
+  /// after any write so new types show in their dropdowns without a page reload.
+  void _invalidateLookups() => _ref.invalidate(stockTypesProvider);
 
   Future<void> loadAll() async {
     state = state.copyWith(status: TypeStatus.loading, errorMessage: null);
@@ -35,6 +42,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
       await _repo.create(model);
       final items = await _repo.getAll();
       state = state.copyWith(status: TypeStatus.success, items: items);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
@@ -49,6 +57,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
       final list =
           state.items.map((i) => i.id == updated.id ? updated : i).toList();
       state = state.copyWith(status: TypeStatus.success, items: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
@@ -62,6 +71,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
       await _repo.delete(id);
       final list = state.items.where((i) => i.id != id).toList();
       state = state.copyWith(status: TypeStatus.success, items: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
@@ -72,5 +82,5 @@ class TypeNotifier extends StateNotifier<TypeState> {
 
 final typeProvider =
     StateNotifierProvider<TypeNotifier, TypeState>((ref) {
-  return TypeNotifier(ref.read(typeRepositoryProvider));
+  return TypeNotifier(ref.read(typeRepositoryProvider), ref);
 });

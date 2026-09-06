@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/providers/stock_provider.dart'
+    show stockColorsProvider;
 import '../../data/datasource/color_remote_datasource.dart';
 import '../../data/model/color_model.dart';
 import '../../data/repository/color_repository.dart';
@@ -15,7 +17,12 @@ final colorRepositoryProvider = Provider<ColorRepository>((ref) {
 
 class ColorNotifier extends StateNotifier<ColorState> {
   final ColorRepository _repo;
-  ColorNotifier(this._repo) : super(const ColorState());
+  final Ref _ref;
+  ColorNotifier(this._repo, this._ref) : super(const ColorState());
+
+  /// Stock dialogs cache the color lookup in a plain [FutureProvider]; bust it
+  /// after any write so new colors show in their dropdowns without a page reload.
+  void _invalidateLookups() => _ref.invalidate(stockColorsProvider);
 
   Future<void> loadAll() async {
     state = state.copyWith(status: ColorStatus.loading, errorMessage: null);
@@ -35,6 +42,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
       await _repo.create(model);
       final items = await _repo.getAll();
       state = state.copyWith(status: ColorStatus.success, items: items);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
@@ -49,6 +57,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
       final list =
           state.items.map((i) => i.id == updated.id ? updated : i).toList();
       state = state.copyWith(status: ColorStatus.success, items: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
@@ -62,6 +71,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
       await _repo.delete(id);
       final list = state.items.where((i) => i.id != id).toList();
       state = state.copyWith(status: ColorStatus.success, items: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
@@ -72,5 +82,5 @@ class ColorNotifier extends StateNotifier<ColorState> {
 
 final colorProvider =
     StateNotifierProvider<ColorNotifier, ColorState>((ref) {
-  return ColorNotifier(ref.read(colorRepositoryProvider));
+  return ColorNotifier(ref.read(colorRepositoryProvider), ref);
 });

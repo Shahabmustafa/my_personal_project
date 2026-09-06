@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/providers/stock_provider.dart'
+    show stockBrandsProvider;
 import '../../data/datasource/brand_remote_datasource.dart';
 import '../../data/model/brand_model.dart';
 import '../../data/repository/brand_repository.dart';
@@ -15,7 +17,12 @@ final brandRepositoryProvider = Provider<BrandRepository>((ref) {
 
 class BrandNotifier extends StateNotifier<BrandState> {
   final BrandRepository _repo;
-  BrandNotifier(this._repo) : super(const BrandState());
+  final Ref _ref;
+  BrandNotifier(this._repo, this._ref) : super(const BrandState());
+
+  /// Stock dialogs cache the brand lookup in a plain [FutureProvider]; bust it
+  /// after any write so new brands show in their dropdowns without a page reload.
+  void _invalidateLookups() => _ref.invalidate(stockBrandsProvider);
 
   Future<void> loadAll() async {
     state = state.copyWith(status: BrandStatus.loading, errorMessage: null);
@@ -35,6 +42,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
       await _repo.create(model);
       final items = await _repo.getAll();
       state = state.copyWith(status: BrandStatus.success, items: items);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
@@ -49,6 +57,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
       final list =
           state.items.map((i) => i.id == updated.id ? updated : i).toList();
       state = state.copyWith(status: BrandStatus.success, items: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
@@ -62,6 +71,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
       await _repo.delete(id);
       final list = state.items.where((i) => i.id != id).toList();
       state = state.copyWith(status: BrandStatus.success, items: list);
+      _invalidateLookups();
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
@@ -72,5 +82,5 @@ class BrandNotifier extends StateNotifier<BrandState> {
 
 final brandProvider =
     StateNotifierProvider<BrandNotifier, BrandState>((ref) {
-  return BrandNotifier(ref.read(brandRepositoryProvider));
+  return BrandNotifier(ref.read(brandRepositoryProvider), ref);
 });
