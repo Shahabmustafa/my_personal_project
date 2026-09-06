@@ -198,6 +198,17 @@ class _AssignStockTab extends ConsumerWidget {
       '${dt.year}';
 }
 
+/// Whole-rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
+String _money(double v) {
+  final s = v.round().toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i != 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return buf.toString();
+}
+
 class _AssignFooter extends ConsumerWidget {
   const _AssignFooter();
 
@@ -229,6 +240,24 @@ class _AssignFooter extends ConsumerWidget {
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                     color: primary),
+              ),
+            ],
+          ),
+          const SizedBox(width: 24),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Total Purchase Value',
+                  style: TextStyle(
+                      fontSize: 11, color: Colors.grey.shade500)),
+              const SizedBox(height: 2),
+              Text(
+                'Rs. ${_money(state.totalPurchaseValue)}',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.blueGrey.shade700),
               ),
             ],
           ),
@@ -307,6 +336,7 @@ class _AssignFooter extends ConsumerWidget {
         branchName: state.selectedBranch!.branchName,
         totalQty: state.totalQuantity,
         totalItems: state.cartItems.length,
+        totalValue: state.totalPurchaseValue,
       ),
     );
     if (confirm != true) return;
@@ -349,11 +379,13 @@ class _ConfirmSendDialog extends StatelessWidget {
   final String branchName;
   final int totalQty;
   final int totalItems;
+  final double totalValue;
 
   const _ConfirmSendDialog({
     required this.branchName,
     required this.totalQty,
     required this.totalItems,
+    required this.totalValue,
   });
 
   @override
@@ -406,6 +438,9 @@ class _ConfirmSendDialog extends StatelessWidget {
                     _chip('$totalQty Pairs', Icons.straighten_outlined),
                   ],
                 ),
+                const SizedBox(height: 8),
+                _chip('Stock worth Rs. ${_money(totalValue)}',
+                    Icons.account_balance_wallet_outlined),
               ],
             ),
           ),

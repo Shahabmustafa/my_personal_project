@@ -124,6 +124,10 @@ class HoAssignStockState {
 
   int get totalQuantity => cartItems.fold(0, (sum, i) => sum + i.quantity);
 
+  /// Total cost of the stock being assigned = Σ (purchase price × quantity).
+  double get totalPurchaseValue =>
+      cartItems.fold(0.0, (sum, i) => sum + i.purchasePrice * i.quantity);
+
   HoAssignStockState copyWith({
     String? assignmentNumber,
     bool? numberLoading,

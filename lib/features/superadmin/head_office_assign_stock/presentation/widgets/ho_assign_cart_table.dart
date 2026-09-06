@@ -345,6 +345,8 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalQty = items.fold(0, (s, i) => s + i.quantity);
+    final totalPurchase =
+        items.fold<double>(0, (s, i) => s + i.purchasePrice * i.quantity);
     const primary = Color(0xFF1565C0);
 
     return Container(
@@ -357,11 +359,25 @@ class _Footer extends StatelessWidget {
       child: Row(
         children: [
           const Expanded(
-            flex: 17,
+            flex: 11,
             child: Text('TOTALS',
                 style: TextStyle(
                     fontWeight: FontWeight.w700, fontSize: 12)),
           ),
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                totalPurchase.toStringAsFixed(0),
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    color: Colors.blueGrey.shade700),
+              ),
+            ),
+          ),
+          const Expanded(flex: 4, child: SizedBox()),
           Expanded(
             flex: 3,
             child: Text(
