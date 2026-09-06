@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../model/branch_overview_model.dart';
+
 class BranchOverviewDatasource {
   final SupabaseClient _client;
   BranchOverviewDatasource(this._client);
@@ -53,5 +55,37 @@ class BranchOverviewDatasource {
       todaySale: _toDouble(res['total_sale']),
       todayExpense: _toDouble(res['expense']),
     );
+  }
+
+  /// Pichhle 7 din ki din-wise sale + top 10 bikne wale articles.
+  /// Sab kuch server-side aggregate hota hai (RPC `branch_dashboard_stats`,
+  /// indexes ke sath) — poori tables client tak fetch nahi hoti.
+  Future<({List<DaySale> weekly, List<TopArticle> topArticles})>
+      fetchDashboardExtras(String branchId) async {
+    if (branchId.isEmpty) return (weekly: <DaySale>[], topArticles: <TopArticle>[]);
+
+    final res = await _client
+        .rpc('branch_dashboard_stats', params: {'p_branch_id': branchId});
+    final map = (res as Map).cast<String, dynamic>();
+
+    final weekly = <DaySale>[
+      for (final r in (map['weekly_sale'] as List? ?? const []))
+        DaySale(
+          day: DateTime.tryParse('${(r as Map)['day']}') ?? DateTime.now(),
+          amount: _toDouble(r['amount']),
+        ),
+    ];
+
+    final topArticles = <TopArticle>[
+      for (final r in (map['top_articles'] as List? ?? const []))
+        TopArticle(
+          productId: '${(r as Map)['product_id']}',
+          articleName: '${r['article_name'] ?? '—'}',
+          quantity: (r['quantity'] as num?)?.toInt() ?? 0,
+          amount: _toDouble(r['amount']),
+        ),
+    ];
+
+    return (weekly: weekly, topArticles: topArticles);
   }
 }

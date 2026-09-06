@@ -12,6 +12,7 @@ class BranchOverviewRepository {
       _datasource.fetchSalesmanCount(branchId),
     ]);
     final counter = await _datasource.fetchTodayCounter(branchId);
+    final extras = await _datasource.fetchDashboardExtras(branchId);
 
     return BranchOverviewData(
       totalArticles: results[0],
@@ -19,6 +20,8 @@ class BranchOverviewRepository {
       totalSalesman: results[2],
       todaySale: counter.todaySale,
       todayExpense: counter.todayExpense,
+      weeklySale: extras.weekly,
+      topArticles: extras.topArticles,
     );
   }
 }

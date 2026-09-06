@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/branch_overview_model.dart';
@@ -68,7 +69,16 @@ class BranchOverviewScreen extends ConsumerWidget {
                     ]),
                   ),
                 ),
-                data: (data) => _CardGrid(data: data),
+                data: (data) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _CardGrid(data: data),
+                    const SizedBox(height: 20),
+                    _WeeklySaleChart(rows: data.weeklySale),
+                    const SizedBox(height: 20),
+                    _TopArticlesCard(rows: data.topArticles),
+                  ],
+                ),
               ),
             ],
           ),
@@ -228,4 +238,295 @@ class _OverviewCard extends StatelessWidget {
 String _fmtAmt(double v) {
   if (v == v.truncate()) return v.toStringAsFixed(0);
   return v.toStringAsFixed(2);
+}
+
+// ── Shared card shell ─────────────────────────────────────────────────────
+
+class _PanelCard extends StatelessWidget {
+  final Widget child;
+  const _PanelCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+String _pkrShort(double v) {
+  if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
+  if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}k';
+  return v.toStringAsFixed(0);
+}
+
+// ── Weekly sale bar graph — last 7 days ────────────────────────────────────
+
+class _WeeklySaleChart extends StatelessWidget {
+  final List<DaySale> rows;
+  const _WeeklySaleChart({required this.rows});
+
+  static const _accent = Color(0xFF3E63DD);
+  static const _weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  @override
+  Widget build(BuildContext context) {
+    final total = rows.fold<double>(0, (s, r) => s + r.amount);
+    final maxVal = rows.fold<double>(0, (a, r) => r.amount > a ? r.amount : a);
+    final maxY = maxVal <= 0 ? 1.0 : maxVal * 1.2;
+
+    return _PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  '1 Week Sale — Last 7 Days',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+              ),
+              Text(
+                'Rs. ${_pkrShort(total)}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          if (rows.isEmpty)
+            const SizedBox(
+              height: 160,
+              child: Center(
+                child: Text('Data nahi',
+                    style: TextStyle(color: Color(0xFF8A8FA3))),
+              ),
+            )
+          else
+            SizedBox(
+              height: 200,
+              child: BarChart(
+                BarChartData(
+                  minY: 0,
+                  maxY: maxY,
+                  alignment: BarChartAlignment.spaceAround,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: maxY / 3,
+                    getDrawingHorizontalLine: (_) =>
+                        const FlLine(color: Color(0xFFEDEFF5), strokeWidth: 1),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 24,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.round();
+                          if (i < 0 || i >= rows.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Text(
+                              _weekday[rows[i].day.weekday - 1],
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Color(0xFF8A8FA3),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final i = group.x;
+                        final day = i >= 0 && i < rows.length
+                            ? _weekday[rows[i].day.weekday - 1]
+                            : '';
+                        return BarTooltipItem(
+                          '$day\nRs. ${_pkrShort(rod.toY)}',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  barGroups: [
+                    for (var i = 0; i < rows.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: rows[i].amount,
+                            width: 16,
+                            color: _accent,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Top 10 articles sold (branch) ─────────────────────────────────────────
+
+class _TopArticlesCard extends StatelessWidget {
+  final List<TopArticle> rows;
+  const _TopArticlesCard({required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxQty = rows.fold<int>(0, (a, r) => r.quantity > a ? r.quantity : a);
+
+    return _PanelCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Top 10 Articles Sold',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Sab se zyada bikne wale articles',
+            style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
+          ),
+          const SizedBox(height: 14),
+          if (rows.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text('Data nahi',
+                    style: TextStyle(color: Color(0xFF8A8FA3))),
+              ),
+            )
+          else
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i != 0) const Divider(height: 18, color: Color(0xFFEDEFF5)),
+              _TopArticleRow(
+                rank: i + 1,
+                article: rows[i],
+                maxQty: maxQty <= 0 ? 1 : maxQty,
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _TopArticleRow extends StatelessWidget {
+  final int rank;
+  final TopArticle article;
+  final int maxQty;
+  const _TopArticleRow({
+    required this.rank,
+    required this.article,
+    required this.maxQty,
+  });
+
+  static const _accent = Color(0xFF3E63DD);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 22,
+          child: Text(
+            '$rank',
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF8A8FA3),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                article.articleName,
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: article.quantity / maxQty,
+                  minHeight: 6,
+                  backgroundColor: const Color(0xFFEDEFF5),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(_accent),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '${article.quantity} pcs',
+              style: const TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Rs. ${_pkrShort(article.amount)}',
+              style: const TextStyle(
+                  fontSize: 11, color: Color(0xFF8A8FA3)),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
