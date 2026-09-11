@@ -5,6 +5,8 @@ import '../../data/model/expense_entry_model.dart';
 import '../../data/model/expense_head_model.dart';
 import '../provider/expense_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 const _primary = Color(0xFFE56A00);
 
 class ExpenseScreen extends ConsumerStatefulWidget {
@@ -57,14 +59,14 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFE7E9F0)),
                       ),
-                      child: const Icon(Icons.refresh,
+                      child: const AppIcon(AppIcons.refresh,
                           color: _primary, size: 20),
                     ),
                   ),
                 ),
                 FilledButton.icon(
                   onPressed: () => _openAddExpenseDialog(context),
-                  icon: const Icon(Icons.add_rounded, size: 18),
+                  icon: const AppIcon(AppIcons.addRounded, size: 18),
                   label: const Text('Add Expense'),
                   style: FilledButton.styleFrom(
                     backgroundColor: _primary,
@@ -138,7 +140,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(children: [
-        Icon(Icons.receipt_long_outlined, color: _primary, size: 22),
+        AppIcon(AppIcons.receiptLongOutlined, color: _primary, size: 22),
         SizedBox(width: 8),
         Text('Add Expense',
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
@@ -173,7 +175,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
                     message: 'New expense head',
                     child: IconButton(
                       onPressed: () => _openAddHeadDialog(context),
-                      icon: const Icon(Icons.add_circle_outline,
+                      icon: const AppIcon(AppIcons.addCircleOutline,
                           color: _primary),
                     ),
                   ),
@@ -214,7 +216,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
                   height: 14,
                   child: CircularProgressIndicator(
                       strokeWidth: 2, color: Colors.white))
-              : const Icon(Icons.check_rounded, size: 16),
+              : const AppIcon(AppIcons.checkRounded, size: 16),
           label: const Text('Save'),
           style: FilledButton.styleFrom(
             backgroundColor: _primary,
@@ -444,8 +446,8 @@ class _DesktopTable extends ConsumerWidget {
                                       color: const Color(0xFFFFF1E0),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(
-                                        Icons.receipt_long_outlined,
+                                    child: const AppIcon(
+                                        AppIcons.receiptLongOutlined,
                                         size: 14,
                                         color: _primary),
                                   ),
@@ -493,7 +495,7 @@ class _DesktopTable extends ConsumerWidget {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: _IconBtn(
-                                  icon: Icons.delete_outline,
+                                  icon: AppIcons.deleteOutline,
                                   color: Colors.red.shade400,
                                   tooltip: 'Delete',
                                   onTap: () =>
@@ -552,7 +554,7 @@ class _TD extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -574,7 +576,7 @@ class _IconBtn extends StatelessWidget {
             decoration: BoxDecoration(
                 color: color.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(6)),
-            child: Icon(icon, size: 16, color: color),
+            child: AppIcon(icon, size: 16, color: color),
           ),
         ),
       );
@@ -629,7 +631,7 @@ class _MobileList extends ConsumerWidget {
                       fontSize: 14,
                       color: _primary)),
               IconButton(
-                icon: Icon(Icons.delete_outline,
+                icon: AppIcon(AppIcons.deleteOutline,
                     size: 18, color: Colors.red.shade400),
                 onPressed: () => _confirmDelete(context, ref, e.id),
               ),
@@ -695,7 +697,7 @@ class _ErrorView extends StatelessWidget {
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+            const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
             const SizedBox(height: 12),
             Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
             const SizedBox(height: 16),
@@ -714,7 +716,7 @@ class _EmptyView extends StatelessWidget {
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey[300]),
+            AppIcon(AppIcons.receiptLongOutlined, size: 48, color: Colors.grey[300]),
             const SizedBox(height: 12),
             const Text('No expenses recorded yet',
                 style: TextStyle(color: Color(0xFF8A8FA3))),

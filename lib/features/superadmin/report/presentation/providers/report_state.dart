@@ -10,6 +10,7 @@ class ReportState<T> {
   final int pageSize;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String? branchId;
   final bool isLoading;
   final String? error;
 
@@ -22,6 +23,7 @@ class ReportState<T> {
     this.pageSize = 20,
     this.startDate,
     this.endDate,
+    this.branchId,
     this.isLoading = false,
     this.error,
   });
@@ -40,6 +42,8 @@ class ReportState<T> {
     bool clearStartDate = false,
     DateTime? endDate,
     bool clearEndDate = false,
+    String? branchId,
+    bool clearBranchId = false,
     bool? isLoading,
     String? error,
     bool clearError = false,
@@ -53,6 +57,7 @@ class ReportState<T> {
         pageSize: pageSize ?? this.pageSize,
         startDate: clearStartDate ? null : startDate ?? this.startDate,
         endDate: clearEndDate ? null : endDate ?? this.endDate,
+        branchId: clearBranchId ? null : branchId ?? this.branchId,
         isLoading: isLoading ?? this.isLoading,
         error: clearError ? null : error ?? this.error,
       );

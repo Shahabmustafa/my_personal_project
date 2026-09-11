@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/company_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class CompanyFormDialog extends StatefulWidget {
   final CompanyModel? company;
   final String headOfficeId;
@@ -56,7 +58,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.business_outlined,
+          const AppIcon(AppIcons.businessOutlined,
               color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Company' : 'Add Company',
@@ -77,7 +79,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
                   controller: _nameCtrl,
                   label: 'Company Name *',
                   hint: 'ABC Traders',
-                  icon: Icons.business_outlined,
+                  icon: AppIcons.businessOutlined,
                   validator: (v) => (v == null || v.trim().isEmpty)
                       ? 'Company name is required'
                       : null,
@@ -87,7 +89,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
                   controller: _phoneCtrl,
                   label: 'Phone Number',
                   hint: '0300-0000000',
-                  icon: Icons.phone_outlined,
+                  icon: AppIcons.phoneOutlined,
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 14),
@@ -95,7 +97,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
                   controller: _emailCtrl,
                   label: 'Email',
                   hint: 'company@example.com',
-                  icon: Icons.email_outlined,
+                  icon: AppIcons.emailOutlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
                     if (v != null && v.trim().isNotEmpty) {
@@ -112,7 +114,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
                   controller: _addressCtrl,
                   label: 'Address',
                   hint: 'Street, City',
-                  icon: Icons.location_on_outlined,
+                  icon: AppIcons.locationOnOutlined,
                   maxLines: 2,
                 ),
                 const SizedBox(height: 14),
@@ -120,7 +122,7 @@ class _CompanyFormDialogState extends State<CompanyFormDialog> {
                   controller: _balanceCtrl,
                   label: 'Opening Balance',
                   hint: '0.00',
-                  icon: Icons.account_balance_wallet_outlined,
+                  icon: AppIcons.accountBalanceWalletOutlined,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) {
@@ -177,7 +179,7 @@ class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final IconData icon;
+  final String icon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final int maxLines;
@@ -203,7 +205,7 @@ class _Field extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

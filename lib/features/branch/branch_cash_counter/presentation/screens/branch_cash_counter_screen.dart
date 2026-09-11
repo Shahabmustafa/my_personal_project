@@ -4,6 +4,8 @@ import '../../../shared/current_branch_provider.dart';
 import '../../data/model/branch_cash_counter_model.dart';
 import '../providers/branch_cash_counter_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BranchCashCounterScreen extends ConsumerStatefulWidget {
   const BranchCashCounterScreen({super.key});
 
@@ -72,14 +74,14 @@ class _BranchCashCounterScreenState
                               child: _SummaryCard(
                                   label: 'Total Sale',
                                   amount: state.totalSale,
-                                  icon: Icons.point_of_sale_outlined,
+                                  icon: AppIcons.pointOfSaleOutlined,
                                   color: const Color(0xFF3E63DD))),
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Net Sale',
                                   amount: state.totalNetSale,
-                                  icon: Icons.published_with_changes_outlined,
+                                  icon: AppIcons.publishedWithChangesOutlined,
                                   color: const Color(0xFF0F9D8F))),
                         ]),
                         const SizedBox(height: 12),
@@ -88,14 +90,14 @@ class _BranchCashCounterScreenState
                               child: _SummaryCard(
                                   label: 'Gross',
                                   amount: state.totalGross,
-                                  icon: Icons.trending_up_outlined,
+                                  icon: AppIcons.trendingUpOutlined,
                                   color: const Color(0xFF22A06B))),
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Expense',
                                   amount: state.totalExpense,
-                                  icon: Icons.receipt_long_outlined,
+                                  icon: AppIcons.receiptLongOutlined,
                                   color: const Color(0xFFE56A00))),
                         ]),
                         const SizedBox(height: 12),
@@ -104,7 +106,7 @@ class _BranchCashCounterScreenState
                               child: _SummaryCard(
                                   label: 'Total Amount',
                                   amount: state.totalAmount,
-                                  icon: Icons.account_balance_wallet_outlined,
+                                  icon: AppIcons.accountBalanceWalletOutlined,
                                   color: const Color(0xFF6C4DE0))),
                         ]),
                       ],
@@ -114,35 +116,35 @@ class _BranchCashCounterScreenState
                           child: _SummaryCard(
                               label: 'Total Sale',
                               amount: state.totalSale,
-                              icon: Icons.point_of_sale_outlined,
+                              icon: AppIcons.pointOfSaleOutlined,
                               color: const Color(0xFF3E63DD))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Net Sale',
                               amount: state.totalNetSale,
-                              icon: Icons.published_with_changes_outlined,
+                              icon: AppIcons.publishedWithChangesOutlined,
                               color: const Color(0xFF0F9D8F))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Gross',
                               amount: state.totalGross,
-                              icon: Icons.trending_up_outlined,
+                              icon: AppIcons.trendingUpOutlined,
                               color: const Color(0xFF22A06B))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Expense',
                               amount: state.totalExpense,
-                              icon: Icons.receipt_long_outlined,
+                              icon: AppIcons.receiptLongOutlined,
                               color: const Color(0xFFE56A00))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Amount',
                               amount: state.totalAmount,
-                              icon: Icons.account_balance_wallet_outlined,
+                              icon: AppIcons.accountBalanceWalletOutlined,
                               color: const Color(0xFF6C4DE0))),
                     ]),
             ),
@@ -186,7 +188,7 @@ class _BranchCashCounterScreenState
 class _SummaryCard extends StatelessWidget {
   final String label;
   final double amount;
-  final IconData icon;
+  final String icon;
   final Color color;
 
   const _SummaryCard({
@@ -213,7 +215,7 @@ class _SummaryCard extends StatelessWidget {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: AppIcon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -501,7 +503,7 @@ class _ErrorView extends StatelessWidget {
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline,
+            const AppIcon(AppIcons.errorOutline,
                 size: 48, color: Colors.redAccent),
             const SizedBox(height: 12),
             Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
@@ -521,7 +523,7 @@ class _EmptyView extends StatelessWidget {
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_balance_wallet_outlined,
+            AppIcon(AppIcons.accountBalanceWalletOutlined,
                 size: 48, color: Colors.grey[300]),
             const SizedBox(height: 12),
             const Text('No cash counter records found',
@@ -534,7 +536,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-      prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+      prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),

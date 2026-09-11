@@ -10,6 +10,8 @@ import '../widgets/sale_exchange_new_cart_table.dart';
 import '../widgets/sale_exchange_new_item_selector.dart';
 import '../widgets/sale_exchange_return_items_picker.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class SaleExchangeScreen extends ConsumerWidget {
   const SaleExchangeScreen({super.key});
 
@@ -237,7 +239,7 @@ class _ExchangeFooter extends ConsumerWidget {
           ),
           const SizedBox(width: 20),
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -262,7 +264,7 @@ class _ExchangeFooter extends ConsumerWidget {
             icon: state.isSaving
                 ? const SizedBox(
                     width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.swap_horiz, size: 18),
+                : const AppIcon(AppIcons.swapHoriz, size: 18),
             label: const Text('Save Exchange'),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -298,7 +300,7 @@ class _ExchangeFooter extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+            const AppIcon(AppIcons.warningAmberRounded, color: Colors.white, size: 18),
             const SizedBox(width: 10),
             Text(warning),
           ]),
@@ -324,7 +326,7 @@ class _ExchangeFooter extends ConsumerWidget {
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(children: [
-          Icon(Icons.swap_horiz, color: Colors.green, size: 22),
+          AppIcon(AppIcons.swapHoriz, color: Colors.green, size: 22),
           SizedBox(width: 8),
           Text('Confirm Exchange', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         ]),
@@ -354,7 +356,7 @@ class _ExchangeFooter extends ConsumerWidget {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 48),
+        icon: const AppIcon(AppIcons.checkCircleOutline, color: Colors.green, size: 48),
         title: const Text('Exchange Saved!'),
         content: const Text('Sale exchange saved successfully.'),
         actions: [

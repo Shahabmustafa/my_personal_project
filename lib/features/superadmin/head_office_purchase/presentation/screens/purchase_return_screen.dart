@@ -7,6 +7,8 @@ import '../providers/purchase_return_provider.dart';
 import '../widgets/purchase_return_cart_table.dart';
 import '../widgets/purchase_return_product_selector.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class PurchaseReturnScreen extends ConsumerWidget {
   const PurchaseReturnScreen({super.key});
 
@@ -35,7 +37,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.keyboard_return,
+                    AppIcon(AppIcons.keyboardReturn,
                         size: 18, color: Colors.orange.shade700),
                     const SizedBox(width: 6),
                     Text(
@@ -95,7 +97,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                           onTap: () => ref
                               .read(purchaseReturnProvider.notifier)
                               .resetReturn(),
-                          child: const Icon(Icons.refresh,
+                          child: const AppIcon(AppIcons.refresh,
                               size: 17, color: Colors.red),
                         ),
                       ],
@@ -146,7 +148,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search company...',
-                            prefixIcon: Icon(Icons.search, size: 18),
+                            prefixIcon: AppIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),
@@ -299,7 +301,7 @@ class _ReturnFooter extends ConsumerWidget {
 
           // Clear
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -324,7 +326,7 @@ class _ReturnFooter extends ConsumerWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.keyboard_return, size: 18),
+                : const AppIcon(AppIcons.keyboardReturn, size: 18),
             label: const Text('Save Return'),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.orange.shade700,
@@ -368,7 +370,7 @@ class _ReturnFooter extends ConsumerWidget {
             borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
-            Icon(Icons.keyboard_return,
+            AppIcon(AppIcons.keyboardReturn,
                 color: Colors.orange.shade700, size: 22),
             const SizedBox(width: 8),
             const Text('Confirm Return',
@@ -420,7 +422,7 @@ class _ReturnFooter extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline,
+                  AppIcon(AppIcons.infoOutline,
                       size: 16, color: Colors.orange.shade700),
                   const SizedBox(width: 8),
                   Expanded(
@@ -446,7 +448,7 @@ class _ReturnFooter extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.account_balance_wallet_outlined,
+                    AppIcon(AppIcons.accountBalanceWalletOutlined,
                         size: 16, color: Colors.blue.shade700),
                     const SizedBox(width: 8),
                     Expanded(
@@ -499,7 +501,7 @@ class _ReturnFooter extends ConsumerWidget {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        icon: const Icon(Icons.check_circle_outline,
+        icon: const AppIcon(AppIcons.checkCircleOutline,
             color: Colors.green, size: 48),
         title: const Text('Return Saved!'),
         content: const Text(

@@ -4,6 +4,8 @@ import '../../../../../core/widget/app_dropdown.dart';
 import '../../data/models/printer_head_model.dart';
 import '../providers/printer_providers.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AssignPrinterFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String branchId,
@@ -128,7 +130,7 @@ class _AssignPrinterFormDialogState
       items: printers,
       selectedItem: selected,
       itemLabel: (p) => p.name,
-      prefixIcon: const Icon(Icons.print_outlined, size: 18),
+      prefixIcon: const AppIcon(AppIcons.printOutlined, size: 18),
       errorText: _printerError,
       onChanged: (p) => setState(() {
         _selectedPrinterHeadId = p?.id;
@@ -150,7 +152,7 @@ class _AssignPrinterFormDialogState
       items: _branches,
       selectedItem: selected,
       itemLabel: (b) => b['name']!,
-      prefixIcon: const Icon(Icons.store_outlined, size: 18),
+      prefixIcon: const AppIcon(AppIcons.storeOutlined, size: 18),
       errorText: _branchError,
       onChanged: (b) => setState(() {
         _selectedBranchId = b?['id'];

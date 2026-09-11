@@ -7,6 +7,8 @@ import '../providers/branch_state.dart';
 import '../widgets/branch_card.dart';
 import '../widgets/branch_form_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BranchesScreen extends ConsumerStatefulWidget {
   const BranchesScreen({super.key});
 
@@ -66,7 +68,7 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
                 if (canEdit)
                   ElevatedButton.icon(
                     onPressed: () => _showForm(context),
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const AppIcon(AppIcons.add, size: 18),
                     label: const Text('Add Branch'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E63DD),
@@ -227,7 +229,7 @@ class _DesktopTable extends StatelessWidget {
                                 color: const Color(0xFFEAEFFD),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.apartment_outlined, color: Color(0xFF3E63DD), size: 16),
+                              child: const AppIcon(AppIcons.apartmentOutlined, color: Color(0xFF3E63DD), size: 16),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
@@ -269,14 +271,14 @@ class _DesktopTable extends StatelessWidget {
                             flex: 2,
                             child: _TD(child: Row(children: [
                               _IconBtn(
-                                icon: Icons.edit_outlined,
+                                icon: AppIcons.editOutlined,
                                 color: const Color(0xFF3E63DD),
                                 tooltip: 'Edit',
                                 onTap: () => onEdit(b),
                               ),
                               const SizedBox(width: 8),
                               _IconBtn(
-                                icon: Icons.delete_outline,
+                                icon: AppIcons.deleteOutline,
                                 color: Colors.redAccent,
                                 tooltip: 'Delete',
                                 onTap: () => onDelete(b),
@@ -359,7 +361,7 @@ class _TD extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -375,7 +377,7 @@ class _IconBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 16, color: color),
+          child: AppIcon(icon, size: 16, color: color),
         ),
       ),
     );
@@ -413,7 +415,7 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+      const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
       const SizedBox(height: 12),
       Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
       const SizedBox(height: 16),
@@ -428,7 +430,7 @@ class _EmptyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.apartment_outlined, size: 48, color: Colors.grey[300]),
+      AppIcon(AppIcons.apartmentOutlined, size: 48, color: Colors.grey[300]),
       const SizedBox(height: 12),
       const Text('No branches found', style: TextStyle(color: Color(0xFF8A8FA3))),
     ]));
@@ -438,7 +440,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+  prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
   filled: true, fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),
   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE7E9F0))),

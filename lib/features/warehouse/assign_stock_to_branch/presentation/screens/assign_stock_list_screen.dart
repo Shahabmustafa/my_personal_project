@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/assign_stock_model.dart';
 import '../providers/assign_stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AssignStockListScreen extends ConsumerStatefulWidget {
   const AssignStockListScreen({super.key});
 
@@ -41,7 +43,7 @@ class _AssignStockListScreenState
           // ── Title row ────────────────────────────────────────────────
           Row(
             children: [
-              const Icon(Icons.history,
+              const AppIcon(AppIcons.history,
                   color: Color(0xFF1565C0), size: 24),
               const SizedBox(width: 8),
               const Text(
@@ -54,7 +56,7 @@ class _AssignStockListScreenState
               IconButton(
                 onPressed: () =>
                     ref.read(assignListProvider.notifier).loadAssignments(),
-                icon: const Icon(Icons.refresh,
+                icon: const AppIcon(AppIcons.refresh,
                     color: Color(0xFF1565C0)),
                 tooltip: 'Refresh',
               ),
@@ -133,7 +135,7 @@ class _AssignStockListScreenState
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.error_outline,
+                              const AppIcon(AppIcons.errorOutline,
                                   color: Colors.red, size: 40),
                               const SizedBox(height: 8),
                               Text('Error: ${listState.error}',
@@ -144,7 +146,7 @@ class _AssignStockListScreenState
                                 onPressed: () => ref
                                     .read(assignListProvider.notifier)
                                     .loadAssignments(),
-                                icon: const Icon(Icons.refresh, size: 16),
+                                icon: const AppIcon(AppIcons.refresh, size: 16),
                                 label: const Text('Retry'),
                               ),
                             ],
@@ -155,7 +157,7 @@ class _AssignStockListScreenState
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.inbox_outlined,
+                                  AppIcon(AppIcons.inboxOutlined,
                                       size: 64,
                                       color: Colors.grey.shade300),
                                   const SizedBox(height: 12),
@@ -304,7 +306,7 @@ class _ListRow extends ConsumerWidget {
             flex: 4,
             child: Row(
               children: [
-                const Icon(Icons.store_outlined,
+                const AppIcon(AppIcons.storeOutlined,
                     size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
                 Expanded(
@@ -420,7 +422,7 @@ class _ListRow extends ConsumerWidget {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
-            Icon(Icons.check_circle_outline,
+            AppIcon(AppIcons.checkCircleOutline,
                 color: Colors.green, size: 22),
             SizedBox(width: 8),
             Text('Accept Assignment?'),
@@ -461,7 +463,7 @@ class _ListRow extends ConsumerWidget {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
-            Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+            AppIcon(AppIcons.cancelOutlined, color: Colors.red, size: 22),
             SizedBox(width: 8),
             Text('Reject Assignment?'),
           ],
@@ -505,26 +507,26 @@ class _StatusChip extends StatelessWidget {
     Color bg;
     Color fg;
     String label;
-    IconData icon;
+    String icon;
 
     switch (status) {
       case 'accepted':
         bg = Colors.green.shade50;
         fg = Colors.green.shade700;
         label = 'Accepted';
-        icon = Icons.check_circle_outline;
+        icon = AppIcons.checkCircleOutline;
         break;
       case 'rejected':
         bg = Colors.red.shade50;
         fg = Colors.red.shade700;
         label = 'Rejected';
-        icon = Icons.cancel_outlined;
+        icon = AppIcons.cancelOutlined;
         break;
       default:
         bg = Colors.orange.shade50;
         fg = Colors.orange.shade700;
         label = 'Pending';
-        icon = Icons.hourglass_empty_outlined;
+        icon = AppIcons.hourglassEmptyOutlined;
     }
 
     return Container(
@@ -537,7 +539,7 @@ class _StatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
+          AppIcon(icon, size: 12, color: fg),
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(

@@ -6,6 +6,8 @@ import '../../data/models/warehouse_stock_model.dart';
 import '../../../shared/current_warehouse_provider.dart';
 import '../providers/stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 // ── Per-size entry model ──────────────────────────────────────────────────
 class _SizeQtyEntry {
   StockLookupItem? size;
@@ -272,7 +274,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                     children: [
                       // ── Section 1: Product & Brand ────────────────
                       _SectionLabel(
-                          icon: Icons.inventory_2_outlined,
+                          icon: AppIcons.inventory2Outlined,
                           label: 'Product & Brand'),
                       const SizedBox(height: 12),
                       Row(children: [
@@ -284,8 +286,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (p) => p.label,
                             errorText: _productError,
                             isRequired: true,
-                            prefixIcon: const Icon(
-                                Icons.inventory_2_outlined,
+                            prefixIcon: const AppIcon(
+                                AppIcons.inventory2Outlined,
                                 size: 20),
                             onChanged: (p) => setState(() {
                               _product = p;
@@ -302,8 +304,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (b) => b.label,
                             errorText: _brandError,
                             isRequired: true,
-                            prefixIcon: const Icon(
-                                Icons.branding_watermark_outlined,
+                            prefixIcon: const AppIcon(
+                                AppIcons.brandingWatermarkOutlined,
                                 size: 20),
                             onChanged: (b) => setState(() {
                               _brand = b;
@@ -323,8 +325,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                               items: companiesAsync.value ?? [],
                               selectedItem: _company,
                               itemLabel: (c) => c.label,
-                              prefixIcon: const Icon(
-                                  Icons.business_outlined, size: 20),
+                              prefixIcon: const AppIcon(
+                                  AppIcons.businessOutlined, size: 20),
                               onChanged: (c) => setState(() {
                                 _company = c;
                                 _previewed = false;
@@ -340,8 +342,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                                   .numberWithOptions(decimal: true),
                               decoration: InputDecoration(
                                 labelText: 'Discount %',
-                                prefixIcon: const Icon(
-                                    Icons.percent_outlined, size: 20),
+                                prefixIcon: const AppIcon(
+                                    AppIcons.percentOutlined, size: 20),
                                 border: OutlineInputBorder(
                                     borderRadius:
                                         BorderRadius.circular(10)),
@@ -369,12 +371,12 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         children: [
                           Expanded(
                             child: _SectionLabel(
-                              icon: Icons.format_size_outlined,
+                              icon: AppIcons.formatSizeOutlined,
                               label: 'Sizes & Quantities  —  one size per row',
                             ),
                           ),
                           TextButton.icon(
-                            icon: const Icon(Icons.add, size: 16),
+                            icon: const AppIcon(AppIcons.add, size: 16),
                             label: const Text('Add Size',
                                 style: TextStyle(fontSize: 13)),
                             onPressed: _addSizeRow,
@@ -419,7 +421,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
 
                       // ── Section 3: Variations ────────────────────
                       _SectionLabel(
-                          icon: Icons.tune_outlined,
+                          icon: AppIcons.tuneOutlined,
                           label:
                           'Variations  —  each combination = 1 stock entry'),
                       const SizedBox(height: 12),
@@ -432,8 +434,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (c) => c.label,
                             errorText: _colorsError,
                             isRequired: true,
-                            prefixIcon: const Icon(
-                                Icons.color_lens_outlined,
+                            prefixIcon: const AppIcon(
+                                AppIcons.colorLensOutlined,
                                 size: 20),
                             onChanged: (c) => setState(() {
                               _color = c;
@@ -451,7 +453,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             errorText: _categoriesError,
                             isRequired: true,
                             prefixIcon:
-                            const Icon(Icons.category_outlined, size: 20),
+                            const AppIcon(AppIcons.categoryOutlined, size: 20),
                             onChanged: (c) => setState(() {
                               _category = c;
                               _previewed = false;
@@ -468,7 +470,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         errorText: _typesError,
                         isRequired: true,
                         prefixIcon:
-                        const Icon(Icons.style_outlined, size: 20),
+                        const AppIcon(AppIcons.styleOutlined, size: 20),
                         onChanged: (t) => setState(() {
                           _type = t;
                           _previewed = false;
@@ -482,7 +484,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         width: double.infinity,
                         height: 44,
                         child: OutlinedButton.icon(
-                          icon: const Icon(Icons.visibility_outlined),
+                          icon: const AppIcon(AppIcons.visibilityOutlined),
                           label: const Text('Preview Stock Entries'),
                           style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(
@@ -547,9 +549,9 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: Colors.white))
-                        : Icon(_previewed
-                        ? Icons.save_outlined
-                        : Icons.visibility_outlined),
+                        : AppIcon(_previewed
+                        ? AppIcons.saveOutlined
+                        : AppIcons.visibilityOutlined),
                     label: Text(_previewed
                         ? 'Save ${_previewRows.length} Entries'
                         : 'Preview First'),
@@ -608,7 +610,7 @@ class _SizeQtyRow extends StatelessWidget {
             itemLabel: (s) => s.label,
             isRequired: true,
             prefixIcon:
-            const Icon(Icons.format_size_outlined, size: 20),
+            const AppIcon(AppIcons.formatSizeOutlined, size: 20),
             onChanged: onSizeChanged,
           ),
         ),
@@ -622,7 +624,7 @@ class _SizeQtyRow extends StatelessWidget {
             decoration: InputDecoration(
               labelText: 'Quantity *',
               prefixIcon:
-              const Icon(Icons.numbers_outlined, size: 20),
+              const AppIcon(AppIcons.numbersOutlined, size: 20),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10)),
               enabledBorder: OutlineInputBorder(
@@ -648,8 +650,8 @@ class _SizeQtyRow extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: 8),
           child: IconButton(
-            icon: Icon(
-              Icons.remove_circle_outline,
+            icon: AppIcon(
+              AppIcons.removeCircleOutline,
               color:
               canRemove ? Colors.red.shade400 : Colors.grey.shade300,
             ),
@@ -697,7 +699,7 @@ class _DialogHeader extends StatelessWidget {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.add_box_outlined,
+            child: const AppIcon(AppIcons.addBoxOutlined,
                 color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
@@ -719,7 +721,7 @@ class _DialogHeader extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: const AppIcon(AppIcons.close, color: Colors.white),
             onPressed: onClose,
           ),
         ],
@@ -729,7 +731,7 @@ class _DialogHeader extends StatelessWidget {
 }
 
 class _SectionLabel extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
 
   const _SectionLabel({required this.icon, required this.label});
@@ -738,7 +740,7 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16,
+        AppIcon(icon, size: 16,
             color: Theme.of(context).colorScheme.primary),
         const SizedBox(width: 6),
         Text(

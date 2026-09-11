@@ -6,6 +6,8 @@ import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
     show bankEntriesForSaleProvider;
 import '../provider/sale_exchange_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Return Total / New Total stat row + Collect/Refund/Even banner. Jab
 /// difference amount 0 nahi hota, payment-type toggle + bank/cash fields
 /// bhi dikhte hain (bilkul sale_invoice ke _InvoiceMetaRow ke conditional
@@ -169,14 +171,14 @@ class _ExchangePaymentTypeToggle extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        _seg('Cash', 'cash', Icons.payments_outlined, primary),
-        _seg('Card', 'card', Icons.credit_card_outlined, primary),
-        _seg('Cash + Card', 'cash_card', Icons.sync_alt, primary),
+        _seg('Cash', 'cash', AppIcons.paymentsOutlined, primary),
+        _seg('Card', 'card', AppIcons.creditCardOutlined, primary),
+        _seg('Cash + Card', 'cash_card', AppIcons.syncAlt, primary),
       ]),
     );
   }
 
-  Widget _seg(String label, String type, IconData icon, Color primary) {
+  Widget _seg(String label, String type, String icon, Color primary) {
     final selected = value == type;
     return InkWell(
       onTap: () => onChanged(type),
@@ -187,7 +189,7 @@ class _ExchangePaymentTypeToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(7),
         ),
         child: Row(children: [
-          Icon(icon, size: 16, color: selected ? Colors.white : Colors.grey.shade600),
+          AppIcon(icon, size: 16, color: selected ? Colors.white : Colors.grey.shade600),
           const SizedBox(width: 6),
           Text(label,
               style: TextStyle(

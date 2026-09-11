@@ -8,6 +8,8 @@ import '../../data/models/warehouse_stock_model.dart';
 import '../providers/stock_provider.dart';
 import '../widgets/add_stock_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Admin-only stock view — shows inventory across ALL warehouses (unlike
 /// [StockScreen] which is scoped to the logged-in user's single assigned
 /// warehouse). Server-paginated; admin can add new stock (picking which
@@ -86,14 +88,14 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
                 const Spacer(),
                 IconButton(
                   onPressed: notifier.refresh,
-                  icon: const Icon(Icons.refresh),
+                  icon: const AppIcon(AppIcons.refresh),
                   tooltip: 'Refresh',
                   color: const Color(0xFF3E63DD),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openAddStock,
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18),
                   label: const Text('Add Stock'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
@@ -117,7 +119,7 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
                 prefixIcon:
-                    const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+                    const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -375,7 +377,7 @@ class _PickWarehouseDialog extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: warehouses
                       .map((w) => ListTile(
-                            leading: const Icon(Icons.warehouse_outlined,
+                            leading: const AppIcon(AppIcons.warehouseOutlined,
                                 color: Color(0xFF3E63DD)),
                             title: Text(w.warehouseName,
                                 style: const TextStyle(fontSize: 14)),

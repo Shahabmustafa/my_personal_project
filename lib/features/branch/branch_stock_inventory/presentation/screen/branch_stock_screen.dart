@@ -5,6 +5,8 @@ import '../../../../../core/pagination/pagination.dart';
 import '../../data/model/branch_stock_model.dart';
 import '../povider/branch_stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BranchStockScreen extends ConsumerStatefulWidget {
   const BranchStockScreen({super.key});
 
@@ -52,7 +54,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                     color: _primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.inventory_2_outlined,
+                  child: const AppIcon(AppIcons.inventory2Outlined,
                       color: _primary, size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -86,7 +88,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFE7E9F0)),
                       ),
-                      child: const Icon(Icons.refresh,
+                      child: const AppIcon(AppIcons.refresh,
                           color: _primary, size: 20),
                     ),
                   ),
@@ -101,21 +103,21 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                 _SummaryCard(
                   label: 'Total Products',
                   value: groupThousands(state.totalCount),
-                  icon: Icons.inventory_2_outlined,
+                  icon: AppIcons.inventory2Outlined,
                   color: _primary,
                 ),
                 const SizedBox(width: 12),
                 _SummaryCard(
                   label: 'Total Pairs',
                   value: groupThousands(stats.totalQuantity),
-                  icon: Icons.straighten_outlined,
+                  icon: AppIcons.straightenOutlined,
                   color: Colors.green.shade700,
                 ),
                 const SizedBox(width: 12),
                 _SummaryCard(
                   label: 'Low Stock (≤5)',
                   value: groupThousands(stats.lowStockCount),
-                  icon: Icons.warning_amber_outlined,
+                  icon: AppIcons.warningAmberOutlined,
                   color: stats.lowStockCount > 0
                       ? Colors.orange.shade700
                       : Colors.grey.shade400,
@@ -124,7 +126,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                 _SummaryCard(
                   label: 'Total Sale Price',
                   value: 'Rs. ${groupThousands(stats.totalSalePrice.round())}',
-                  icon: Icons.sell_outlined,
+                  icon: AppIcons.sellOutlined,
                   color: const Color(0xFF6C4DE0),
                 ),
               ],
@@ -143,11 +145,11 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                     'Search by article, barcode, size, color, brand...',
                     hintStyle: const TextStyle(
                         fontSize: 13, color: Color(0xFF8A8FA3)),
-                    prefixIcon: const Icon(Icons.search,
+                    prefixIcon: const AppIcon(AppIcons.search,
                         color: Color(0xFF8A8FA3), size: 20),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
-                      icon: const Icon(Icons.clear,
+                      icon: const AppIcon(AppIcons.clear,
                           size: 18, color: Color(0xFF8A8FA3)),
                       onPressed: () {
                         _searchCtrl.clear();
@@ -252,7 +254,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline,
+                    const AppIcon(AppIcons.infoOutline,
                         size: 14, color: Color(0xFF8A8FA3)),
                     const SizedBox(width: 6),
                     Text(
@@ -410,7 +412,7 @@ class _StockRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min, // ← KEY FIX
                   children: [
                     if (isLowStock) ...[
-                      Icon(Icons.warning_amber_rounded,
+                      AppIcon(AppIcons.warningAmberRounded,
                           size: 12,
                           color: Colors.orange.shade700),
                       const SizedBox(width: 4),
@@ -469,7 +471,7 @@ class _StockRow extends StatelessWidget {
 class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final String icon;
   final Color color;
 
   const _SummaryCard({
@@ -505,7 +507,7 @@ class _SummaryCard extends StatelessWidget {
                 color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(9),
               ),
-              child: Icon(icon, size: 20, color: color),
+              child: AppIcon(icon, size: 20, color: color),
             ),
             const SizedBox(width: 12),
             Column(
@@ -572,10 +574,10 @@ class _EmptyView extends StatelessWidget {
               color: Color(0xFFF0F4FF),
               shape: BoxShape.circle,
             ),
-            child: Icon(
+            child: AppIcon(
               isSearch
-                  ? Icons.search_off_outlined
-                  : Icons.inventory_2_outlined,
+                  ? AppIcons.searchOffOutlined
+                  : AppIcons.inventory2Outlined,
               size: 48,
               color: Colors.grey.shade300,
             ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/warehouse_cash_counter_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class CashCounterFormDialog extends StatefulWidget {
   final WarehouseCashCounterModel? record;
   final String warehouseId;
@@ -77,7 +79,7 @@ class _CashCounterFormDialogState extends State<CashCounterFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.account_balance_wallet_outlined,
+          const AppIcon(AppIcons.accountBalanceWalletOutlined,
               color: _blue, size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Cash Counter' : 'Add Cash Counter',
@@ -108,7 +110,7 @@ class _CashCounterFormDialogState extends State<CashCounterFormDialog> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
+                        const AppIcon(AppIcons.calendarTodayOutlined,
                             size: 18, color: Color(0xFF8A8FA3)),
                         const SizedBox(width: 10),
                         Expanded(
@@ -117,7 +119,7 @@ class _CashCounterFormDialogState extends State<CashCounterFormDialog> {
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),
-                        const Icon(Icons.arrow_drop_down,
+                        const AppIcon(AppIcons.arrowDropDown,
                             color: Color(0xFF8A8FA3)),
                       ],
                     ),
@@ -130,7 +132,7 @@ class _CashCounterFormDialogState extends State<CashCounterFormDialog> {
                   controller: _netAmountCtrl,
                   label: 'Net Amount *',
                   hint: '0.00',
-                  icon: Icons.monetization_on_outlined,
+                  icon: AppIcons.monetizationOnOutlined,
                   required: true,
                 ),
                 const SizedBox(height: 14),
@@ -138,21 +140,21 @@ class _CashCounterFormDialogState extends State<CashCounterFormDialog> {
                   controller: _purchaseCtrl,
                   label: 'Total Purchase',
                   hint: '0.00',
-                  icon: Icons.shopping_cart_outlined,
+                  icon: AppIcons.shoppingCartOutlined,
                 ),
                 const SizedBox(height: 14),
                 _AmountField(
                   controller: _returnCtrl,
                   label: 'Total Return / Purchase Return',
                   hint: '0.00',
-                  icon: Icons.assignment_return_outlined,
+                  icon: AppIcons.assignmentReturnOutlined,
                 ),
                 const SizedBox(height: 14),
                 _AmountField(
                   controller: _expenseCtrl,
                   label: 'Expense',
                   hint: '0.00',
-                  icon: Icons.receipt_long_outlined,
+                  icon: AppIcons.receiptLongOutlined,
                 ),
               ],
             ),
@@ -202,7 +204,7 @@ class _AmountField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final IconData icon;
+  final String icon;
   final bool required;
 
   const _AmountField({
@@ -234,7 +236,7 @@ class _AmountField extends StatelessWidget {
         hintText: hint,
         labelStyle: const TextStyle(fontSize: 13),
         prefixIcon:
-            Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+            AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

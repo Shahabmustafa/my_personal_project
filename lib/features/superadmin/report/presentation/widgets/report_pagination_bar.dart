@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Backend-side pagination control — data server se page-by-page (`.range()`)
 /// aata hai, ye bar sirf current/total page dikhata hai aur prev/next se
 /// notifier.goToPage() call karta hai.
@@ -37,13 +39,13 @@ class ReportPaginationBar extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3))),
           const Spacer(),
           IconButton(
-            icon: const Icon(Icons.chevron_left, size: 20),
+            icon: const AppIcon(AppIcons.chevronLeft, size: 20),
             onPressed: page > 1 ? () => onPageChange(page - 1) : null,
           ),
           Text('Page $page of $totalPages',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           IconButton(
-            icon: const Icon(Icons.chevron_right, size: 20),
+            icon: const AppIcon(AppIcons.chevronRight, size: 20),
             onPressed: page < totalPages ? () => onPageChange(page + 1) : null,
           ),
         ],

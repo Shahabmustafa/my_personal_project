@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'paginated_list_state.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Infinite-scrolling body for a server-paginated list.
 ///
 /// Handles: first-load spinner, first-load error + retry, empty state,
@@ -160,7 +162,7 @@ class _Footer<T> extends StatelessWidget {
         child: Center(
           child: TextButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh, size: 16),
+            icon: const AppIcon(AppIcons.refresh, size: 16),
             label: const Text('Retry loading more'),
           ),
         ),
@@ -201,7 +203,7 @@ class _ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, size: 44, color: Colors.redAccent),
+            const AppIcon(AppIcons.errorOutline, size: 44, color: Colors.redAccent),
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -225,7 +227,7 @@ class _EmptyView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.inbox_outlined, size: 48, color: Colors.grey[300]),
+            AppIcon(AppIcons.inboxOutlined, size: 48, color: Colors.grey[300]),
             const SizedBox(height: 12),
             Text(text, style: const TextStyle(color: Color(0xFF8A8FA3))),
           ],

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../purchase_invoice/data/models/warehouse_stock_model.dart';
 import '../providers/assign_stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AssignProductSelector extends ConsumerStatefulWidget {
   const AssignProductSelector({super.key});
 
@@ -154,7 +156,7 @@ class _AssignProductSelectorState
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded,
+              const AppIcon(AppIcons.warningAmberRounded,
                   color: Colors.white, size: 18),
               const SizedBox(width: 8),
               Expanded(child: Text(error)),
@@ -278,7 +280,7 @@ class _AssignProductSelectorState
                                       : Colors.grey.shade300),
                             ),
                             suffixIcon: _barcodeNotFound
-                                ? const Icon(Icons.error_outline,
+                                ? const AppIcon(AppIcons.errorOutline,
                                     color: Colors.red, size: 18)
                                 : null,
                           ),
@@ -466,7 +468,7 @@ class _AssignProductSelectorState
                   SizedBox(
                     height: 48,
                     child: FilledButton.icon(
-                      icon: const Icon(Icons.add_shopping_cart, size: 18),
+                      icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
                       label: const Text('Add Product'),
                       style: FilledButton.styleFrom(
                         backgroundColor: primary,
@@ -536,7 +538,7 @@ class _AssignProductSelectorState
         searchFieldProps: const TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search...',
-            prefixIcon: Icon(Icons.search, size: 18),
+            prefixIcon: AppIcon(AppIcons.search, size: 18),
             isDense: true,
           ),
         ),
@@ -682,7 +684,7 @@ class _QtyStepperInput extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _btn(
-                icon: Icons.remove,
+                icon: AppIcons.remove,
                 color: enabled
                     ? primaryColor.withOpacity(0.08)
                     : Colors.grey.shade100,
@@ -715,7 +717,7 @@ class _QtyStepperInput extends StatelessWidget {
                 ),
               ),
               _btn(
-                icon: Icons.add,
+                icon: AppIcons.add,
                 color: enabled ? primaryColor : Colors.grey.shade100,
                 iconColor:
                     enabled ? Colors.white : Colors.grey.shade400,
@@ -731,7 +733,7 @@ class _QtyStepperInput extends StatelessWidget {
   }
 
   Widget _btn({
-    required IconData icon,
+    required String icon,
     required Color color,
     required Color iconColor,
     required BorderRadius radius,
@@ -745,7 +747,7 @@ class _QtyStepperInput extends StatelessWidget {
           height: double.infinity,
           decoration: BoxDecoration(color: color, borderRadius: radius),
           alignment: Alignment.center,
-          child: Icon(icon, size: 16, color: iconColor),
+          child: AppIcon(icon, size: 16, color: iconColor),
         ),
       );
 }

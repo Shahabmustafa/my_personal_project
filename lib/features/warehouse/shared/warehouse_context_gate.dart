@@ -4,6 +4,8 @@ import '../../auth/presentation/providers/auth_provider.dart';
 import '../../auth/presentation/providers/workspace_selection_provider.dart';
 import '../../superadmin/warehouse/presentation/providers/warehouse_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Admin/superadmin don't own a warehouse assignment, but warehouse-scoped
 /// features (Purchase Invoice, Purchase Return, Add Stock) need one to work
 /// against. This gate lets them explicitly pick a warehouse to act on —
@@ -60,7 +62,7 @@ class _WarehouseContextGateState extends ConsumerState<WarehouseContextGate> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.warehouse_outlined,
+              const AppIcon(AppIcons.warehouseOutlined,
                   size: 18, color: Color(0xFF3E63DD)),
               const SizedBox(width: 8),
               const Text('Working warehouse:',
@@ -109,7 +111,7 @@ class _WarehouseContextGateState extends ConsumerState<WarehouseContextGate> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.warehouse_outlined,
+                      AppIcon(AppIcons.warehouseOutlined,
                           size: 48, color: Colors.grey[300]),
                       const SizedBox(height: 12),
                       const Text('Select a warehouse above to continue',

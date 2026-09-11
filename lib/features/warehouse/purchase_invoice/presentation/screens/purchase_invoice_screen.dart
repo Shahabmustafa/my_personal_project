@@ -8,6 +8,8 @@ import '../providers/purchase_invoice_provider.dart';
 import '../widgets/purchase_cart_table.dart';
 import '../widgets/purchase_product_selector.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class PurchaseInvoiceScreen extends ConsumerWidget {
   const PurchaseInvoiceScreen({super.key});
 
@@ -69,7 +71,7 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
                           onTap: () => ref
                               .read(purchaseInvoiceProvider.notifier)
                               .resetInvoice(),
-                          child: const Icon(Icons.refresh,
+                          child: const AppIcon(AppIcons.refresh,
                               size: 17, color: Colors.red),
                         ),
                       ],
@@ -120,7 +122,7 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search company...',
-                            prefixIcon: Icon(Icons.search, size: 18),
+                            prefixIcon: AppIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),
@@ -214,7 +216,7 @@ class _InvoiceFooter extends ConsumerWidget {
           ),
           const SizedBox(width: 20),
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -237,7 +239,7 @@ class _InvoiceFooter extends ConsumerWidget {
                     height: 16,
                     child: CircularProgressIndicator(
                         strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.receipt_long, size: 18),
+                : const AppIcon(AppIcons.receiptLong, size: 18),
             label: const Text('Purchase Invoice'),
             style: FilledButton.styleFrom(
               padding:
@@ -278,7 +280,7 @@ class _InvoiceFooter extends ConsumerWidget {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.warning_amber_rounded,
+              AppIcon(AppIcons.warningAmberRounded,
                   color: Colors.white, size: 18),
               SizedBox(width: 10),
               Text('Please select a company first'),
@@ -332,7 +334,7 @@ class _InvoiceFooter extends ConsumerWidget {
           await showDialog(
             context: context,
             builder: (_) => AlertDialog(
-              icon: const Icon(Icons.check_circle_outline,
+              icon: const AppIcon(AppIcons.checkCircleOutline,
                   color: Colors.green, size: 48),
               title: const Text('Invoice Saved!'),
               content:
@@ -430,7 +432,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       title: Row(
         children: [
-          Icon(Icons.receipt_long, color: primary, size: 22),
+          AppIcon(AppIcons.receiptLong, color: primary, size: 22),
           const SizedBox(width: 8),
           const Text('Purchase Invoice',
               style:
@@ -446,7 +448,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             _fieldRow(
               label: 'Customer Name',
-              icon: Icons.person_outline,
+              icon: AppIcons.personOutline,
               child: TextField(
                 controller: _customerNameCtrl,
                 style: const TextStyle(
@@ -458,7 +460,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             _fieldRow(
               label: 'Opening Balance',
-              icon: Icons.account_balance_wallet_outlined,
+              icon: AppIcons.accountBalanceWalletOutlined,
               child: _readOnlyField(
                 value: 'PKR ${openingBalance.toStringAsFixed(0)}',
                 color: openingBalance > 0
@@ -470,7 +472,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             _fieldRow(
               label: 'Cash in Hand',
-              icon: Icons.payments_outlined,
+              icon: AppIcons.paymentsOutlined,
               child: _readOnlyField(
                 value: 'PKR ${cashAmount.toStringAsFixed(0)}',
                 color: cashAmount > 0
@@ -482,7 +484,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             _fieldRow(
               label: 'Total Amount',
-              icon: Icons.shopping_bag_outlined,
+              icon: AppIcons.shoppingBagOutlined,
               child: _readOnlyField(
                 value: 'PKR ${totalAmount.toStringAsFixed(0)}',
                 color: Colors.black87,
@@ -493,7 +495,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             _fieldRow(
               label: 'Pay Amount',
-              icon: Icons.payments_outlined,
+              icon: AppIcons.paymentsOutlined,
               child: canPay
                   ? TextField(
                       controller: _payCtrl,
@@ -515,7 +517,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             _fieldRow(
               label: 'Remaining',
-              icon: Icons.pending_outlined,
+              icon: AppIcons.pendingOutlined,
               child: _readOnlyField(
                 value: 'PKR ${remaining.toStringAsFixed(0)}',
                 color: remaining > 0
@@ -538,7 +540,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.warning_amber_rounded,
+                    AppIcon(AppIcons.warningAmberRounded,
                         color: Colors.red.shade700, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
@@ -571,7 +573,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                     label: 'Cash Pay',
                     value: 'PKR ${effectivePay.toStringAsFixed(0)}',
                     color: Colors.green.shade700,
-                    icon: Icons.payments_outlined,
+                    icon: AppIcons.paymentsOutlined,
                   ),
                   Container(
                       width: 1,
@@ -581,7 +583,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                     label: 'On Credit',
                     value: 'PKR ${remaining.toStringAsFixed(0)}',
                     color: Colors.orange.shade700,
-                    icon: Icons.credit_card_outlined,
+                    icon: AppIcons.creditCardOutlined,
                   ),
                   Container(
                       width: 1,
@@ -591,7 +593,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                     label: 'Mode',
                     value: paymentMode.toUpperCase(),
                     color: primary,
-                    icon: Icons.receipt_outlined,
+                    icon: AppIcons.receiptOutlined,
                   ),
                 ],
               ),
@@ -633,7 +635,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
   Widget _fieldRow({
     required String label,
-    required IconData icon,
+    required String icon,
     required Widget child,
   }) {
     return Row(
@@ -642,7 +644,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
           width: 140,
           child: Row(
             children: [
-              Icon(icon, size: 15, color: Colors.grey),
+              AppIcon(icon, size: 15, color: Colors.grey),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(label,
@@ -701,12 +703,12 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
     required String label,
     required String value,
     required Color color,
-    required IconData icon,
+    required String icon,
   }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: color),
+        AppIcon(icon, size: 14, color: color),
         const SizedBox(height: 3),
         Text(label,
             style:

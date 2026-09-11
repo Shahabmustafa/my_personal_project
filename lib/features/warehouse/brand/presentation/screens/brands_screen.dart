@@ -5,6 +5,8 @@ import '../providers/brand_provider.dart';
 import '../providers/brand_state.dart';
 import '../widgets/brand_form_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BrandsScreen extends ConsumerStatefulWidget {
   final bool readOnly;
   const BrandsScreen({super.key, this.readOnly = false});
@@ -107,7 +109,7 @@ class _BrandsScreenState extends ConsumerState<BrandsScreen> {
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18),
                   label: const Text('Add Brand'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
@@ -129,7 +131,7 @@ class _BrandsScreenState extends ConsumerState<BrandsScreen> {
               decoration: InputDecoration(
                 hintText: 'Search brands...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+                prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -154,7 +156,7 @@ class _BrandsScreenState extends ConsumerState<BrandsScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.error_outline,
+                            const AppIcon(AppIcons.errorOutline,
                                 size: 48, color: Colors.redAccent),
                             const SizedBox(height: 12),
                             Text(state.errorMessage ?? 'Error',
@@ -174,7 +176,7 @@ class _BrandsScreenState extends ConsumerState<BrandsScreen> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.branding_watermark_outlined,
+                                AppIcon(AppIcons.brandingWatermarkOutlined,
                                     size: 48, color: Colors.grey[300]),
                                 const SizedBox(height: 12),
                                 Text(
@@ -290,14 +292,14 @@ class _TableView extends StatelessWidget {
                             width: 100,
                             child: Row(children: [
                               _IconBtn(
-                                icon: Icons.edit_outlined,
+                                icon: AppIcons.editOutlined,
                                 color: const Color(0xFF3E63DD),
                                 tooltip: 'Edit',
                                 onTap: () => onEdit(item: item),
                               ),
                               const SizedBox(width: 8),
                               _IconBtn(
-                                icon: Icons.delete_outline,
+                                icon: AppIcons.deleteOutline,
                                 color: Colors.redAccent,
                                 tooltip: 'Delete',
                                 onTap: () => onDelete(item),
@@ -318,7 +320,7 @@ class _TableView extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -340,7 +342,7 @@ class _IconBtn extends StatelessWidget {
           decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 16, color: color),
+          child: AppIcon(icon, size: 16, color: color),
         ),
       ),
     );

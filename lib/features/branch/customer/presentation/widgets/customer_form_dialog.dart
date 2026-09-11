@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/customer_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class CustomerFormDialog extends StatefulWidget {
   final CustomerModel? customer;
   final String branchId;
@@ -56,7 +58,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.person_outline, color: Color(0xFF3E63DD), size: 20),
+          const AppIcon(AppIcons.personOutline, color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Customer' : 'Add Customer',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -75,7 +77,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                   controller: _nameCtrl,
                   label: 'Name *',
                   hint: 'Customer full name',
-                  icon: Icons.person_outline,
+                  icon: AppIcons.personOutline,
                   validator: (v) =>
                   (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                 ),
@@ -84,7 +86,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                   controller: _phoneCtrl,
                   label: 'Phone Number',
                   hint: '0300-0000000',
-                  icon: Icons.phone_outlined,
+                  icon: AppIcons.phoneOutlined,
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 14),
@@ -92,7 +94,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                   controller: _emailCtrl,
                   label: 'Email',
                   hint: 'customer@example.com',
-                  icon: Icons.email_outlined,
+                  icon: AppIcons.emailOutlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
                     if (v != null && v.trim().isNotEmpty) {
@@ -109,7 +111,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                   controller: _addressCtrl,
                   label: 'Address',
                   hint: 'Street, City',
-                  icon: Icons.location_on_outlined,
+                  icon: AppIcons.locationOnOutlined,
                   maxLines: 2,
                 ),
                 const SizedBox(height: 14),
@@ -117,7 +119,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                   controller: _balanceCtrl,
                   label: 'Opening Balance',
                   hint: '0.00',
-                  icon: Icons.account_balance_wallet_outlined,
+                  icon: AppIcons.accountBalanceWalletOutlined,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) {
                     if (v != null && v.isNotEmpty) {
@@ -170,7 +172,7 @@ class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final IconData icon;
+  final String icon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final int maxLines;
@@ -196,7 +198,7 @@ class _Field extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

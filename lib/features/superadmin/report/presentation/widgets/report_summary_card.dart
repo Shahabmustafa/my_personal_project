@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
 /// Har report screen (invoice/return/exchange) ke top par stat cards ke liye
 /// — bilkul branch_cash_counter screen ke _SummaryCard jaisa, taake app mein
 /// look consistent rahe.
 class ReportSummaryCard extends StatelessWidget {
   final String label;
   final String value;
-  final IconData icon;
+  final String icon;
   final Color color;
 
   const ReportSummaryCard({
@@ -34,7 +35,7 @@ class ReportSummaryCard extends StatelessWidget {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: AppIcon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

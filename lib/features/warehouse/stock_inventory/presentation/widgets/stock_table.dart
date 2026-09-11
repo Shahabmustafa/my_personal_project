@@ -6,6 +6,8 @@ import '../../data/barcode_printer_service.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class StockTable extends ConsumerWidget {
   final bool readOnly;
   const StockTable({super.key, this.readOnly = false});
@@ -123,7 +125,7 @@ class _DesktopRow extends ConsumerWidget {
                 // Edit quantity & discount
                 if (!readOnly)
                   IconButton(
-                    icon: Icon(Icons.edit_outlined,
+                    icon: AppIcon(AppIcons.editOutlined,
                         size: 18,
                         color: Theme.of(context).colorScheme.primary),
                     tooltip: 'Edit',
@@ -131,14 +133,14 @@ class _DesktopRow extends ConsumerWidget {
                   ),
                 // Copy barcode
                 IconButton(
-                  icon: const Icon(Icons.copy_outlined,
+                  icon: const AppIcon(AppIcons.copyOutlined,
                       size: 18, color: Colors.blueGrey),
                   tooltip: 'Copy barcode',
                   onPressed: () => _copyBarcode(context),
                 ),
                 // Print label
                 IconButton(
-                  icon: Icon(Icons.print_outlined,
+                  icon: AppIcon(AppIcons.printOutlined,
                       size: 18,
                       color: Theme.of(context).colorScheme.primary),
                   tooltip: 'Print label',
@@ -147,7 +149,7 @@ class _DesktopRow extends ConsumerWidget {
                 // Delete
                 if (!readOnly)
                   IconButton(
-                    icon: const Icon(Icons.delete_outline,
+                    icon: const AppIcon(AppIcons.deleteOutline,
                         size: 18, color: Colors.red),
                     tooltip: 'Delete',
                     onPressed: () => _confirmDelete(context, ref),
@@ -179,7 +181,7 @@ class _DesktopRow extends ConsumerWidget {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline,
+            const AppIcon(AppIcons.checkCircleOutline,
                 color: Colors.white, size: 16),
             const SizedBox(width: 8),
             Text('Barcode copied: ${stock.barcode}'),
@@ -269,7 +271,7 @@ void showEditStockDialog(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const Icon(Icons.numbers_outlined, size: 18),
+                    prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 18),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -289,7 +291,7 @@ void showEditStockDialog(
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const Icon(Icons.percent_outlined, size: 18),
+                    prefixIcon: const AppIcon(AppIcons.percentOutlined, size: 18),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -377,14 +379,14 @@ class _BarcodeLabel extends StatelessWidget {
               // ── Dialog title ──────────────────────────────────────
               Row(
                 children: [
-                  Icon(Icons.print_outlined, color: primary),
+                  AppIcon(AppIcons.printOutlined, color: primary),
                   const SizedBox(width: 8),
                   const Text('Barcode Label',
                       style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const AppIcon(AppIcons.close),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -446,22 +448,22 @@ class _BarcodeLabel extends StatelessWidget {
 
                     // Details grid
                     _LabelDetail(
-                        icon: Icons.format_size_outlined,
+                        icon: AppIcons.formatSizeOutlined,
                         label: 'Size',
                         value: stock.sizeName ?? '—'),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: Icons.color_lens_outlined,
+                        icon: AppIcons.colorLensOutlined,
                         label: 'Color',
                         value: stock.colorName ?? '—'),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: Icons.category_outlined,
+                        icon: AppIcons.categoryOutlined,
                         label: 'Category',
                         value: stock.categoryName ?? '—'),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: Icons.style_outlined,
+                        icon: AppIcons.styleOutlined,
                         label: 'Type',
                         value: stock.typeName ?? '—'),
                   ],
@@ -475,7 +477,7 @@ class _BarcodeLabel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      icon: const Icon(Icons.copy_outlined, size: 16),
+                      icon: const AppIcon(AppIcons.copyOutlined, size: 16),
                       label: const Text('Copy'),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -496,7 +498,7 @@ class _BarcodeLabel extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton.icon(
-                      icon: const Icon(Icons.print_outlined, size: 16),
+                      icon: const AppIcon(AppIcons.printOutlined, size: 16),
                       label: const Text('Print'),
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -573,7 +575,7 @@ class _BarcodePainter extends CustomPainter {
 // ── Label detail row ──────────────────────────────────────────────────────
 
 class _LabelDetail extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
   final String value;
 
@@ -587,7 +589,7 @@ class _LabelDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.grey.shade500),
+        AppIcon(icon, size: 14, color: Colors.grey.shade500),
         const SizedBox(width: 6),
         Text(
           '$label:',
@@ -648,7 +650,7 @@ class _MobileList extends ConsumerWidget {
                     // Edit
                     if (!readOnly)
                       IconButton(
-                        icon: Icon(Icons.edit_outlined,
+                        icon: AppIcon(AppIcons.editOutlined,
                             color: Theme.of(context).colorScheme.primary,
                             size: 18),
                         onPressed: () =>
@@ -656,7 +658,7 @@ class _MobileList extends ConsumerWidget {
                       ),
                     // Copy
                     IconButton(
-                      icon: const Icon(Icons.copy_outlined,
+                      icon: const AppIcon(AppIcons.copyOutlined,
                           color: Colors.blueGrey, size: 18),
                       onPressed: () {
                         Clipboard.setData(
@@ -670,7 +672,7 @@ class _MobileList extends ConsumerWidget {
                     ),
                     // Print
                     IconButton(
-                      icon: Icon(Icons.print_outlined,
+                      icon: AppIcon(AppIcons.printOutlined,
                           color: Theme.of(context).colorScheme.primary,
                           size: 18),
                       onPressed: () => showDialog(
@@ -681,7 +683,7 @@ class _MobileList extends ConsumerWidget {
                     // Delete
                     if (!readOnly)
                       IconButton(
-                        icon: const Icon(Icons.delete_outline,
+                        icon: const AppIcon(AppIcons.deleteOutline,
                             color: Colors.red, size: 20),
                         onPressed: () async {
                           final err = await ref

@@ -5,6 +5,8 @@ import '../providers/stock_provider.dart';
 import '../widgets/add_stock_dialog.dart';
 import '../widgets/stock_table.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class StockScreen extends ConsumerStatefulWidget {
   final bool readOnly;
   const StockScreen({super.key, this.readOnly = false});
@@ -67,7 +69,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
               ),
               if (!widget.readOnly)
                 FilledButton.icon(
-                  icon: const Icon(Icons.add),
+                  icon: const AppIcon(AppIcons.add),
                   label: const Text('Add Stock'),
                   style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -88,10 +90,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             decoration: InputDecoration(
               hintText:
                   'Search by barcode, article, brand, size, color...',
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const AppIcon(AppIcons.search),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear),
+                      icon: const AppIcon(AppIcons.clear),
                       onPressed: () {
                         _searchCtrl.clear();
                         notifier.setSearch('');

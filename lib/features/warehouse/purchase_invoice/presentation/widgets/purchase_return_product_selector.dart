@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_return_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class PurchaseReturnProductSelector extends ConsumerStatefulWidget {
   const PurchaseReturnProductSelector({super.key});
 
@@ -267,7 +269,7 @@ class _PurchaseReturnProductSelectorState
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
                         prefixIcon:
-                            const Icon(Icons.qr_code_scanner, size: 18),
+                            const AppIcon(AppIcons.qrCodeScanner, size: 18),
                         errorText:
                             _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(
@@ -316,7 +318,7 @@ class _PurchaseReturnProductSelectorState
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: Icon(Icons.search, size: 18),
+                            prefixIcon: AppIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),
@@ -533,7 +535,7 @@ class _PurchaseReturnProductSelectorState
                   SizedBox(
                     height: 48,
                     child: FilledButton.icon(
-                      icon: const Icon(Icons.keyboard_return, size: 18),
+                      icon: const AppIcon(AppIcons.keyboardReturn, size: 18),
                       label: const Text('Add Return'),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.orange.shade700,
@@ -711,7 +713,7 @@ class _QtyStepperInput extends StatelessWidget {
                     borderRadius: const BorderRadius.horizontal(
                         left: Radius.circular(7)),
                   ),
-                  child: Icon(Icons.remove,
+                  child: AppIcon(AppIcons.remove,
                       size: 16,
                       color: enabled
                           ? primaryColor
@@ -754,7 +756,7 @@ class _QtyStepperInput extends StatelessWidget {
                     borderRadius: const BorderRadius.horizontal(
                         right: Radius.circular(7)),
                   ),
-                  child: Icon(Icons.add,
+                  child: AppIcon(AppIcons.add,
                       size: 16,
                       color: enabled
                           ? Colors.white

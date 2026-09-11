@@ -6,6 +6,8 @@ import '../../data/models/printer_head_model.dart';
 import '../providers/printer_providers.dart';
 import '../widgets/printer_head_card.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class PrinterHeadsScreen extends ConsumerStatefulWidget {
   const PrinterHeadsScreen({super.key});
 
@@ -85,7 +87,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
                     const Spacer(),
                     ElevatedButton.icon(
                       onPressed: () => _showAddDialog(context),
-                      icon: const Icon(Icons.add, size: 18),
+                      icon: const AppIcon(AppIcons.add, size: 18),
                       label: const Text('Add Printer'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3E63DD),
@@ -204,7 +206,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.center,
                                   children: const [
-                                    Icon(Icons.add_photo_alternate_outlined,
+                                    AppIcon(AppIcons.addPhotoAlternateOutlined,
                                         size: 36, color: Color(0xFF8A8FA3)),
                                     SizedBox(height: 8),
                                     Text('Tap to select image',
@@ -227,21 +229,21 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
                       _buildField(
                         controller: nameCtrl,
                         label: 'Printer Name *',
-                        icon: Icons.print_outlined,
+                        icon: AppIcons.printOutlined,
                         required: true,
                       ),
                       const SizedBox(height: 12),
                       _buildField(
                         controller: addressCtrl,
                         label: 'Address *',
-                        icon: Icons.location_on_outlined,
+                        icon: AppIcons.locationOnOutlined,
                         required: true,
                       ),
                       const SizedBox(height: 12),
                       _buildField(
                         controller: phoneCtrl,
                         label: 'Phone Number *',
-                        icon: Icons.phone_outlined,
+                        icon: AppIcons.phoneOutlined,
                         keyboardType: TextInputType.phone,
                         required: true,
                       ),
@@ -362,7 +364,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
   Widget _buildField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
+    required String icon,
     TextInputType keyboardType = TextInputType.text,
     bool required = false,
   }) {
@@ -372,7 +374,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -518,7 +520,7 @@ class _DesktopTable extends StatelessWidget {
                           child: _TD(
                             child: Row(children: [
                               if (p.phoneNumber.isNotEmpty) ...[
-                                const Icon(Icons.phone_outlined,
+                                const AppIcon(AppIcons.phoneOutlined,
                                     size: 13,
                                     color: Color(0xFF8A8FA3)),
                                 const SizedBox(width: 4),
@@ -554,7 +556,7 @@ class _DesktopTable extends StatelessWidget {
                           flex: 2,
                           child: _TD(
                             child: _IconBtn(
-                              icon: Icons.delete_outline,
+                              icon: AppIcons.deleteOutline,
                               color: Colors.redAccent,
                               tooltip: 'Delete',
                               onTap: () => onDelete(p),
@@ -612,7 +614,7 @@ class _TableIcon extends StatelessWidget {
         color: const Color(0xFFEAEFFD),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: const Icon(Icons.print_outlined,
+      child: const AppIcon(AppIcons.printOutlined,
           size: 18, color: Color(0xFF3E63DD)),
     );
   }
@@ -649,7 +651,7 @@ class _TD extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -670,7 +672,7 @@ class _IconBtn extends StatelessWidget {
         decoration: BoxDecoration(
             color: color.withOpacity(0.08),
             borderRadius: BorderRadius.circular(6)),
-        child: Icon(icon, size: 16, color: color),
+        child: AppIcon(icon, size: 16, color: color),
       ),
     ),
   );
@@ -685,7 +687,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child:
     Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const Icon(Icons.error_outline,
+      const AppIcon(AppIcons.errorOutline,
           size: 48, color: Colors.redAccent),
       const SizedBox(height: 12),
       Text(message,
@@ -703,7 +705,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child:
     Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.print_outlined, size: 48, color: Colors.grey[300]),
+      AppIcon(AppIcons.printOutlined, size: 48, color: Colors.grey[300]),
       const SizedBox(height: 12),
       const Text('No printers found',
           style: TextStyle(color: Color(0xFF8A8FA3))),
@@ -714,7 +716,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+  prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
   filled: true,
   fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),

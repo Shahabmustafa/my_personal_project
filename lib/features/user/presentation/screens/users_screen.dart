@@ -11,6 +11,8 @@ import '../widgets/user_card.dart';
 import '../widgets/assign_dialog.dart';
 import '../widgets/add_user_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
 
@@ -72,7 +74,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 if (canEdit)
                   ElevatedButton.icon(
                     onPressed: () => showDialog(context: context, builder: (_) => const AddUserDialog()),
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const AppIcon(AppIcons.add, size: 18),
                     label: const Text('Add User'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E63DD),
@@ -105,7 +107,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               onRetry: () => ref.read(userProvider.notifier).loadAllUsers(),
             )
                 : filtered.isEmpty
-                ? const _EmptyView(icon: Icons.people_outline, message: 'No users found')
+                ? const _EmptyView(icon: AppIcons.peopleOutline, message: 'No users found')
                 : isMobile
                 ? _MobileList(
               users: filtered,
@@ -258,7 +260,7 @@ class _DesktopTable extends StatelessWidget {
                               onTap: () => _showBranchWarehouseDialog(
                                 context,
                                 title: 'Branches — ${u.username}',
-                                icon: Icons.apartment_outlined,
+                                icon: AppIcons.apartmentOutlined,
                                 ids: u.branchIds,
                                 type: 'branch',
                               ),
@@ -286,7 +288,7 @@ class _DesktopTable extends StatelessWidget {
                               onTap: () => _showBranchWarehouseDialog(
                                 context,
                                 title: 'Warehouses — ${u.username}',
-                                icon: Icons.warehouse_outlined,
+                                icon: AppIcons.warehouseOutlined,
                                 ids: u.warehouseIds,
                                 type: 'warehouse',
                               ),
@@ -310,14 +312,14 @@ class _DesktopTable extends StatelessWidget {
                             flex: 2,
                             child: _TD(child: Row(children: [
                               _IconBtn(
-                                icon: u.isActive ? Icons.block : Icons.check_circle_outline,
+                                icon: u.isActive ? AppIcons.block : AppIcons.checkCircleOutline,
                                 color: u.isActive ? Colors.redAccent : Colors.green,
                                 tooltip: u.isActive ? 'Deactivate' : 'Activate',
                                 onTap: () => onToggleActive(u),
                               ),
                               const SizedBox(width: 8),
                               _IconBtn(
-                                icon: Icons.link,
+                                icon: AppIcons.link,
                                 color: const Color(0xFF3E63DD),
                                 tooltip: 'Assign',
                                 onTap: () => onAssign(u),
@@ -374,7 +376,7 @@ class _MobileList extends StatelessWidget {
 void _showBranchWarehouseDialog(
     BuildContext context, {
       required String title,
-      required IconData icon,
+      required String icon,
       required List<String> ids,
       required String type, // 'branch' or 'warehouse'
     }) {
@@ -391,7 +393,7 @@ void _showBranchWarehouseDialog(
 
 class _BranchWarehouseInfoDialog extends ConsumerWidget {
   final String title;
-  final IconData icon;
+  final String icon;
   final List<String> ids;
   final String type;
 
@@ -422,7 +424,7 @@ class _BranchWarehouseInfoDialog extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
-            child: Icon(icon, color: accentColor, size: 18),
+            child: AppIcon(icon, color: accentColor, size: 18),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -439,7 +441,7 @@ class _BranchWarehouseInfoDialog extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
-              Icon(Icons.info_outline, size: 16, color: Colors.grey[400]),
+              AppIcon(AppIcons.infoOutline, size: 16, color: Colors.grey[400]),
               const SizedBox(width: 8),
               Text(
                 isBranch ? 'Branch data loading...' : 'Warehouse data loading...',
@@ -465,7 +467,7 @@ class _BranchWarehouseInfoDialog extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(icon, size: 16, color: accentColor),
+                  AppIcon(icon, size: 16, color: accentColor),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
@@ -537,7 +539,7 @@ class _TD extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -553,7 +555,7 @@ class _IconBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 16, color: color),
+          child: AppIcon(icon, size: 16, color: color),
         ),
       ),
     );
@@ -607,7 +609,7 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+      const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
       const SizedBox(height: 12),
       Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
       const SizedBox(height: 16),
@@ -617,14 +619,14 @@ class _ErrorView extends StatelessWidget {
 }
 
 class _EmptyView extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String message;
   const _EmptyView({required this.icon, required this.message});
 
   @override
   Widget build(BuildContext context) {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, size: 48, color: Colors.grey[300]),
+      AppIcon(icon, size: 48, color: Colors.grey[300]),
       const SizedBox(height: 12),
       Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
     ]));
@@ -646,7 +648,7 @@ String _roleLabel(String role) {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+  prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
   filled: true, fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),
   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE7E9F0))),

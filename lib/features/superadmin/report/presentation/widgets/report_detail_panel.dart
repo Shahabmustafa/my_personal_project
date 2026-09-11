@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Right-side slide-in panel shared by the sale/return/exchange report
 /// screens — shows a single record's full detail (products, payments,
 /// totals) when its "View" action is tapped. Each screen supplies its own
@@ -70,14 +72,14 @@ class ReportDetailPanel extends StatelessWidget {
                   Tooltip(
                     message: 'Print',
                     child: IconButton(
-                      icon: const Icon(Icons.print_outlined, size: 20),
+                      icon: const AppIcon(AppIcons.printOutlined, size: 20),
                       onPressed: onPrint,
                     ),
                   ),
                 Tooltip(
                   message: 'Close',
                   child: IconButton(
-                    icon: const Icon(Icons.close, size: 20),
+                    icon: const AppIcon(AppIcons.close, size: 20),
                     onPressed: onClose,
                   ),
                 ),

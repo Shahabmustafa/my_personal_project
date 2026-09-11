@@ -8,6 +8,8 @@ import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../../../user/presentation/providers/user_provider.dart';
 import '../providers/employee_salary_providers.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class EmployeeSalaryFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String userId,
@@ -98,7 +100,7 @@ class _EmployeeSalaryFormDialogState
                       _buildField(
                         controller: _salaryCtrl,
                         label: 'Salary *',
-                        icon: Icons.currency_rupee_outlined,
+                        icon: AppIcons.currencyRupeeOutlined,
                         required: true,
                         isNumeric: true,
                       ),
@@ -106,7 +108,7 @@ class _EmployeeSalaryFormDialogState
                       _buildField(
                         controller: _commissionCtrl,
                         label: 'Commission % *',
-                        icon: Icons.percent_outlined,
+                        icon: AppIcons.percentOutlined,
                         required: true,
                         isNumeric: true,
                       ),
@@ -174,7 +176,7 @@ class _EmployeeSalaryFormDialogState
       items: users,
       selectedItem: selected,
       itemLabel: (u) => '${u.username} (${u.roleDisplayName})',
-      prefixIcon: const Icon(Icons.person_outline, size: 18),
+      prefixIcon: const AppIcon(AppIcons.personOutline, size: 18),
       errorText: _userError,
       onChanged: (u) => setState(() {
         _selectedUserId = u?.id;
@@ -195,7 +197,7 @@ class _EmployeeSalaryFormDialogState
       items: branches,
       selectedItem: selected,
       itemLabel: (b) => b.branchName,
-      prefixIcon: const Icon(Icons.store_outlined, size: 18),
+      prefixIcon: const AppIcon(AppIcons.storeOutlined, size: 18),
       errorText: _branchError,
       onChanged: (b) => setState(() {
         _selectedBranchId = b?.id;
@@ -207,7 +209,7 @@ class _EmployeeSalaryFormDialogState
   Widget _buildField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
+    required String icon,
     bool required = false,
     bool isNumeric = false,
   }) {
@@ -222,7 +224,7 @@ class _EmployeeSalaryFormDialogState
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

@@ -7,6 +7,8 @@ import '../../../../branch/return_stock_to_warehouse/presentation/providers/bran
     show branchWarehouseReturnRepositoryProvider;
 import '../providers/incoming_branch_return_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 const _primary = Color(0xFF3E63DD);
 
 /// Admin's screen for accepting/rejecting stock returns sent by branches —
@@ -35,8 +37,8 @@ class _IncomingBranchReturnsScreenState
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.move_to_inbox_outlined,
+              const AppIcon(
+                AppIcons.moveToInboxOutlined,
                 color: _primary,
                 size: 24,
               ),
@@ -48,7 +50,7 @@ class _IncomingBranchReturnsScreenState
               const Spacer(),
               IconButton(
                 onPressed: () => ref.invalidate(incomingBranchReturnsProvider),
-                icon: const Icon(Icons.refresh, color: _primary),
+                icon: const AppIcon(AppIcons.refresh, color: _primary),
                 tooltip: 'Refresh',
               ),
             ],
@@ -91,8 +93,8 @@ class _IncomingBranchReturnsScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
+                    const AppIcon(
+                      AppIcons.errorOutline,
                       color: Colors.red,
                       size: 40,
                     ),
@@ -142,8 +144,8 @@ class _IncomingBranchReturnsScreenState
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
-                                        Icons.inbox_outlined,
+                                      AppIcon(
+                                        AppIcons.inboxOutlined,
                                         size: 64,
                                         color: Colors.grey.shade300,
                                       ),
@@ -294,7 +296,7 @@ class _ListRow extends ConsumerWidget {
             flex: 4,
             child: Row(
               children: [
-                const Icon(Icons.store_outlined, size: 14, color: Colors.grey),
+                const AppIcon(AppIcons.storeOutlined, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -395,7 +397,7 @@ class _ListRow extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
-            Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+            AppIcon(AppIcons.checkCircleOutline, color: Colors.green, size: 22),
             SizedBox(width: 8),
             Text('Accept Return?'),
           ],
@@ -440,7 +442,7 @@ class _ListRow extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
-            Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+            AppIcon(AppIcons.cancelOutlined, color: Colors.red, size: 22),
             SizedBox(width: 8),
             Text('Reject Return?'),
           ],

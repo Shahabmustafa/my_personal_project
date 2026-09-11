@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_return_model.dart';
 import '../providers/purchase_return_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class PurchaseReturnsListScreen extends ConsumerStatefulWidget {
   const PurchaseReturnsListScreen({super.key});
 
@@ -40,7 +42,7 @@ class _PurchaseReturnsListScreenState
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.keyboard_return,
+                        AppIcon(AppIcons.keyboardReturn,
                             size: 20, color: Colors.orange.shade700),
                         const SizedBox(width: 8),
                         const Text('Purchase Returns',
@@ -60,7 +62,7 @@ class _PurchaseReturnsListScreenState
               if (counter != null) _CounterSummaryCard(counter: counter),
               const SizedBox(width: 12),
               FilledButton.icon(
-                icon: const Icon(Icons.add),
+                icon: const AppIcon(AppIcons.add),
                 label: const Text('New Return'),
                 style: FilledButton.styleFrom(
                     backgroundColor: Colors.orange.shade700),
@@ -88,7 +90,7 @@ class _PurchaseReturnsListScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.keyboard_return_outlined,
+                    AppIcon(AppIcons.keyboardReturnOutlined,
                         size: 64, color: Colors.grey),
                     SizedBox(height: 12),
                     Text('No purchase returns yet',

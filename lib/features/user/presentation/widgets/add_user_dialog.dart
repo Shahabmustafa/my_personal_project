@@ -4,6 +4,8 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/user_provider.dart';
 import '../providers/user_state.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AddUserDialog extends ConsumerStatefulWidget {
   const AddUserDialog({super.key});
 
@@ -120,7 +122,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(
         children: [
-          Icon(Icons.person_add_outlined, color: Color(0xFF3E63DD), size: 22),
+          AppIcon(AppIcons.personAddOutlined, color: Color(0xFF3E63DD), size: 22),
           SizedBox(width: 10),
           Text('Add New User',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -142,7 +144,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                   controller: _usernameCtrl,
                   label: 'Username *',
                   hint: 'e.g. john_doe',
-                  icon: Icons.person_outline,
+                  icon: AppIcons.personOutline,
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Username is required' : null,
                 ),
@@ -153,7 +155,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                   controller: _emailCtrl,
                   label: 'Email *',
                   hint: 'user@example.com',
-                  icon: Icons.email_outlined,
+                  icon: AppIcons.emailOutlined,
                   keyboardType: TextInputType.emailAddress,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Email is required';
@@ -170,13 +172,13 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                 TextFormField(
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
-                  decoration: _decor('Password *', Icons.lock_outline).copyWith(
+                  decoration: _decor('Password *', AppIcons.lockOutline).copyWith(
                     hintText: 'Min 6 characters',
                     suffixIcon: IconButton(
-                      icon: Icon(
+                      icon: AppIcon(
                         _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                            ? AppIcons.visibilityOffOutlined
+                            : AppIcons.visibilityOutlined,
                         color: const Color(0xFF8A8FA3),
                         size: 20,
                       ),
@@ -197,7 +199,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                   controller: _phoneCtrl,
                   label: 'Phone Number',
                   hint: '0300-0000000',
-                  icon: Icons.phone_outlined,
+                  icon: AppIcons.phoneOutlined,
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 14),
@@ -205,7 +207,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                 // Role
                 DropdownButtonFormField<String>(
                   value: _role,
-                  decoration: _decor('Role *', Icons.badge_outlined),
+                  decoration: _decor('Role *', AppIcons.badgeOutlined),
                   isExpanded: true,
                   items: _availableRoles
                       .map((r) => DropdownMenuItem(
@@ -228,7 +230,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.apartment_outlined,
+                      const AppIcon(AppIcons.apartmentOutlined,
                           size: 16, color: Color(0xFF3E63DD)),
                       const SizedBox(width: 8),
                       Expanded(
@@ -283,7 +285,7 @@ class _FormField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final IconData icon;
+  final String icon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
 
@@ -307,10 +309,10 @@ class _FormField extends StatelessWidget {
   }
 }
 
-InputDecoration _decor(String label, IconData icon) => InputDecoration(
+InputDecoration _decor(String label, String icon) => InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(fontSize: 13),
-      prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+      prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       border: OutlineInputBorder(

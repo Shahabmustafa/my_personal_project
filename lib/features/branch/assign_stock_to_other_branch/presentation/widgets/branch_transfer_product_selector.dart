@@ -6,6 +6,8 @@ import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
     show branchStockCacheProvider;
 import '../providers/branch_transfer_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Product/size/color picker for the branch-to-branch stock transfer cart —
 /// same barcode + cascading dropdown pattern as [SaleProductSelector], but
 /// sourced from this branch's own stock and adding into
@@ -254,7 +256,7 @@ class _BranchTransferProductSelectorState
                       decoration: InputDecoration(
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
-                        prefixIcon: const Icon(Icons.qr_code_scanner, size: 18),
+                        prefixIcon: const AppIcon(AppIcons.qrCodeScanner, size: 18),
                         errorText: _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
@@ -294,7 +296,7 @@ class _BranchTransferProductSelectorState
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: Icon(Icons.search, size: 18),
+                            prefixIcon: AppIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),
@@ -442,7 +444,7 @@ class _BranchTransferProductSelectorState
                   SizedBox(
                     height: 48,
                     child: FilledButton.icon(
-                      icon: const Icon(Icons.add_shopping_cart, size: 18),
+                      icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
                       label: const Text('Add Product'),
                       style: FilledButton.styleFrom(
                         backgroundColor: const Color(0xFF43A047),
@@ -585,7 +587,7 @@ class _QtyStepperInput extends StatelessWidget {
                     color: enabled ? primaryColor.withOpacity(0.08) : Colors.grey.shade100,
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
                   ),
-                  child: Icon(Icons.remove, size: 16, color: enabled ? primaryColor : Colors.grey.shade400),
+                  child: AppIcon(AppIcons.remove, size: 16, color: enabled ? primaryColor : Colors.grey.shade400),
                 ),
               ),
               SizedBox(
@@ -619,7 +621,7 @@ class _QtyStepperInput extends StatelessWidget {
                     color: enabled ? primaryColor : Colors.grey.shade100,
                     borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
                   ),
-                  child: Icon(Icons.add, size: 16, color: enabled ? Colors.white : Colors.grey.shade400),
+                  child: AppIcon(AppIcons.add, size: 16, color: enabled ? Colors.white : Colors.grey.shade400),
                 ),
               ),
             ],

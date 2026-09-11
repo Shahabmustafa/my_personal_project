@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../superadmin/employee_salary/data/models/employee_salary_model.dart';
 import '../../../../superadmin/employee_salary/presentation/providers/employee_salary_providers.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 const _primary = Color(0xFF3E63DD);
 
 /// Dedicated, read-only employee list for a branch — sourced entirely from
@@ -58,7 +60,7 @@ class _BranchEmployeeScreenState extends ConsumerState<BranchEmployeeScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: const Color(0xFFE7E9F0)),
                       ),
-                      child: const Icon(Icons.refresh, color: _primary, size: 20),
+                      child: const AppIcon(AppIcons.refresh, color: _primary, size: 20),
                     ),
                   ),
                 ),
@@ -390,7 +392,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+        const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
         const SizedBox(height: 12),
         Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
         const SizedBox(height: 16),
@@ -407,7 +409,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.people_outline, size: 48, color: Colors.grey[300]),
+        AppIcon(AppIcons.peopleOutline, size: 48, color: Colors.grey[300]),
         const SizedBox(height: 12),
         const Text('No employees found for this branch', style: TextStyle(color: Color(0xFF8A8FA3))),
         const SizedBox(height: 4),
@@ -439,7 +441,7 @@ String _fmtAmt(double v) {
 InputDecoration _searchDecor(String hint) => InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-      prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+      prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),

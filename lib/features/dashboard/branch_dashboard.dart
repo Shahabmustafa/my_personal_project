@@ -18,6 +18,7 @@ import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picke
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
 
+import 'package:safishoe_app/core/constants/app_icons.dart';
 // Roles: cashier, manager, salesman
 
 class BranchDashboard extends ConsumerStatefulWidget {
@@ -31,42 +32,42 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
   int _index = 0;
 
   static const _navItems = [
-    SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
-    SidebarItem(icon: Icons.badge_outlined, label: 'Employees'),
-    SidebarItem(icon: Icons.apartment_outlined, label: 'Customers'),
+    SidebarItem(icon: AppIcons.dashboardOutlined, label: 'Dashboard'),
+    SidebarItem(icon: AppIcons.badgeOutlined, label: 'Employees'),
+    SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Customers'),
     SidebarItem(
-        icon: Icons.apartment_outlined,
+        icon: AppIcons.apartmentOutlined,
         label: 'Assign Stock My Branch',
         group: 'Assign Stock'),
     SidebarItem(
-        icon: Icons.compare_arrows_outlined,
+        icon: AppIcons.compareArrowsOutlined,
         label: 'Assign Stock to Other Branch',
         group: 'Assign Stock'),
     SidebarItem(
-        icon: Icons.assignment_return_outlined,
+        icon: AppIcons.assignmentReturnOutlined,
         label: 'Return to Other Branch',
         group: 'Stock Returns'),
     SidebarItem(
-        icon: Icons.move_to_inbox_outlined,
+        icon: AppIcons.moveToInboxOutlined,
         label: 'Incoming Stock Returns',
         group: 'Stock Returns'),
     SidebarItem(
-        icon: Icons.warehouse_outlined,
+        icon: AppIcons.warehouseOutlined,
         label: 'Return to Admin',
         group: 'Stock Returns'),
-    SidebarItem(icon: Icons.apartment_outlined, label: 'Stock Inventory'),
-    SidebarItem(icon: Icons.point_of_sale_outlined, label: 'Cash Counter'),
-    SidebarItem(icon: Icons.receipt_long_outlined, label: 'Expense'),
+    SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Stock Inventory'),
+    SidebarItem(icon: AppIcons.pointOfSaleOutlined, label: 'Cash Counter'),
+    SidebarItem(icon: AppIcons.receiptLongOutlined, label: 'Expense'),
     SidebarItem(
-        icon: Icons.shopping_cart_checkout_outlined,
+        icon: AppIcons.shoppingCartCheckoutOutlined,
         label: 'Sale Invoice',
         group: 'Sales'),
     SidebarItem(
-        icon: Icons.assignment_return_outlined,
+        icon: AppIcons.assignmentReturnOutlined,
         label: 'Sale Return',
         group: 'Sales'),
     SidebarItem(
-        icon: Icons.swap_horiz_outlined,
+        icon: AppIcons.swapHorizOutlined,
         label: 'Sale Exchange',
         group: 'Sales'),
   ];

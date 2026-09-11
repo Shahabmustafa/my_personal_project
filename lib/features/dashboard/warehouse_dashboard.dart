@@ -16,6 +16,7 @@ import '../warehouse/size/presentation/screens/sizes_screen.dart';
 import '../warehouse/type/presentation/screens/types_screen.dart';
 import '../warehouse/stock_inventory/presentation/screens/stock_screen.dart';
 
+import 'package:safishoe_app/core/constants/app_icons.dart';
 // Roles: warehouse_manager, inventory_manager
 
 class WarehouseDashboard extends ConsumerStatefulWidget {
@@ -29,38 +30,38 @@ class _WarehouseDashboardState extends ConsumerState<WarehouseDashboard> {
   int _index = 0;
 
   static const _navItems = [
-    SidebarItem(icon: Icons.business_outlined, label: 'Purchase Invoice'),
-    SidebarItem(icon: Icons.business_outlined, label: 'Purchase Return'),
-    SidebarItem(icon: Icons.business_outlined, label: 'Assign Stock To Branch'),
-    SidebarItem(icon: Icons.business_outlined, label: 'Warehouse Cash Counter'),
-    SidebarItem(icon: Icons.business_outlined, label: 'Company'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Purchase Invoice'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Purchase Return'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Assign Stock To Branch'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Warehouse Cash Counter'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Company'),
     SidebarItem(
-      icon: Icons.inventory_2_outlined,
+      icon: AppIcons.inventory2Outlined,
       label: 'Products',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.branding_watermark_outlined,
+      icon: AppIcons.brandingWatermarkOutlined,
       label: 'Brands',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.format_size_outlined,
+      icon: AppIcons.formatSizeOutlined,
       label: 'Sizes',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.color_lens_outlined,
+      icon: AppIcons.colorLensOutlined,
       label: 'Colors',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.category_outlined,
+      icon: AppIcons.categoryOutlined,
       label: 'Categories',
       group: 'Catalog',
     ),
-    SidebarItem(icon: Icons.style_outlined, label: 'Types', group: 'Catalog'),
-    SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
+    SidebarItem(icon: AppIcons.styleOutlined, label: 'Types', group: 'Catalog'),
+    SidebarItem(icon: AppIcons.warehouseOutlined, label: 'Stock Inventory'),
   ];
 
   static const _pages = [

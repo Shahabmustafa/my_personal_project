@@ -6,6 +6,8 @@ import '../providers/warehouse_cash_counter_provider.dart';
 import '../providers/warehouse_cash_counter_state.dart';
 
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class WarehouseCashCounterScreen extends ConsumerStatefulWidget {
   const WarehouseCashCounterScreen({super.key});
 
@@ -100,14 +102,14 @@ class _WarehouseCashCounterScreenState
                               child: _SummaryCard(
                                   label: 'Net Amount',
                                   amount: state.totalNetAmount,
-                                  icon: Icons.monetization_on_outlined,
+                                  icon: AppIcons.monetizationOnOutlined,
                                   color: const Color(0xFF3E63DD))),
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Purchase',
                                   amount: state.totalPurchase,
-                                  icon: Icons.shopping_cart_outlined,
+                                  icon: AppIcons.shoppingCartOutlined,
                                   color: const Color(0xFF22A06B))),
                         ]),
                         const SizedBox(height: 12),
@@ -116,14 +118,14 @@ class _WarehouseCashCounterScreenState
                               child: _SummaryCard(
                                   label: 'Total Return',
                                   amount: state.totalReturn,
-                                  icon: Icons.assignment_return_outlined,
+                                  icon: AppIcons.assignmentReturnOutlined,
                                   color: const Color(0xFFE2483D))),
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Expense',
                                   amount: state.totalExpense,
-                                  icon: Icons.receipt_long_outlined,
+                                  icon: AppIcons.receiptLongOutlined,
                                   color: const Color(0xFFE56A00))),
                         ]),
                       ],
@@ -133,28 +135,28 @@ class _WarehouseCashCounterScreenState
                           child: _SummaryCard(
                               label: 'Net Amount',
                               amount: state.totalNetAmount,
-                              icon: Icons.monetization_on_outlined,
+                              icon: AppIcons.monetizationOnOutlined,
                               color: const Color(0xFF3E63DD))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Purchase',
                               amount: state.totalPurchase,
-                              icon: Icons.shopping_cart_outlined,
+                              icon: AppIcons.shoppingCartOutlined,
                               color: const Color(0xFF22A06B))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Return',
                               amount: state.totalReturn,
-                              icon: Icons.assignment_return_outlined,
+                              icon: AppIcons.assignmentReturnOutlined,
                               color: const Color(0xFFE2483D))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Expense',
                               amount: state.totalExpense,
-                              icon: Icons.receipt_long_outlined,
+                              icon: AppIcons.receiptLongOutlined,
                               color: const Color(0xFFE56A00))),
                     ]),
             ),
@@ -199,7 +201,7 @@ class _WarehouseCashCounterScreenState
 class _SummaryCard extends StatelessWidget {
   final String label;
   final double amount;
-  final IconData icon;
+  final String icon;
   final Color color;
 
   const _SummaryCard({
@@ -226,7 +228,7 @@ class _SummaryCard extends StatelessWidget {
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: AppIcon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -446,21 +448,21 @@ class _MobileList extends StatelessWidget {
               const SizedBox(height: 12),
               // Amount rows
               _MobileRow(
-                icon: Icons.monetization_on_outlined,
+                icon: AppIcons.monetizationOnOutlined,
                 label: 'Net Amount',
                 value: 'Rs. ${_fmtAmt(r.netAmount)}',
                 valueColor: const Color(0xFF3E63DD),
               ),
               const SizedBox(height: 8),
               _MobileRow(
-                icon: Icons.shopping_cart_outlined,
+                icon: AppIcons.shoppingCartOutlined,
                 label: 'Purchase',
                 value: 'Rs. ${_fmtAmt(r.totalPurchase)}',
                 valueColor: const Color(0xFF22A06B),
               ),
               const SizedBox(height: 8),
               _MobileRow(
-                icon: Icons.assignment_return_outlined,
+                icon: AppIcons.assignmentReturnOutlined,
                 label: 'Return',
                 value: 'Rs. ${_fmtAmt(r.totalReturnPurchase)}',
                 valueColor: r.totalReturnPurchase > 0
@@ -469,7 +471,7 @@ class _MobileList extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _MobileRow(
-                icon: Icons.receipt_long_outlined,
+                icon: AppIcons.receiptLongOutlined,
                 label: 'Expense',
                 value: 'Rs. ${_fmtAmt(r.expense)}',
                 valueColor: r.expense > 0
@@ -485,7 +487,7 @@ class _MobileList extends StatelessWidget {
 }
 
 class _MobileRow extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
   final String value;
   final Color valueColor;
@@ -501,7 +503,7 @@ class _MobileRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF8A8FA3)),
+        AppIcon(icon, size: 14, color: const Color(0xFF8A8FA3)),
         const SizedBox(width: 6),
         Text(label,
             style: const TextStyle(
@@ -577,7 +579,7 @@ class _ErrorView extends StatelessWidget {
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline,
+            const AppIcon(AppIcons.errorOutline,
                 size: 48, color: Colors.redAccent),
             const SizedBox(height: 12),
             Text(message,
@@ -599,7 +601,7 @@ class _EmptyView extends StatelessWidget {
       child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.account_balance_wallet_outlined,
+            AppIcon(AppIcons.accountBalanceWalletOutlined,
                 size: 48, color: Colors.grey[300]),
             const SizedBox(height: 12),
             const Text('No cash counter records found',
@@ -612,7 +614,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-      prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+      prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),

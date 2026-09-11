@@ -14,6 +14,8 @@ import '../widgets/sale_return_cart_table.dart';
 import '../widgets/sale_return_items_picker.dart';
 import '../widgets/sale_return_product_selector.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Sale Invoice screen ka mirror — structure bilkul wahi hai, sirf effect
 /// vice versa: stock wapis add hota hai, cash counter se minus hota hai.
 class SaleReturnScreen extends ConsumerWidget {
@@ -77,7 +79,7 @@ class SaleReturnScreen extends ConsumerWidget {
                         InkWell(
                           borderRadius: BorderRadius.circular(4),
                           onTap: () => ref.read(saleReturnProvider.notifier).resetReturn(),
-                          child: const Icon(Icons.refresh, size: 17, color: Colors.red),
+                          child: const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
                         ),
                       ],
                     ),
@@ -162,14 +164,14 @@ class _RefundTypeToggle extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
-        _seg('Cash', 'cash', Icons.payments_outlined, accent),
-        _seg('Card', 'card', Icons.credit_card_outlined, accent),
-        _seg('Cash + Card', 'cash_card', Icons.sync_alt, accent),
+        _seg('Cash', 'cash', AppIcons.paymentsOutlined, accent),
+        _seg('Card', 'card', AppIcons.creditCardOutlined, accent),
+        _seg('Cash + Card', 'cash_card', AppIcons.syncAlt, accent),
       ]),
     );
   }
 
-  Widget _seg(String label, String type, IconData icon, Color accent) {
+  Widget _seg(String label, String type, String icon, Color accent) {
     final selected = value == type;
     return InkWell(
       onTap: () => onChanged(type),
@@ -180,7 +182,7 @@ class _RefundTypeToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(7),
         ),
         child: Row(children: [
-          Icon(icon, size: 16, color: selected ? Colors.white : Colors.grey.shade600),
+          AppIcon(icon, size: 16, color: selected ? Colors.white : Colors.grey.shade600),
           const SizedBox(width: 6),
           Text(label,
               style: TextStyle(
@@ -257,7 +259,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
                       decoration: _decor('Sale Invoice #').copyWith(
                         suffixIcon: state.originalInvoice != null
                             ? IconButton(
-                                icon: const Icon(Icons.clear, size: 18),
+                                icon: const AppIcon(AppIcons.clear, size: 18),
                                 tooltip: 'Return without invoice',
                                 onPressed: notifier.clearOriginalInvoice,
                               )
@@ -431,7 +433,7 @@ class _ReturnFooter extends ConsumerWidget {
           ),
           const SizedBox(width: 20),
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -448,7 +450,7 @@ class _ReturnFooter extends ConsumerWidget {
             icon: state.isSaving
                 ? const SizedBox(
                     width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Icon(Icons.assignment_return_outlined, size: 18),
+                : const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
             label: const Text('Sale Return'),
             style: FilledButton.styleFrom(
               backgroundColor: accent,
@@ -491,7 +493,7 @@ class _ReturnFooter extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+            const AppIcon(AppIcons.warningAmberRounded, color: Colors.white, size: 18),
             const SizedBox(width: 10),
             Text(warning),
           ]),
@@ -509,7 +511,7 @@ class _ReturnFooter extends ConsumerWidget {
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(children: [
-          Icon(Icons.assignment_return_outlined, color: Colors.red, size: 22),
+          AppIcon(AppIcons.assignmentReturnOutlined, color: Colors.red, size: 22),
           SizedBox(width: 8),
           Text('Confirm Sale Return', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         ]),

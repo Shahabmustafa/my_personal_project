@@ -5,6 +5,8 @@ import '../../data/model/product_model.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_form_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class ProductsScreen extends ConsumerStatefulWidget {
   final bool readOnly;
   const ProductsScreen({super.key, this.readOnly = false});
@@ -89,7 +91,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18),
                   label: const Text('Add Product'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
@@ -113,7 +115,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
                 prefixIcon:
-                    const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+                    const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -254,14 +256,14 @@ class _DesktopTable extends StatelessWidget {
                           flex: 2,
                           child: Row(children: [
                             _IconBtn(
-                              icon: Icons.edit_outlined,
+                              icon: AppIcons.editOutlined,
                               color: const Color(0xFF3E63DD),
                               tooltip: 'Edit',
                               onTap: () => onEdit(p),
                             ),
                             const SizedBox(width: 8),
                             _IconBtn(
-                              icon: Icons.delete_outline,
+                              icon: AppIcons.deleteOutline,
                               color: Colors.redAccent,
                               tooltip: 'Delete',
                               onTap: () => onDelete(p),
@@ -286,7 +288,7 @@ class _DesktopTable extends StatelessWidget {
           color: const Color(0xFFEAEFFD),
           borderRadius: BorderRadius.circular(6),
         ),
-        child: const Icon(Icons.inventory_2_outlined,
+        child: const AppIcon(AppIcons.inventory2Outlined,
             size: 18, color: Color(0xFF3E63DD)),
       );
 }
@@ -354,13 +356,13 @@ class _MobileList extends StatelessWidget {
               Column(
                 children: [
                   _IconBtn(
-                      icon: Icons.edit_outlined,
+                      icon: AppIcons.editOutlined,
                       color: const Color(0xFF3E63DD),
                       tooltip: 'Edit',
                       onTap: () => onEdit(p)),
                   const SizedBox(height: 6),
                   _IconBtn(
-                      icon: Icons.delete_outline,
+                      icon: AppIcons.deleteOutline,
                       color: Colors.redAccent,
                       tooltip: 'Delete',
                       onTap: () => onDelete(p)),
@@ -379,7 +381,7 @@ class _MobileList extends StatelessWidget {
           color: const Color(0xFFEAEFFD),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(Icons.inventory_2_outlined,
+        child: const AppIcon(AppIcons.inventory2Outlined,
             size: 22, color: Color(0xFF3E63DD)),
       );
 }
@@ -407,7 +409,7 @@ class _TH extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -429,7 +431,7 @@ class _IconBtn extends StatelessWidget {
           decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 16, color: color),
+          child: AppIcon(icon, size: 16, color: color),
         ),
       ),
     );

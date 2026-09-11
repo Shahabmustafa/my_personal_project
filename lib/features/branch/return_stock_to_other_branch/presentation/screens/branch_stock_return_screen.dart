@@ -8,6 +8,8 @@ import '../providers/branch_stock_return_provider.dart';
 import '../widgets/branch_return_cart_table.dart';
 import '../widgets/branch_return_product_selector.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 const _primary = Color(0xFF1565C0);
 
 String _fmtAmt(double v) =>
@@ -91,12 +93,12 @@ class _BranchStockReturnScreenState
                 message: 'Refresh',
                 child: IconButton(
                   onPressed: () => ref.invalidate(sentStockReturnsProvider),
-                  icon: const Icon(Icons.refresh),
+                  icon: const AppIcon(AppIcons.refresh),
                 ),
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
-                icon: const Icon(Icons.add),
+                icon: const AppIcon(AppIcons.add),
                 label: const Text('New Return'),
                 style: FilledButton.styleFrom(backgroundColor: _primary),
                 onPressed: () async {
@@ -141,7 +143,7 @@ class _BranchStockReturnScreenState
                         child: ReportSummaryCard(
                           label: 'Total Returns',
                           value: '${filtered.length}',
-                          icon: Icons.assignment_return_outlined,
+                          icon: AppIcons.assignmentReturnOutlined,
                           color: _primary,
                         ),
                       ),
@@ -150,7 +152,7 @@ class _BranchStockReturnScreenState
                         child: ReportSummaryCard(
                           label: 'Total Quantity',
                           value: '$totalQuantity',
-                          icon: Icons.inventory_2_outlined,
+                          icon: AppIcons.inventory2Outlined,
                           color: const Color(0xFFE56A00),
                         ),
                       ),
@@ -159,7 +161,7 @@ class _BranchStockReturnScreenState
                         child: ReportSummaryCard(
                           label: 'Total Value',
                           value: 'Rs. ${_fmtAmt(totalValue)}',
-                          icon: Icons.sell_outlined,
+                          icon: AppIcons.sellOutlined,
                           color: const Color(0xFF22A06B),
                         ),
                       ),
@@ -222,7 +224,7 @@ class _BranchStockReturnScreenState
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.inbox_outlined,
+                              AppIcon(AppIcons.inboxOutlined,
                                   size: 64, color: Colors.grey.shade300),
                               const SizedBox(height: 12),
                               Text(
@@ -277,23 +279,23 @@ class _BranchStockReturnScreenState
   Widget _chip(String label, String value, int count) {
     final isSelected = _filterStatus == value;
     Color chipColor;
-    IconData chipIcon;
+    String chipIcon;
     switch (value) {
       case 'pending':
         chipColor = Colors.orange;
-        chipIcon = Icons.hourglass_empty_outlined;
+        chipIcon = AppIcons.hourglassEmptyOutlined;
         break;
       case 'accepted':
         chipColor = Colors.green;
-        chipIcon = Icons.check_circle_outline;
+        chipIcon = AppIcons.checkCircleOutline;
         break;
       case 'rejected':
         chipColor = Colors.red;
-        chipIcon = Icons.cancel_outlined;
+        chipIcon = AppIcons.cancelOutlined;
         break;
       default:
         chipColor = _primary;
-        chipIcon = Icons.list_outlined;
+        chipIcon = AppIcons.listOutlined;
     }
     return GestureDetector(
       onTap: () => setState(() => _filterStatus = value),
@@ -311,7 +313,7 @@ class _BranchStockReturnScreenState
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(chipIcon,
+            AppIcon(chipIcon,
                 size: 15, color: isSelected ? Colors.white : chipColor),
             const SizedBox(width: 6),
             Text(
@@ -449,7 +451,7 @@ class _ReturnTable extends StatelessWidget {
               flex: _colFlex[2],
               child: Row(
                 children: [
-                  const Icon(Icons.store_outlined,
+                  const AppIcon(AppIcons.storeOutlined,
                       size: 14, color: Color(0xFF8A8FA3)),
                   const SizedBox(width: 6),
                   Expanded(
@@ -489,7 +491,7 @@ class _ReturnTable extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   child: const Padding(
                     padding: EdgeInsets.all(5),
-                    child: Icon(Icons.visibility_outlined,
+                    child: AppIcon(AppIcons.visibilityOutlined,
                         size: 19, color: _primary),
                   ),
                 ),
@@ -614,7 +616,7 @@ class _NewReturnForm extends ConsumerWidget {
                         InkWell(
                           borderRadius: BorderRadius.circular(4),
                           onTap: () => ref.read(branchStockReturnProvider.notifier).resetReturn(),
-                          child: const Icon(Icons.refresh, size: 17, color: Colors.red),
+                          child: const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
                         ),
                       ],
                     ),
@@ -656,12 +658,12 @@ class _NewReturnForm extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search branch...',
-                            prefixIcon: Icon(Icons.search, size: 18),
+                            prefixIcon: AppIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),
                         itemBuilder: (ctx, branch, isSelected, _) => ListTile(
-                          leading: const Icon(Icons.store_outlined, size: 18, color: _primary),
+                          leading: const AppIcon(AppIcons.storeOutlined, size: 18, color: _primary),
                           title: Text(branch.branchName,
                               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                           subtitle: branch.city != null
@@ -742,7 +744,7 @@ class _ReturnFooter extends ConsumerWidget {
           if (state.destinationBranch != null)
             Row(
               children: [
-                const Icon(Icons.store_outlined, size: 16, color: _primary),
+                const AppIcon(AppIcons.storeOutlined, size: 16, color: _primary),
                 const SizedBox(width: 6),
                 Text(state.destinationBranch!.label,
                     style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
@@ -750,7 +752,7 @@ class _ReturnFooter extends ConsumerWidget {
             ),
           const Spacer(),
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -767,7 +769,7 @@ class _ReturnFooter extends ConsumerWidget {
               ? const SizedBox(
                   width: 180, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
               : FilledButton.icon(
-                  icon: const Icon(Icons.assignment_return_outlined, size: 18),
+                  icon: const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
                   label: const Text('Send Return'),
                   style: FilledButton.styleFrom(
                     backgroundColor: _primary,
@@ -814,7 +816,7 @@ class _ReturnFooter extends ConsumerWidget {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
+              const AppIcon(AppIcons.checkCircleOutline, color: Colors.white, size: 18),
               const SizedBox(width: 8),
               Text('Stock returned to $branchName successfully'),
             ],
@@ -851,7 +853,7 @@ class _ConfirmSendDialog extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(
         children: [
-          Icon(Icons.assignment_return_outlined, color: _primary, size: 22),
+          AppIcon(AppIcons.assignmentReturnOutlined, color: _primary, size: 22),
           SizedBox(width: 8),
           Text('Confirm Return'),
         ],
@@ -875,7 +877,7 @@ class _ConfirmSendDialog extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.store_outlined, size: 16, color: _primary),
+                    const AppIcon(AppIcons.storeOutlined, size: 16, color: _primary),
                     const SizedBox(width: 6),
                     Text(branchName,
                         style: const TextStyle(fontWeight: FontWeight.w700, color: _primary)),
@@ -884,9 +886,9 @@ class _ConfirmSendDialog extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _chip('$totalItems Products', Icons.inventory_2_outlined),
+                    _chip('$totalItems Products', AppIcons.inventory2Outlined),
                     const SizedBox(width: 12),
-                    _chip('$totalQty Pairs', Icons.straighten_outlined),
+                    _chip('$totalQty Pairs', AppIcons.straightenOutlined),
                   ],
                 ),
               ],
@@ -913,9 +915,9 @@ class _ConfirmSendDialog extends StatelessWidget {
     );
   }
 
-  Widget _chip(String text, IconData icon) => Row(
+  Widget _chip(String text, String icon) => Row(
         children: [
-          Icon(icon, size: 14, color: _primary),
+          AppIcon(icon, size: 14, color: _primary),
           const SizedBox(width: 4),
           Text(text, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
         ],
@@ -933,26 +935,26 @@ class StatusChip extends StatelessWidget {
     Color bg;
     Color fg;
     String label;
-    IconData icon;
+    String icon;
 
     switch (status) {
       case 'accepted':
         bg = Colors.green.shade50;
         fg = Colors.green.shade700;
         label = 'Accepted';
-        icon = Icons.check_circle_outline;
+        icon = AppIcons.checkCircleOutline;
         break;
       case 'rejected':
         bg = Colors.red.shade50;
         fg = Colors.red.shade700;
         label = 'Rejected';
-        icon = Icons.cancel_outlined;
+        icon = AppIcons.cancelOutlined;
         break;
       default:
         bg = Colors.orange.shade50;
         fg = Colors.orange.shade700;
         label = 'Pending';
-        icon = Icons.hourglass_empty_outlined;
+        icon = AppIcons.hourglassEmptyOutlined;
     }
 
     return Container(
@@ -965,7 +967,7 @@ class StatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
+          AppIcon(icon, size: 12, color: fg),
           const SizedBox(width: 4),
           Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
         ],

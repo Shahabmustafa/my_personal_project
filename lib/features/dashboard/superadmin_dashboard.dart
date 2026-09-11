@@ -15,6 +15,7 @@ import '../superadmin/employee_salary/presentation/screens/employee_salary_scree
 import '../superadmin/report/presentation/screens/sale_exchange_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_invoice_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_return_report_screen.dart';
+import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
 import '../warehouse/company/presentation/screens/companies_screen.dart';
 import '../user/presentation/screens/users_screen.dart';
@@ -31,6 +32,7 @@ import '../superadmin/overview/presentation/screens/overview_screen.dart';
 import '../superadmin/head_office_purchase/presentation/screens/purchase_invoice_screen.dart';
 import '../superadmin/head_office_purchase/presentation/screens/purchase_return_screen.dart';
 
+import 'package:safishoe_app/core/constants/app_icons.dart';
 // Roles: superadmin, admin
 
 class SuperAdminDashboard extends ConsumerStatefulWidget {
@@ -45,94 +47,99 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
   int _index = 0;
 
   static const _navItems = [
-    SidebarItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
-    SidebarItem(icon: Icons.apartment_outlined, label: 'Branches'),
-    SidebarItem(icon: Icons.warehouse_outlined, label: 'Warehouse'),
-    SidebarItem(icon: Icons.people_outline, label: 'Users'),
+    SidebarItem(icon: AppIcons.dashboardOutlined, label: 'Dashboard'),
+    SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Branches'),
+    SidebarItem(icon: AppIcons.warehouseOutlined, label: 'Warehouse'),
+    SidebarItem(icon: AppIcons.peopleOutline, label: 'Users'),
     SidebarItem(
-      icon: Icons.inventory_2_outlined,
+      icon: AppIcons.inventory2Outlined,
       label: 'Products',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.format_size_outlined,
+      icon: AppIcons.formatSizeOutlined,
       label: 'Sizes',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.color_lens_outlined,
+      icon: AppIcons.colorLensOutlined,
       label: 'Colors',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.branding_watermark_outlined,
+      icon: AppIcons.brandingWatermarkOutlined,
       label: 'Brands',
       group: 'Catalog',
     ),
     SidebarItem(
-      icon: Icons.category_outlined,
+      icon: AppIcons.categoryOutlined,
       label: 'Categories',
       group: 'Catalog',
     ),
-    SidebarItem(icon: Icons.style_outlined, label: 'Types', group: 'Catalog'),
-    SidebarItem(icon: Icons.warehouse_outlined, label: 'Stock Inventory'),
+    SidebarItem(icon: AppIcons.styleOutlined, label: 'Types', group: 'Catalog'),
+    SidebarItem(icon: AppIcons.warehouseOutlined, label: 'Stock Inventory'),
     SidebarItem(
-      icon: Icons.receipt_long_outlined,
+      icon: AppIcons.receiptLongOutlined,
       label: 'Purchase Invoice',
       group: 'Purchase',
     ),
     SidebarItem(
-      icon: Icons.assignment_return_outlined,
+      icon: AppIcons.assignmentReturnOutlined,
       label: 'Purchase Return',
       group: 'Purchase',
     ),
-    SidebarItem(icon: Icons.storefront_outlined, label: 'Company'),
+    SidebarItem(icon: AppIcons.storefrontOutlined, label: 'Company'),
     SidebarItem(
-      icon: Icons.local_shipping_outlined,
+      icon: AppIcons.localShippingOutlined,
       label: 'Assign Stock To Branch',
       group: 'Assign Stock',
     ),
-    SidebarItem(icon: Icons.history, label: 'History', group: 'Assign Stock'),
+    SidebarItem(icon: AppIcons.history, label: 'History', group: 'Assign Stock'),
     SidebarItem(
-      icon: Icons.move_to_inbox_outlined,
+      icon: AppIcons.moveToInboxOutlined,
       label: 'Incoming Branch Returns',
       group: 'Assign Stock',
     ),
-    SidebarItem(icon: Icons.business_outlined, label: 'Head Office'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
     SidebarItem(
-      icon: Icons.percent_outlined,
+      icon: AppIcons.percentOutlined,
       label: 'Branch Invoice Discount',
       group: 'Discount',
     ),
     SidebarItem(
-      icon: Icons.account_balance_outlined,
+      icon: AppIcons.accountBalanceOutlined,
       label: 'Bank Head',
       group: 'Bank',
     ),
     SidebarItem(
-      icon: Icons.account_balance_wallet_outlined,
+      icon: AppIcons.accountBalanceWalletOutlined,
       label: 'Bank Entry',
       group: 'Bank',
     ),
-    SidebarItem(icon: Icons.print_outlined, label: 'Print', group: 'Printer'),
+    SidebarItem(icon: AppIcons.printOutlined, label: 'Print', group: 'Printer'),
     SidebarItem(
-      icon: Icons.local_printshop_outlined,
+      icon: AppIcons.localPrintshopOutlined,
       label: 'Assign Print',
       group: 'Printer',
     ),
-    SidebarItem(icon: Icons.payments_outlined, label: 'Employee Salary'),
+    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Employee Salary'),
     SidebarItem(
-      icon: Icons.receipt_long_outlined,
+      icon: AppIcons.listAlt,
+      label: 'Sale Summary',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.receiptLongOutlined,
       label: 'Sale Invoice Report',
       group: 'Reports',
     ),
     SidebarItem(
-      icon: Icons.assignment_return_outlined,
+      icon: AppIcons.assignmentReturnOutlined,
       label: 'Sale Return Report',
       group: 'Reports',
     ),
     SidebarItem(
-      icon: Icons.swap_horiz_outlined,
+      icon: AppIcons.swapHorizOutlined,
       label: 'Sale Exchange Report',
       group: 'Reports',
     ),
@@ -173,6 +180,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     PrinterHeadsScreen(),
     AssignPrinterScreen(),
     EmployeeSalaryScreen(),
+    SaleSummaryReportScreen(),
     SaleInvoiceReportScreen(),
     SaleReturnReportScreen(),
     SaleExchangeReportScreen(),

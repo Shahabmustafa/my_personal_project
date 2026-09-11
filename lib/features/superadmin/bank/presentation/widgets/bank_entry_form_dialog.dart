@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/bank_head_model.dart';
 import '../providers/bank_providers.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BankEntryFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String bankId,
@@ -89,7 +91,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
                   _buildField(
                     controller: _accountCtrl,
                     label: 'Account Number *',
-                    icon: Icons.numbers_outlined,
+                    icon: AppIcons.numbersOutlined,
                     required: true,
                   ),
                   const SizedBox(height: 12),
@@ -98,7 +100,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
                   _buildField(
                     controller: _balanceCtrl,
                     label: 'Opening Balance *',
-                    icon: Icons.currency_rupee_outlined,
+                    icon: AppIcons.currencyRupeeOutlined,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
                     required: true,
@@ -151,7 +153,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
     return DropdownButtonFormField<BankHeadModel>(
       value: selected,
       isExpanded: true,
-      decoration: _decor('Bank *', Icons.account_balance_outlined),
+      decoration: _decor('Bank *', AppIcons.accountBalanceOutlined),
       items: banks
           .map((b) =>
               DropdownMenuItem(value: b, child: Text(b.bankName)))
@@ -166,7 +168,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
     return DropdownButtonFormField<String>(
       value: _selectedBranchId,
       isExpanded: true,
-      decoration: _decor('Branch *', Icons.store_outlined),
+      decoration: _decor('Branch *', AppIcons.storeOutlined),
       items: _branches
           .map((b) =>
               DropdownMenuItem(value: b['id'], child: Text(b['name']!)))
@@ -179,7 +181,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
   Widget _buildField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
+    required String icon,
     TextInputType keyboardType = TextInputType.text,
     bool required = false,
     bool isNumeric = false,
@@ -202,10 +204,10 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
     );
   }
 
-  InputDecoration _decor(String label, IconData icon) => InputDecoration(
+  InputDecoration _decor(String label, String icon) => InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

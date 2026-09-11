@@ -10,6 +10,8 @@ import '../providers/auth_provider.dart';
 import '../providers/workspace_selection_provider.dart';
 import 'login_screen.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// User ko uske assigned branches aur warehouses dikhata hai — jab
 /// login ke baad 1 se zyada assign hon. Jis par tap kare, wahi id
 /// locally persist ho jati hai aur app usi branch/warehouse ke liye
@@ -137,27 +139,27 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
                     )
                   else ...[
                     if (_branches.isNotEmpty) ...[
-                      const _SectionLabel(label: 'Branches', icon: Icons.apartment_outlined),
+                      const _SectionLabel(label: 'Branches', icon: AppIcons.apartmentOutlined),
                       const SizedBox(height: 10),
                       ..._branches.map((b) => _WorkspaceCard(
                             title: b.branchName,
                             subtitle: [b.city, b.address]
                                 .where((s) => s.isNotEmpty)
                                 .join(' • '),
-                            icon: Icons.apartment_outlined,
+                            icon: AppIcons.apartmentOutlined,
                             onTap: () => _pickBranch(b.id),
                           )),
                       const SizedBox(height: 20),
                     ],
                     if (_warehouses.isNotEmpty) ...[
-                      const _SectionLabel(label: 'Warehouses', icon: Icons.warehouse_outlined),
+                      const _SectionLabel(label: 'Warehouses', icon: AppIcons.warehouseOutlined),
                       const SizedBox(height: 10),
                       ..._warehouses.map((w) => _WorkspaceCard(
                             title: w.warehouseName,
                             subtitle: [w.city, w.address]
                                 .where((s) => s.isNotEmpty)
                                 .join(' • '),
-                            icon: Icons.warehouse_outlined,
+                            icon: AppIcons.warehouseOutlined,
                             onTap: () => _pickWarehouse(w.id),
                           )),
                     ],
@@ -173,7 +175,7 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
                         );
                       }
                     },
-                    icon: const Icon(Icons.logout, size: 18),
+                    icon: const AppIcon(AppIcons.logout, size: 18),
                     label: const Text('Logout'),
                   ),
                 ],
@@ -188,14 +190,14 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
 
 class _SectionLabel extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final String icon;
   const _SectionLabel({required this.label, required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey.shade600),
+        AppIcon(icon, size: 16, color: Colors.grey.shade600),
         const SizedBox(width: 6),
         Text(label,
             style: TextStyle(
@@ -211,7 +213,7 @@ class _SectionLabel extends StatelessWidget {
 class _WorkspaceCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
+  final String icon;
   final VoidCallback onTap;
 
   const _WorkspaceCard({
@@ -246,7 +248,7 @@ class _WorkspaceCard extends StatelessWidget {
                     color: Theme.of(context).primaryColor.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, size: 20, color: Theme.of(context).primaryColor),
+                  child: AppIcon(icon, size: 20, color: Theme.of(context).primaryColor),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -263,7 +265,7 @@ class _WorkspaceCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.grey.shade400),
+                AppIcon(AppIcons.chevronRight, color: Colors.grey.shade400),
               ],
             ),
           ),

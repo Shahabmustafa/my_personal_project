@@ -7,6 +7,8 @@ import '../providers/warehouse_state.dart';
 import '../widgets/warehouse_card.dart';
 import '../widgets/warehouse_form_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class WarehouseScreen extends ConsumerStatefulWidget {
   const WarehouseScreen({super.key});
 
@@ -67,7 +69,7 @@ class _WarehouseScreenState extends ConsumerState<WarehouseScreen> {
                 if (canEdit)
                   ElevatedButton.icon(
                     onPressed: () => _showForm(context),
-                    icon: const Icon(Icons.add, size: 18),
+                    icon: const AppIcon(AppIcons.add, size: 18),
                     label: const Text('Add Warehouse'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E63DD),
@@ -231,7 +233,7 @@ class _DesktopTable extends StatelessWidget {
                                 color: const Color(0xFFE8F5E9),
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(Icons.warehouse_outlined,
+                              child: const AppIcon(AppIcons.warehouseOutlined,
                                   color: Color(0xFF2E7D32), size: 16),
                             ),
                             const SizedBox(width: 10),
@@ -281,14 +283,14 @@ class _DesktopTable extends StatelessWidget {
                             flex: 2,
                             child: _TD(child: Row(children: [
                               _IconBtn(
-                                icon: Icons.edit_outlined,
+                                icon: AppIcons.editOutlined,
                                 color: const Color(0xFF3E63DD),
                                 tooltip: 'Edit',
                                 onTap: () => onEdit(w),
                               ),
                               const SizedBox(width: 8),
                               _IconBtn(
-                                icon: Icons.delete_outline,
+                                icon: AppIcons.deleteOutline,
                                 color: Colors.redAccent,
                                 tooltip: 'Delete',
                                 onTap: () => onDelete(w),
@@ -376,7 +378,7 @@ class _TD extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -398,7 +400,7 @@ class _IconBtn extends StatelessWidget {
           decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 16, color: color),
+          child: AppIcon(icon, size: 16, color: color),
         ),
       ),
     );
@@ -438,7 +440,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+        const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
         const SizedBox(height: 12),
         Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
         const SizedBox(height: 16),
@@ -455,7 +457,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.warehouse_outlined, size: 48, color: Colors.grey[300]),
+        AppIcon(AppIcons.warehouseOutlined, size: 48, color: Colors.grey[300]),
         const SizedBox(height: 12),
         const Text('No warehouses found',
             style: TextStyle(color: Color(0xFF8A8FA3))),
@@ -467,7 +469,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+  prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
   filled: true,
   fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),

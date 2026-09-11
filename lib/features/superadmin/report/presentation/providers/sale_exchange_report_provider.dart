@@ -16,6 +16,7 @@ class SaleExchangeReportNotifier extends StateNotifier<ReportState<SaleExchangeM
       final result = await _repo.getExchangeReport(
         startDate: state.startDate,
         endDate: state.endDate,
+        branchId: state.branchId,
         page: state.page,
         pageSize: state.pageSize,
       );
@@ -50,6 +51,15 @@ class SaleExchangeReportNotifier extends StateNotifier<ReportState<SaleExchangeM
 
   void clearDateRange() {
     state = state.copyWith(clearStartDate: true, clearEndDate: true, page: 1);
+    load();
+  }
+
+  void setBranch(String? branchId) {
+    state = state.copyWith(
+      branchId: branchId,
+      clearBranchId: branchId == null || branchId.isEmpty,
+      page: 1,
+    );
     load();
   }
 }

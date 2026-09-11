@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/employee_salary_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class EmployeeSalaryCard extends StatelessWidget {
   final EmployeeSalaryModel salary;
   final VoidCallback onDelete;
@@ -30,7 +32,7 @@ class EmployeeSalaryCard extends StatelessWidget {
                   color: const Color(0xFFEAEFFD),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.person_outline,
+                child: const AppIcon(AppIcons.personOutline,
                     size: 18, color: Color(0xFF3E63DD)),
               ),
               const SizedBox(width: 10),
@@ -52,7 +54,7 @@ class EmployeeSalaryCard extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.delete_outline,
+                icon: const AppIcon(AppIcons.deleteOutline,
                     size: 20, color: Colors.redAccent),
                 onPressed: onDelete,
                 tooltip: 'Delete',

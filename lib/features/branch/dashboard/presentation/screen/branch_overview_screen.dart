@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/branch_overview_model.dart';
 import '../provider/branch_overview_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BranchOverviewScreen extends ConsumerWidget {
   const BranchOverviewScreen({super.key});
 
@@ -47,7 +49,7 @@ class BranchOverviewScreen extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: const Color(0xFFE7E9F0)),
                         ),
-                        child: const Icon(Icons.refresh, color: Color(0xFF3E63DD), size: 20),
+                        child: const AppIcon(AppIcons.refresh, color: Color(0xFF3E63DD), size: 20),
                       ),
                     ),
                   ),
@@ -63,7 +65,7 @@ class BranchOverviewScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(vertical: 40),
                   child: Center(
                     child: Column(children: [
-                      const Icon(Icons.error_outline, size: 40, color: Colors.redAccent),
+                      const AppIcon(AppIcons.errorOutline, size: 40, color: Colors.redAccent),
                       const SizedBox(height: 10),
                       Text('Error: $e', style: const TextStyle(color: Color(0xFF8A8FA3))),
                     ]),
@@ -100,38 +102,38 @@ class _CardGrid extends StatelessWidget {
       _CardSpec(
         label: 'Total Article',
         value: '${data.totalArticles}',
-        icon: Icons.inventory_2_outlined,
+        icon: AppIcons.inventory2Outlined,
         color: const Color(0xFF3E63DD),
       ),
       _CardSpec(
         label: 'Total Invoice',
         value: '${data.totalInvoices}',
-        icon: Icons.receipt_long_outlined,
+        icon: AppIcons.receiptLongOutlined,
         color: const Color(0xFF6C4DE0),
       ),
       _CardSpec(
         label: 'Today Sale',
         value: 'Rs. ${_fmtAmt(data.todaySale)}',
-        icon: Icons.point_of_sale_outlined,
+        icon: AppIcons.pointOfSaleOutlined,
         color: const Color(0xFF22A06B),
       ),
       _CardSpec(
         label: 'Today Target',
         value: 'Coming Soon',
-        icon: Icons.flag_outlined,
+        icon: AppIcons.flagOutlined,
         color: const Color(0xFF8A8FA3),
         muted: true,
       ),
       _CardSpec(
         label: 'Total Salesman',
         value: '${data.totalSalesman}',
-        icon: Icons.badge_outlined,
+        icon: AppIcons.badgeOutlined,
         color: const Color(0xFF1565C0),
       ),
       _CardSpec(
         label: 'Total Expense',
         value: 'Rs. ${_fmtAmt(data.todayExpense)}',
-        icon: Icons.receipt_outlined,
+        icon: AppIcons.receiptOutlined,
         color: const Color(0xFFE56A00),
       ),
     ];
@@ -169,7 +171,7 @@ class _CardGrid extends StatelessWidget {
 class _CardSpec {
   final String label;
   final String value;
-  final IconData icon;
+  final String icon;
   final Color color;
   final bool muted;
   const _CardSpec({
@@ -205,7 +207,7 @@ class _OverviewCard extends StatelessWidget {
               color: spec.color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(spec.icon, color: spec.color, size: 22),
+            child: AppIcon(spec.icon, color: spec.color, size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(

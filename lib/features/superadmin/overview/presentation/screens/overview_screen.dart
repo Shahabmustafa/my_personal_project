@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/overview_datasource.dart';
 import '../providers/overview_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class OverviewScreen extends ConsumerWidget {
   const OverviewScreen({super.key});
 
@@ -45,7 +47,7 @@ class OverviewScreen extends ConsumerWidget {
                 ),
                 IconButton(
                   onPressed: () => ref.invalidate(overviewStatsProvider),
-                  icon: const Icon(Icons.refresh, color: _accent),
+                  icon: const AppIcon(AppIcons.refresh, color: _accent),
                   tooltip: 'Refresh',
                 ),
               ],
@@ -61,8 +63,8 @@ class OverviewScreen extends ConsumerWidget {
                 child: Center(
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.error_outline,
+                      const AppIcon(
+                        AppIcons.errorOutline,
                         color: Colors.redAccent,
                         size: 44,
                       ),
@@ -74,7 +76,7 @@ class OverviewScreen extends ConsumerWidget {
                       const SizedBox(height: 14),
                       FilledButton.icon(
                         onPressed: () => ref.invalidate(overviewStatsProvider),
-                        icon: const Icon(Icons.refresh, size: 16),
+                        icon: const AppIcon(AppIcons.refresh, size: 16),
                         label: const Text('Retry'),
                       ),
                     ],
@@ -110,31 +112,31 @@ class _Content extends StatelessWidget {
       _StatCardData(
         'All Branch Article',
         '${stats.branchStockPairs} pairs',
-        Icons.storefront_outlined,
+        AppIcons.storefrontOutlined,
         const Color(0xFF7B1FA2),
       ),
       _StatCardData(
         "Today's Profit",
         _pkr(stats.todayProfit),
-        Icons.savings_outlined,
+        AppIcons.savingsOutlined,
         const Color(0xFF00796B),
       ),
       _StatCardData(
         'Total Articles',
         '${stats.totalArticles}',
-        Icons.inventory_2_outlined,
+        AppIcons.inventory2Outlined,
         const Color(0xFF3E63DD),
       ),
       _StatCardData(
         'Total Warehouses',
         '${stats.totalWarehouses}',
-        Icons.warehouse_outlined,
+        AppIcons.warehouseOutlined,
         const Color(0xFF6A1B9A),
       ),
       _StatCardData(
         'Total Branches',
         '${stats.totalBranches}',
-        Icons.apartment_outlined,
+        AppIcons.apartmentOutlined,
         const Color(0xFF00838F),
       ),
     ];
@@ -377,8 +379,8 @@ class _TopArticleCard extends StatelessWidget {
                     color: const Color(0xFFEF6C00).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.emoji_events_outlined,
+                  child: const AppIcon(
+                    AppIcons.emojiEventsOutlined,
                     color: Color(0xFFEF6C00),
                     size: 22,
                   ),
@@ -424,7 +426,7 @@ class _TopArticleCard extends StatelessWidget {
 class _StatCardData {
   final String label;
   final String value;
-  final IconData icon;
+  final String icon;
   final Color color;
   _StatCardData(this.label, this.value, this.icon, this.color);
 }
@@ -454,7 +456,7 @@ class _StatCard extends StatelessWidget {
                   color: data.color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(data.icon, color: data.color, size: 20),
+                child: AppIcon(data.icon, color: data.color, size: 20),
               ),
               const Spacer(),
             ],
@@ -521,8 +523,8 @@ class _TodayByBranch extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.storefront_outlined,
+                    const AppIcon(
+                      AppIcons.storefrontOutlined,
                       size: 18,
                       color: Color(0xFF3E63DD),
                     ),

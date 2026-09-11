@@ -3,6 +3,8 @@ import '../../../../branch/sale_exchange/data/model/sale_exchange_model.dart';
 import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart';
 import '../../../../branch/sale_return/data/model/sale_return_model.dart';
 import '../model/report_page_result.dart';
+import '../model/sale_summary_totals.dart';
+import '../model/sale_transaction_row.dart';
 
 /// Admin-side reports — sab branches ka data (koi branch_id filter nahi),
 /// optional start/end date range ke sath. Har method do queries chalata hai:
@@ -74,14 +76,13 @@ class SaleReportDatasource {
   Future<ReportPageResult<SaleInvoiceModel>> fetchInvoiceReport({
     DateTime? startDate,
     DateTime? endDate,
+    String? branchId,
     required int page,
     required int pageSize,
   }) async {
-    final totalsRes = await _applyDateRange(
-      _client.from('sale_invoices').select('total_amount, sale_invoice_items(quantity)'),
-      startDate,
-      endDate,
-    );
+    var totalsQuery = _client.from('sale_invoices').select('total_amount, sale_invoice_items(quantity)');
+    if (branchId != null && branchId.isNotEmpty) totalsQuery = totalsQuery.eq('branch_id', branchId);
+    final totalsRes = await _applyDateRange(totalsQuery, startDate, endDate);
     final totalsList = totalsRes as List;
     var totalQuantity = 0;
     var totalAmount = 0.0;
@@ -96,11 +97,11 @@ class SaleReportDatasource {
 
     final from = (page - 1) * pageSize;
     final to = from + pageSize - 1;
-    final pageRes = await _applyDateRange(
-      _client.from('sale_invoices').select(_invoiceSelect),
-      startDate,
-      endDate,
-    ).order('created_at', ascending: false).range(from, to);
+    var pageQuery = _client.from('sale_invoices').select(_invoiceSelect);
+    if (branchId != null && branchId.isNotEmpty) pageQuery = pageQuery.eq('branch_id', branchId);
+    final pageRes = await _applyDateRange(pageQuery, startDate, endDate)
+        .order('created_at', ascending: false)
+        .range(from, to);
 
     final rows = (pageRes as List)
         .map((e) => SaleInvoiceModel.fromJson(e as Map<String, dynamic>))
@@ -123,14 +124,13 @@ class SaleReportDatasource {
   Future<ReportPageResult<SaleReturnModel>> fetchReturnReport({
     DateTime? startDate,
     DateTime? endDate,
+    String? branchId,
     required int page,
     required int pageSize,
   }) async {
-    final totalsRes = await _applyDateRange(
-      _client.from('sale_returns').select('total_amount, sale_return_items(quantity)'),
-      startDate,
-      endDate,
-    );
+    var totalsQuery = _client.from('sale_returns').select('total_amount, sale_return_items(quantity)');
+    if (branchId != null && branchId.isNotEmpty) totalsQuery = totalsQuery.eq('branch_id', branchId);
+    final totalsRes = await _applyDateRange(totalsQuery, startDate, endDate);
     final totalsList = totalsRes as List;
     var totalQuantity = 0;
     var totalAmount = 0.0;
@@ -145,11 +145,11 @@ class SaleReportDatasource {
 
     final from = (page - 1) * pageSize;
     final to = from + pageSize - 1;
-    final pageRes = await _applyDateRange(
-      _client.from('sale_returns').select(_returnSelect),
-      startDate,
-      endDate,
-    ).order('created_at', ascending: false).range(from, to);
+    var pageQuery = _client.from('sale_returns').select(_returnSelect);
+    if (branchId != null && branchId.isNotEmpty) pageQuery = pageQuery.eq('branch_id', branchId);
+    final pageRes = await _applyDateRange(pageQuery, startDate, endDate)
+        .order('created_at', ascending: false)
+        .range(from, to);
 
     final rows = (pageRes as List)
         .map((e) => SaleReturnModel.fromJson(e as Map<String, dynamic>))
@@ -175,14 +175,14 @@ class SaleReportDatasource {
   Future<ReportPageResult<SaleExchangeModel>> fetchExchangeReport({
     DateTime? startDate,
     DateTime? endDate,
+    String? branchId,
     required int page,
     required int pageSize,
   }) async {
-    final totalsRes = await _applyDateRange(
-      _client.from('sale_exchanges').select('new_total, sale_exchange_new_items(quantity)'),
-      startDate,
-      endDate,
-    );
+    var totalsQuery =
+        _client.from('sale_exchanges').select('new_total, sale_exchange_new_items(quantity)');
+    if (branchId != null && branchId.isNotEmpty) totalsQuery = totalsQuery.eq('branch_id', branchId);
+    final totalsRes = await _applyDateRange(totalsQuery, startDate, endDate);
     final totalsList = totalsRes as List;
     var totalQuantity = 0;
     var totalAmount = 0.0;
@@ -197,11 +197,11 @@ class SaleReportDatasource {
 
     final from = (page - 1) * pageSize;
     final to = from + pageSize - 1;
-    final pageRes = await _applyDateRange(
-      _client.from('sale_exchanges').select(_exchangeSelect),
-      startDate,
-      endDate,
-    ).order('created_at', ascending: false).range(from, to);
+    var pageQuery = _client.from('sale_exchanges').select(_exchangeSelect);
+    if (branchId != null && branchId.isNotEmpty) pageQuery = pageQuery.eq('branch_id', branchId);
+    final pageRes = await _applyDateRange(pageQuery, startDate, endDate)
+        .order('created_at', ascending: false)
+        .range(from, to);
 
     final rows = (pageRes as List)
         .map((e) => SaleExchangeModel.fromJson(e as Map<String, dynamic>))
@@ -213,5 +213,105 @@ class SaleReportDatasource {
       totalQuantity: totalQuantity,
       totalAmount: totalAmount,
     );
+  }
+
+  // ── Combined summary (Sale + Return + Exchange cards) ───────────────────
+  // Har table se sirf jitna column chahiye utna fetch karta hai — teeno
+  // reports ki totals ek hi jagah, sale summary screen ke top cards ke liye.
+
+  Future<SaleSummaryTotals> fetchSummaryTotals({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? branchId,
+  }) async {
+    double sumField(List rows, String field) => rows.fold<double>(
+        0.0, (sum, row) => sum + ((row as Map<String, dynamic>)[field] as num? ?? 0).toDouble());
+
+    var invoiceQuery = _client.from('sale_invoices').select('total_amount');
+    var returnQuery = _client.from('sale_returns').select('total_amount');
+    var exchangeQuery = _client.from('sale_exchanges').select('difference_amount');
+    if (branchId != null && branchId.isNotEmpty) {
+      invoiceQuery = invoiceQuery.eq('branch_id', branchId);
+      returnQuery = returnQuery.eq('branch_id', branchId);
+      exchangeQuery = exchangeQuery.eq('branch_id', branchId);
+    }
+
+    final invoicesRes = await _applyDateRange(invoiceQuery, startDate, endDate) as List;
+    final returnsRes = await _applyDateRange(returnQuery, startDate, endDate) as List;
+    final exchangesRes = await _applyDateRange(exchangeQuery, startDate, endDate) as List;
+
+    return SaleSummaryTotals(
+      totalSale: sumField(invoicesRes, 'total_amount'),
+      totalReturn: sumField(returnsRes, 'total_amount'),
+      exchangeChange: sumField(exchangesRes, 'difference_amount'),
+      invoiceCount: invoicesRes.length,
+      returnCount: returnsRes.length,
+      exchangeCount: exchangesRes.length,
+    );
+  }
+
+  // ── Combined transaction list (Sale + Return + Exchange in one feed) ────
+
+  Future<List<SaleTransactionRow>> fetchCombinedTransactions({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? branchId,
+  }) async {
+    var invoiceQuery = _client
+        .from('sale_invoices')
+        .select('id, invoice_number, created_at, total_amount, branches(branch_name), customers(name)');
+    var returnQuery = _client
+        .from('sale_returns')
+        .select('id, return_number, created_at, total_amount, branches(branch_name), customers(name)');
+    var exchangeQuery = _client.from('sale_exchanges').select(
+        'id, exchange_number, created_at, difference_amount, branches(branch_name), customers(name)');
+    if (branchId != null && branchId.isNotEmpty) {
+      invoiceQuery = invoiceQuery.eq('branch_id', branchId);
+      returnQuery = returnQuery.eq('branch_id', branchId);
+      exchangeQuery = exchangeQuery.eq('branch_id', branchId);
+    }
+
+    final invoicesRes = await _applyDateRange(invoiceQuery, startDate, endDate) as List;
+    final returnsRes = await _applyDateRange(returnQuery, startDate, endDate) as List;
+    final exchangesRes = await _applyDateRange(exchangeQuery, startDate, endDate) as List;
+
+    String? relatedName(Map<String, dynamic> row, String key, String field) =>
+        (row[key] as Map<String, dynamic>?)?[field]?.toString();
+
+    final rows = <SaleTransactionRow>[
+      for (final row in invoicesRes.cast<Map<String, dynamic>>())
+        SaleTransactionRow(
+          id: row['id'].toString(),
+          type: SaleTransactionType.sale,
+          number: row['invoice_number']?.toString() ?? '',
+          branchName: relatedName(row, 'branches', 'branch_name'),
+          customerName: relatedName(row, 'customers', 'name'),
+          createdAt: DateTime.parse(row['created_at'].toString()),
+          amount: (row['total_amount'] as num? ?? 0).toDouble(),
+        ),
+      for (final row in returnsRes.cast<Map<String, dynamic>>())
+        SaleTransactionRow(
+          id: row['id'].toString(),
+          type: SaleTransactionType.saleReturn,
+          number: row['return_number']?.toString() ?? '',
+          branchName: relatedName(row, 'branches', 'branch_name'),
+          customerName: relatedName(row, 'customers', 'name'),
+          createdAt: DateTime.parse(row['created_at'].toString()),
+          amount: -(row['total_amount'] as num? ?? 0).toDouble(),
+        ),
+      for (final row in exchangesRes.cast<Map<String, dynamic>>())
+        SaleTransactionRow(
+          id: row['id'].toString(),
+          type: SaleTransactionType.exchange,
+          number: row['exchange_number']?.toString() ?? '',
+          branchName: relatedName(row, 'branches', 'branch_name'),
+          customerName: relatedName(row, 'customers', 'name'),
+          createdAt: DateTime.parse(row['created_at'].toString()),
+          amount: (row['difference_amount'] as num? ?? 0).toDouble(),
+        ),
+    ];
+
+    rows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return rows;
   }
 }

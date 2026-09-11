@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class SidebarItem {
-  final IconData icon;
+  final String icon;
   final String label;
   final String? group;
   const SidebarItem({required this.icon, required this.label, this.group});
@@ -155,7 +157,7 @@ class SidebarShell extends StatelessWidget {
                               color: const Color(0xFFFEECEC),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(Icons.logout,
+                            child: const AppIcon(AppIcons.logout,
                                 size: 16, color: Color(0xFFC62828)),
                           ),
                         ),
@@ -217,7 +219,7 @@ class SidebarShell extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(item.icon, size: 19, color: active ? _accent : _textDim),
+                AppIcon(item.icon, size: 19, color: active ? _accent : _textDim),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(item.label,
@@ -248,7 +250,7 @@ class SidebarShell extends StatelessWidget {
           childrenPadding: const EdgeInsets.only(left: 8),
           shape: const Border(),
           collapsedShape: const Border(),
-          leading: Icon(navItems[indices.first].icon,
+          leading: AppIcon(navItems[indices.first].icon,
               size: 19, color: containsActive ? _accent : _textDim),
           title: Text(group,
               style: TextStyle(

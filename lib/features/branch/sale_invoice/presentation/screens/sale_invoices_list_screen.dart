@@ -4,6 +4,8 @@ import '../../data/model/sale_invoice_model.dart';
 import '../provider/sale_invoice_provider.dart';
 import 'sale_invoice_screen.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class SaleInvoicesListScreen extends ConsumerStatefulWidget {
   final bool showNewInvoiceButton;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
@@ -56,12 +58,12 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 message: 'Refresh',
                 child: IconButton(
                   onPressed: () => ref.read(saleInvoiceListProvider.notifier).loadInvoices(),
-                  icon: const Icon(Icons.refresh),
+                  icon: const AppIcon(AppIcons.refresh),
                 ),
               ),
               if (widget.showNewInvoiceButton)
                 FilledButton.icon(
-                  icon: const Icon(Icons.add),
+                  icon: const AppIcon(AppIcons.add),
                   label: const Text('New Invoice'),
                   onPressed: () async {
                     await Navigator.push(
@@ -95,7 +97,7 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey),
+                    AppIcon(AppIcons.receiptLongOutlined, size: 64, color: Colors.grey),
                     SizedBox(height: 12),
                     Text('No sale invoices yet', style: TextStyle(color: Colors.grey, fontSize: 15)),
                   ],
@@ -194,7 +196,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
                         children: [
                           if (onExchangeTap != null)
                             IconButton(
-                              icon: const Icon(Icons.swap_horiz_outlined, size: 20),
+                              icon: const AppIcon(AppIcons.swapHorizOutlined, size: 20),
                               tooltip: 'Exchange',
                               onPressed: () => onExchangeTap!(inv),
                             ),
@@ -307,7 +309,7 @@ class _MobileInvoiceList extends StatelessWidget {
                     Text(_formatDate(inv.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
                     if (onExchangeTap != null)
                       IconButton(
-                        icon: const Icon(Icons.swap_horiz_outlined, size: 18),
+                        icon: const AppIcon(AppIcons.swapHorizOutlined, size: 18),
                         tooltip: 'Exchange',
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),

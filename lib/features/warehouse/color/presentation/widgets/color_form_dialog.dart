@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/color_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class ColorFormDialog extends StatefulWidget {
   final ColorModel? item;
   final ValueChanged<ColorModel> onSave;
@@ -38,7 +40,7 @@ class _ColorFormDialogState extends State<ColorFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.color_lens_outlined, color: Color(0xFF3E63DD), size: 20),
+          const AppIcon(AppIcons.colorLensOutlined, color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Color' : 'Add Color',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -55,7 +57,7 @@ class _ColorFormDialogState extends State<ColorFormDialog> {
               labelText: 'Color Name *',
               hintText: 'e.g. Red',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Icon(Icons.color_lens_outlined, size: 18, color: Color(0xFF8A8FA3)),
+              prefixIcon: const AppIcon(AppIcons.colorLensOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

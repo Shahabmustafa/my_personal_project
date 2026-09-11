@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../sale_exchange/data/model/sale_exchange_model.dart' show ReturnCartItem;
 import '../provider/sale_return_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Selected invoice ki lines dikhata hai — har line par checkbox + qty
 /// stepper (max = us line ki original sold quantity). Cashier jo lines
 /// opt-in karega wahi customer se wapas li ja rahi hain. Bilkul
@@ -186,7 +188,7 @@ class _QtyStepperState extends State<_QtyStepper> {
               height: double.infinity,
               alignment: Alignment.center,
               decoration: BoxDecoration(color: color.withOpacity(0.08)),
-              child: Icon(Icons.remove, size: 14, color: color),
+              child: AppIcon(AppIcons.remove, size: 14, color: color),
             ),
           ),
           Expanded(
@@ -218,7 +220,7 @@ class _QtyStepperState extends State<_QtyStepper> {
               height: double.infinity,
               alignment: Alignment.center,
               decoration: BoxDecoration(color: color),
-              child: const Icon(Icons.add, size: 14, color: Colors.white),
+              child: const AppIcon(AppIcons.add, size: 14, color: Colors.white),
             ),
           ),
         ],

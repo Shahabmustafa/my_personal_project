@@ -9,6 +9,8 @@ import '../provider/sale_invoice_provider.dart';
 import '../widgets/sale_cart_table.dart';
 import '../widgets/sale_product_selector.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class SaleInvoiceScreen extends ConsumerWidget {
   const SaleInvoiceScreen({super.key});
 
@@ -73,8 +75,8 @@ class SaleInvoiceScreen extends ConsumerWidget {
                           onTap: () => ref
                               .read(saleInvoiceProvider.notifier)
                               .resetInvoice(),
-                          child: const Icon(
-                            Icons.refresh,
+                          child: const AppIcon(
+                            AppIcons.refresh,
                             size: 17,
                             color: Colors.red,
                           ),
@@ -170,15 +172,15 @@ class _SaleTypeToggle extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _seg('Cash', 'cash', Icons.payments_outlined, primary),
-          _seg('Card', 'card', Icons.credit_card_outlined, primary),
-          _seg('Cash + Card', 'cash_card', Icons.sync_alt, primary),
+          _seg('Cash', 'cash', AppIcons.paymentsOutlined, primary),
+          _seg('Card', 'card', AppIcons.creditCardOutlined, primary),
+          _seg('Cash + Card', 'cash_card', AppIcons.syncAlt, primary),
         ],
       ),
     );
   }
 
-  Widget _seg(String label, String type, IconData icon, Color primary) {
+  Widget _seg(String label, String type, String icon, Color primary) {
     final selected = value == type;
     return InkWell(
       onTap: () => onChanged(type),
@@ -190,7 +192,7 @@ class _SaleTypeToggle extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
+            AppIcon(
               icon,
               size: 16,
               color: selected ? Colors.white : Colors.grey.shade600,
@@ -572,7 +574,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
           ),
           const SizedBox(width: 20),
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -601,7 +603,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
                         color: Colors.white,
                       ),
                     )
-                  : const Icon(Icons.receipt_long, size: 18),
+                  : const AppIcon(AppIcons.receiptLong, size: 18),
               label: const Text('Sale Invoice'),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
@@ -671,8 +673,8 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(
-                Icons.warning_amber_rounded,
+              const AppIcon(
+                AppIcons.warningAmberRounded,
                 color: Colors.white,
                 size: 18,
               ),
@@ -695,7 +697,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Row(
           children: [
-            Icon(Icons.receipt_long, color: Colors.green, size: 22),
+            AppIcon(AppIcons.receiptLong, color: Colors.green, size: 22),
             SizedBox(width: 8),
             Text(
               'Confirm Sale Invoice',
@@ -766,8 +768,8 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
     await showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        icon: const Icon(
-          Icons.check_circle_outline,
+        icon: const AppIcon(
+          AppIcons.checkCircleOutline,
           color: Colors.green,
           size: 48,
         ),
@@ -814,7 +816,7 @@ class _ManagerWarningBanner extends ConsumerWidget {
       ),
       child: const Row(
         children: [
-          Icon(Icons.error_outline, size: 18, color: fg),
+          AppIcon(AppIcons.errorOutline, size: 18, color: fg),
           SizedBox(width: 10),
           Expanded(
             child: Text(

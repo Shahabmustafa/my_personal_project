@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../auth/data/model/user_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class UserCard extends StatelessWidget {
   final UserModel user;
   final bool canEdit;
@@ -75,14 +77,14 @@ class UserCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 _OutlineBtn(
-                  icon: user.isActive ? Icons.block : Icons.check_circle_outline,
+                  icon: user.isActive ? AppIcons.block : AppIcons.checkCircleOutline,
                   label: user.isActive ? 'Deactivate' : 'Activate',
                   color: user.isActive ? Colors.redAccent : Colors.green,
                   onTap: onToggleActive,
                 ),
                 const SizedBox(width: 8),
                 _OutlineBtn(
-                  icon: Icons.link,
+                  icon: AppIcons.link,
                   label: 'Assign',
                   color: const Color(0xFF3E63DD),
                   onTap: onAssign,
@@ -100,9 +102,9 @@ class UserCard extends StatelessWidget {
                 spacing: 6,
                 children: [
                   if (user.branchIds.isNotEmpty)
-                    _InfoChip(icon: Icons.apartment_outlined, label: '${user.branchIds.length} branch(es)'),
+                    _InfoChip(icon: AppIcons.apartmentOutlined, label: '${user.branchIds.length} branch(es)'),
                   if (user.warehouseIds.isNotEmpty)
-                    _InfoChip(icon: Icons.warehouse_outlined, label: '${user.warehouseIds.length} warehouse(s)'),
+                    _InfoChip(icon: AppIcons.warehouseOutlined, label: '${user.warehouseIds.length} warehouse(s)'),
                 ],
               ),
             ),
@@ -169,7 +171,7 @@ class _RoleBadge extends StatelessWidget {
 }
 
 class _InfoChip extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
   const _InfoChip({required this.icon, required this.label});
 
@@ -181,7 +183,7 @@ class _InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: const Color(0xFF8A8FA3)),
+          AppIcon(icon, size: 12, color: const Color(0xFF8A8FA3)),
           const SizedBox(width: 4),
           Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3))),
         ],
@@ -191,7 +193,7 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _OutlineBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
   final Color color;
   final VoidCallback onTap;
@@ -201,7 +203,7 @@ class _OutlineBtn extends StatelessWidget {
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 15, color: color),
+      icon: AppIcon(icon, size: 15, color: color),
       label: Text(label, style: TextStyle(fontSize: 12, color: color)),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),

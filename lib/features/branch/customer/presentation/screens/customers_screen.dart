@@ -7,6 +7,8 @@ import '../providers/customer_provider.dart';
 import '../widgets/customer_form_dialog.dart';
 import '../widgets/loyalty_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class CustomersScreen extends ConsumerStatefulWidget {
   const CustomersScreen({super.key});
 
@@ -46,7 +48,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(context),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18),
                   label: const Text('Add Customer'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
@@ -299,7 +301,7 @@ class _DesktopTable extends StatelessWidget {
                           flex: 2,
                           child: _TD(
                               child: Row(children: [
-                                const Icon(Icons.star,
+                                const AppIcon(AppIcons.star,
                                     size: 14, color: Color(0xFFD4A017)),
                                 const SizedBox(width: 4),
                                 Text('${c.loyaltyPoints}',
@@ -320,21 +322,21 @@ class _DesktopTable extends StatelessWidget {
                                           fontStyle: FontStyle.italic))
                                   : Row(children: [
                                 _IconBtn(
-                                  icon: Icons.star_outline,
+                                  icon: AppIcons.starOutline,
                                   color: const Color(0xFFD4A017),
                                   tooltip: 'Loyalty Points',
                                   onTap: () => onLoyalty(c),
                                 ),
                                 const SizedBox(width: 6),
                                 _IconBtn(
-                                  icon: Icons.edit_outlined,
+                                  icon: AppIcons.editOutlined,
                                   color: const Color(0xFF3E63DD),
                                   tooltip: 'Edit',
                                   onTap: () => onEdit(c),
                                 ),
                                 const SizedBox(width: 6),
                                 _IconBtn(
-                                  icon: Icons.delete_outline,
+                                  icon: AppIcons.deleteOutline,
                                   color: Colors.redAccent,
                                   tooltip: 'Delete',
                                   onTap: () => onDelete(c),
@@ -431,14 +433,14 @@ class _MobileList extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.star,
+                  const AppIcon(AppIcons.star,
                       size: 14, color: Color(0xFFD4A017)),
                   const SizedBox(width: 4),
                   Text('${c.loyaltyPoints} pts',
                       style: const TextStyle(
                           fontSize: 13, fontWeight: FontWeight.w500)),
                   const SizedBox(width: 16),
-                  const Icon(Icons.account_balance_wallet_outlined,
+                  const AppIcon(AppIcons.accountBalanceWalletOutlined,
                       size: 14, color: Color(0xFF8A8FA3)),
                   const SizedBox(width: 4),
                   Text('Rs. ${c.openingBalance.toStringAsFixed(0)}',
@@ -460,19 +462,19 @@ class _MobileList extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     _IconBtn(
-                        icon: Icons.star_outline,
+                        icon: AppIcons.starOutline,
                         color: const Color(0xFFD4A017),
                         tooltip: 'Loyalty',
                         onTap: () => onLoyalty(c)),
                     const SizedBox(width: 8),
                     _IconBtn(
-                        icon: Icons.edit_outlined,
+                        icon: AppIcons.editOutlined,
                         color: const Color(0xFF3E63DD),
                         tooltip: 'Edit',
                         onTap: () => onEdit(c)),
                     const SizedBox(width: 8),
                     _IconBtn(
-                        icon: Icons.delete_outline,
+                        icon: AppIcons.deleteOutline,
                         color: Colors.redAccent,
                         tooltip: 'Delete',
                         onTap: () => onDelete(c)),
@@ -524,7 +526,7 @@ class _TD extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -546,7 +548,7 @@ class _IconBtn extends StatelessWidget {
           decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(6)),
-          child: Icon(icon, size: 16, color: color),
+          child: AppIcon(icon, size: 16, color: color),
         ),
       ),
     );
@@ -574,7 +576,7 @@ class _SharedBadge extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+  prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
   filled: true,
   fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),

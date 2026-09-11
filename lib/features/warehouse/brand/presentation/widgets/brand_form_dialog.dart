@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/brand_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BrandFormDialog extends StatefulWidget {
   final BrandModel? item;
   final ValueChanged<BrandModel> onSave;
@@ -38,7 +40,7 @@ class _BrandFormDialogState extends State<BrandFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.branding_watermark_outlined, color: Color(0xFF3E63DD), size: 20),
+          const AppIcon(AppIcons.brandingWatermarkOutlined, color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Brand' : 'Add Brand',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -55,7 +57,7 @@ class _BrandFormDialogState extends State<BrandFormDialog> {
               labelText: 'Brand Name *',
               hintText: 'e.g. Nike',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Icon(Icons.branding_watermark_outlined, size: 18, color: Color(0xFF8A8FA3)),
+              prefixIcon: const AppIcon(AppIcons.brandingWatermarkOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

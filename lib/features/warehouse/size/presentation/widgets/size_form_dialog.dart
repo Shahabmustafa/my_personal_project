@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/size_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class SizeFormDialog extends StatefulWidget {
   final SizeModel? item;
   final ValueChanged<SizeModel> onSave;
@@ -38,7 +40,7 @@ class _SizeFormDialogState extends State<SizeFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.format_size_outlined, color: Color(0xFF3E63DD), size: 20),
+          const AppIcon(AppIcons.formatSizeOutlined, color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Size' : 'Add Size',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -55,7 +57,7 @@ class _SizeFormDialogState extends State<SizeFormDialog> {
               labelText: 'Size Number *',
               hintText: 'e.g. 42',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Icon(Icons.format_size_outlined, size: 18, color: Color(0xFF8A8FA3)),
+              prefixIcon: const AppIcon(AppIcons.formatSizeOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

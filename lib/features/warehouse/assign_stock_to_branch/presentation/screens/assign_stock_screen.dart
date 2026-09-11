@@ -6,6 +6,8 @@ import '../providers/assign_stock_provider.dart';
 import '../widgets/assign_cart_table.dart';
 import '../widgets/assign_product_selector.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AssignStockScreen extends ConsumerWidget {
   const AssignStockScreen({super.key});
 
@@ -22,7 +24,7 @@ class AssignStockScreen extends ConsumerWidget {
           // ── Title ─────────────────────────────────────────────────────
           const Row(
             children: [
-              Icon(Icons.local_shipping_outlined,
+              AppIcon(AppIcons.localShippingOutlined,
                   color: Color(0xFF1565C0), size: 24),
               SizedBox(width: 8),
               Text(
@@ -75,7 +77,7 @@ class AssignStockScreen extends ConsumerWidget {
                           onTap: () => ref
                               .read(assignStockProvider.notifier)
                               .resetAssignment(),
-                          child: const Icon(Icons.refresh,
+                          child: const AppIcon(AppIcons.refresh,
                               size: 17, color: Colors.red),
                         ),
                       ],
@@ -128,13 +130,13 @@ class AssignStockScreen extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search branch...',
-                            prefixIcon: Icon(Icons.search, size: 18),
+                            prefixIcon: AppIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),
                         itemBuilder: (ctx, branch, isSelected, _) =>
                             ListTile(
-                          leading: const Icon(Icons.store_outlined,
+                          leading: const AppIcon(AppIcons.storeOutlined,
                               size: 18, color: Color(0xFF1565C0)),
                           title: Text(branch.branchName,
                               style: const TextStyle(
@@ -240,7 +242,7 @@ class _AssignFooter extends ConsumerWidget {
           if (state.selectedBranch != null)
             Row(
               children: [
-                const Icon(Icons.store_outlined,
+                const AppIcon(AppIcons.storeOutlined,
                     size: 16, color: Color(0xFF1565C0)),
                 const SizedBox(width: 6),
                 Text(
@@ -255,7 +257,7 @@ class _AssignFooter extends ConsumerWidget {
 
           // Clear button
           OutlinedButton.icon(
-            icon: const Icon(Icons.clear_all, size: 18),
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
             label: const Text('Clear'),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.red,
@@ -279,7 +281,7 @@ class _AssignFooter extends ConsumerWidget {
                   child: Center(
                       child: CircularProgressIndicator(strokeWidth: 2)))
               : FilledButton.icon(
-                  icon: const Icon(Icons.send_outlined, size: 18),
+                  icon: const AppIcon(AppIcons.sendOutlined, size: 18),
                   label: const Text('Add Assign Stock to Branch'),
                   style: FilledButton.styleFrom(
                     backgroundColor: primary,
@@ -331,7 +333,7 @@ class _AssignFooter extends ConsumerWidget {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle_outline,
+              const AppIcon(AppIcons.checkCircleOutline,
                   color: Colors.white, size: 18),
               const SizedBox(width: 8),
               Text('Stock assigned to $branchName successfully'),
@@ -374,7 +376,7 @@ class _ConfirmSendDialog extends StatelessWidget {
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(
         children: [
-          Icon(Icons.local_shipping_outlined,
+          AppIcon(AppIcons.localShippingOutlined,
               color: Color(0xFF1565C0), size: 22),
           SizedBox(width: 8),
           Text('Confirm Assignment'),
@@ -399,7 +401,7 @@ class _ConfirmSendDialog extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.store_outlined,
+                    const AppIcon(AppIcons.storeOutlined,
                         size: 16, color: Color(0xFF1565C0)),
                     const SizedBox(width: 6),
                     Text(branchName,
@@ -412,9 +414,9 @@ class _ConfirmSendDialog extends StatelessWidget {
                 Row(
                   children: [
                     _chip('$totalItems Products',
-                        Icons.inventory_2_outlined),
+                        AppIcons.inventory2Outlined),
                     const SizedBox(width: 12),
-                    _chip('$totalQty Pairs', Icons.straighten_outlined),
+                    _chip('$totalQty Pairs', AppIcons.straightenOutlined),
                   ],
                 ),
               ],
@@ -446,9 +448,9 @@ class _ConfirmSendDialog extends StatelessWidget {
     );
   }
 
-  Widget _chip(String text, IconData icon) => Row(
+  Widget _chip(String text, String icon) => Row(
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF1565C0)),
+          AppIcon(icon, size: 14, color: const Color(0xFF1565C0)),
           const SizedBox(width: 4),
           Text(text,
               style: const TextStyle(

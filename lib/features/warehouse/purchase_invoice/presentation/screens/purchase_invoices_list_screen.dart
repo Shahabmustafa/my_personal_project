@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../providers/purchase_invoice_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class PurchaseInvoicesListScreen extends ConsumerStatefulWidget {
   const PurchaseInvoicesListScreen({super.key});
 
@@ -48,7 +50,7 @@ class _PurchaseInvoicesListScreenState
                 ),
               ),
               FilledButton.icon(
-                icon: const Icon(Icons.add),
+                icon: const AppIcon(AppIcons.add),
                 label: const Text('New Invoice'),
                 onPressed: () {
                   // Navigate to purchase invoice screen
@@ -75,7 +77,7 @@ class _PurchaseInvoicesListScreenState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.receipt_long_outlined,
+                    AppIcon(AppIcons.receiptLongOutlined,
                         size: 64, color: Colors.grey),
                     SizedBox(height: 12),
                     Text('No purchase invoices yet',

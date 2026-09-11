@@ -1,6 +1,8 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // AppSearchDropdown — single-select with built-in search (dropdown_search pkg)
 // Usage:
@@ -82,7 +84,7 @@ class AppSearchDropdown<T> extends StatelessWidget {
         searchFieldProps: TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search $label...',
-            prefixIcon: const Icon(Icons.search, size: 18),
+            prefixIcon: const AppIcon(AppIcons.search, size: 18),
             border:
             OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding:
@@ -106,7 +108,7 @@ class AppSearchDropdown<T> extends StatelessWidget {
                 isSelected ? FontWeight.w600 : FontWeight.normal),
           ),
           trailing: isSelected
-              ? Icon(Icons.check,
+              ? AppIcon(AppIcons.check,
               color: theme.colorScheme.primary, size: 18)
               : null,
           tileColor: isSelected
@@ -180,7 +182,7 @@ class AppMultiSelectDropdown<T> extends StatelessWidget {
           const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           filled: true,
           fillColor: Colors.white,
-          suffixIcon: const Icon(Icons.arrow_drop_down),
+          suffixIcon: const AppIcon(AppIcons.arrowDropDown),
         ),
         child: selectedItems.isEmpty
             ? Text(
@@ -195,7 +197,7 @@ class AppMultiSelectDropdown<T> extends StatelessWidget {
               .map((item) => Chip(
             label: Text(itemLabel(item),
                 style: const TextStyle(fontSize: 12)),
-            deleteIcon: const Icon(Icons.close, size: 14),
+            deleteIcon: const AppIcon(AppIcons.close, size: 14),
             materialTapTargetSize:
             MaterialTapTargetSize.shrinkWrap,
             padding: const EdgeInsets.symmetric(
@@ -297,7 +299,7 @@ class _MultiSelectDialogState<T> extends State<_MultiSelectDialog<T>> {
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(
                   hintText: 'Search ${widget.label}...',
-                  prefixIcon: const Icon(Icons.search, size: 18),
+                  prefixIcon: const AppIcon(AppIcons.search, size: 18),
                   isDense: true,
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8)),

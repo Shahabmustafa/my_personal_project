@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/warehouse_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class WarehouseCard extends StatelessWidget {
   final WarehouseModel warehouse;
   final bool canEdit;
@@ -32,7 +34,7 @@ class WarehouseCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.warehouse_outlined, color: Color(0xFF2E7D32), size: 22),
+            child: const AppIcon(AppIcons.warehouseOutlined, color: Color(0xFF2E7D32), size: 22),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -46,9 +48,9 @@ class WarehouseCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 6),
-                if (warehouse.address.isNotEmpty) _IconRow(icon: Icons.location_on_outlined, text: warehouse.address),
-                if (warehouse.city.isNotEmpty) _IconRow(icon: Icons.location_city, text: warehouse.city),
-                if (warehouse.phoneNumber.isNotEmpty) _IconRow(icon: Icons.phone_outlined, text: warehouse.phoneNumber),
+                if (warehouse.address.isNotEmpty) _IconRow(icon: AppIcons.locationOnOutlined, text: warehouse.address),
+                if (warehouse.city.isNotEmpty) _IconRow(icon: AppIcons.locationCity, text: warehouse.city),
+                if (warehouse.phoneNumber.isNotEmpty) _IconRow(icon: AppIcons.phoneOutlined, text: warehouse.phoneNumber),
               ],
             ),
           ),
@@ -56,9 +58,9 @@ class WarehouseCard extends StatelessWidget {
             const SizedBox(width: 8),
             Column(
               children: [
-                _ActionBtn(icon: Icons.edit_outlined, color: const Color(0xFF3E63DD), onTap: onEdit),
+                _ActionBtn(icon: AppIcons.editOutlined, color: const Color(0xFF3E63DD), onTap: onEdit),
                 const SizedBox(height: 6),
-                _ActionBtn(icon: Icons.delete_outline, color: Colors.redAccent, onTap: onDelete),
+                _ActionBtn(icon: AppIcons.deleteOutline, color: Colors.redAccent, onTap: onDelete),
               ],
             ),
           ],
@@ -89,7 +91,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _IconRow extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String text;
   const _IconRow({required this.icon, required this.text});
 
@@ -99,7 +101,7 @@ class _IconRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: const Color(0xFF8A8FA3)),
+          AppIcon(icon, size: 13, color: const Color(0xFF8A8FA3)),
           const SizedBox(width: 5),
           Expanded(child: Text(text, style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
         ],
@@ -109,7 +111,7 @@ class _IconRow extends StatelessWidget {
 }
 
 class _ActionBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final VoidCallback onTap;
   const _ActionBtn({required this.icon, required this.color, required this.onTap});
@@ -122,7 +124,7 @@ class _ActionBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 18, color: color),
+        child: AppIcon(icon, size: 18, color: color),
       ),
     );
   }

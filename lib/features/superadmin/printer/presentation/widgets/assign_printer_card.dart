@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/assign_printer_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AssignPrinterCard extends StatelessWidget {
   final AssignPrinterModel item;
   final VoidCallback onDelete;
@@ -94,7 +96,7 @@ class AssignPrinterCard extends StatelessWidget {
                           color: const Color(0xFFEAF5E6),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Icon(Icons.store_outlined,
+                        child: const AppIcon(AppIcons.storeOutlined,
                             size: 15, color: Color(0xFF2E7D32)),
                       ),
                       const SizedBox(width: 8),
@@ -115,7 +117,7 @@ class AssignPrinterCard extends StatelessWidget {
                                 item.branchCity.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               _IconRow(
-                                icon: Icons.location_on_outlined,
+                                icon: AppIcons.locationOnOutlined,
                                 text: [item.branchAddress, item.branchCity]
                                     .where((s) => s.isNotEmpty)
                                     .join(', '),
@@ -132,16 +134,16 @@ class AssignPrinterCard extends StatelessWidget {
                 // Printer details
                 if (item.printerPhone.isNotEmpty)
                   _IconRow(
-                      icon: Icons.phone_outlined,
+                      icon: AppIcons.phoneOutlined,
                       text: item.printerPhone),
                 if (item.printerAddress.isNotEmpty)
                   _IconRow(
-                      icon: Icons.location_on_outlined,
+                      icon: AppIcons.locationOnOutlined,
                       text: item.printerAddress),
 
                 const SizedBox(height: 4),
                 _IconRow(
-                  icon: Icons.calendar_today_outlined,
+                  icon: AppIcons.calendarTodayOutlined,
                   text: _fmt(item.createdAt),
                 ),
               ],
@@ -159,7 +161,7 @@ class AssignPrinterCard extends StatelessWidget {
                 color: Colors.redAccent.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.delete_outline,
+              child: const AppIcon(AppIcons.deleteOutline,
                   size: 18, color: Colors.redAccent),
             ),
           ),
@@ -184,14 +186,14 @@ class _DefaultPrinterIcon extends StatelessWidget {
         color: const Color(0xFFEAEFFD),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: const Icon(Icons.print_outlined,
+      child: const AppIcon(AppIcons.printOutlined,
           color: Color(0xFF3E63DD), size: 22),
     );
   }
 }
 
 class _IconRow extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String text;
   const _IconRow({required this.icon, required this.text});
 
@@ -201,7 +203,7 @@ class _IconRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: const Color(0xFF8A8FA3)),
+          AppIcon(icon, size: 13, color: const Color(0xFF8A8FA3)),
           const SizedBox(width: 5),
           Expanded(
             child: Text(

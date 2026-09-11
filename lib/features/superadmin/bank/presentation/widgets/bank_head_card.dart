@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/bank_head_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BankHeadCard extends StatelessWidget {
   final BankHeadModel bank;
   final VoidCallback onDelete;
@@ -26,7 +28,7 @@ class BankHeadCard extends StatelessWidget {
               color: const Color(0xFFEAEFFD),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.account_balance_outlined,
+            child: const AppIcon(AppIcons.accountBalanceOutlined,
                 color: Color(0xFF3E63DD), size: 22),
           ),
           const SizedBox(width: 14),
@@ -40,7 +42,7 @@ class BankHeadCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined,
+                    const AppIcon(AppIcons.calendarTodayOutlined,
                         size: 12, color: Color(0xFF8A8FA3)),
                     const SizedBox(width: 4),
                     Text(
@@ -62,7 +64,7 @@ class BankHeadCard extends StatelessWidget {
                 color: Colors.redAccent.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.delete_outline,
+              child: const AppIcon(AppIcons.deleteOutline,
                   size: 18, color: Colors.redAccent),
             ),
           ),

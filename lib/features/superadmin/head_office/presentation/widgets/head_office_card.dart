@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/head_office_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class HeadOfficeCard extends StatelessWidget {
   final HeadOfficeModel headOffice;
   final bool canEdit;
@@ -34,7 +36,7 @@ class HeadOfficeCard extends StatelessWidget {
             decoration: BoxDecoration(
                 color: const Color(0xFFEAEFFD),
                 borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.business_outlined,
+            child: const AppIcon(AppIcons.businessOutlined,
                 color: Color(0xFF3E63DD), size: 22),
           ),
           const SizedBox(width: 14),
@@ -54,13 +56,13 @@ class HeadOfficeCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 if (headOffice.address.isNotEmpty)
                   _IconRow(
-                      icon: Icons.location_on_outlined,
+                      icon: AppIcons.locationOnOutlined,
                       text: headOffice.address),
                 if (headOffice.city.isNotEmpty)
-                  _IconRow(icon: Icons.location_city, text: headOffice.city),
+                  _IconRow(icon: AppIcons.locationCity, text: headOffice.city),
                 if (headOffice.phoneNumber.isNotEmpty)
                   _IconRow(
-                      icon: Icons.phone_outlined, text: headOffice.phoneNumber),
+                      icon: AppIcons.phoneOutlined, text: headOffice.phoneNumber),
               ],
             ),
           ),
@@ -69,12 +71,12 @@ class HeadOfficeCard extends StatelessWidget {
             Column(
               children: [
                 _ActionBtn(
-                    icon: Icons.edit_outlined,
+                    icon: AppIcons.editOutlined,
                     color: const Color(0xFF3E63DD),
                     onTap: onEdit),
                 const SizedBox(height: 6),
                 _ActionBtn(
-                    icon: Icons.delete_outline,
+                    icon: AppIcons.deleteOutline,
                     color: Colors.redAccent,
                     onTap: onDelete),
               ],
@@ -110,7 +112,7 @@ class _StatusPill extends StatelessWidget {
 }
 
 class _IconRow extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String text;
   const _IconRow({required this.icon, required this.text});
 
@@ -120,7 +122,7 @@ class _IconRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: const Color(0xFF8A8FA3)),
+          AppIcon(icon, size: 13, color: const Color(0xFF8A8FA3)),
           const SizedBox(width: 5),
           Expanded(
               child: Text(text,
@@ -133,7 +135,7 @@ class _IconRow extends StatelessWidget {
 }
 
 class _ActionBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final VoidCallback onTap;
   const _ActionBtn(
@@ -149,7 +151,7 @@ class _ActionBtn extends StatelessWidget {
         decoration: BoxDecoration(
             color: color.withOpacity(0.08),
             borderRadius: BorderRadius.circular(8)),
-        child: Icon(icon, size: 18, color: color),
+        child: AppIcon(icon, size: 18, color: color),
       ),
     );
   }

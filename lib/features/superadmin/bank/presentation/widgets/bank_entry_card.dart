@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/models/bank_entry_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BankEntryCard extends StatelessWidget {
   final BankEntryModel entry;
   final VoidCallback onDelete;
@@ -32,7 +34,7 @@ class BankEntryCard extends StatelessWidget {
               color: const Color(0xFFEAEFFD),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.account_balance_outlined,
+            child: const AppIcon(AppIcons.accountBalanceOutlined,
                 color: Color(0xFF3E63DD), size: 22),
           ),
           const SizedBox(width: 14),
@@ -74,7 +76,7 @@ class BankEntryCard extends StatelessWidget {
                           color: const Color(0xFFEAF5E6),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Icon(Icons.store_outlined,
+                        child: const AppIcon(AppIcons.storeOutlined,
                             size: 15, color: Color(0xFF2E7D32)),
                       ),
                       const SizedBox(width: 8),
@@ -95,7 +97,7 @@ class BankEntryCard extends StatelessWidget {
                                 entry.branchCity.isNotEmpty) ...[
                               const SizedBox(height: 2),
                               _IconRow(
-                                icon: Icons.location_on_outlined,
+                                icon: AppIcons.locationOnOutlined,
                                 text: [entry.branchAddress, entry.branchCity]
                                     .where((s) => s.isNotEmpty)
                                     .join(', '),
@@ -112,14 +114,14 @@ class BankEntryCard extends StatelessWidget {
                 // Account number
                 if (entry.accountNumber.isNotEmpty)
                   _IconRow(
-                    icon: Icons.numbers_outlined,
+                    icon: AppIcons.numbersOutlined,
                     text: 'A/C: ${entry.accountNumber}',
                     bold: true,
                   ),
 
                 const SizedBox(height: 4),
                 _IconRow(
-                  icon: Icons.calendar_today_outlined,
+                  icon: AppIcons.calendarTodayOutlined,
                   text: _fmt(entry.createdAt),
                 ),
               ],
@@ -129,7 +131,7 @@ class BankEntryCard extends StatelessWidget {
 
           // Delete button
           _ActionBtn(
-            icon: Icons.delete_outline,
+            icon: AppIcons.deleteOutline,
             color: Colors.redAccent,
             onTap: onDelete,
           ),
@@ -171,7 +173,7 @@ class _BalanceBadge extends StatelessWidget {
 }
 
 class _IconRow extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String text;
   final bool bold;
   const _IconRow({required this.icon, required this.text, this.bold = false});
@@ -182,7 +184,7 @@ class _IconRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         children: [
-          Icon(icon, size: 13, color: const Color(0xFF8A8FA3)),
+          AppIcon(icon, size: 13, color: const Color(0xFF8A8FA3)),
           const SizedBox(width: 5),
           Expanded(
             child: Text(
@@ -202,7 +204,7 @@ class _IconRow extends StatelessWidget {
 }
 
 class _ActionBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final VoidCallback onTap;
   const _ActionBtn({required this.icon, required this.color, required this.onTap});
@@ -218,7 +220,7 @@ class _ActionBtn extends StatelessWidget {
           color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 18, color: color),
+        child: AppIcon(icon, size: 18, color: color),
       ),
     );
   }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/customer_model.dart';
 import '../providers/customer_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class LoyaltyDialog extends ConsumerStatefulWidget {
   final CustomerModel customer;
   const LoyaltyDialog({super.key, required this.customer});
@@ -72,7 +74,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.star_outline, color: Color(0xFFD4A017), size: 22),
+          const AppIcon(AppIcons.starOutline, color: Color(0xFFD4A017), size: 22),
           const SizedBox(width: 8),
           Text('Loyalty Points — ${widget.customer.name}',
               style:
@@ -97,7 +99,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.star, color: Color(0xFFD4A017), size: 28),
+                    const AppIcon(AppIcons.star, color: Color(0xFFD4A017), size: 28),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +185,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
                 decoration: InputDecoration(
                   labelText: _isAdd ? 'Points to Add' : 'Points to Redeem',
                   hintText: 'e.g. 50',
-                  prefixIcon: const Icon(Icons.star_outline,
+                  prefixIcon: const AppIcon(AppIcons.starOutline,
                       size: 18, color: Color(0xFF8A8FA3)),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(

@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../data/model/product_model.dart';
 import '../providers/product_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class ProductFormDialog extends ConsumerStatefulWidget {
   final ProductModel? product;
   final VoidCallback? onSaved;
@@ -167,7 +169,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.inventory_2_outlined,
+          const AppIcon(AppIcons.inventory2Outlined,
               color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Product' : 'Add Product',
@@ -230,7 +232,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   controller: _nameCtrl,
                   label: 'Article Name *',
                   hint: 'e.g. Sports Shoe 001',
-                  icon: Icons.inventory_2_outlined,
+                  icon: AppIcons.inventory2Outlined,
                   onChanged: (_) {
                     if (_duplicateNameError != null) {
                       setState(() => _duplicateNameError = null);
@@ -249,7 +251,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   controller: _salePriceCtrl,
                   label: 'Sale Price *',
                   hint: '0.00',
-                  icon: Icons.sell_outlined,
+                  icon: AppIcons.sellOutlined,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) {
@@ -265,7 +267,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   controller: _purchasePriceCtrl,
                   label: 'Purchase Price *',
                   hint: '0.00',
-                  icon: Icons.shopping_cart_outlined,
+                  icon: AppIcons.shoppingCartOutlined,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   validator: (v) {
@@ -311,7 +313,7 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
   Widget _uploadPlaceholder() => Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: const [
-          Icon(Icons.add_photo_alternate_outlined,
+          AppIcon(AppIcons.addPhotoAlternateOutlined,
               size: 36, color: Color(0xFF8A8FA3)),
           SizedBox(height: 8),
           Text('Tap to upload image',
@@ -324,7 +326,7 @@ class _Field extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final IconData icon;
+  final String icon;
   final TextInputType keyboardType;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
@@ -351,7 +353,7 @@ class _Field extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: Icon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_return_model.dart';
 import '../provider/sale_return_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Sale Invoice ke [SaleCartTable] jaisa hi hai — return cart ke liye,
 /// qty par koi stock-cap nahi.
 class SaleReturnCartTable extends ConsumerWidget {
@@ -17,7 +19,7 @@ class SaleReturnCartTable extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.assignment_return_outlined, size: 64, color: Colors.grey.shade300),
+            AppIcon(AppIcons.assignmentReturnOutlined, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 12),
             Text('No items to return',
                 style: TextStyle(
@@ -136,7 +138,7 @@ class _CartRow extends ConsumerWidget {
             flex: 1,
             child: Center(
               child: IconButton(
-                icon: const Icon(Icons.delete_outline, size: 17, color: Colors.red),
+                icon: const AppIcon(AppIcons.deleteOutline, size: 17, color: Colors.red),
                 onPressed: () => notifier.removeItem(item.branchStockId),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -213,7 +215,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
       child: Row(
         children: [
           _btn(
-            icon: Icons.remove,
+            icon: AppIcons.remove,
             color: color.withOpacity(0.08),
             iconColor: color,
             radius: const BorderRadius.horizontal(left: Radius.circular(6)),
@@ -241,7 +243,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
             ),
           ),
           _btn(
-            icon: Icons.add,
+            icon: AppIcons.add,
             color: color,
             iconColor: Colors.white,
             radius: const BorderRadius.horizontal(right: Radius.circular(6)),
@@ -258,7 +260,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
   }
 
   Widget _btn({
-    required IconData icon,
+    required String icon,
     required Color color,
     required Color iconColor,
     required BorderRadius radius,
@@ -272,7 +274,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
           height: double.infinity,
           decoration: BoxDecoration(color: color, borderRadius: radius),
           alignment: Alignment.center,
-          child: Icon(icon, size: 15, color: iconColor),
+          child: AppIcon(icon, size: 15, color: iconColor),
         ),
       );
 }
@@ -368,7 +370,7 @@ class _MobileList extends ConsumerWidget {
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 12, fontFamily: 'monospace'))),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                      icon: const AppIcon(AppIcons.deleteOutline, color: Colors.red, size: 18),
                       onPressed: () => notifier.removeItem(item.branchStockId),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),

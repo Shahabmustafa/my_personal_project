@@ -9,6 +9,8 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import 'select_workspace_screen.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -118,8 +120,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           color: Theme.of(context).primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.store_mall_directory_rounded,
+                        child: AppIcon(
+                          AppIcons.storeMallDirectoryRounded,
                           size: 42,
                           color: Theme.of(context).primaryColor,
                         ),
@@ -149,7 +151,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailController,
                       label: 'Email',
                       hint: 'you@example.com',
-                      icon: Icons.email_outlined,
+                      icon: AppIcons.emailOutlined,
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
@@ -169,13 +171,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _passwordController,
                       label: 'Password',
                       hint: 'Enter your password',
-                      icon: Icons.lock_outline,
+                      icon: AppIcons.lockOutline,
                       obscureText: _obscurePassword,
                       suffixIcon: IconButton(
-                        icon: Icon(
+                        icon: AppIcon(
                           _obscurePassword
-                              ? Icons.visibility_off_outlined
-                              : Icons.visibility_outlined,
+                              ? AppIcons.visibilityOffOutlined
+                              : AppIcons.visibilityOutlined,
                           color: Colors.grey.shade600,
                         ),
                         onPressed: () => setState(

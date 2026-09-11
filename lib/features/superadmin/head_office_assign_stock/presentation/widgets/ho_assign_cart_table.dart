@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class HoAssignCartTable extends ConsumerWidget {
   const HoAssignCartTable({super.key});
 
@@ -15,7 +17,7 @@ class HoAssignCartTable extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.local_shipping_outlined,
+            AppIcon(AppIcons.localShippingOutlined,
                 size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 12),
             Text('No Products Added',
@@ -184,7 +186,7 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
           Expanded(
             flex: 1,
             child: IconButton(
-              icon: const Icon(Icons.delete_outline,
+              icon: const AppIcon(AppIcons.deleteOutline,
                   color: Colors.red, size: 18),
               onPressed: () => notifier.removeItem(item.stockId),
               padding: EdgeInsets.zero,
@@ -267,7 +269,7 @@ class _QtyStepperState extends State<_QtyStepper> {
       child: Row(
         children: [
           _btn(
-            icon: Icons.remove,
+            icon: AppIcons.remove,
             color: color.withOpacity(0.08),
             iconColor: color,
             radius: const BorderRadius.horizontal(left: Radius.circular(5)),
@@ -298,7 +300,7 @@ class _QtyStepperState extends State<_QtyStepper> {
             ),
           ),
           _btn(
-            icon: Icons.add,
+            icon: AppIcons.add,
             color: color,
             iconColor: Colors.white,
             radius:
@@ -317,7 +319,7 @@ class _QtyStepperState extends State<_QtyStepper> {
   }
 
   Widget _btn({
-    required IconData icon,
+    required String icon,
     required Color color,
     required Color iconColor,
     required BorderRadius radius,
@@ -331,7 +333,7 @@ class _QtyStepperState extends State<_QtyStepper> {
           height: double.infinity,
           decoration: BoxDecoration(color: color, borderRadius: radius),
           alignment: Alignment.center,
-          child: Icon(icon, size: 14, color: iconColor),
+          child: AppIcon(icon, size: 14, color: iconColor),
         ),
       );
 }
@@ -430,7 +432,7 @@ class _MobileList extends ConsumerWidget {
                                 fontWeight: FontWeight.w700,
                                 fontSize: 13))),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline,
+                      icon: const AppIcon(AppIcons.deleteOutline,
                           color: Colors.red, size: 18),
                       onPressed: () => notifier.removeItem(item.stockId),
                       padding: EdgeInsets.zero,

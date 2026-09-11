@@ -5,6 +5,8 @@ import '../providers/printer_providers.dart';
 import '../widgets/assign_printer_card.dart';
 import '../widgets/assign_printer_form_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class AssignPrinterScreen extends ConsumerStatefulWidget {
   const AssignPrinterScreen({super.key});
 
@@ -69,7 +71,7 @@ class _AssignPrinterScreenState extends ConsumerState<AssignPrinterScreen> {
                     const Spacer(),
                     ElevatedButton.icon(
                       onPressed: () => _showAddDialog(context),
-                      icon: const Icon(Icons.add, size: 18),
+                      icon: const AppIcon(AppIcons.add, size: 18),
                       label: const Text('Assign Printer'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3E63DD),
@@ -302,8 +304,8 @@ class _DesktopTable extends StatelessWidget {
                                   borderRadius:
                                       BorderRadius.circular(6),
                                 ),
-                                child: const Icon(
-                                    Icons.store_outlined,
+                                child: const AppIcon(
+                                    AppIcons.storeOutlined,
                                     size: 15,
                                     color: Color(0xFF2E7D32)),
                               ),
@@ -332,11 +334,11 @@ class _DesktopTable extends StatelessWidget {
                               children: [
                                 if (item.branchAddress.isNotEmpty)
                                   _MiniRow(
-                                      icon: Icons.location_on_outlined,
+                                      icon: AppIcons.locationOnOutlined,
                                       text: item.branchAddress),
                                 if (item.branchCity.isNotEmpty)
                                   _MiniRow(
-                                      icon: Icons.location_city_outlined,
+                                      icon: AppIcons.locationCityOutlined,
                                       text: item.branchCity),
                                 if (item.branchAddress.isEmpty &&
                                     item.branchCity.isEmpty)
@@ -381,7 +383,7 @@ class _DesktopTable extends StatelessWidget {
                           flex: 2,
                           child: _TD(
                             child: _IconBtn(
-                              icon: Icons.delete_outline,
+                              icon: AppIcons.deleteOutline,
                               color: Colors.redAccent,
                               tooltip: 'Remove',
                               onTap: () => onDelete(item),
@@ -424,7 +426,7 @@ class _DesktopTable extends StatelessWidget {
         color: const Color(0xFFEAEFFD),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: const Icon(Icons.print_outlined,
+      child: const AppIcon(AppIcons.printOutlined,
           size: 15, color: Color(0xFF3E63DD)),
     );
   }
@@ -490,13 +492,13 @@ class _TD extends StatelessWidget {
 }
 
 class _MiniRow extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String text;
   const _MiniRow({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) => Row(children: [
-        Icon(icon, size: 11, color: const Color(0xFF8A8FA3)),
+        AppIcon(icon, size: 11, color: const Color(0xFF8A8FA3)),
         const SizedBox(width: 4),
         Expanded(
           child: Text(text,
@@ -508,7 +510,7 @@ class _MiniRow extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
@@ -529,7 +531,7 @@ class _IconBtn extends StatelessWidget {
             decoration: BoxDecoration(
                 color: color.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(6)),
-            child: Icon(icon, size: 16, color: color),
+            child: AppIcon(icon, size: 16, color: color),
           ),
         ),
       );
@@ -544,7 +546,7 @@ class _ErrorView extends StatelessWidget {
   Widget build(BuildContext context) => Center(
         child:
             Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.error_outline,
+          const AppIcon(AppIcons.errorOutline,
               size: 48, color: Colors.redAccent),
           const SizedBox(height: 12),
           Text(message,
@@ -563,7 +565,7 @@ class _EmptyView extends StatelessWidget {
   Widget build(BuildContext context) => Center(
         child:
             Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.print_disabled_outlined,
+          AppIcon(AppIcons.printDisabledOutlined,
               size: 48, color: Colors.grey[300]),
           const SizedBox(height: 12),
           const Text('No assignments found',
@@ -576,7 +578,7 @@ InputDecoration _searchDecor(String hint) => InputDecoration(
       hintText: hint,
       hintStyle:
           const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-      prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+      prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),

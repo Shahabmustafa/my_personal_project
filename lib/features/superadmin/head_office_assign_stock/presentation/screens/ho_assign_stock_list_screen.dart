@@ -8,6 +8,8 @@ import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Head office → branch stock assignment history. Lays the data out the same
 /// way as the sale reports: summary cards, a scrollable [ReportTableShell]
 /// table, a right slide-in detail panel on "View", and a pagination bar.
@@ -76,7 +78,7 @@ class _HoAssignStockListScreenState
         children: [
           Row(
             children: [
-              const Icon(Icons.history, color: _accent, size: 24),
+              const AppIcon(AppIcons.history, color: _accent, size: 24),
               const SizedBox(width: 8),
               const Expanded(
                 child: Text('Assignment History',
@@ -90,12 +92,12 @@ class _HoAssignStockListScreenState
                     _endDate = null;
                     _page = 1;
                   }),
-                  icon: const Icon(Icons.clear, size: 16),
+                  icon: const AppIcon(AppIcons.clear, size: 16),
                   label: Text(_rangeLabel(_startDate, _endDate)),
                 ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
-                icon: const Icon(Icons.filter_alt_outlined, size: 18),
+                icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
                 label: const Text('Filter'),
                 onPressed: () async {
                   final result = await showDialog<(DateTime?, DateTime?)?>(
@@ -114,7 +116,7 @@ class _HoAssignStockListScreenState
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const AppIcon(AppIcons.refresh),
                 tooltip: 'Refresh',
                 onPressed: notifier.loadAssignments,
               ),
@@ -126,7 +128,7 @@ class _HoAssignStockListScreenState
               child: ReportSummaryCard(
                 label: 'Total Assignments',
                 value: '$totalCount',
-                icon: Icons.assignment_outlined,
+                icon: AppIcons.assignmentOutlined,
                 color: _accent,
               ),
             ),
@@ -135,7 +137,7 @@ class _HoAssignStockListScreenState
               child: ReportSummaryCard(
                 label: 'Pairs Assigned',
                 value: '$totalPairs',
-                icon: Icons.inventory_2_outlined,
+                icon: AppIcons.inventory2Outlined,
                 color: const Color(0xFF6A1B9A),
               ),
             ),
@@ -144,7 +146,7 @@ class _HoAssignStockListScreenState
               child: ReportSummaryCard(
                 label: 'Total Purchase Value',
                 value: 'Rs. ${_money(totalValue)}',
-                icon: Icons.account_balance_wallet_outlined,
+                icon: AppIcons.accountBalanceWalletOutlined,
                 color: const Color(0xFF22A06B),
               ),
             ),
@@ -153,7 +155,7 @@ class _HoAssignStockListScreenState
               child: ReportSummaryCard(
                 label: 'Pending',
                 value: '$pendingCount',
-                icon: Icons.hourglass_empty_outlined,
+                icon: AppIcons.hourglassEmptyOutlined,
                 color: const Color(0xFFE56A00),
               ),
             ),
@@ -275,19 +277,19 @@ class _HoAssignStockListScreenState
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
-          icon: const Icon(Icons.visibility_outlined, size: 19),
+          icon: const AppIcon(AppIcons.visibilityOutlined, size: 19),
           tooltip: 'View',
           onPressed: () => setState(() => _selected = a),
         ),
         if (a.status == 'pending') ...[
           IconButton(
-            icon: Icon(Icons.check_circle_outline,
+            icon: AppIcon(AppIcons.checkCircleOutline,
                 size: 19, color: Colors.green.shade600),
             tooltip: 'Accept',
             onPressed: () => _onAccept(a),
           ),
           IconButton(
-            icon: Icon(Icons.cancel_outlined,
+            icon: AppIcon(AppIcons.cancelOutlined,
                 size: 19, color: Colors.red.shade600),
             tooltip: 'Reject',
             onPressed: () => _onReject(a),
@@ -305,7 +307,7 @@ class _HoAssignStockListScreenState
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
-            Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+            AppIcon(AppIcons.checkCircleOutline, color: Colors.green, size: 22),
             SizedBox(width: 8),
             Text('Accept Assignment?'),
           ],
@@ -341,7 +343,7 @@ class _HoAssignStockListScreenState
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
-            Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+            AppIcon(AppIcons.cancelOutlined, color: Colors.red, size: 22),
             SizedBox(width: 8),
             Text('Reject Assignment?'),
           ],
@@ -515,14 +517,14 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 40),
+          const AppIcon(AppIcons.errorOutline, color: Colors.red, size: 40),
           const SizedBox(height: 8),
           Text('Error: $message',
               style: const TextStyle(color: Colors.red)),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: onRetry,
-            icon: const Icon(Icons.refresh, size: 16),
+            icon: const AppIcon(AppIcons.refresh, size: 16),
             label: const Text('Retry'),
           ),
         ],
@@ -540,26 +542,26 @@ class _StatusChip extends StatelessWidget {
     Color bg;
     Color fg;
     String label;
-    IconData icon;
+    String icon;
 
     switch (status) {
       case 'accepted':
         bg = Colors.green.shade50;
         fg = Colors.green.shade700;
         label = 'Accepted';
-        icon = Icons.check_circle_outline;
+        icon = AppIcons.checkCircleOutline;
         break;
       case 'rejected':
         bg = Colors.red.shade50;
         fg = Colors.red.shade700;
         label = 'Rejected';
-        icon = Icons.cancel_outlined;
+        icon = AppIcons.cancelOutlined;
         break;
       default:
         bg = Colors.orange.shade50;
         fg = Colors.orange.shade700;
         label = 'Pending';
-        icon = Icons.hourglass_empty_outlined;
+        icon = AppIcons.hourglassEmptyOutlined;
     }
 
     return Container(
@@ -572,7 +574,7 @@ class _StatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: fg),
+          AppIcon(icon, size: 12, color: fg),
           const SizedBox(width: 4),
           Text(label,
               style: TextStyle(

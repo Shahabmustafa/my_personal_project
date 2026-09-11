@@ -8,7 +8,10 @@ import '../widgets/report_detail_panel.dart';
 import '../widgets/report_table_shell.dart';
 import '../widgets/report_pagination_bar.dart';
 import '../widgets/report_summary_card.dart';
+import '../widgets/report_branch_filter_dropdown.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class SaleInvoiceReportScreen extends ConsumerStatefulWidget {
   const SaleInvoiceReportScreen({super.key});
 
@@ -49,12 +52,14 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
               if (state.hasFilter)
                 TextButton.icon(
                   onPressed: notifier.clearDateRange,
-                  icon: const Icon(Icons.clear, size: 16),
+                  icon: const AppIcon(AppIcons.clear, size: 16),
                   label: Text(_rangeLabel(state.startDate, state.endDate)),
                 ),
               const SizedBox(width: 8),
+              ReportBranchFilterDropdown(value: state.branchId, onChanged: notifier.setBranch),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
-                icon: const Icon(Icons.filter_alt_outlined, size: 18),
+                icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
                 label: const Text('Filter'),
                 onPressed: () async {
                   final result = await showDialog<(DateTime?, DateTime?)?>(
@@ -69,7 +74,7 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.refresh),
+                icon: const AppIcon(AppIcons.refresh),
                 onPressed: notifier.load,
               ),
             ],
@@ -80,7 +85,7 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
               child: ReportSummaryCard(
                 label: 'Total Invoices',
                 value: '${state.totalCount}',
-                icon: Icons.receipt_long_outlined,
+                icon: AppIcons.receiptLongOutlined,
                 color: _accent,
               ),
             ),
@@ -89,7 +94,7 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
               child: ReportSummaryCard(
                 label: 'Total Quantity',
                 value: '${state.totalQuantity}',
-                icon: Icons.inventory_2_outlined,
+                icon: AppIcons.inventory2Outlined,
                 color: const Color(0xFFE56A00),
               ),
             ),
@@ -98,7 +103,7 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
               child: ReportSummaryCard(
                 label: 'Total Sale',
                 value: 'Rs. ${state.totalAmount.toStringAsFixed(0)}',
-                icon: Icons.point_of_sale_outlined,
+                icon: AppIcons.pointOfSaleOutlined,
                 color: const Color(0xFF22A06B),
               ),
             ),
@@ -148,14 +153,14 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   IconButton(
-                                                    icon: const Icon(Icons.visibility_outlined,
+                                                    icon: const AppIcon(AppIcons.visibilityOutlined,
                                                         size: 19),
                                                     tooltip: 'View',
                                                     onPressed: () =>
                                                         setState(() => _selected = inv),
                                                   ),
                                                   IconButton(
-                                                    icon: const Icon(Icons.print_outlined,
+                                                    icon: const AppIcon(AppIcons.printOutlined,
                                                         size: 19),
                                                     tooltip: 'Print',
                                                     onPressed: () => _print(inv),

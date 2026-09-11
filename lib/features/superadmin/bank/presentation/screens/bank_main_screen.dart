@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'bank_heads_screen.dart';
 import 'bank_entries_screen.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BankMainScreen extends StatelessWidget {
   const BankMainScreen({super.key});
 
@@ -32,11 +34,11 @@ class BankMainScreen extends StatelessWidget {
             unselectedLabelStyle: TextStyle(fontSize: 14),
             tabs: [
               Tab(
-                icon: Icon(Icons.account_balance_outlined, size: 18),
+                icon: AppIcon(AppIcons.accountBalanceOutlined, size: 18),
                 text: 'Bank Heads',
               ),
               Tab(
-                icon: Icon(Icons.receipt_long_outlined, size: 18),
+                icon: AppIcon(AppIcons.receiptLongOutlined, size: 18),
                 text: 'Bank Entries',
               ),
             ],

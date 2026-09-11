@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/type_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class TypeFormDialog extends StatefulWidget {
   final TypeModel? item;
   final ValueChanged<TypeModel> onSave;
@@ -38,7 +40,7 @@ class _TypeFormDialogState extends State<TypeFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.style_outlined, color: Color(0xFF3E63DD), size: 20),
+          const AppIcon(AppIcons.styleOutlined, color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Type' : 'Add Type',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -55,7 +57,7 @@ class _TypeFormDialogState extends State<TypeFormDialog> {
               labelText: 'Type Name *',
               hintText: 'e.g. Sandal',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Icon(Icons.style_outlined, size: 18, color: Color(0xFF8A8FA3)),
+              prefixIcon: const AppIcon(AppIcons.styleOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

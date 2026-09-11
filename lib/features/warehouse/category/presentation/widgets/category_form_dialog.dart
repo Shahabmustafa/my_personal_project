@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/model/category_model.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class CategoryFormDialog extends StatefulWidget {
   final CategoryModel? item;
   final ValueChanged<CategoryModel> onSave;
@@ -38,7 +40,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
-          const Icon(Icons.category_outlined, color: Color(0xFF3E63DD), size: 20),
+          const AppIcon(AppIcons.categoryOutlined, color: Color(0xFF3E63DD), size: 20),
           const SizedBox(width: 8),
           Text(isEdit ? 'Edit Category' : 'Add Category',
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
@@ -55,7 +57,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
               labelText: 'Category *',
               hintText: 'e.g. Male',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Icon(Icons.category_outlined, size: 18, color: Color(0xFF8A8FA3)),
+              prefixIcon: const AppIcon(AppIcons.categoryOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

@@ -6,6 +6,8 @@ import '../../../../superadmin/report/presentation/widgets/report_detail_panel.d
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 import '../provider/branch_assign_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 class BranchAssignListScreen extends ConsumerStatefulWidget {
   const BranchAssignListScreen({super.key});
 
@@ -101,8 +103,8 @@ class _BranchAssignListScreenState
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.hourglass_empty,
+                      const AppIcon(
+                        AppIcons.hourglassEmpty,
                         size: 13,
                         color: Colors.white,
                       ),
@@ -120,7 +122,7 @@ class _BranchAssignListScreenState
                 ),
               IconButton(
                 tooltip: 'Refresh',
-                icon: const Icon(Icons.refresh),
+                icon: const AppIcon(AppIcons.refresh),
                 onPressed: () =>
                     ref.read(branchAssignProvider.notifier).loadAssignments(),
               ),
@@ -135,7 +137,7 @@ class _BranchAssignListScreenState
                 child: ReportSummaryCard(
                   label: 'Total Assignments',
                   value: '${filtered.length}',
-                  icon: Icons.move_to_inbox_outlined,
+                  icon: AppIcons.moveToInboxOutlined,
                   color: _primary,
                 ),
               ),
@@ -144,7 +146,7 @@ class _BranchAssignListScreenState
                 child: ReportSummaryCard(
                   label: 'Total Quantity',
                   value: '$totalQuantity',
-                  icon: Icons.inventory_2_outlined,
+                  icon: AppIcons.inventory2Outlined,
                   color: const Color(0xFFE56A00),
                 ),
               ),
@@ -153,7 +155,7 @@ class _BranchAssignListScreenState
                 child: ReportSummaryCard(
                   label: 'Total Sale Price',
                   value: 'Rs. ${_fmtAmt(totalSalePrice)}',
-                  icon: Icons.sell_outlined,
+                  icon: AppIcons.sellOutlined,
                   color: const Color(0xFF22A06B),
                 ),
               ),
@@ -243,23 +245,23 @@ class _BranchAssignListScreenState
   Widget _chip(String label, String value, int count) {
     final isSelected = _filterStatus == value;
     Color chipColor;
-    IconData chipIcon;
+    String chipIcon;
     switch (value) {
       case 'pending':
         chipColor = Colors.orange;
-        chipIcon = Icons.hourglass_empty_outlined;
+        chipIcon = AppIcons.hourglassEmptyOutlined;
         break;
       case 'accepted':
         chipColor = Colors.green;
-        chipIcon = Icons.check_circle_outline;
+        chipIcon = AppIcons.checkCircleOutline;
         break;
       case 'rejected':
         chipColor = Colors.red;
-        chipIcon = Icons.cancel_outlined;
+        chipIcon = AppIcons.cancelOutlined;
         break;
       default:
         chipColor = _primary;
-        chipIcon = Icons.list_outlined;
+        chipIcon = AppIcons.listOutlined;
     }
     return GestureDetector(
       onTap: () => setState(() => _filterStatus = value),
@@ -277,7 +279,7 @@ class _BranchAssignListScreenState
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            AppIcon(
               chipIcon,
               size: 14,
               color: isSelected ? Colors.white : const Color(0xFF8A8FA3),
@@ -470,7 +472,7 @@ class _AssignTable extends ConsumerWidget {
                 child: Row(
                   children: [
                     _ActionIcon(
-                      icon: Icons.visibility_outlined,
+                      icon: AppIcons.visibilityOutlined,
                       tooltip: 'View',
                       color: const Color(0xFF3E63DD),
                       onTap: () => onView(a),
@@ -478,14 +480,14 @@ class _AssignTable extends ConsumerWidget {
                     if (a.status == 'pending') ...[
                       const SizedBox(width: 4),
                       _ActionIcon(
-                        icon: Icons.check_circle_outline,
+                        icon: AppIcons.checkCircleOutline,
                         tooltip: 'Accept',
                         color: Colors.green.shade600,
                         onTap: () => _confirmAccept(context, ref, a),
                       ),
                       const SizedBox(width: 4),
                       _ActionIcon(
-                        icon: Icons.cancel_outlined,
+                        icon: AppIcons.cancelOutlined,
                         tooltip: 'Reject',
                         color: Colors.red.shade600,
                         onTap: () => _confirmReject(context, ref, a),
@@ -503,7 +505,7 @@ class _AssignTable extends ConsumerWidget {
 }
 
 class _ActionIcon extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String tooltip;
   final Color color;
   final VoidCallback onTap;
@@ -522,7 +524,7 @@ class _ActionIcon extends StatelessWidget {
       borderRadius: BorderRadius.circular(6),
       child: Padding(
         padding: const EdgeInsets.all(5),
-        child: Icon(icon, size: 19, color: color),
+        child: AppIcon(icon, size: 19, color: color),
       ),
     ),
   );
@@ -651,7 +653,7 @@ class _AssignDetailBody extends ConsumerWidget {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  icon: const Icon(Icons.check_rounded, size: 16),
+                  icon: const AppIcon(AppIcons.checkRounded, size: 16),
                   label: const Text('Accept'),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
@@ -662,7 +664,7 @@ class _AssignDetailBody extends ConsumerWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton.icon(
-                  icon: const Icon(Icons.close_rounded, size: 16),
+                  icon: const AppIcon(AppIcons.closeRounded, size: 16),
                   label: const Text('Reject'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red.shade600,
@@ -703,7 +705,7 @@ Future<void> _confirmAccept(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(
         children: [
-          Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+          AppIcon(AppIcons.checkCircleOutline, color: Colors.green, size: 22),
           SizedBox(width: 8),
           Text(
             'Accept Assignment?',
@@ -781,7 +783,7 @@ Future<void> _confirmReject(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: const Row(
         children: [
-          Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+          AppIcon(AppIcons.cancelOutlined, color: Colors.red, size: 22),
           SizedBox(width: 8),
           Text(
             'Reject Assignment?',
@@ -858,28 +860,28 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     Color bg, fg, border;
     String label;
-    IconData icon;
+    String icon;
     switch (status) {
       case 'accepted':
         bg = const Color(0xFFEAF5E6);
         fg = const Color(0xFF2E7D32);
         border = const Color(0xFFA5D6A7);
         label = 'Accepted';
-        icon = Icons.check_circle_outline;
+        icon = AppIcons.checkCircleOutline;
         break;
       case 'rejected':
         bg = const Color(0xFFFFEBEE);
         fg = const Color(0xFFC62828);
         border = const Color(0xFFEF9A9A);
         label = 'Rejected';
-        icon = Icons.cancel_outlined;
+        icon = AppIcons.cancelOutlined;
         break;
       default:
         bg = const Color(0xFFFFF8E1);
         fg = const Color(0xFFE65100);
         border = const Color(0xFFFFCC80);
         label = 'Pending';
-        icon = Icons.hourglass_empty_outlined;
+        icon = AppIcons.hourglassEmptyOutlined;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -891,7 +893,7 @@ class _StatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: fg),
+          AppIcon(icon, size: 13, color: fg),
           const SizedBox(width: 5),
           Text(
             label,
@@ -925,8 +927,8 @@ class _ErrorView extends StatelessWidget {
             color: Colors.red.shade50,
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            Icons.error_outline,
+          child: AppIcon(
+            AppIcons.errorOutline,
             color: Colors.red.shade400,
             size: 36,
           ),
@@ -939,7 +941,7 @@ class _ErrorView extends StatelessWidget {
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: onRetry,
-          icon: const Icon(Icons.refresh, size: 16),
+          icon: const AppIcon(AppIcons.refresh, size: 16),
           label: const Text('Retry'),
         ),
       ],
@@ -962,8 +964,8 @@ class _EmptyView extends StatelessWidget {
             color: Color(0xFFF0F4FF),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            Icons.move_to_inbox_outlined,
+          child: AppIcon(
+            AppIcons.moveToInboxOutlined,
             size: 48,
             color: Colors.grey.shade300,
           ),

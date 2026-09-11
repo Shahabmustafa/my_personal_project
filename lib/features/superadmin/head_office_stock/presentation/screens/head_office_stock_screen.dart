@@ -7,6 +7,8 @@ import '../../data/model/stock_inventory_model.dart';
 import '../providers/stock_inventory_provider.dart';
 import '../widgets/add_stock_inventory_dialog.dart';
 
+import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Superadmin stock view — head office ka stock (`stock_inventory` table).
 /// Warehouse se koi taalluq nahi. Add / Edit / Delete + barcode print/copy.
 class HeadOfficeStockScreen extends ConsumerStatefulWidget {
@@ -68,14 +70,14 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                     notifier.refresh();
                     ref.invalidate(headOfficeStockStatsProvider);
                   },
-                  icon: const Icon(Icons.refresh),
+                  icon: const AppIcon(AppIcons.refresh),
                   tooltip: 'Refresh',
                   color: const Color(0xFF3E63DD),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openAddStock,
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18),
                   label: const Text('Add Stock'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
@@ -98,7 +100,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                 hintText: 'Search by barcode, article, brand...',
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF8A8FA3)),
+                prefixIcon: const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -214,7 +216,7 @@ void _showEditDialog(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const Icon(Icons.numbers_outlined, size: 18),
+                    prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 18),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -234,7 +236,7 @@ void _showEditDialog(
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const Icon(Icons.percent_outlined, size: 18),
+                    prefixIcon: const AppIcon(AppIcons.percentOutlined, size: 18),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -316,25 +318,25 @@ class _RowActions extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _actionBtn(
-          icon: Icons.edit_outlined,
+          icon: AppIcons.editOutlined,
           color: const Color(0xFF3E63DD),
           tooltip: 'Edit',
           onPressed: () => _showEditDialog(context, ref, stock),
         ),
         _actionBtn(
-          icon: Icons.copy_outlined,
+          icon: AppIcons.copyOutlined,
           color: Colors.blueGrey,
           tooltip: 'Copy barcode',
           onPressed: () => _copyBarcode(context, stock.barcode),
         ),
         _actionBtn(
-          icon: Icons.print_outlined,
+          icon: AppIcons.printOutlined,
           color: const Color(0xFF3E63DD),
           tooltip: 'Print label',
           onPressed: () => _showPrintDialog(context, stock),
         ),
         _actionBtn(
-          icon: Icons.delete_outline,
+          icon: AppIcons.deleteOutline,
           color: Colors.red,
           tooltip: 'Delete',
           onPressed: () => _confirmDelete(context, ref, stock),
@@ -344,13 +346,13 @@ class _RowActions extends ConsumerWidget {
   }
 
   Widget _actionBtn({
-    required IconData icon,
+    required String icon,
     required Color color,
     required String tooltip,
     required VoidCallback onPressed,
   }) {
     return IconButton(
-      icon: Icon(icon, size: 18, color: color),
+      icon: AppIcon(icon, size: 18, color: color),
       tooltip: tooltip,
       onPressed: onPressed,
       padding: EdgeInsets.zero,
@@ -645,14 +647,14 @@ class _BarcodeLabel extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.print_outlined, color: primary),
+                  const AppIcon(AppIcons.printOutlined, color: primary),
                   const SizedBox(width: 8),
                   const Text('Barcode Label',
                       style: TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w700)),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close),
+                    icon: const AppIcon(AppIcons.close),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -697,22 +699,22 @@ class _BarcodeLabel extends StatelessWidget {
                     Divider(color: Colors.grey.shade200, height: 1),
                     const SizedBox(height: 12),
                     _LabelDetail(
-                        icon: Icons.format_size_outlined,
+                        icon: AppIcons.formatSizeOutlined,
                         label: 'Size',
                         value: stock.sizeName ?? '—'),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: Icons.color_lens_outlined,
+                        icon: AppIcons.colorLensOutlined,
                         label: 'Color',
                         value: stock.colorName ?? '—'),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: Icons.category_outlined,
+                        icon: AppIcons.categoryOutlined,
                         label: 'Category',
                         value: stock.categoryName ?? '—'),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: Icons.style_outlined,
+                        icon: AppIcons.styleOutlined,
                         label: 'Type',
                         value: stock.typeName ?? '—'),
                   ],
@@ -723,7 +725,7 @@ class _BarcodeLabel extends StatelessWidget {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      icon: const Icon(Icons.copy_outlined, size: 16),
+                      icon: const AppIcon(AppIcons.copyOutlined, size: 16),
                       label: const Text('Copy'),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -744,7 +746,7 @@ class _BarcodeLabel extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: FilledButton.icon(
-                      icon: const Icon(Icons.print_outlined, size: 16),
+                      icon: const AppIcon(AppIcons.printOutlined, size: 16),
                       label: const Text('Print'),
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
@@ -815,7 +817,7 @@ class _BarcodePainter extends CustomPainter {
 }
 
 class _LabelDetail extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
   final String value;
 
@@ -826,7 +828,7 @@ class _LabelDetail extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.grey.shade500),
+        AppIcon(icon, size: 14, color: Colors.grey.shade500),
         const SizedBox(width: 6),
         Text('$label:',
             style: TextStyle(

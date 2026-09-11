@@ -26,6 +26,7 @@ class SaleInvoiceReportNotifier extends StateNotifier<ReportState<SaleInvoiceMod
       final result = await _repo.getInvoiceReport(
         startDate: state.startDate,
         endDate: state.endDate,
+        branchId: state.branchId,
         page: state.page,
         pageSize: state.pageSize,
       );
@@ -60,6 +61,15 @@ class SaleInvoiceReportNotifier extends StateNotifier<ReportState<SaleInvoiceMod
 
   void clearDateRange() {
     state = state.copyWith(clearStartDate: true, clearEndDate: true, page: 1);
+    load();
+  }
+
+  void setBranch(String? branchId) {
+    state = state.copyWith(
+      branchId: branchId,
+      clearBranchId: branchId == null || branchId.isEmpty,
+      page: 1,
+    );
     load();
   }
 }
