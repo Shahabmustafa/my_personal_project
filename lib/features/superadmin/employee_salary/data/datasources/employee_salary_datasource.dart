@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/employee_salary_model.dart';
+import '../models/employee_salary_history_model.dart';
 
 class EmployeeSalaryDatasource {
   final SupabaseClient _client;
@@ -48,5 +49,21 @@ class EmployeeSalaryDatasource {
 
   Future<void> deleteEmployeeSalary(String id) async {
     await _client.from('employee_salary').delete().eq('id', id);
+  }
+
+  /// Pichle mahinon ka archived total_sales/total_sales_return/net_salary —
+  /// har mahine ki 1 tareekh ko cron job yahan record daal deta hai.
+  Future<List<EmployeeSalaryHistoryModel>> fetchHistory(
+      String employeeSalaryId) async {
+    final response = await _client
+        .from('employee_salary_history')
+        .select()
+        .eq('employee_salary_id', employeeSalaryId)
+        .order('period_month', ascending: false);
+
+    return (response as List)
+        .map((e) =>
+            EmployeeSalaryHistoryModel.fromMap(e as Map<String, dynamic>))
+        .toList();
   }
 }

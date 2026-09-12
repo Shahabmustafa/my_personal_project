@@ -6,9 +6,13 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 class EmployeeSalaryCard extends StatelessWidget {
   final EmployeeSalaryModel salary;
   final VoidCallback onDelete;
+  final VoidCallback onHistory;
 
   const EmployeeSalaryCard(
-      {super.key, required this.salary, required this.onDelete});
+      {super.key,
+      required this.salary,
+      required this.onDelete,
+      required this.onHistory});
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +56,12 @@ class EmployeeSalaryCard extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: const AppIcon(AppIcons.history,
+                    size: 20, color: Color(0xFF3E63DD)),
+                onPressed: onHistory,
+                tooltip: 'History',
               ),
               IconButton(
                 icon: const AppIcon(AppIcons.deleteOutline,

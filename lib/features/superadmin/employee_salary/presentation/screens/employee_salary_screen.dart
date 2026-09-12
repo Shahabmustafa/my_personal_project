@@ -4,6 +4,7 @@ import '../../data/models/employee_salary_model.dart';
 import '../providers/employee_salary_providers.dart';
 import '../widgets/employee_salary_card.dart';
 import '../widgets/employee_salary_form_dialog.dart';
+import '../widgets/employee_salary_history_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -102,10 +103,12 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
                         ? _MobileList(
                             salaries: filtered,
                             onDelete: (s) => _confirmDelete(context, s),
+                            onHistory: (s) => _showHistory(context, s),
                           )
                         : _DesktopTable(
                             salaries: filtered,
                             onDelete: (s) => _confirmDelete(context, s),
+                            onHistory: (s) => _showHistory(context, s),
                           ),
               ),
             ],
@@ -197,6 +200,15 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
     );
   }
 
+  // ── History Dialog ─────────────────────────────────────────────────────────
+
+  void _showHistory(BuildContext context, EmployeeSalaryModel salary) {
+    showDialog(
+      context: context,
+      builder: (_) => EmployeeSalaryHistoryDialog(salary: salary),
+    );
+  }
+
   void _snack(BuildContext ctx, String msg, Color color) {
     ScaffoldMessenger.of(ctx).showSnackBar(
       SnackBar(content: Text(msg), backgroundColor: color),
@@ -209,8 +221,10 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
 class _DesktopTable extends StatelessWidget {
   final List<EmployeeSalaryModel> salaries;
   final Function(EmployeeSalaryModel) onDelete;
+  final Function(EmployeeSalaryModel) onHistory;
 
-  const _DesktopTable({required this.salaries, required this.onDelete});
+  const _DesktopTable(
+      {required this.salaries, required this.onDelete, required this.onHistory});
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +255,7 @@ class _DesktopTable extends StatelessWidget {
                   _TH('Total Sale',   flex: 2),
                   _TH('Net Salary',   flex: 2),
                   _TH('Date',         flex: 2),
-                  _TH('Action',       flex: 1),
+                  _TH('Action',       flex: 2),
                 ]),
               ),
               Expanded(
@@ -348,13 +362,25 @@ class _DesktopTable extends StatelessWidget {
                           ),
                         ),
                         Expanded(
-                          flex: 1,
+                          flex: 2,
                           child: _TD(
-                            child: _IconBtn(
-                              icon: AppIcons.deleteOutline,
-                              color: Colors.redAccent,
-                              tooltip: 'Delete',
-                              onTap: () => onDelete(s),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _IconBtn(
+                                  icon: AppIcons.history,
+                                  color: const Color(0xFF3E63DD),
+                                  tooltip: 'History',
+                                  onTap: () => onHistory(s),
+                                ),
+                                const SizedBox(width: 6),
+                                _IconBtn(
+                                  icon: AppIcons.deleteOutline,
+                                  color: Colors.redAccent,
+                                  tooltip: 'Delete',
+                                  onTap: () => onDelete(s),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -381,8 +407,10 @@ class _DesktopTable extends StatelessWidget {
 class _MobileList extends StatelessWidget {
   final List<EmployeeSalaryModel> salaries;
   final Function(EmployeeSalaryModel) onDelete;
+  final Function(EmployeeSalaryModel) onHistory;
 
-  const _MobileList({required this.salaries, required this.onDelete});
+  const _MobileList(
+      {required this.salaries, required this.onDelete, required this.onHistory});
 
   @override
   Widget build(BuildContext context) {
@@ -392,6 +420,7 @@ class _MobileList extends StatelessWidget {
       itemBuilder: (_, i) => EmployeeSalaryCard(
         salary: salaries[i],
         onDelete: () => onDelete(salaries[i]),
+        onHistory: () => onHistory(salaries[i]),
       ),
     );
   }

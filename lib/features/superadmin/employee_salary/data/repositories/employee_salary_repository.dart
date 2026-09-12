@@ -1,5 +1,6 @@
 import '../datasources/employee_salary_datasource.dart';
 import '../models/employee_salary_model.dart';
+import '../models/employee_salary_history_model.dart';
 
 class EmployeeSalaryRepository {
   final EmployeeSalaryDatasource _datasource;
@@ -30,4 +31,7 @@ class EmployeeSalaryRepository {
 
   Future<void> removeEmployeeSalary(String id) =>
       _datasource.deleteEmployeeSalary(id);
+
+  Future<List<EmployeeSalaryHistoryModel>> getHistory(String employeeSalaryId) =>
+      _datasource.fetchHistory(employeeSalaryId);
 }
