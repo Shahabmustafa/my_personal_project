@@ -57,7 +57,7 @@ class _TypeFormDialogState extends State<TypeFormDialog> {
               labelText: 'Type Name *',
               hintText: 'e.g. Sandal',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Center(child: AppIcon(AppIcons.styleOutlined, size: 16, color: Color(0xFF8A8FA3))),
+              prefixIcon: const AppIcon(AppIcons.styleOutlined, size: 16, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

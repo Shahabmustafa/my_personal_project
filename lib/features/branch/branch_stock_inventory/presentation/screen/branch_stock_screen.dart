@@ -145,8 +145,8 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                     'Search by article, barcode, size, color, brand...',
                     hintStyle: const TextStyle(
                         fontSize: 13, color: Color(0xFF8A8FA3)),
-                    prefixIcon: const Center(child: AppIcon(AppIcons.search,
-                        color: Color(0xFF8A8FA3), size: 16)),
+                    prefixIcon: const AppIcon(AppIcons.search,
+                        color: Color(0xFF8A8FA3), size: 16),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
                       icon: const AppIcon(AppIcons.clear,

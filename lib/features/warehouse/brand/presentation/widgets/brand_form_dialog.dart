@@ -57,7 +57,7 @@ class _BrandFormDialogState extends State<BrandFormDialog> {
               labelText: 'Brand Name *',
               hintText: 'e.g. Nike',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const Center(child: AppIcon(AppIcons.brandingWatermarkOutlined, size: 16, color: Color(0xFF8A8FA3))),
+              prefixIcon: const AppIcon(AppIcons.brandingWatermarkOutlined, size: 16, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

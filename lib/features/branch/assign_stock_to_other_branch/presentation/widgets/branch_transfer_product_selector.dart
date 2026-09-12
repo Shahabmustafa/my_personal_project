@@ -256,7 +256,7 @@ class _BranchTransferProductSelectorState
                       decoration: InputDecoration(
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
-                        prefixIcon: const Center(child: AppIcon(AppIcons.qrCodeScanner, size: 16)),
+                        prefixIcon: const AppIcon(AppIcons.qrCodeScanner, size: 16),
                         errorText: _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
@@ -296,7 +296,7 @@ class _BranchTransferProductSelectorState
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: Center(child: AppIcon(AppIcons.search, size: 16)),
+                            prefixIcon: AppIcon(AppIcons.search, size: 16),
                             isDense: true,
                           ),
                         ),

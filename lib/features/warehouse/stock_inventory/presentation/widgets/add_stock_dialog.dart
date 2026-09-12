@@ -286,9 +286,9 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (p) => p.label,
                             errorText: _productError,
                             isRequired: true,
-                            prefixIcon: const Center(child: AppIcon(
+                            prefixIcon: const AppIcon(
                                 AppIcons.inventory2Outlined,
-                                size: 16)),
+                                size: 16),
                             onChanged: (p) => setState(() {
                               _product = p;
                               _previewed = false;
@@ -304,9 +304,9 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (b) => b.label,
                             errorText: _brandError,
                             isRequired: true,
-                            prefixIcon: const Center(child: AppIcon(
+                            prefixIcon: const AppIcon(
                                 AppIcons.brandingWatermarkOutlined,
-                                size: 16)),
+                                size: 16),
                             onChanged: (b) => setState(() {
                               _brand = b;
                               _previewed = false;
@@ -325,8 +325,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                               items: companiesAsync.value ?? [],
                               selectedItem: _company,
                               itemLabel: (c) => c.label,
-                              prefixIcon: const Center(child: AppIcon(
-                                  AppIcons.businessOutlined, size: 16)),
+                              prefixIcon: const AppIcon(
+                                  AppIcons.businessOutlined, size: 16),
                               onChanged: (c) => setState(() {
                                 _company = c;
                                 _previewed = false;
@@ -342,8 +342,8 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                                   .numberWithOptions(decimal: true),
                               decoration: InputDecoration(
                                 labelText: 'Discount %',
-                                prefixIcon: const Center(child: AppIcon(
-                                    AppIcons.percentOutlined, size: 16)),
+                                prefixIcon: const AppIcon(
+                                    AppIcons.percentOutlined, size: 16),
                                 border: OutlineInputBorder(
                                     borderRadius:
                                         BorderRadius.circular(10)),
@@ -434,9 +434,9 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (c) => c.label,
                             errorText: _colorsError,
                             isRequired: true,
-                            prefixIcon: const Center(child: AppIcon(
+                            prefixIcon: const AppIcon(
                                 AppIcons.colorLensOutlined,
-                                size: 16)),
+                                size: 16),
                             onChanged: (c) => setState(() {
                               _color = c;
                               _previewed = false;
@@ -452,7 +452,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (c) => c.label,
                             errorText: _categoriesError,
                             isRequired: true,
-                            prefixIcon: const Center(child: AppIcon(AppIcons.categoryOutlined, size: 16)),
+                            prefixIcon: const AppIcon(AppIcons.categoryOutlined, size: 16),
                             onChanged: (c) => setState(() {
                               _category = c;
                               _previewed = false;
@@ -468,7 +468,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         itemLabel: (t) => t.label,
                         errorText: _typesError,
                         isRequired: true,
-                        prefixIcon: const Center(child: AppIcon(AppIcons.styleOutlined, size: 16)),
+                        prefixIcon: const AppIcon(AppIcons.styleOutlined, size: 16),
                         onChanged: (t) => setState(() {
                           _type = t;
                           _previewed = false;
@@ -607,7 +607,7 @@ class _SizeQtyRow extends StatelessWidget {
             selectedItem: entry.size,
             itemLabel: (s) => s.label,
             isRequired: true,
-            prefixIcon: const Center(child: AppIcon(AppIcons.formatSizeOutlined, size: 16)),
+            prefixIcon: const AppIcon(AppIcons.formatSizeOutlined, size: 16),
             onChanged: onSizeChanged,
           ),
         ),
@@ -620,7 +620,7 @@ class _SizeQtyRow extends StatelessWidget {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Quantity *',
-              prefixIcon: const Center(child: AppIcon(AppIcons.numbersOutlined, size: 16)),
+              prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 16),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10)),
               enabledBorder: OutlineInputBorder(

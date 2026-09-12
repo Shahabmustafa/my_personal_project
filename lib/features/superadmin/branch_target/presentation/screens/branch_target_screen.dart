@@ -78,7 +78,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
               decoration: InputDecoration(
                 hintText: 'Search branches...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const Center(child: AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3))),
+                prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),

@@ -90,7 +90,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             decoration: InputDecoration(
               hintText:
                   'Search by barcode, article, brand, size, color...',
-              prefixIcon: const Center(child: AppIcon(AppIcons.search, size: 16)),
+              prefixIcon: const AppIcon(AppIcons.search, size: 16),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
                       icon: const AppIcon(AppIcons.clear),
