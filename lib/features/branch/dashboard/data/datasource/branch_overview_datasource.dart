@@ -57,6 +57,19 @@ class BranchOverviewDatasource {
     );
   }
 
+  /// Branch ka monthly sale target (Rs.) — admin/superadmin "Branch Target"
+  /// screen se set karta hai. 0 = target set nahi.
+  Future<double> fetchMonthlyTarget(String branchId) async {
+    if (branchId.isEmpty) return 0.0;
+    final res = await _client
+        .from('branches')
+        .select('monthly_target')
+        .eq('id', branchId)
+        .maybeSingle();
+    if (res == null) return 0.0;
+    return _toDouble(res['monthly_target']);
+  }
+
   /// Pichhle 7 din ki din-wise sale + top 10 bikne wale articles.
   /// Sab kuch server-side aggregate hota hai (RPC `branch_dashboard_stats`,
   /// indexes ke sath) — poori tables client tak fetch nahi hoti.

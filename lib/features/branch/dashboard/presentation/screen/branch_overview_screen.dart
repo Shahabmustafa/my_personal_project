@@ -119,10 +119,14 @@ class _CardGrid extends StatelessWidget {
       ),
       _CardSpec(
         label: 'Today Target',
-        value: 'Coming Soon',
+        value: data.todayTarget > 0 ? 'Rs. ${_fmtAmt(data.todayTarget)}' : 'Not set',
         icon: AppIcons.flagOutlined,
-        color: const Color(0xFF8A8FA3),
-        muted: true,
+        color: data.todayTarget <= 0
+            ? const Color(0xFF8A8FA3)
+            : data.todaySale >= data.todayTarget
+                ? const Color(0xFF22A06B)
+                : const Color(0xFFE56A00),
+        muted: data.todayTarget <= 0,
       ),
       _CardSpec(
         label: 'Total Salesman',

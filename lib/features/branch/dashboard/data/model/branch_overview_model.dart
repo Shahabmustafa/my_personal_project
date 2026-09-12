@@ -4,6 +4,10 @@ class BranchOverviewData {
   final double todaySale;
   final int totalSalesman;
   final double todayExpense;
+
+  /// Branch ka monthly target ho to aaj ka target (current date se mahine
+  /// ke aakhir tak bache dinon mein taqseem karke) — 0 = target set nahi.
+  final double todayTarget;
   final List<DaySale> weeklySale;
   final List<TopArticle> topArticles;
 
@@ -13,6 +17,7 @@ class BranchOverviewData {
     this.todaySale = 0,
     this.totalSalesman = 0,
     this.todayExpense = 0,
+    this.todayTarget = 0,
     this.weeklySale = const [],
     this.topArticles = const [],
   });
