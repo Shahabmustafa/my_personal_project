@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 
@@ -35,7 +36,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: TextFieldIcon(icon, size: 16,color: Colors.grey.shade600),
+        prefixIcon: SvgPicture.asset(icon,),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey.shade100,

@@ -130,7 +130,7 @@ class _AssignPrinterFormDialogState
       items: printers,
       selectedItem: selected,
       itemLabel: (p) => p.name,
-      prefixIcon: const TextFieldIcon(AppIcons.printOutlined, size: 16),
+      prefixIcon: const TextFieldIcon(AppIcons.printOutlined, size: 14),
       errorText: _printerError,
       onChanged: (p) => setState(() {
         _selectedPrinterHeadId = p?.id;
@@ -152,7 +152,7 @@ class _AssignPrinterFormDialogState
       items: _branches,
       selectedItem: selected,
       itemLabel: (b) => b['name']!,
-      prefixIcon: const TextFieldIcon(AppIcons.storeOutlined, size: 16),
+      prefixIcon: const TextFieldIcon(AppIcons.storeOutlined, size: 14),
       errorText: _branchError,
       onChanged: (b) => setState(() {
         _selectedBranchId = b?['id'];

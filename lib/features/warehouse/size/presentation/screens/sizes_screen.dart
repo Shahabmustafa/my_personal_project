@@ -132,7 +132,7 @@ class _SizesScreenState extends ConsumerState<SizesScreen> {
               decoration: InputDecoration(
                 hintText: 'Search sizes...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+                prefixIcon: const TextFieldIcon(AppIcons.search, size: 14, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),

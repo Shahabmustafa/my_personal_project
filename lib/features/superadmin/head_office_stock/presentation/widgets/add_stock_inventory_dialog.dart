@@ -290,7 +290,7 @@ class _AddStockInventoryDialogState
                             errorText: _productError,
                             isRequired: true,
                             prefixIcon: const TextFieldIcon(AppIcons.inventory2Outlined,
-                                size: 16),
+                                size: 14),
                             onChanged: (p) => setState(() {
                               _product = p;
                               _previewed = false;
@@ -308,7 +308,7 @@ class _AddStockInventoryDialogState
                             isRequired: true,
                             prefixIcon: const TextFieldIcon(
                                 AppIcons.brandingWatermarkOutlined,
-                                size: 16),
+                                size: 14),
                             onChanged: (b) => setState(() {
                               _brand = b;
                               _previewed = false;
@@ -328,7 +328,7 @@ class _AddStockInventoryDialogState
                               selectedItem: _company,
                               itemLabel: (c) => c.label,
                               prefixIcon: const TextFieldIcon(AppIcons.businessOutlined,
-                                  size: 16),
+                                  size: 14),
                               onChanged: (c) => setState(() {
                                 _company = c;
                                 _previewed = false;
@@ -346,7 +346,7 @@ class _AddStockInventoryDialogState
                               decoration: InputDecoration(
                                 labelText: 'Discount %',
                                 prefixIcon: const TextFieldIcon(AppIcons.percentOutlined,
-                                    size: 16),
+                                    size: 14),
                                 border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(10)),
                                 enabledBorder: OutlineInputBorder(
@@ -426,7 +426,7 @@ class _AddStockInventoryDialogState
                             itemLabel: (c) => c.label,
                             errorText: _colorsError,
                             isRequired: true,
-                            prefixIcon: const TextFieldIcon(AppIcons.colorLensOutlined, size: 16),
+                            prefixIcon: const TextFieldIcon(AppIcons.colorLensOutlined, size: 14),
                             onChanged: (c) => setState(() {
                               _color = c;
                               _previewed = false;
@@ -442,7 +442,7 @@ class _AddStockInventoryDialogState
                             itemLabel: (c) => c.label,
                             errorText: _categoriesError,
                             isRequired: true,
-                            prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 16),
+                            prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 14),
                             onChanged: (c) => setState(() {
                               _category = c;
                               _previewed = false;
@@ -458,7 +458,7 @@ class _AddStockInventoryDialogState
                         itemLabel: (t) => t.label,
                         errorText: _typesError,
                         isRequired: true,
-                        prefixIcon: const TextFieldIcon(AppIcons.styleOutlined, size: 16),
+                        prefixIcon: const TextFieldIcon(AppIcons.styleOutlined, size: 14),
                         onChanged: (t) => setState(() {
                           _type = t;
                           _previewed = false;
@@ -588,7 +588,7 @@ class _SizeQtyRow extends StatelessWidget {
             selectedItem: entry.size,
             itemLabel: (s) => s.label,
             isRequired: true,
-            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 16),
+            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 14),
             onChanged: onSizeChanged,
           ),
         ),
@@ -600,7 +600,7 @@ class _SizeQtyRow extends StatelessWidget {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Quantity *',
-              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 16),
+              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 14),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10)),
               enabledBorder: OutlineInputBorder(

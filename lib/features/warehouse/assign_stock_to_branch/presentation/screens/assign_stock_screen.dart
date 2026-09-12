@@ -131,7 +131,7 @@ class AssignStockScreen extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search branch...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 16),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 14),
                             isDense: true,
                           ),
                         ),
