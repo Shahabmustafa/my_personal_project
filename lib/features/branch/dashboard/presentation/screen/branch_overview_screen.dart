@@ -451,15 +451,18 @@ class _WeeklySaleChart extends StatelessWidget {
   }
 }
 
-// ── Top 10 articles sold (branch) ─────────────────────────────────────────
+// ── Top 10 articles sold (branch) — vertical bar chart ──────────────────────
 
 class _TopArticlesCard extends StatelessWidget {
   final List<TopArticle> rows;
   const _TopArticlesCard({required this.rows});
 
+  static const _accent = Color(0xFF3E63DD);
+
   @override
   Widget build(BuildContext context) {
     final maxQty = rows.fold<int>(0, (a, r) => r.quantity > a ? r.quantity : a);
+    final maxY = maxQty <= 0 ? 1.0 : maxQty * 1.2;
 
     return _PanelCard(
       child: Column(
@@ -474,7 +477,7 @@ class _TopArticlesCard extends StatelessWidget {
             'Sab se zyada bikne wale articles',
             style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           if (rows.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -484,89 +487,108 @@ class _TopArticlesCard extends StatelessWidget {
               ),
             )
           else
-            for (var i = 0; i < rows.length; i++) ...[
-              if (i != 0) const Divider(height: 18, color: Color(0xFFEDEFF5)),
-              _TopArticleRow(
-                rank: i + 1,
-                article: rows[i],
-                maxQty: maxQty <= 0 ? 1 : maxQty,
-              ),
-            ],
-        ],
-      ),
-    );
-  }
-}
-
-class _TopArticleRow extends StatelessWidget {
-  final int rank;
-  final TopArticle article;
-  final int maxQty;
-  const _TopArticleRow({
-    required this.rank,
-    required this.article,
-    required this.maxQty,
-  });
-
-  static const _accent = Color(0xFF3E63DD);
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: 22,
-          child: Text(
-            '$rank',
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF8A8FA3),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                article.articleName,
-                style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600),
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: article.quantity / maxQty,
-                  minHeight: 6,
-                  backgroundColor: const Color(0xFFEDEFF5),
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(_accent),
+            SizedBox(
+              height: 280,
+              child: BarChart(
+                BarChartData(
+                  minY: 0,
+                  maxY: maxY,
+                  alignment: BarChartAlignment.spaceAround,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: maxY / 4,
+                    getDrawingHorizontalLine: (_) =>
+                        const FlLine(color: Color(0xFFEDEFF5), strokeWidth: 1),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        interval: maxY / 4,
+                        getTitlesWidget: (value, meta) => Text(
+                          value.round().toString(),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF8A8FA3),
+                          ),
+                        ),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 64,
+                        getTitlesWidget: (value, meta) {
+                          final i = value.round();
+                          if (i < 0 || i >= rows.length) {
+                            return const SizedBox.shrink();
+                          }
+                          final name = rows[i].articleName;
+                          final label = name.length > 10
+                              ? '${name.substring(0, 10)}…'
+                              : name;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Transform.rotate(
+                              angle: -0.6,
+                              alignment: Alignment.topRight,
+                              child: Text(
+                                label,
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  color: Color(0xFF8A8FA3),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final article = rows[group.x.toInt()];
+                        return BarTooltipItem(
+                          '${article.articleName}\n${article.quantity} pcs\nRs. ${_pkrShort(article.amount)}',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  barGroups: [
+                    for (var i = 0; i < rows.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: rows[i].quantity.toDouble(),
+                            color: _accent,
+                            width: 16,
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(4)),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '${article.quantity} pcs',
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700),
             ),
-            const SizedBox(height: 2),
-            Text(
-              'Rs. ${_pkrShort(article.amount)}',
-              style: const TextStyle(
-                  fontSize: 11, color: Color(0xFF8A8FA3)),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
