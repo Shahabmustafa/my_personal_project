@@ -96,7 +96,7 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _openAddStock,
-                  icon: const AppIcon(AppIcons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                   label: const Text('Add Stock'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),

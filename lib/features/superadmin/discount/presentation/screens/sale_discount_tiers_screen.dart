@@ -45,7 +45,7 @@ class SaleDiscountTiersScreen extends ConsumerWidget {
               ),
               ElevatedButton.icon(
                 onPressed: () => _showTierDialog(context, ref),
-                icon: const AppIcon(AppIcons.add, size: 18),
+                icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                 label: const Text('Add Tier'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _accent,

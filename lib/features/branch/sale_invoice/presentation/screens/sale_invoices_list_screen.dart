@@ -63,7 +63,7 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
               ),
               if (widget.showNewInvoiceButton)
                 FilledButton.icon(
-                  icon: const AppIcon(AppIcons.add),
+                  icon: const AppIcon(AppIcons.add, color: Colors.white),
                   label: const Text('New Invoice'),
                   onPressed: () async {
                     await Navigator.push(

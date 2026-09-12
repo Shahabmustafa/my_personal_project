@@ -49,7 +49,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(context),
-                  icon: const AppIcon(AppIcons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                   label: const Text('Add Customer'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
@@ -321,7 +321,9 @@ class _DesktopTable extends StatelessWidget {
                                           fontSize: 11,
                                           color: Colors.grey.shade500,
                                           fontStyle: FontStyle.italic))
-                                  : Row(children: [
+                                  : FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(children: [
                                 _IconBtn(
                                   icon: AppIcons.starOutline,
                                   color: const Color(0xFFD4A017),
@@ -342,7 +344,7 @@ class _DesktopTable extends StatelessWidget {
                                   tooltip: 'Delete',
                                   onTap: () => onDelete(c),
                                 ),
-                              ])),
+                              ]))),
                         ),
                       ]),
                     );

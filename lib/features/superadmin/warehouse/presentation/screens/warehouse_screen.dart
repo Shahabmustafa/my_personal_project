@@ -70,7 +70,7 @@ class _WarehouseScreenState extends ConsumerState<WarehouseScreen> {
                 if (canEdit)
                   ElevatedButton.icon(
                     onPressed: () => _showForm(context),
-                    icon: const AppIcon(AppIcons.add, size: 18),
+                    icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                     label: const Text('Add Warehouse'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E63DD),

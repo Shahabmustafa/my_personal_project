@@ -99,7 +99,7 @@ class _BranchStockReturnScreenState
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
-                icon: const AppIcon(AppIcons.add),
+                icon: const AppIcon(AppIcons.add, color: Colors.white),
                 label: const Text('New Return'),
                 style: FilledButton.styleFrom(backgroundColor: _primary),
                 onPressed: () async {

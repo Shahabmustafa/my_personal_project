@@ -106,7 +106,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
               ),
               const SizedBox(width: 8),
               FilledButton.icon(
-                icon: const AppIcon(AppIcons.add),
+                icon: const AppIcon(AppIcons.add, color: Colors.white),
                 label: const Text('New Transfer'),
                 style: FilledButton.styleFrom(backgroundColor: _primary),
                 onPressed: () async {

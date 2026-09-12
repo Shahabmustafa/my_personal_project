@@ -50,7 +50,7 @@ class _PurchaseInvoicesListScreenState
                 ),
               ),
               FilledButton.icon(
-                icon: const AppIcon(AppIcons.add),
+                icon: const AppIcon(AppIcons.add, color: Colors.white),
                 label: const Text('New Invoice'),
                 onPressed: () {
                   // Navigate to purchase invoice screen

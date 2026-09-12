@@ -66,7 +66,7 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                 ),
                 FilledButton.icon(
                   onPressed: () => _openAddExpenseDialog(context),
-                  icon: const AppIcon(AppIcons.addRounded, size: 18),
+                  icon: const AppIcon(AppIcons.addRounded, size: 18, color: Colors.white),
                   label: const Text('Add Expense'),
                   style: FilledButton.styleFrom(
                     backgroundColor: _primary,

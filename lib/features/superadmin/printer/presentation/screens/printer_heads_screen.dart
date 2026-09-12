@@ -88,7 +88,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
                     const Spacer(),
                     ElevatedButton.icon(
                       onPressed: () => _showAddDialog(context),
-                      icon: const AppIcon(AppIcons.add, size: 18),
+                      icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                       label: const Text('Add Printer'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF3E63DD),

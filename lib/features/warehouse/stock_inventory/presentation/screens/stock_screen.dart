@@ -70,7 +70,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
               ),
               if (!widget.readOnly)
                 FilledButton.icon(
-                  icon: const AppIcon(AppIcons.add),
+                  icon: const AppIcon(AppIcons.add, color: Colors.white),
                   label: const Text('Add Stock'),
                   style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(

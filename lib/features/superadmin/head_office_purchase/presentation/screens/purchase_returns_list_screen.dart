@@ -62,7 +62,7 @@ class _PurchaseReturnsListScreenState
               if (counter != null) _CounterSummaryCard(counter: counter),
               const SizedBox(width: 12),
               FilledButton.icon(
-                icon: const AppIcon(AppIcons.add),
+                icon: const AppIcon(AppIcons.add, color: Colors.white),
                 label: const Text('New Return'),
                 style: FilledButton.styleFrom(
                     backgroundColor: Colors.orange.shade700),

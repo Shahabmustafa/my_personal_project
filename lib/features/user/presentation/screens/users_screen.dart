@@ -75,7 +75,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 if (canEdit)
                   ElevatedButton.icon(
                     onPressed: () => showDialog(context: context, builder: (_) => const AddUserDialog()),
-                    icon: const AppIcon(AppIcons.add, size: 18),
+                    icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                     label: const Text('Add User'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E63DD),

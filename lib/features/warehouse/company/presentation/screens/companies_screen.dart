@@ -85,7 +85,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(context),
-                  icon: const AppIcon(AppIcons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                   label: const Text('Add Company'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),

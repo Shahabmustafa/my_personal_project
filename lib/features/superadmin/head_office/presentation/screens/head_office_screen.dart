@@ -68,7 +68,7 @@ class _HeadOfficeScreenState extends ConsumerState<HeadOfficeScreen> {
                 if (canEdit && headOfficeState.headOffices.isEmpty)
                   ElevatedButton.icon(
                     onPressed: () => _showForm(context),
-                    icon: const AppIcon(AppIcons.add, size: 18),
+                    icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                     label: const Text('Add Head Office'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF3E63DD),

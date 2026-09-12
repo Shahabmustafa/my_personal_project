@@ -110,7 +110,7 @@ class _BrandsScreenState extends ConsumerState<BrandsScreen> {
                 const Spacer(),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(),
-                  icon: const AppIcon(AppIcons.add, size: 18),
+                  icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
                   label: const Text('Add Brand'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3E63DD),
