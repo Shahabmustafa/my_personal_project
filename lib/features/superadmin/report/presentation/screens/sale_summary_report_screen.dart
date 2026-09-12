@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_transaction_row.dart';
-import '../providers/sale_invoice_report_provider.dart' show saleReportRepositoryProvider;
+import '../providers/sale_report_providers.dart' show saleReportRepositoryProvider;
 import '../providers/sale_summary_provider.dart';
 import '../widgets/report_branch_filter_dropdown.dart';
 import '../widgets/report_date_filter_dialog.dart';
 import '../widgets/report_detail_panel.dart';
 import '../widgets/report_summary_card.dart';
 import '../widgets/report_table_shell.dart';
+import '../../../../branch/shared/current_branch_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -16,7 +17,12 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 /// mein (newest first), top par Total Sale / Total Return / Exchange /
 /// Net Total Sale cards ke sath.
 class SaleSummaryReportScreen extends ConsumerStatefulWidget {
-  const SaleSummaryReportScreen({super.key});
+  /// Branch-role users ke liye: true hone par sirf apni branch ka data
+  /// dikhta hai — branch filter dropdown aur "Branch" column hide ho jate
+  /// hain, aur data hamesha [currentBranchIdProvider] tak restricted rehta hai.
+  final bool restrictToOwnBranch;
+
+  const SaleSummaryReportScreen({super.key, this.restrictToOwnBranch = false});
 
   @override
   ConsumerState<SaleSummaryReportScreen> createState() => _SaleSummaryReportScreenState();
@@ -31,6 +37,15 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
   SaleTransactionRow? _selectedRow;
   Widget? _selectedBody;
   String? _loadingId;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.restrictToOwnBranch) {
+      final branchId = ref.read(currentBranchIdProvider);
+      ref.read(saleSummaryProvider.notifier).setBranch(branchId);
+    }
+  }
 
   Color _rowColor(SaleTransactionType type) => switch (type) {
         SaleTransactionType.sale => _saleColor,
@@ -89,8 +104,10 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
                   label: Text(_rangeLabel(state.startDate, state.endDate)),
                 ),
               const SizedBox(width: 8),
-              ReportBranchFilterDropdown(value: state.branchId, onChanged: notifier.setBranch),
-              const SizedBox(width: 8),
+              if (!widget.restrictToOwnBranch) ...[
+                ReportBranchFilterDropdown(value: state.branchId, onChanged: notifier.setBranch),
+                const SizedBox(width: 8),
+              ],
               OutlinedButton.icon(
                 icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
                 label: const Text('Filter'),
@@ -167,14 +184,15 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
                           ? const Center(child: Text('No transactions found'))
                           : SingleChildScrollView(
                               child: ReportTableShell(
-                                columns: const [
-                                  DataColumn(label: Text('Type')),
-                                  DataColumn(label: Text('Number')),
-                                  DataColumn(label: Text('Branch')),
-                                  DataColumn(label: Text('Customer')),
-                                  DataColumn(label: Text('Date')),
-                                  DataColumn(label: Text('Amount'), numeric: true),
-                                  DataColumn(label: Text('Actions')),
+                                columns: [
+                                  const DataColumn(label: Text('Type')),
+                                  const DataColumn(label: Text('Number')),
+                                  if (!widget.restrictToOwnBranch)
+                                    const DataColumn(label: Text('Branch')),
+                                  const DataColumn(label: Text('Customer')),
+                                  const DataColumn(label: Text('Date')),
+                                  const DataColumn(label: Text('Amount'), numeric: true),
+                                  const DataColumn(label: Text('Actions')),
                                 ],
                                 rows: state.transactions
                                     .map((t) => DataRow(
@@ -185,9 +203,10 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
                                             DataCell(Text(t.number,
                                                 style:
                                                     const TextStyle(fontWeight: FontWeight.w600))),
-                                            DataCell(Text(t.branchName ?? '—')),
+                                            if (!widget.restrictToOwnBranch)
+                                              DataCell(Text(t.branchName ?? '—')),
                                             DataCell(Text(t.customerName ?? '—')),
-                                            DataCell(Text(_fmtDate(t.createdAt))),
+                                            DataCell(Text(_fmtDateTime(t.createdAt))),
                                             DataCell(Text(
                                               '${t.amount < 0 ? '- ' : ''}Rs. ${t.amount.abs().toStringAsFixed(0)}',
                                               style: TextStyle(
@@ -220,7 +239,7 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
                   ReportDetailOverlay(
                     title: _selectedRow!.number,
                     subtitle:
-                        '${_selectedRow!.branchName ?? '—'} · ${_fmtDate(_selectedRow!.createdAt)}',
+                        '${_selectedRow!.branchName ?? '—'} · ${_fmtDateTime(_selectedRow!.createdAt)}',
                     accent: _rowColor(_selectedRow!.type),
                     onClose: () => setState(() {
                       _selectedRow = null;
@@ -238,6 +257,16 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
 
   String _fmtDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  String _fmtDateTime(DateTime d) {
+    final local = d.toLocal();
+    final hour24 = local.hour;
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    final time =
+        '${hour12.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')} $period';
+    return '${_fmtDate(local)} $time';
+  }
 
   String _rangeLabel(DateTime? start, DateTime? end) {
     if (start == null && end == null) return '';
