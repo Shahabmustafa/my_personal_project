@@ -185,8 +185,8 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
                 decoration: InputDecoration(
                   labelText: _isAdd ? 'Points to Add' : 'Points to Redeem',
                   hintText: 'e.g. 50',
-                  prefixIcon: const AppIcon(AppIcons.starOutline,
-                      size: 18, color: Color(0xFF8A8FA3)),
+                  prefixIcon: const Center(child: AppIcon(AppIcons.starOutline,
+                      size: 16, color: Color(0xFF8A8FA3))),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 14),

@@ -207,7 +207,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
   InputDecoration _decor(String label, String icon) => InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: AppIcon(icon, size: 18, color: const Color(0xFF8A8FA3)),
+        prefixIcon: Center(child: AppIcon(icon, size: 16, color: const Color(0xFF8A8FA3))),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

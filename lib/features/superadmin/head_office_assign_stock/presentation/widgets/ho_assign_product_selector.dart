@@ -524,7 +524,7 @@ class _HoAssignProductSelectorState
         searchFieldProps: const TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search...',
-            prefixIcon: AppIcon(AppIcons.search, size: 18),
+            prefixIcon: Center(child: AppIcon(AppIcons.search, size: 16)),
             isDense: true,
           ),
         ),

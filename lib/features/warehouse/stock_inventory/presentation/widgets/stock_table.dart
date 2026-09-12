@@ -271,7 +271,7 @@ void showEditStockDialog(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 18),
+                    prefixIcon: const Center(child: AppIcon(AppIcons.numbersOutlined, size: 16)),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -291,7 +291,7 @@ void showEditStockDialog(
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const AppIcon(AppIcons.percentOutlined, size: 18),
+                    prefixIcon: const Center(child: AppIcon(AppIcons.percentOutlined, size: 16)),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),

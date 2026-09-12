@@ -122,7 +122,7 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search company...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 18),
+                            prefixIcon: Center(child: AppIcon(AppIcons.search, size: 16)),
                             isDense: true,
                           ),
                         ),

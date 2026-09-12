@@ -250,7 +250,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                       decoration: InputDecoration(
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
-                        prefixIcon: const AppIcon(AppIcons.qrCodeScanner, size: 18),
+                        prefixIcon: const Center(child: AppIcon(AppIcons.qrCodeScanner, size: 16)),
                         errorText: _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
@@ -290,7 +290,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 18),
+                            prefixIcon: Center(child: AppIcon(AppIcons.search, size: 16)),
                             isDense: true,
                           ),
                         ),

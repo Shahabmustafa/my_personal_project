@@ -100,7 +100,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                 hintText: 'Search by barcode, article, brand...',
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const AppIcon(AppIcons.search, size: 18, color: Color(0xFF8A8FA3)),
+                prefixIcon: const Center(child: AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3))),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -216,7 +216,7 @@ void _showEditDialog(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 18),
+                    prefixIcon: const Center(child: AppIcon(AppIcons.numbersOutlined, size: 16)),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -236,7 +236,7 @@ void _showEditDialog(
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const AppIcon(AppIcons.percentOutlined, size: 18),
+                    prefixIcon: const Center(child: AppIcon(AppIcons.percentOutlined, size: 16)),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),

@@ -57,7 +57,7 @@ class _SizeFormDialogState extends State<SizeFormDialog> {
               labelText: 'Size Number *',
               hintText: 'e.g. 42',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const AppIcon(AppIcons.formatSizeOutlined, size: 18, color: Color(0xFF8A8FA3)),
+              prefixIcon: const Center(child: AppIcon(AppIcons.formatSizeOutlined, size: 16, color: Color(0xFF8A8FA3))),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

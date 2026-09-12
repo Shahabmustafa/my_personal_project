@@ -492,7 +492,7 @@ class _NewTransferForm extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search branch...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 18),
+                            prefixIcon: Center(child: AppIcon(AppIcons.search, size: 16)),
                             isDense: true,
                           ),
                         ),
