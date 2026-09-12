@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../branch/sale_exchange/data/model/sale_exchange_model.dart';
+import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart';
+import '../../../../branch/sale_return/data/model/sale_return_model.dart';
+
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Right-side slide-in panel shared by the sale/return/exchange report
@@ -261,4 +265,165 @@ class DetailDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Divider(height: 1, color: Color(0xFFE7E9F0)));
+}
+
+/// Detail-panel body for a sale invoice — shared by the Sale Invoice report
+/// and the combined Sale Summary screen.
+class InvoiceDetailBody extends StatelessWidget {
+  final SaleInvoiceModel invoice;
+  const InvoiceDetailBody({super.key, required this.invoice});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailKV('Branch', invoice.branchName ?? '—'),
+        DetailKV('Customer', invoice.customerName ?? '—'),
+        DetailKV('Payment', invoice.paymentTypeLabel.toUpperCase()),
+        if (invoice.hasReturn || invoice.hasExchange)
+          DetailKV(
+              'Status',
+              [
+                if (invoice.hasReturn) 'Returned',
+                if (invoice.hasExchange) 'Exchanged',
+              ].join(' · '),
+              valueColor: Colors.red),
+        const DetailDivider(),
+        DetailSectionLabel('ITEMS (${invoice.items.length})'),
+        for (final item in invoice.items)
+          DetailProductRow(
+            name: item.productName ?? 'Item',
+            sizeName: item.sizeName,
+            colorName: item.colorName,
+            quantity: item.quantity,
+            total: item.totalPrice,
+          ),
+        const DetailDivider(),
+        DetailKV('Sub Total', 'Rs. ${invoice.subtotal.toStringAsFixed(0)}'),
+        if (invoice.totalDiscount > 0)
+          DetailKV('Discount', '- Rs. ${invoice.totalDiscount.toStringAsFixed(0)}',
+              valueColor: Colors.orange),
+        if (invoice.invoiceDiscount > 0)
+          DetailKV('Invoice Discount', '- Rs. ${invoice.invoiceDiscount.toStringAsFixed(0)}',
+              valueColor: Colors.orange),
+        DetailKV('Total', 'Rs. ${invoice.totalAmount.toStringAsFixed(0)}',
+            bold: true, valueColor: Colors.green.shade700),
+        if (invoice.payments.isNotEmpty) ...[
+          const DetailDivider(),
+          DetailSectionLabel('PAYMENTS'),
+          for (final p in invoice.payments)
+            DetailKV(p.paymentType.toUpperCase(), 'Rs. ${p.amount.toStringAsFixed(0)}'),
+        ],
+      ],
+    );
+  }
+}
+
+/// Detail-panel body for a sale return — shared by the Sale Return report
+/// and the combined Sale Summary screen.
+class ReturnDetailBody extends StatelessWidget {
+  final SaleReturnModel saleReturn;
+  const ReturnDetailBody({super.key, required this.saleReturn});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailKV('Branch', saleReturn.branchName ?? '—'),
+        DetailKV('Customer', saleReturn.customerName ?? '—'),
+        DetailKV('Against Invoice', saleReturn.originalInvoiceNumber ?? '—'),
+        DetailKV('Refund Via', saleReturn.paymentTypeLabel.toUpperCase()),
+        const DetailDivider(),
+        DetailSectionLabel('ITEMS (${saleReturn.items.length})'),
+        for (final item in saleReturn.items)
+          DetailProductRow(
+            name: item.productName ?? 'Item',
+            sizeName: item.sizeName,
+            colorName: item.colorName,
+            quantity: item.quantity,
+            total: item.totalPrice,
+          ),
+        const DetailDivider(),
+        DetailKV('Sub Total', 'Rs. ${saleReturn.subtotal.toStringAsFixed(0)}'),
+        if (saleReturn.totalDiscount > 0)
+          DetailKV('Discount', '- Rs. ${saleReturn.totalDiscount.toStringAsFixed(0)}',
+              valueColor: Colors.orange),
+        DetailKV('Refund Amount', 'Rs. ${saleReturn.totalAmount.toStringAsFixed(0)}',
+            bold: true, valueColor: Colors.red.shade400),
+        if (saleReturn.payments.isNotEmpty) ...[
+          const DetailDivider(),
+          DetailSectionLabel('REFUNDED VIA'),
+          for (final p in saleReturn.payments)
+            DetailKV(p.paymentType.toUpperCase(), 'Rs. ${p.amount.toStringAsFixed(0)}'),
+        ],
+      ],
+    );
+  }
+}
+
+/// Detail-panel body for a sale exchange — shared by the Sale Exchange
+/// report and the combined Sale Summary screen.
+class ExchangeDetailBody extends StatelessWidget {
+  final SaleExchangeModel exchange;
+  const ExchangeDetailBody({super.key, required this.exchange});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailKV('Branch', exchange.branchName ?? '—'),
+        DetailKV('Customer', exchange.customerName ?? '—'),
+        DetailKV('Against Invoice', exchange.originalInvoiceNumber ?? '—'),
+        if (exchange.returnItems.isNotEmpty) ...[
+          const DetailDivider(),
+          DetailSectionLabel('RETURNED ITEMS (${exchange.returnItems.length})'),
+          for (final item in exchange.returnItems)
+            DetailProductRow(
+              name: item.productName ?? 'Item',
+              sizeName: item.sizeName,
+              colorName: item.colorName,
+              quantity: item.quantity,
+              total: item.totalPrice,
+            ),
+          DetailKV('Return Total', 'Rs. ${exchange.returnTotal.toStringAsFixed(0)}'),
+        ],
+        const DetailDivider(),
+        DetailSectionLabel('NEW ITEMS (${exchange.newItems.length})'),
+        for (final item in exchange.newItems)
+          DetailProductRow(
+            name: item.productName ?? 'Item',
+            sizeName: item.sizeName,
+            colorName: item.colorName,
+            quantity: item.quantity,
+            total: item.totalPrice,
+          ),
+        DetailKV('New Total', 'Rs. ${exchange.newTotal.toStringAsFixed(0)}'),
+        const DetailDivider(),
+        DetailKV(
+          exchange.differenceLabel == 'Refund'
+              ? 'Refund To Customer'
+              : exchange.differenceLabel == 'Collect'
+                  ? 'Collect From Customer'
+                  : 'Even Exchange',
+          'Rs. ${exchange.differenceAmount.abs().toStringAsFixed(0)}',
+          bold: true,
+          valueColor: exchange.differenceAmount < 0
+              ? Colors.red.shade400
+              : exchange.differenceAmount > 0
+                  ? Colors.green.shade700
+                  : null,
+        ),
+        if (exchange.payments.isNotEmpty) ...[
+          const DetailDivider(),
+          DetailSectionLabel('PAYMENTS'),
+          for (final p in exchange.payments)
+            DetailKV('${p.direction == 'refund' ? 'Refunded' : 'Collected'} (${p.paymentType.toUpperCase()})',
+                'Rs. ${p.amount.toStringAsFixed(0)}'),
+        ],
+      ],
+    );
+  }
 }

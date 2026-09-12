@@ -55,6 +55,12 @@ class SaleReportRepository {
           page: page,
           pageSize: pageSize);
 
+  Future<SaleInvoiceModel> getInvoiceById(String id) => _datasource.fetchInvoiceById(id);
+
+  Future<SaleReturnModel> getReturnById(String id) => _datasource.fetchReturnById(id);
+
+  Future<SaleExchangeModel> getExchangeById(String id) => _datasource.fetchExchangeById(id);
+
   Future<SaleSummaryTotals> getSummaryTotals({
     DateTime? startDate,
     DateTime? endDate,

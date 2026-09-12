@@ -174,7 +174,7 @@ class _SaleReturnReportScreenState extends ConsumerState<SaleReturnReportScreen>
                     accent: _accent,
                     onClose: () => setState(() => _selected = null),
                     onPrint: () => _print(_selected!),
-                    child: _ReturnDetailBody(saleReturn: _selected!),
+                    child: ReturnDetailBody(saleReturn: _selected!),
                   ),
               ],
             ),
@@ -204,45 +204,4 @@ class _SaleReturnReportScreenState extends ConsumerState<SaleReturnReportScreen>
 
   static String _fmtStatic(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-}
-
-class _ReturnDetailBody extends StatelessWidget {
-  final SaleReturnModel saleReturn;
-  const _ReturnDetailBody({required this.saleReturn});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DetailKV('Branch', saleReturn.branchName ?? '—'),
-        DetailKV('Customer', saleReturn.customerName ?? '—'),
-        DetailKV('Against Invoice', saleReturn.originalInvoiceNumber ?? '—'),
-        DetailKV('Refund Via', saleReturn.paymentTypeLabel.toUpperCase()),
-        const DetailDivider(),
-        DetailSectionLabel('ITEMS (${saleReturn.items.length})'),
-        for (final item in saleReturn.items)
-          DetailProductRow(
-            name: item.productName ?? 'Item',
-            sizeName: item.sizeName,
-            colorName: item.colorName,
-            quantity: item.quantity,
-            total: item.totalPrice,
-          ),
-        const DetailDivider(),
-        DetailKV('Sub Total', 'Rs. ${saleReturn.subtotal.toStringAsFixed(0)}'),
-        if (saleReturn.totalDiscount > 0)
-          DetailKV('Discount', '- Rs. ${saleReturn.totalDiscount.toStringAsFixed(0)}',
-              valueColor: Colors.orange),
-        DetailKV('Refund Amount', 'Rs. ${saleReturn.totalAmount.toStringAsFixed(0)}',
-            bold: true, valueColor: Colors.red.shade400),
-        if (saleReturn.payments.isNotEmpty) ...[
-          const DetailDivider(),
-          DetailSectionLabel('REFUNDED VIA'),
-          for (final p in saleReturn.payments)
-            DetailKV(p.paymentType.toUpperCase(), 'Rs. ${p.amount.toStringAsFixed(0)}'),
-        ],
-      ],
-    );
-  }
 }

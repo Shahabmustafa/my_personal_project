@@ -179,7 +179,7 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
                     accent: _accent,
                     onClose: () => setState(() => _selected = null),
                     onPrint: () => _print(_selected!),
-                    child: _InvoiceDetailBody(invoice: _selected!),
+                    child: InvoiceDetailBody(invoice: _selected!),
                   ),
               ],
             ),
@@ -209,55 +209,4 @@ class _SaleInvoiceReportScreenState extends ConsumerState<SaleInvoiceReportScree
 
   static String _fmtStatic(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-}
-
-class _InvoiceDetailBody extends StatelessWidget {
-  final SaleInvoiceModel invoice;
-  const _InvoiceDetailBody({required this.invoice});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DetailKV('Branch', invoice.branchName ?? '—'),
-        DetailKV('Customer', invoice.customerName ?? '—'),
-        DetailKV('Payment', invoice.paymentTypeLabel.toUpperCase()),
-        if (invoice.hasReturn || invoice.hasExchange)
-          DetailKV(
-              'Status',
-              [
-                if (invoice.hasReturn) 'Returned',
-                if (invoice.hasExchange) 'Exchanged',
-              ].join(' · '),
-              valueColor: Colors.red),
-        const DetailDivider(),
-        DetailSectionLabel('ITEMS (${invoice.items.length})'),
-        for (final item in invoice.items)
-          DetailProductRow(
-            name: item.productName ?? 'Item',
-            sizeName: item.sizeName,
-            colorName: item.colorName,
-            quantity: item.quantity,
-            total: item.totalPrice,
-          ),
-        const DetailDivider(),
-        DetailKV('Sub Total', 'Rs. ${invoice.subtotal.toStringAsFixed(0)}'),
-        if (invoice.totalDiscount > 0)
-          DetailKV('Discount', '- Rs. ${invoice.totalDiscount.toStringAsFixed(0)}',
-              valueColor: Colors.orange),
-        if (invoice.invoiceDiscount > 0)
-          DetailKV('Invoice Discount', '- Rs. ${invoice.invoiceDiscount.toStringAsFixed(0)}',
-              valueColor: Colors.orange),
-        DetailKV('Total', 'Rs. ${invoice.totalAmount.toStringAsFixed(0)}',
-            bold: true, valueColor: Colors.green.shade700),
-        if (invoice.payments.isNotEmpty) ...[
-          const DetailDivider(),
-          DetailSectionLabel('PAYMENTS'),
-          for (final p in invoice.payments)
-            DetailKV(p.paymentType.toUpperCase(), 'Rs. ${p.amount.toStringAsFixed(0)}'),
-        ],
-      ],
-    );
-  }
 }

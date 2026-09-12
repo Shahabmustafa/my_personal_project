@@ -115,6 +115,11 @@ class SaleReportDatasource {
     );
   }
 
+  Future<SaleInvoiceModel> fetchInvoiceById(String id) async {
+    final row = await _client.from('sale_invoices').select(_invoiceSelect).eq('id', id).single();
+    return SaleInvoiceModel.fromJson(row);
+  }
+
   // ── Sale Return report ───────────────────────────────────────────────────
 
   static const _returnSelect =
@@ -161,6 +166,11 @@ class SaleReportDatasource {
       totalQuantity: totalQuantity,
       totalAmount: totalAmount,
     );
+  }
+
+  Future<SaleReturnModel> fetchReturnById(String id) async {
+    final row = await _client.from('sale_returns').select(_returnSelect).eq('id', id).single();
+    return SaleReturnModel.fromJson(row);
   }
 
   // ── Sale Exchange report ─────────────────────────────────────────────────
@@ -213,6 +223,11 @@ class SaleReportDatasource {
       totalQuantity: totalQuantity,
       totalAmount: totalAmount,
     );
+  }
+
+  Future<SaleExchangeModel> fetchExchangeById(String id) async {
+    final row = await _client.from('sale_exchanges').select(_exchangeSelect).eq('id', id).single();
+    return SaleExchangeModel.fromJson(row);
   }
 
   // ── Combined summary (Sale + Return + Exchange cards) ───────────────────

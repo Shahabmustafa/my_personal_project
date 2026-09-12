@@ -182,7 +182,7 @@ class _SaleExchangeReportScreenState extends ConsumerState<SaleExchangeReportScr
                     accent: _accent,
                     onClose: () => setState(() => _selected = null),
                     onPrint: () => _print(_selected!),
-                    child: _ExchangeDetailBody(exchange: _selected!),
+                    child: ExchangeDetailBody(exchange: _selected!),
                   ),
               ],
             ),
@@ -212,67 +212,4 @@ class _SaleExchangeReportScreenState extends ConsumerState<SaleExchangeReportScr
 
   static String _fmtStatic(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
-}
-
-class _ExchangeDetailBody extends StatelessWidget {
-  final SaleExchangeModel exchange;
-  const _ExchangeDetailBody({required this.exchange});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DetailKV('Branch', exchange.branchName ?? '—'),
-        DetailKV('Customer', exchange.customerName ?? '—'),
-        DetailKV('Against Invoice', exchange.originalInvoiceNumber ?? '—'),
-        if (exchange.returnItems.isNotEmpty) ...[
-          const DetailDivider(),
-          DetailSectionLabel('RETURNED ITEMS (${exchange.returnItems.length})'),
-          for (final item in exchange.returnItems)
-            DetailProductRow(
-              name: item.productName ?? 'Item',
-              sizeName: item.sizeName,
-              colorName: item.colorName,
-              quantity: item.quantity,
-              total: item.totalPrice,
-            ),
-          DetailKV('Return Total', 'Rs. ${exchange.returnTotal.toStringAsFixed(0)}'),
-        ],
-        const DetailDivider(),
-        DetailSectionLabel('NEW ITEMS (${exchange.newItems.length})'),
-        for (final item in exchange.newItems)
-          DetailProductRow(
-            name: item.productName ?? 'Item',
-            sizeName: item.sizeName,
-            colorName: item.colorName,
-            quantity: item.quantity,
-            total: item.totalPrice,
-          ),
-        DetailKV('New Total', 'Rs. ${exchange.newTotal.toStringAsFixed(0)}'),
-        const DetailDivider(),
-        DetailKV(
-          exchange.differenceLabel == 'Refund'
-              ? 'Refund To Customer'
-              : exchange.differenceLabel == 'Collect'
-                  ? 'Collect From Customer'
-                  : 'Even Exchange',
-          'Rs. ${exchange.differenceAmount.abs().toStringAsFixed(0)}',
-          bold: true,
-          valueColor: exchange.differenceAmount < 0
-              ? Colors.red.shade400
-              : exchange.differenceAmount > 0
-                  ? Colors.green.shade700
-                  : null,
-        ),
-        if (exchange.payments.isNotEmpty) ...[
-          const DetailDivider(),
-          DetailSectionLabel('PAYMENTS'),
-          for (final p in exchange.payments)
-            DetailKV('${p.direction == 'refund' ? 'Refunded' : 'Collected'} (${p.paymentType.toUpperCase()})',
-                'Rs. ${p.amount.toStringAsFixed(0)}'),
-        ],
-      ],
-    );
-  }
 }
