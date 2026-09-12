@@ -27,4 +27,10 @@ ALTER TABLE public.sale_discount_tiers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY authenticated_full_access ON public.sale_discount_tiers
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+-- RLS policy alone isn't enough — Postgres checks the role's baseline table
+-- privilege before RLS even applies. Every other app table already has this
+-- grant; a new table needs it explicitly or every query 42501s with
+-- "permission denied for table sale_discount_tiers".
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.sale_discount_tiers TO authenticated;
+
 NOTIFY pgrst, 'reload schema';
