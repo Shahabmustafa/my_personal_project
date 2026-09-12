@@ -4,6 +4,7 @@ import '../../data/model/branch_target_row.dart';
 import '../providers/branch_target_report_provider.dart';
 import '../widgets/report_summary_card.dart';
 import '../widgets/report_table_shell.dart';
+import '../../../../branch/shared/current_branch_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -11,7 +12,12 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 /// Har branch ka monthly target (÷30 = aaj ka target), aaj ki net sale, aur
 /// target achieve hua ya nahi — ek jagah.
 class BranchTargetReportScreen extends ConsumerWidget {
-  const BranchTargetReportScreen({super.key});
+  /// Branch-role users ke liye: true hone par sirf apni branch ka target
+  /// dikhta hai (aur "Branch" column / branches-wide summary cards hide ho
+  /// jate hain).
+  final bool restrictToOwnBranch;
+
+  const BranchTargetReportScreen({super.key, this.restrictToOwnBranch = false});
 
   static const _accent = Color(0xFF3E63DD);
   static const _achievedColor = Color(0xFF22A06B);
@@ -22,8 +28,13 @@ class BranchTargetReportScreen extends ConsumerWidget {
     final state = ref.watch(branchTargetReportProvider);
     final notifier = ref.read(branchTargetReportProvider.notifier);
 
-    final withTarget = state.rows.where((r) => r.monthlyTarget > 0).toList();
+    final rows = restrictToOwnBranch
+        ? state.rows.where((r) => r.branchId == ref.watch(currentBranchIdProvider)).toList()
+        : state.rows;
+
+    final withTarget = rows.where((r) => r.monthlyTarget > 0).toList();
     final achievedCount = withTarget.where((r) => r.isAchieved).length;
+    final myTarget = restrictToOwnBranch && rows.isNotEmpty ? rows.first : null;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -32,9 +43,9 @@ class BranchTargetReportScreen extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: Text('Branch Target',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Expanded(
+                child: Text(restrictToOwnBranch ? 'My Target' : 'Branch Target',
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),
               IconButton(
                 icon: const AppIcon(AppIcons.refresh),
@@ -43,25 +54,48 @@ class BranchTargetReportScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(children: [
-            Expanded(
-              child: ReportSummaryCard(
-                label: 'Branches With Target',
-                value: '${withTarget.length}',
-                icon: AppIcons.flagOutlined,
-                color: _accent,
+          if (myTarget != null)
+            Row(children: [
+              Expanded(
+                child: ReportSummaryCard(
+                  label: 'Sale Target (Today)',
+                  value: myTarget.monthlyTarget > 0
+                      ? 'Rs. ${myTarget.dailyTarget.toStringAsFixed(0)}'
+                      : 'Not set',
+                  icon: AppIcons.flagOutlined,
+                  color: _accent,
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: ReportSummaryCard(
-                label: 'Achieved Today',
-                value: '$achievedCount / ${withTarget.length}',
-                icon: AppIcons.trendingUpOutlined,
-                color: _achievedColor,
+              const SizedBox(width: 14),
+              Expanded(
+                child: ReportSummaryCard(
+                  label: 'Total Sale (Today)',
+                  value: 'Rs. ${myTarget.netSaleToday.toStringAsFixed(0)}',
+                  icon: AppIcons.trendingUpOutlined,
+                  color: myTarget.isAchieved ? _achievedColor : _pendingColor,
+                ),
               ),
-            ),
-          ]),
+            ])
+          else
+            Row(children: [
+              Expanded(
+                child: ReportSummaryCard(
+                  label: 'Branches With Target',
+                  value: '${withTarget.length}',
+                  icon: AppIcons.flagOutlined,
+                  color: _accent,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: ReportSummaryCard(
+                  label: 'Achieved Today',
+                  value: '$achievedCount / ${withTarget.length}',
+                  icon: AppIcons.trendingUpOutlined,
+                  color: _achievedColor,
+                ),
+              ),
+            ]),
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -71,19 +105,19 @@ class BranchTargetReportScreen extends ConsumerWidget {
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : state.rows.isEmpty
+                : rows.isEmpty
                     ? const Center(child: Text('No branches found'))
                     : SingleChildScrollView(
                         child: ReportTableShell(
-                          columns: const [
-                            DataColumn(label: Text('Branch')),
-                            DataColumn(label: Text('Monthly Target'), numeric: true),
-                            DataColumn(label: Text('Sale Target'), numeric: true),
-                            DataColumn(label: Text('Total Sale'), numeric: true),
-                            DataColumn(label: Text('Status')),
-                            DataColumn(label: Text('Date & Time')),
+                          columns: [
+                            if (!restrictToOwnBranch) const DataColumn(label: Text('Branch')),
+                            const DataColumn(label: Text('Monthly Target'), numeric: true),
+                            const DataColumn(label: Text('Sale Target'), numeric: true),
+                            const DataColumn(label: Text('Total Sale'), numeric: true),
+                            const DataColumn(label: Text('Status')),
+                            const DataColumn(label: Text('Date & Time')),
                           ],
-                          rows: state.rows.map((r) => _row(r, state.asOf)).toList(),
+                          rows: rows.map((r) => _row(r, state.asOf)).toList(),
                         ),
                       ),
           ),
@@ -95,7 +129,8 @@ class BranchTargetReportScreen extends ConsumerWidget {
   DataRow _row(BranchTargetRow r, DateTime? asOf) {
     final hasTarget = r.monthlyTarget > 0;
     return DataRow(cells: [
-      DataCell(Text(r.branchName, style: const TextStyle(fontWeight: FontWeight.w600))),
+      if (!restrictToOwnBranch)
+        DataCell(Text(r.branchName, style: const TextStyle(fontWeight: FontWeight.w600))),
       DataCell(Text(
         hasTarget ? 'Rs. ${r.monthlyTarget.toStringAsFixed(0)}' : '—',
       )),
