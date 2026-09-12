@@ -147,7 +147,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                     hintStyle: const TextStyle(
                         fontSize: 13, color: Color(0xFF8A8FA3)),
                     prefixIcon: const TextFieldIcon(AppIcons.search,
-                        color: Color(0xFF8A8FA3), size: 14),
+                        color: Color(0xFF8A8FA3), size: 12),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(
                       icon: const AppIcon(AppIcons.clear,

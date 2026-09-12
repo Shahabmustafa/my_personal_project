@@ -375,7 +375,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: TextFieldIcon(icon, size: 14, color: const Color(0xFF8A8FA3)),
+        prefixIcon: TextFieldIcon(icon, size: 12, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -717,7 +717,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const TextFieldIcon(AppIcons.search, size: 14, color: Color(0xFF8A8FA3)),
+  prefixIcon: const TextFieldIcon(AppIcons.search, size: 12, color: Color(0xFF8A8FA3)),
   filled: true,
   fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),

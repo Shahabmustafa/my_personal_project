@@ -206,7 +206,7 @@ class _Field extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: TextFieldIcon(icon, size: 14, color: const Color(0xFF8A8FA3)),
+        prefixIcon: TextFieldIcon(icon, size: 12, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

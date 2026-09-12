@@ -85,7 +85,7 @@ class AppSearchDropdown<T> extends StatelessWidget {
         searchFieldProps: TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search $label...',
-            prefixIcon: const TextFieldIcon(AppIcons.search, size: 14),
+            prefixIcon: const TextFieldIcon(AppIcons.search, size: 12),
             border:
             OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             contentPadding:
@@ -183,7 +183,7 @@ class AppMultiSelectDropdown<T> extends StatelessWidget {
           const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           filled: true,
           fillColor: Colors.white,
-          suffixIcon: const TextFieldIcon(AppIcons.arrowDropDown, size: 14),
+          suffixIcon: const TextFieldIcon(AppIcons.arrowDropDown, size: 12),
         ),
         child: selectedItems.isEmpty
             ? Text(
@@ -300,7 +300,7 @@ class _MultiSelectDialogState<T> extends State<_MultiSelectDialog<T>> {
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(
                   hintText: 'Search ${widget.label}...',
-                  prefixIcon: const TextFieldIcon(AppIcons.search, size: 14),
+                  prefixIcon: const TextFieldIcon(AppIcons.search, size: 12),
                   isDense: true,
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8)),

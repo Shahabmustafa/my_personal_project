@@ -181,7 +181,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                             ? AppIcons.visibilityOffOutlined
                             : AppIcons.visibilityOutlined,
                         color: const Color(0xFF8A8FA3),
-                        size: 14,
+                        size: 12,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),
@@ -313,7 +313,7 @@ class _FormField extends StatelessWidget {
 InputDecoration _decor(String label, String icon) => InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(fontSize: 13),
-      prefixIcon: TextFieldIcon(icon, size: 14, color: const Color(0xFF8A8FA3)),
+      prefixIcon: TextFieldIcon(icon, size: 12, color: const Color(0xFF8A8FA3)),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       border: OutlineInputBorder(

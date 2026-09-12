@@ -539,7 +539,7 @@ class _AssignProductSelectorState
         searchFieldProps: const TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search...',
-            prefixIcon: TextFieldIcon(AppIcons.search, size: 14),
+            prefixIcon: TextFieldIcon(AppIcons.search, size: 12),
             isDense: true,
           ),
         ),

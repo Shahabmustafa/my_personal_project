@@ -176,7 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       obscureText: _obscurePassword,
                       suffixIcon: IconButton(
                         icon: TextFieldIcon(_obscurePassword ? AppIcons.visibilityOffOutlined : AppIcons.visibilityOutlined,
-                          size: 14,
+                          size: 12,
                           color: Colors.grey.shade600,
                         ),
                         onPressed: () => setState(
