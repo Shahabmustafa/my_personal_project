@@ -541,16 +541,6 @@ class _QtyStepperInput extends StatelessWidget {
     required this.onSubmit,
   });
 
-  void _inc() {
-    final v = int.tryParse(controller.text) ?? 0;
-    controller.text = '${v + 1}';
-  }
-
-  void _dec() {
-    final v = int.tryParse(controller.text) ?? 2;
-    if (v > 1) controller.text = '${v - 1}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -559,67 +549,35 @@ class _QtyStepperInput extends StatelessWidget {
       children: [
         Text('Quantity', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         const SizedBox(height: 4),
-        Container(
+        SizedBox(
+          width: 64,
           height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: enabled ? primaryColor.withOpacity(0.5) : Colors.grey.shade200,
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: enabled ? primaryColor : Colors.grey.shade400,
             ),
-            color: enabled ? Colors.white : Colors.grey.shade50,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              InkWell(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
-                onTap: enabled ? _dec : null,
-                child: Container(
-                  width: 36,
-                  height: double.infinity,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: enabled ? primaryColor.withOpacity(0.08) : Colors.grey.shade100,
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(7)),
-                  ),
-                  child: AppIcon(AppIcons.remove, size: 16, color: enabled ? primaryColor : Colors.grey.shade400),
-                ),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: !enabled,
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primaryColor.withOpacity(0.5)),
               ),
-              SizedBox(
-                width: 48,
-                child: TextField(
-                  controller: controller,
-                  enabled: enabled,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: enabled ? primaryColor : Colors.grey.shade400,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 13),
-                  ),
-                  onSubmitted: onSubmit,
-                ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade200),
               ),
-              InkWell(
-                borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
-                onTap: enabled ? _inc : null,
-                child: Container(
-                  width: 36,
-                  height: double.infinity,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: enabled ? primaryColor : Colors.grey.shade100,
-                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(7)),
-                  ),
-                  child: AppIcon(AppIcons.add, size: 16, color: enabled ? Colors.white : Colors.grey.shade400),
-                ),
-              ),
-            ],
+              contentPadding: const EdgeInsets.symmetric(vertical: 13),
+            ),
+            onSubmitted: onSubmit,
           ),
         ),
       ],

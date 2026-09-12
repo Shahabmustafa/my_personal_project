@@ -214,73 +214,21 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
         borderRadius: BorderRadius.circular(7),
         border: Border.all(color: color.withOpacity(0.4)),
       ),
-      child: Row(
-        children: [
-          _btn(
-            icon: AppIcons.remove,
-            color: color.withOpacity(0.08),
-            iconColor: color,
-            radius: const BorderRadius.horizontal(left: Radius.circular(6)),
-            onTap: () {
-              final v = int.tryParse(_ctrl.text) ?? 1;
-              if (v > 1) {
-                _ctrl.text = '${v - 1}';
-                widget.onChanged(v - 1);
-              }
-            },
-          ),
-          Expanded(
-            child: TextField(
-              controller: _ctrl,
-              keyboardType: TextInputType.number,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onSubmitted: (_) => _commit(),
-              onTapOutside: (_) => _commit(),
-            ),
-          ),
-          _btn(
-            icon: AppIcons.add,
-            color: color,
-            iconColor: Colors.white,
-            radius: const BorderRadius.horizontal(right: Radius.circular(6)),
-            onTap: () {
-              final v = int.tryParse(_ctrl.text) ?? 0;
-              final next = v + 1;
-              if (widget.maxValue <= 0 || next <= widget.maxValue) {
-                _ctrl.text = '$next';
-                widget.onChanged(next);
-              }
-            },
-          ),
-        ],
+      child: TextField(
+        controller: _ctrl,
+        keyboardType: TextInputType.number,
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+        onSubmitted: (_) => _commit(),
+        onTapOutside: (_) => _commit(),
       ),
     );
   }
-
-  Widget _btn({
-    required String icon,
-    required Color color,
-    required Color iconColor,
-    required BorderRadius radius,
-    required VoidCallback onTap,
-  }) =>
-      InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: Container(
-          width: 30,
-          height: double.infinity,
-          decoration: BoxDecoration(color: color, borderRadius: radius),
-          alignment: Alignment.center,
-          child: AppIcon(icon, size: 15, color: iconColor),
-        ),
-      );
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────
