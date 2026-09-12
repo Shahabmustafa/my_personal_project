@@ -296,7 +296,7 @@ class _SidebarShellState extends State<SidebarShell> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: _bg,
+                        color: _accent,
                         shape: BoxShape.circle,
                         border: Border.all(color: _line),
                         boxShadow: const [
@@ -313,7 +313,7 @@ class _SidebarShellState extends State<SidebarShell> {
                             ? AppIcons.chevronRight
                             : AppIcons.chevronLeft,
                         size: 14,
-                        color: _textDim,
+                        color: Colors.white,
                       ),
                     ),
                   ),
