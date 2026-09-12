@@ -78,11 +78,12 @@ class BranchTargetReportScreen extends ConsumerWidget {
                           columns: const [
                             DataColumn(label: Text('Branch')),
                             DataColumn(label: Text('Monthly Target'), numeric: true),
-                            DataColumn(label: Text('Today\'s Target'), numeric: true),
-                            DataColumn(label: Text('Net Sale (Today)'), numeric: true),
+                            DataColumn(label: Text('Sale Target'), numeric: true),
+                            DataColumn(label: Text('Total Sale'), numeric: true),
                             DataColumn(label: Text('Status')),
+                            DataColumn(label: Text('Date & Time')),
                           ],
-                          rows: state.rows.map((r) => _row(r)).toList(),
+                          rows: state.rows.map((r) => _row(r, state.asOf)).toList(),
                         ),
                       ),
           ),
@@ -91,7 +92,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
     );
   }
 
-  DataRow _row(BranchTargetRow r) {
+  DataRow _row(BranchTargetRow r, DateTime? asOf) {
     final hasTarget = r.monthlyTarget > 0;
     return DataRow(cells: [
       DataCell(Text(r.branchName, style: const TextStyle(fontWeight: FontWeight.w600))),
@@ -110,7 +111,21 @@ class BranchTargetReportScreen extends ConsumerWidget {
       )),
       DataCell(hasTarget ? _StatusBadge(row: r) : const Text('No target set',
           style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
+      DataCell(Text(asOf != null ? _fmtDateTime(asOf) : '—',
+          style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
     ]);
+  }
+
+  static String _fmtDateTime(DateTime d) {
+    final local = d.toLocal();
+    final date =
+        '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+    final hour24 = local.hour;
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    final time =
+        '${hour12.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')} $period';
+    return '$date $time';
   }
 }
 

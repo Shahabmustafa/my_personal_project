@@ -10,10 +10,15 @@ class BranchTargetReportState {
   final bool isLoading;
   final String? error;
 
+  /// Jab data aakhri baar load hua — report table mein har row ke sath
+  /// "Date & Time" ke taur par dikhaya jata hai.
+  final DateTime? asOf;
+
   const BranchTargetReportState({
     this.rows = const [],
     this.isLoading = false,
     this.error,
+    this.asOf,
   });
 
   BranchTargetReportState copyWith({
@@ -21,11 +26,13 @@ class BranchTargetReportState {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    DateTime? asOf,
   }) =>
       BranchTargetReportState(
         rows: rows ?? this.rows,
         isLoading: isLoading ?? this.isLoading,
         error: clearError ? null : error ?? this.error,
+        asOf: asOf ?? this.asOf,
       );
 }
 
@@ -60,7 +67,7 @@ class BranchTargetReportNotifier extends StateNotifier<BranchTargetReportState> 
           .toList()
         ..sort((a, b) => a.branchName.compareTo(b.branchName));
 
-      state = state.copyWith(rows: rows, isLoading: false);
+      state = state.copyWith(rows: rows, isLoading: false, asOf: DateTime.now());
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
     }
