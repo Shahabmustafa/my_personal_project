@@ -7,6 +7,12 @@ import '../provider/sale_invoice_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+
+/// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
+/// (color/size/category/type ke sath) hai, is liye alag Size/Color/
+/// Category/Type dropdowns ki zaroorat nahi. Search karte hi neeche list
+/// mein har variant apne color/size/category/type ke sath dikhta hai,
+/// jo chahiye wahi select kar lo.
 class SaleProductSelector extends ConsumerStatefulWidget {
   const SaleProductSelector({super.key});
 
@@ -21,11 +27,6 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
   final _qtyCtrl = TextEditingController(text: '1');
 
   BranchStockModel? _selectedStock;
-  _ProductItem? _selectedProduct;
-  BranchStockModel? _selectedSizeStock;
-  BranchStockModel? _selectedColorStock;
-  BranchStockModel? _selectedTypeStock;
-  BranchStockModel? _selectedCategoryStock;
   bool _barcodeNotFound = false;
 
   @override
@@ -36,74 +37,34 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
     super.dispose();
   }
 
-  List<_ProductItem> _buildProducts(List<BranchStockModel> all) {
-    final seen = <String, _ProductItem>{};
-    for (final s in all.where((s) => s.quantity > 0)) {
-      seen.putIfAbsent(
-          s.productId,
-          () => _ProductItem(id: s.productId, name: s.productName ?? s.productId));
-    }
-    return seen.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+  /// Article dropdown ki search — product name ke sath color/size/category/
+  /// type/barcode se bhi match ho jaye, taaki "Red" ya "42" jaise search se
+  /// bhi seedha sahi variant mil jaye.
+  List<BranchStockModel> _filterStock(List<BranchStockModel> all, String query) {
+    final available = all.where((s) => s.quantity > 0);
+    if (query.trim().isEmpty) return available.toList();
+    final q = query.toLowerCase();
+    return available.where((s) {
+      final haystack = [
+        s.productName ?? '',
+        s.colorName ?? '',
+        s.sizeName ?? '',
+        s.categoryName ?? '',
+        s.typeName ?? '',
+        s.barcode,
+      ].join(' ').toLowerCase();
+      return haystack.contains(q);
+    }).toList();
   }
 
-  List<BranchStockModel> _sizesFor(List<BranchStockModel> all, String productId) {
-    final seen = <String, BranchStockModel>{};
-    for (final s in all.where((s) => s.productId == productId && s.quantity > 0)) {
-      seen.putIfAbsent(s.sizeId, () => s);
-    }
-    return seen.values.toList()
-      ..sort((a, b) => (a.sizeName ?? '').compareTo(b.sizeName ?? ''));
-  }
-
-  List<BranchStockModel> _colorsFor(
-      List<BranchStockModel> all, String productId, String sizeId) {
-    final seen = <String, BranchStockModel>{};
-    for (final s in all.where((s) =>
-        s.productId == productId && s.sizeId == sizeId && s.quantity > 0)) {
-      seen.putIfAbsent(s.colorId, () => s);
-    }
-    return seen.values.toList();
-  }
-
-  List<BranchStockModel> _categoriesFor(List<BranchStockModel> all,
-      String productId, String sizeId, String colorId) {
-    final seen = <String, BranchStockModel>{};
-    for (final s in all.where((s) =>
-        s.productId == productId &&
-        s.sizeId == sizeId &&
-        s.colorId == colorId &&
-        s.quantity > 0)) {
-      seen.putIfAbsent(s.categoryId, () => s);
-    }
-    return seen.values.toList();
-  }
-
-  List<BranchStockModel> _typesFor(List<BranchStockModel> all, String productId,
-      String sizeId, String colorId, String categoryId) {
-    final seen = <String, BranchStockModel>{};
-    for (final s in all.where((s) =>
-        s.productId == productId &&
-        s.sizeId == sizeId &&
-        s.colorId == colorId &&
-        s.categoryId == categoryId &&
-        s.quantity > 0)) {
-      seen.putIfAbsent(s.typeId, () => s);
-    }
-    return seen.values.toList();
-  }
-
-  BranchStockModel? _findStock(List<BranchStockModel> all, String productId,
-      String sizeId, String colorId, String categoryId, String typeId) {
-    try {
-      return all.firstWhere((s) =>
-          s.productId == productId &&
-          s.sizeId == sizeId &&
-          s.colorId == colorId &&
-          s.categoryId == categoryId &&
-          s.typeId == typeId);
-    } catch (_) {
-      return null;
-    }
+  String _variantLine(BranchStockModel s) {
+    final parts = [
+      if ((s.colorName ?? '').isNotEmpty) s.colorName!,
+      if ((s.sizeName ?? '').isNotEmpty) 'Size ${s.sizeName!}',
+      if ((s.categoryName ?? '').isNotEmpty) s.categoryName!,
+      if ((s.typeName ?? '').isNotEmpty) s.typeName!,
+    ];
+    return parts.join(' • ');
   }
 
   void _onBarcodeSubmit(List<BranchStockModel> allStock) {
@@ -114,12 +75,6 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
       setState(() {
         _barcodeNotFound = false;
         _selectedStock = stock;
-        _selectedProduct =
-            _ProductItem(id: stock.productId, name: stock.productName ?? stock.productId);
-        _selectedSizeStock = stock;
-        _selectedColorStock = stock;
-        _selectedCategoryStock = stock;
-        _selectedTypeStock = stock;
       });
     } catch (_) {
       setState(() {
@@ -161,11 +116,6 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
     _qtyCtrl.text = '1';
     setState(() {
       _selectedStock = null;
-      _selectedProduct = null;
-      _selectedSizeStock = null;
-      _selectedColorStock = null;
-      _selectedCategoryStock = null;
-      _selectedTypeStock = null;
       _barcodeNotFound = false;
     });
     _barcodeFocus.requestFocus();
@@ -180,54 +130,8 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
       loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
       data: (allStock) {
-        final products = _buildProducts(allStock);
-
-        final sizes = _selectedProduct != null
-            ? _sizesFor(allStock, _selectedProduct!.id)
-            : <BranchStockModel>[];
-
-        final colors = (_selectedProduct != null && _selectedSizeStock != null)
-            ? _colorsFor(allStock, _selectedProduct!.id, _selectedSizeStock!.sizeId)
-            : <BranchStockModel>[];
-
-        final categories = (_selectedProduct != null &&
-                _selectedSizeStock != null &&
-                _selectedColorStock != null)
-            ? _categoriesFor(allStock, _selectedProduct!.id,
-                _selectedSizeStock!.sizeId, _selectedColorStock!.colorId)
-            : <BranchStockModel>[];
-
-        final types = (_selectedProduct != null &&
-                _selectedSizeStock != null &&
-                _selectedColorStock != null &&
-                _selectedCategoryStock != null)
-            ? _typesFor(
-                allStock,
-                _selectedProduct!.id,
-                _selectedSizeStock!.sizeId,
-                _selectedColorStock!.colorId,
-                _selectedCategoryStock!.categoryId)
-            : <BranchStockModel>[];
-
-        if (_selectedProduct != null &&
-            _selectedSizeStock != null &&
-            _selectedColorStock != null &&
-            _selectedCategoryStock != null &&
-            _selectedTypeStock != null &&
-            _selectedStock == null) {
-          _selectedStock = _findStock(
-            allStock,
-            _selectedProduct!.id,
-            _selectedSizeStock!.sizeId,
-            _selectedColorStock!.colorId,
-            _selectedCategoryStock!.categoryId,
-            _selectedTypeStock!.typeId,
-          );
-        }
-
         final stock = _selectedStock;
         final totalQty = stock?.quantity ?? 0;
-        final salePrice = stock?.salePrice ?? 0.0;
 
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -236,220 +140,114 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: TextField(
-                      controller: _barcodeCtrl,
-                      focusNode: _barcodeFocus,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'Bar Code',
-                        hintText: 'Scan barcode...',
-                        prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 12),
-                        errorText: _barcodeNotFound ? 'Not found' : null,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
-                        ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                      ),
-                      onSubmitted: (_) => _onBarcodeSubmit(allStock),
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  controller: _barcodeCtrl,
+                  focusNode: _barcodeFocus,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Bar Code',
+                    hintText: 'Scan barcode...',
+                    prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 12),
+                    errorText: _barcodeNotFound ? 'Not found' : null,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
                     ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 3,
-                    child: DropdownSearch<_ProductItem>(
-                      items: (f, _) => products
-                          .where((p) => p.name.toLowerCase().contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedProduct,
-                      itemAsString: (p) => p.name,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: (p) => setState(() {
-                        _selectedProduct = p;
-                        _selectedSizeStock = null;
-                        _selectedColorStock = null;
-                        _selectedCategoryStock = null;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                        _barcodeCtrl.clear();
-                        _barcodeNotFound = false;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Product')),
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        constraints: const BoxConstraints(maxHeight: 260),
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Search...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 12),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<BranchStockModel>(
-                      enabled: _selectedProduct != null,
-                      items: (f, _) => sizes
-                          .where((s) =>
-                              (s.sizeName ?? '').toLowerCase().contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedSizeStock,
-                      itemAsString: (s) => s.sizeName ?? s.sizeId,
-                      compareFn: (a, b) => a.sizeId == b.sizeId,
-                      onSelected: (s) => setState(() {
-                        _selectedSizeStock = s;
-                        _selectedColorStock = null;
-                        _selectedCategoryStock = null;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Size', enabled: _selectedProduct != null)),
-                      popupProps:
-                          const PopupProps.menu(constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<BranchStockModel>(
-                      enabled: _selectedProduct != null && _selectedSizeStock != null,
-                      items: (f, _) => colors
-                          .where((s) =>
-                              (s.colorName ?? '').toLowerCase().contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedColorStock,
-                      itemAsString: (s) => s.colorName ?? s.colorId,
-                      compareFn: (a, b) => a.colorId == b.colorId,
-                      onSelected: (s) => setState(() {
-                        _selectedColorStock = s;
-                        _selectedCategoryStock = null;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Color',
-                              enabled: _selectedProduct != null && _selectedSizeStock != null)),
-                      popupProps:
-                          const PopupProps.menu(constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<BranchStockModel>(
-                      enabled: _selectedProduct != null &&
-                          _selectedSizeStock != null &&
-                          _selectedColorStock != null,
-                      items: (f, _) => categories
-                          .where((s) =>
-                              (s.categoryName ?? '').toLowerCase().contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedCategoryStock,
-                      itemAsString: (s) => s.categoryName ?? s.categoryId,
-                      compareFn: (a, b) => a.categoryId == b.categoryId,
-                      onSelected: (s) => setState(() {
-                        _selectedCategoryStock = s;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Category',
-                              enabled: _selectedProduct != null &&
-                                  _selectedSizeStock != null &&
-                                  _selectedColorStock != null)),
-                      popupProps:
-                          const PopupProps.menu(constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<BranchStockModel>(
-                      enabled: _selectedProduct != null &&
-                          _selectedSizeStock != null &&
-                          _selectedColorStock != null &&
-                          _selectedCategoryStock != null,
-                      items: (f, _) => types
-                          .where((s) =>
-                              (s.typeName ?? '').toLowerCase().contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedTypeStock,
-                      itemAsString: (s) => s.typeName ?? s.typeId,
-                      compareFn: (a, b) => a.typeId == b.typeId,
-                      onSelected: (s) => setState(() {
-                        _selectedTypeStock = s;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Type',
-                              enabled: _selectedProduct != null &&
-                                  _selectedSizeStock != null &&
-                                  _selectedColorStock != null &&
-                                  _selectedCategoryStock != null)),
-                      popupProps:
-                          const PopupProps.menu(constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                ],
+                  onSubmitted: (_) => _onBarcodeSubmit(allStock),
+                ),
               ),
-              const SizedBox(height: 10),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _InfoBox(
-                      label: 'S.Price',
-                      value: stock != null ? salePrice.toStringAsFixed(0) : null,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    flex: 2,
-                    child: _InfoBox(
-                      label: 'In Stock',
-                      value: stock != null ? '$totalQty' : null,
-                      valueColor:
-                          (stock != null && totalQty == 0) ? Colors.red : Colors.green.shade700,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  _QtyStepperInput(
-                    controller: _qtyCtrl,
-                    enabled: stock != null && totalQty > 0,
-                    primaryColor: primary,
-                    onSubmit: (_) => _addToCart(),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 48,
-                    child: FilledButton.icon(
-                      icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
-                      label: const Text('Add Product'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF43A047),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 5,
+                child: DropdownSearch<BranchStockModel>(
+                  items: (f, _) => _filterStock(allStock, f),
+                  selectedItem: _selectedStock,
+                  itemAsString: (s) {
+                    final variant = _variantLine(s);
+                    final name = s.productName ?? s.productId;
+                    return variant.isEmpty ? name : '$name — $variant';
+                  },
+                  compareFn: (a, b) =>
+                      a.productId == b.productId &&
+                      a.sizeId == b.sizeId &&
+                      a.colorId == b.colorId &&
+                      a.categoryId == b.categoryId &&
+                      a.typeId == b.typeId,
+                  onSelected: (s) => setState(() {
+                    _selectedStock = s;
+                    _barcodeCtrl.clear();
+                    _barcodeNotFound = false;
+                  }),
+                  decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Article')),
+                  popupProps: PopupProps.menu(
+                    showSearchBox: true,
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    searchFieldProps: const TextFieldProps(
+                      decoration: InputDecoration(
+                        hintText: 'Search article, color, size, category...',
+                        prefixIcon: TextFieldIcon(AppIcons.search, size: 12),
+                        isDense: true,
                       ),
-                      onPressed: (stock != null && totalQty > 0) ? _addToCart : null,
                     ),
+                    itemBuilder: (context, s, isSelected, isFocused) {
+                      final variant = _variantLine(s);
+                      return ListTile(
+                        dense: true,
+                        selected: isSelected,
+                        title: Text(s.productName ?? s.productId,
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                        subtitle: Text(
+                          variant.isEmpty ? 'Barcode: ${s.barcode}' : '$variant  •  Barcode: ${s.barcode}',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                        trailing: Text('Qty ${s.quantity}',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: s.quantity > 0 ? Colors.green.shade700 : Colors.red)),
+                      );
+                    },
                   ),
-                ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: _InfoBox(
+                  label: 'In Stock',
+                  value: stock != null ? '$totalQty' : null,
+                  valueColor:
+                      (stock != null && totalQty == 0) ? Colors.red : Colors.green.shade700,
+                ),
+              ),
+              const SizedBox(width: 10),
+              _QtyStepperInput(
+                controller: _qtyCtrl,
+                enabled: stock != null && totalQty > 0,
+                primaryColor: primary,
+                onSubmit: (_) => _addToCart(),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 48,
+                child: FilledButton.icon(
+                  icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
+                  label: const Text('Add Product'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF43A047),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+                  ),
+                  onPressed: (stock != null && totalQty > 0) ? _addToCart : null,
+                ),
               ),
             ],
           ),
@@ -475,18 +273,6 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
       fillColor: Colors.grey.shade50,
     );
   }
-}
-
-class _ProductItem {
-  final String id;
-  final String name;
-  const _ProductItem({required this.id, required this.name});
-
-  @override
-  bool operator ==(Object other) => other is _ProductItem && other.id == id;
-
-  @override
-  int get hashCode => id.hashCode;
 }
 
 class _InfoBox extends StatelessWidget {
