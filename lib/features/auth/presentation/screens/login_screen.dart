@@ -122,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         child: AppIcon(
                           AppIcons.storeMallDirectoryRounded,
-                          size: 32,
+                          size: 26,
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
