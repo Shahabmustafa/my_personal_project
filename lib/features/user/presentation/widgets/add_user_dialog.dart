@@ -180,7 +180,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                             ? AppIcons.visibilityOffOutlined
                             : AppIcons.visibilityOutlined,
                         color: const Color(0xFF8A8FA3),
-                        size: 20,
+                        size: 18,
                       ),
                       onPressed: () =>
                           setState(() => _obscurePassword = !_obscurePassword),

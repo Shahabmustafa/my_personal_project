@@ -182,7 +182,7 @@ class AppMultiSelectDropdown<T> extends StatelessWidget {
           const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           filled: true,
           fillColor: Colors.white,
-          suffixIcon: const AppIcon(AppIcons.arrowDropDown),
+          suffixIcon: const AppIcon(AppIcons.arrowDropDown, size: 18),
         ),
         child: selectedItems.isEmpty
             ? Text(

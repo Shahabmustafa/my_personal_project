@@ -470,7 +470,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         errorText: _typesError,
                         isRequired: true,
                         prefixIcon:
-                        const AppIcon(AppIcons.styleOutlined, size: 20),
+                        const AppIcon(AppIcons.styleOutlined, size: 18),
                         onChanged: (t) => setState(() {
                           _type = t;
                           _previewed = false;
@@ -610,7 +610,7 @@ class _SizeQtyRow extends StatelessWidget {
             itemLabel: (s) => s.label,
             isRequired: true,
             prefixIcon:
-            const AppIcon(AppIcons.formatSizeOutlined, size: 20),
+            const AppIcon(AppIcons.formatSizeOutlined, size: 18),
             onChanged: onSizeChanged,
           ),
         ),
@@ -624,7 +624,7 @@ class _SizeQtyRow extends StatelessWidget {
             decoration: InputDecoration(
               labelText: 'Quantity *',
               prefixIcon:
-              const AppIcon(AppIcons.numbersOutlined, size: 20),
+              const AppIcon(AppIcons.numbersOutlined, size: 18),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10)),
               enabledBorder: OutlineInputBorder(

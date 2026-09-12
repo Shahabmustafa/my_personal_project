@@ -115,7 +115,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
                 prefixIcon:
-                    const AppIcon(AppIcons.search, color: Color(0xFF8A8FA3)),
+                    const AppIcon(AppIcons.search, size: 18, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
