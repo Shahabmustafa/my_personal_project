@@ -128,9 +128,9 @@ class SaleInvoiceScreen extends ConsumerWidget {
           // ── Customer / Salesman / Printer / Bank ─────────────────────
           const _InvoiceMetaRow(),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const SaleProductSelector(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           Expanded(
             child: Container(
@@ -244,7 +244,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -332,7 +332,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
           // ── Row 2: Bank / Cash Amount ──────────────────────────────
           if (state.paymentType == 'card' ||
               state.paymentType == 'cash_card') ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 6),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

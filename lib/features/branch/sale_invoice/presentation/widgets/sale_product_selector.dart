@@ -134,7 +134,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
         final totalQty = stock?.quantity ?? 0;
 
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
