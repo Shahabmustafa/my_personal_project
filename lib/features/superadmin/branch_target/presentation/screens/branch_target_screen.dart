@@ -4,14 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch/data/model/branch_model.dart';
 import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../../branch/presentation/providers/branch_state.dart';
+import '../../../report/data/model/branch_target_row.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 
 /// Superadmin/admin yahan har branch ka monthly sale target (Rs.) set karta
-/// hai. "Branch Target" report isko 30 din se divide karke daily target
-/// nikalta hai aur us din ki net sale se compare karta hai. 0 = target set
-/// nahi.
+/// hai. "Branch Target" report isko current date se mahine ke aakhir (30)
+/// tak bache dinon mein divide karke daily target nikalta hai aur us din ki
+/// net sale se compare karta hai. 0 = target set nahi.
 class BranchTargetScreen extends ConsumerStatefulWidget {
   const BranchTargetScreen({super.key});
 
@@ -64,7 +65,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
                 Text(
-                  'Har branch ka monthly sale target set karein — 30 din se divide karke daily target Branch Target report mein dikhega.',
+                  'Har branch ka monthly sale target set karein — current date se mahine ke aakhir (30) tak bache dinon mein taqseem karke daily target Branch Target report mein dikhega.',
                   style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
                 ),
               ],
@@ -163,7 +164,7 @@ class _BranchTargetRowState extends ConsumerState<_BranchTargetRow> {
   @override
   Widget build(BuildContext context) {
     final b = widget.branch;
-    final daily = b.monthlyTarget / 30;
+    final daily = BranchTargetRow.dailyTargetFor(b.monthlyTarget);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

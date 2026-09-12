@@ -36,7 +36,7 @@ class BranchTargetReportState {
       );
 }
 
-/// Har active branch ka monthly target (÷30 = daily target) aur aaj ki net
+/// Har active branch ka monthly target (baaki bache dinon se divide = daily target) aur aaj ki net
 /// sale ek sath dikhata hai — "Branch Target" report.
 class BranchTargetReportNotifier extends StateNotifier<BranchTargetReportState> {
   final SaleReportRepository _saleRepo;

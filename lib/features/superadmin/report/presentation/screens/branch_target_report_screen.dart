@@ -9,7 +9,7 @@ import '../../../../branch/shared/current_branch_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 
-/// Har branch ka monthly target (÷30 = aaj ka target), aaj ki net sale, aur
+/// Har branch ka monthly target (baaki bache dinon se divide = aaj ka target), aaj ki net sale, aur
 /// target achieve hua ya nahi — ek jagah.
 class BranchTargetReportScreen extends ConsumerWidget {
   /// Branch-role users ke liye: true hone par sirf apni branch ka target
