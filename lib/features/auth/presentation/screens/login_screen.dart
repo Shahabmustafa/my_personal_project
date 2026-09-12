@@ -10,6 +10,7 @@ import '../widgets/primary_button.dart';
 import 'select_workspace_screen.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -174,7 +175,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       icon: AppIcons.lockOutline,
                       obscureText: _obscurePassword,
                       suffixIcon: IconButton(
-                        icon: AppIcon(_obscurePassword ? AppIcons.visibilityOffOutlined : AppIcons.visibilityOutlined,
+                        icon: TextFieldIcon(_obscurePassword ? AppIcons.visibilityOffOutlined : AppIcons.visibilityOutlined,
                           size: 18,
                           color: Colors.grey.shade600,
                         ),

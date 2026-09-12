@@ -6,6 +6,7 @@ import '../providers/user_state.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class AddUserDialog extends ConsumerStatefulWidget {
   const AddUserDialog({super.key});
 
@@ -175,7 +176,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                   decoration: _decor('Password *', AppIcons.lockOutline).copyWith(
                     hintText: 'Min 6 characters',
                     suffixIcon: IconButton(
-                      icon: AppIcon(
+                      icon: TextFieldIcon(
                         _obscurePassword
                             ? AppIcons.visibilityOffOutlined
                             : AppIcons.visibilityOutlined,
@@ -312,7 +313,7 @@ class _FormField extends StatelessWidget {
 InputDecoration _decor(String label, String icon) => InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(fontSize: 13),
-      prefixIcon: AppIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
+      prefixIcon: TextFieldIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       border: OutlineInputBorder(

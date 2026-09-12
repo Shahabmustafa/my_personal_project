@@ -10,6 +10,7 @@ import '../widgets/add_stock_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Admin-only stock view — shows inventory across ALL warehouses (unlike
 /// [StockScreen] which is scoped to the logged-in user's single assigned
 /// warehouse). Server-paginated; admin can add new stock (picking which
@@ -118,7 +119,7 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
                 hintText: 'Search by barcode, article, brand, warehouse...',
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+                prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/bank_head_model.dart';
 import '../providers/bank_providers.dart';
 
-import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class BankEntryFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String bankId,
@@ -207,7 +207,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
   InputDecoration _decor(String label, String icon) => InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: AppIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
+        prefixIcon: TextFieldIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

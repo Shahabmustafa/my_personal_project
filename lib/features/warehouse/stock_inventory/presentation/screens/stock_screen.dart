@@ -7,6 +7,7 @@ import '../widgets/stock_table.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class StockScreen extends ConsumerStatefulWidget {
   final bool readOnly;
   const StockScreen({super.key, this.readOnly = false});
@@ -90,7 +91,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
             decoration: InputDecoration(
               hintText:
                   'Search by barcode, article, brand, size, color...',
-              prefixIcon: const AppIcon(AppIcons.search, size: 16),
+              prefixIcon: const TextFieldIcon(AppIcons.search, size: 16),
               suffixIcon: _searchCtrl.text.isNotEmpty
                   ? IconButton(
                       icon: const AppIcon(AppIcons.clear),

@@ -7,6 +7,7 @@ import '../providers/ho_assign_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class HoAssignProductSelector extends ConsumerStatefulWidget {
   const HoAssignProductSelector({super.key});
 
@@ -524,7 +525,7 @@ class _HoAssignProductSelectorState
         searchFieldProps: const TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search...',
-            prefixIcon: AppIcon(AppIcons.search, size: 16),
+            prefixIcon: TextFieldIcon(AppIcons.search, size: 16),
             isDense: true,
           ),
         ),

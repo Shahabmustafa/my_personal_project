@@ -3,6 +3,7 @@ import '../../data/model/color_model.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class ColorFormDialog extends StatefulWidget {
   final ColorModel? item;
   final ValueChanged<ColorModel> onSave;
@@ -57,7 +58,7 @@ class _ColorFormDialogState extends State<ColorFormDialog> {
               labelText: 'Color Name *',
               hintText: 'e.g. Red',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const AppIcon(AppIcons.colorLensOutlined, size: 16, color: Color(0xFF8A8FA3)),
+              prefixIcon: const TextFieldIcon(AppIcons.colorLensOutlined, size: 16, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

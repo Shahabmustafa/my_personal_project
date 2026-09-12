@@ -8,8 +8,8 @@ import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../../../user/presentation/providers/user_provider.dart';
 import '../providers/employee_salary_providers.dart';
 
-import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class EmployeeSalaryFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String userId,
@@ -176,7 +176,7 @@ class _EmployeeSalaryFormDialogState
       items: users,
       selectedItem: selected,
       itemLabel: (u) => '${u.username} (${u.roleDisplayName})',
-      prefixIcon: const AppIcon(AppIcons.personOutline, size: 16),
+      prefixIcon: const TextFieldIcon(AppIcons.personOutline, size: 16),
       errorText: _userError,
       onChanged: (u) => setState(() {
         _selectedUserId = u?.id;
@@ -197,7 +197,7 @@ class _EmployeeSalaryFormDialogState
       items: branches,
       selectedItem: selected,
       itemLabel: (b) => b.branchName,
-      prefixIcon: const AppIcon(AppIcons.storeOutlined, size: 16),
+      prefixIcon: const TextFieldIcon(AppIcons.storeOutlined, size: 16),
       errorText: _branchError,
       onChanged: (b) => setState(() {
         _selectedBranchId = b?.id;
@@ -224,7 +224,7 @@ class _EmployeeSalaryFormDialogState
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: AppIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
+        prefixIcon: TextFieldIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),

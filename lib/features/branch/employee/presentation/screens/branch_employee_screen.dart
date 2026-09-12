@@ -5,6 +5,7 @@ import '../../../../superadmin/employee_salary/presentation/providers/employee_s
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 const _primary = Color(0xFF3E63DD);
 
 /// Dedicated, read-only employee list for a branch — sourced entirely from
@@ -441,7 +442,7 @@ String _fmtAmt(double v) {
 InputDecoration _searchDecor(String hint) => InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-      prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+      prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),

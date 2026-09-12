@@ -8,6 +8,7 @@ import '../widgets/printer_head_card.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class PrinterHeadsScreen extends ConsumerStatefulWidget {
   const PrinterHeadsScreen({super.key});
 
@@ -374,7 +375,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: AppIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
+        prefixIcon: TextFieldIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -716,7 +717,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
   hintText: hint,
   hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-  prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+  prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
   filled: true,
   fillColor: Colors.white,
   contentPadding: const EdgeInsets.symmetric(vertical: 12),

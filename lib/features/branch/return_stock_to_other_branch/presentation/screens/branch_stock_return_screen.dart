@@ -10,6 +10,7 @@ import '../widgets/branch_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 const _primary = Color(0xFF1565C0);
 
 String _fmtAmt(double v) =>
@@ -658,7 +659,7 @@ class _NewReturnForm extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search branch...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 16),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 16),
                             isDense: true,
                           ),
                         ),

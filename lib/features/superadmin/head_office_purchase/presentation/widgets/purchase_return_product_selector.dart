@@ -6,6 +6,7 @@ import '../providers/purchase_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class PurchaseReturnProductSelector extends ConsumerStatefulWidget {
   const PurchaseReturnProductSelector({super.key});
 
@@ -268,7 +269,7 @@ class _PurchaseReturnProductSelectorState
                       decoration: InputDecoration(
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
-                        prefixIcon: const AppIcon(AppIcons.qrCodeScanner, size: 16),
+                        prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 16),
                         errorText:
                             _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(
@@ -317,7 +318,7 @@ class _PurchaseReturnProductSelectorState
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 16),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 16),
                             isDense: true,
                           ),
                         ),

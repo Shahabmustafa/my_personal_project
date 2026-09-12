@@ -6,6 +6,7 @@ import '../widgets/bank_head_card.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class BankHeadsScreen extends ConsumerStatefulWidget {
   const BankHeadsScreen({super.key});
 
@@ -133,7 +134,7 @@ class _BankHeadsScreenState extends ConsumerState<BankHeadsScreen> {
               autofocus: true,
               decoration: InputDecoration(
                 labelText: 'Bank Name *',
-                prefixIcon: const AppIcon(AppIcons.accountBalanceOutlined,
+                prefixIcon: const TextFieldIcon(AppIcons.accountBalanceOutlined,
                     size: 16, color: Color(0xFF8A8FA3)),
                 isDense: true,
                 contentPadding: const EdgeInsets.symmetric(
@@ -487,7 +488,7 @@ class _EmptyView extends StatelessWidget {
 InputDecoration _searchDecor(String hint) => InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-      prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+      prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
       filled: true,
       fillColor: Colors.white,
       contentPadding: const EdgeInsets.symmetric(vertical: 12),

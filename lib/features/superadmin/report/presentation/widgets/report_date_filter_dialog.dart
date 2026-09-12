@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Start/end date pick karne wala alert dialog — "Apply" par (start, end)
 /// wapas karta hai (dono ya ek hi bhi ho sakta hai), "Clear" par (null, null).
 class ReportDateFilterDialog extends StatefulWidget {
@@ -99,7 +100,7 @@ class _DateField extends StatelessWidget {
           labelText: label,
           isDense: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          suffixIcon: const AppIcon(AppIcons.calendarTodayOutlined, size: 16),
+          suffixIcon: const TextFieldIcon(AppIcons.calendarTodayOutlined, size: 16),
         ),
         child: Text(value, style: const TextStyle(fontSize: 13)),
       ),

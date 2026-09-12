@@ -7,6 +7,7 @@ import '../../../branch/presentation/providers/branch_state.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Superadmin yahan har branch ke liye max percentage set karta hai jo us
 /// branch ka cashier Sale Invoice par invoice-wise (extra) discount ke taur
 /// par laga sakta hai. 0 = us branch par discount field dikhta hi nahi.
@@ -80,7 +81,7 @@ class _BranchInvoiceDiscountScreenState
                 hintText: 'Search branches...',
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+                prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),

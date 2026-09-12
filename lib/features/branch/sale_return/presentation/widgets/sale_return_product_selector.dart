@@ -8,6 +8,7 @@ import '../provider/sale_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Sale Invoice ke [SaleProductSelector] jaisa hi hai, lekin return ke liye:
 /// koi stock-quantity cap nahi (jitni bhi qty return karni ho utni allowed
 /// hai — sale ka vice versa) aur qty>0 filter nahi (0-stock SKU bhi return
@@ -234,7 +235,7 @@ class _SaleReturnProductSelectorState
                       decoration: InputDecoration(
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
-                        prefixIcon: const AppIcon(AppIcons.qrCodeScanner, size: 16),
+                        prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 16),
                         errorText: _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
@@ -274,7 +275,7 @@ class _SaleReturnProductSelectorState
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 16),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 16),
                             isDense: true,
                           ),
                         ),

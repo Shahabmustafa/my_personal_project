@@ -8,6 +8,7 @@ import '../../../report/data/model/branch_target_row.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 
 /// Superadmin/admin yahan har branch ka monthly sale target (Rs.) set karta
 /// hai. "Branch Target" report isko current date se mahine ke aakhir (30)
@@ -78,7 +79,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
               decoration: InputDecoration(
                 hintText: 'Search branches...',
                 hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+                prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),

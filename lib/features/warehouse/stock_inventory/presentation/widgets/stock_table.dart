@@ -8,6 +8,7 @@ import '../providers/stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class StockTable extends ConsumerWidget {
   final bool readOnly;
   const StockTable({super.key, this.readOnly = false});
@@ -271,7 +272,7 @@ void showEditStockDialog(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 16),
+                    prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 16),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -291,7 +292,7 @@ void showEditStockDialog(
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const AppIcon(AppIcons.percentOutlined, size: 16),
+                    prefixIcon: const TextFieldIcon(AppIcons.percentOutlined, size: 16),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),

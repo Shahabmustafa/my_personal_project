@@ -9,6 +9,7 @@ import '../widgets/add_stock_inventory_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Superadmin stock view — head office ka stock (`stock_inventory` table).
 /// Warehouse se koi taalluq nahi. Add / Edit / Delete + barcode print/copy.
 class HeadOfficeStockScreen extends ConsumerStatefulWidget {
@@ -100,7 +101,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                 hintText: 'Search by barcode, article, brand...',
                 hintStyle:
                     const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const AppIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
+                prefixIcon: const TextFieldIcon(AppIcons.search, size: 16, color: Color(0xFF8A8FA3)),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -216,7 +217,7 @@ void _showEditDialog(
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const AppIcon(AppIcons.numbersOutlined, size: 16),
+                    prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 16),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
@@ -236,7 +237,7 @@ void _showEditDialog(
                       const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const AppIcon(AppIcons.percentOutlined, size: 16),
+                    prefixIcon: const TextFieldIcon(AppIcons.percentOutlined, size: 16),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -35,7 +35,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: AppIcon(icon, size: 16,color: Colors.grey.shade600),
+        prefixIcon: TextFieldIcon(icon, size: 16,color: Colors.grey.shade600),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey.shade100,

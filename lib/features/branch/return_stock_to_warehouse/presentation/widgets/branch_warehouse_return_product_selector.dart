@@ -8,6 +8,7 @@ import '../providers/branch_warehouse_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Product/size/color picker for the branch-to-warehouse stock return cart —
 /// same pattern as [BranchReturnProductSelector], adding into
 /// [BranchWarehouseReturnNotifier] instead.
@@ -255,7 +256,7 @@ class _BranchWarehouseReturnProductSelectorState
                       decoration: InputDecoration(
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
-                        prefixIcon: const AppIcon(AppIcons.qrCodeScanner, size: 16),
+                        prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 16),
                         errorText: _barcodeNotFound ? 'Not found' : null,
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
@@ -295,7 +296,7 @@ class _BranchWarehouseReturnProductSelectorState
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search...',
-                            prefixIcon: AppIcon(AppIcons.search, size: 16),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 16),
                             isDense: true,
                           ),
                         ),

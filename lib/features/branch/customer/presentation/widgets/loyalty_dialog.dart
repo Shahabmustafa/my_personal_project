@@ -5,6 +5,7 @@ import '../providers/customer_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class LoyaltyDialog extends ConsumerStatefulWidget {
   final CustomerModel customer;
   const LoyaltyDialog({super.key, required this.customer});
@@ -185,7 +186,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
                 decoration: InputDecoration(
                   labelText: _isAdd ? 'Points to Add' : 'Points to Redeem',
                   hintText: 'e.g. 50',
-                  prefixIcon: const AppIcon(AppIcons.starOutline,
+                  prefixIcon: const TextFieldIcon(AppIcons.starOutline,
                       size: 16, color: Color(0xFF8A8FA3)),
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(

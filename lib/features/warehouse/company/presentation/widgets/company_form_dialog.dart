@@ -3,6 +3,7 @@ import '../../data/model/company_model.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class CompanyFormDialog extends StatefulWidget {
   final CompanyModel? company;
   final String headOfficeId;
@@ -205,7 +206,7 @@ class _Field extends StatelessWidget {
         labelText: label,
         hintText: hint,
         labelStyle: const TextStyle(fontSize: 13),
-        prefixIcon: AppIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
+        prefixIcon: TextFieldIcon(icon, size: 16, color: const Color(0xFF8A8FA3)),
         isDense: true,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

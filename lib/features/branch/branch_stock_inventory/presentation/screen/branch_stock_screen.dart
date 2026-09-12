@@ -7,6 +7,7 @@ import '../povider/branch_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class BranchStockScreen extends ConsumerStatefulWidget {
   const BranchStockScreen({super.key});
 
@@ -145,7 +146,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                     'Search by article, barcode, size, color, brand...',
                     hintStyle: const TextStyle(
                         fontSize: 13, color: Color(0xFF8A8FA3)),
-                    prefixIcon: const AppIcon(AppIcons.search,
+                    prefixIcon: const TextFieldIcon(AppIcons.search,
                         color: Color(0xFF8A8FA3), size: 16),
                     suffixIcon: _searchCtrl.text.isNotEmpty
                         ? IconButton(

@@ -3,6 +3,7 @@ import '../../data/model/category_model.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class CategoryFormDialog extends StatefulWidget {
   final CategoryModel? item;
   final ValueChanged<CategoryModel> onSave;
@@ -57,7 +58,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
               labelText: 'Category *',
               hintText: 'e.g. Male',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const AppIcon(AppIcons.categoryOutlined, size: 16, color: Color(0xFF8A8FA3)),
+              prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 16, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
