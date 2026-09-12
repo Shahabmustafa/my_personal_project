@@ -379,10 +379,12 @@ class _TopArticleCard extends StatelessWidget {
                     color: const Color(0xFFEF6C00).withOpacity(0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const AppIcon(
-                    AppIcons.emojiEventsOutlined,
-                    color: Color(0xFFEF6C00),
-                    size: 22,
+                  child: Center(
+                    child: const AppIcon(
+                      AppIcons.emojiEventsOutlined,
+                      color: Color(0xFFEF6C00),
+                      size: 22,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -456,7 +458,7 @@ class _StatCard extends StatelessWidget {
                   color: data.color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: AppIcon(data.icon, color: data.color, size: 20),
+                child: Center(child: AppIcon(data.icon, color: data.color, size: 20)),
               ),
               const Spacer(),
             ],
