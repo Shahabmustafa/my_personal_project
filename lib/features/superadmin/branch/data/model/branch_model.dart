@@ -12,6 +12,11 @@ class BranchModel {
   /// "Discount → Branch Invoice Discount" screen se set karta hai.
   /// 0 = branch koi invoice discount nahi laga sakta.
   final double maxInvoiceDiscountPct;
+
+  /// Superadmin/admin "Branch Target" screen se set kiya hua monthly sale
+  /// target (Rs.). 0 = koi target set nahi. Branch Target report isko 30
+  /// se divide karke daily target nikalta hai.
+  final double monthlyTarget;
   final DateTime? createdAt;
 
   const BranchModel({
@@ -23,6 +28,7 @@ class BranchModel {
     this.status = 'active',
     this.canApplyInvoiceDiscount = false,
     this.maxInvoiceDiscountPct = 0,
+    this.monthlyTarget = 0,
     this.createdAt,
   });
 
@@ -37,6 +43,7 @@ class BranchModel {
       canApplyInvoiceDiscount: json['can_apply_invoice_discount'] as bool? ?? false,
       maxInvoiceDiscountPct:
           (json['max_invoice_discount_pct'] as num?)?.toDouble() ?? 0,
+      monthlyTarget: (json['monthly_target'] as num?)?.toDouble() ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -52,6 +59,7 @@ class BranchModel {
         'status': status,
         'can_apply_invoice_discount': canApplyInvoiceDiscount,
         'max_invoice_discount_pct': maxInvoiceDiscountPct,
+        'monthly_target': monthlyTarget,
       };
 
   bool get isActive => status == 'active';
@@ -65,6 +73,7 @@ class BranchModel {
     String? status,
     bool? canApplyInvoiceDiscount,
     double? maxInvoiceDiscountPct,
+    double? monthlyTarget,
   }) {
     return BranchModel(
       id: id ?? this.id,
@@ -75,6 +84,7 @@ class BranchModel {
       status: status ?? this.status,
       canApplyInvoiceDiscount: canApplyInvoiceDiscount ?? this.canApplyInvoiceDiscount,
       maxInvoiceDiscountPct: maxInvoiceDiscountPct ?? this.maxInvoiceDiscountPct,
+      monthlyTarget: monthlyTarget ?? this.monthlyTarget,
       createdAt: createdAt,
     );
   }

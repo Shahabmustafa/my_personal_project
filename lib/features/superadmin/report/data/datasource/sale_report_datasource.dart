@@ -329,4 +329,48 @@ class SaleReportDatasource {
     rows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return rows;
   }
+
+  // ── Branch Target report ─────────────────────────────────────────────────
+  // Har branch ki ek din (default: aaj) ki net sale — invoice + return +
+  // exchange, [SaleSummaryTotals.netTotalSale] jaisa hi formula
+  // (sale − return + exchange difference), lekin branch_id ke hisaab se
+  // grouped taake Branch Target report har branch ka target achieve hua ya
+  // nahi check kar sake.
+
+  Future<Map<String, double>> fetchNetSaleByBranch({DateTime? date}) async {
+    final day = date ?? DateTime.now();
+    final start = _startOfDayUtc(day).toIso8601String();
+    final end = _startOfNextDayUtc(day).toIso8601String();
+
+    final invoicesRes = await _client
+        .from('sale_invoices')
+        .select('branch_id, total_amount')
+        .gte('created_at', start)
+        .lt('created_at', end) as List;
+    final returnsRes = await _client
+        .from('sale_returns')
+        .select('branch_id, total_amount')
+        .gte('created_at', start)
+        .lt('created_at', end) as List;
+    final exchangesRes = await _client
+        .from('sale_exchanges')
+        .select('branch_id, difference_amount')
+        .gte('created_at', start)
+        .lt('created_at', end) as List;
+
+    final net = <String, double>{};
+    void add(String branchId, double amount) =>
+        net[branchId] = (net[branchId] ?? 0) + amount;
+
+    for (final row in invoicesRes.cast<Map<String, dynamic>>()) {
+      add(row['branch_id'].toString(), (row['total_amount'] as num? ?? 0).toDouble());
+    }
+    for (final row in returnsRes.cast<Map<String, dynamic>>()) {
+      add(row['branch_id'].toString(), -(row['total_amount'] as num? ?? 0).toDouble());
+    }
+    for (final row in exchangesRes.cast<Map<String, dynamic>>()) {
+      add(row['branch_id'].toString(), (row['difference_amount'] as num? ?? 0).toDouble());
+    }
+    return net;
+  }
 }

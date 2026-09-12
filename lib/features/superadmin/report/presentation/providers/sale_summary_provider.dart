@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../data/model/sale_summary_totals.dart';
 import '../../data/model/sale_transaction_row.dart';
 import '../../data/repository/sale_report_repository.dart';
-import 'sale_invoice_report_provider.dart' show saleReportRepositoryProvider;
+import 'sale_report_providers.dart' show saleReportRepositoryProvider;
 
 class SaleSummaryState {
   final SaleSummaryTotals totals;

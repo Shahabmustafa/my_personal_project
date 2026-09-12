@@ -35,6 +35,7 @@ class BranchRemoteDatasource {
           'status': branch.status,
           'can_apply_invoice_discount': branch.canApplyInvoiceDiscount,
           'max_invoice_discount_pct': branch.maxInvoiceDiscountPct,
+          'monthly_target': branch.monthlyTarget,
         })
         .select()
         .single();
@@ -52,6 +53,7 @@ class BranchRemoteDatasource {
           'status': branch.status,
           'can_apply_invoice_discount': branch.canApplyInvoiceDiscount,
           'max_invoice_discount_pct': branch.maxInvoiceDiscountPct,
+          'monthly_target': branch.monthlyTarget,
         })
         .eq('id', branch.id)
         .select()

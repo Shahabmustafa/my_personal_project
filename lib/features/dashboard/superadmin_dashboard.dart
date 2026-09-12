@@ -6,15 +6,14 @@ import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../superadmin/branch/presentation/screens/branches_screen.dart';
+import '../superadmin/branch_target/presentation/screens/branch_target_screen.dart';
 import '../superadmin/discount/presentation/screens/branch_invoice_discount_screen.dart';
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
 import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
-import '../superadmin/report/presentation/screens/sale_exchange_report_screen.dart';
-import '../superadmin/report/presentation/screens/sale_invoice_report_screen.dart';
-import '../superadmin/report/presentation/screens/sale_return_report_screen.dart';
+import '../superadmin/report/presentation/screens/branch_target_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
 import '../warehouse/company/presentation/screens/companies_screen.dart';
@@ -107,6 +106,11 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Discount',
     ),
     SidebarItem(
+      icon: AppIcons.flagOutlined,
+      label: 'Branch Target',
+      group: 'Target',
+    ),
+    SidebarItem(
       icon: AppIcons.accountBalanceOutlined,
       label: 'Bank Head',
       group: 'Bank',
@@ -129,18 +133,8 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Reports',
     ),
     SidebarItem(
-      icon: AppIcons.receiptLongOutlined,
-      label: 'Sale Invoice Report',
-      group: 'Reports',
-    ),
-    SidebarItem(
-      icon: AppIcons.assignmentReturnOutlined,
-      label: 'Sale Return Report',
-      group: 'Reports',
-    ),
-    SidebarItem(
-      icon: AppIcons.swapHorizOutlined,
-      label: 'Sale Exchange Report',
+      icon: AppIcons.trendingUpOutlined,
+      label: 'Branch Target',
       group: 'Reports',
     ),
   ];
@@ -175,15 +169,14 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     IncomingBranchReturnsScreen(),
     HeadOfficeScreen(),
     BranchInvoiceDiscountScreen(),
+    BranchTargetScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),
     PrinterHeadsScreen(),
     AssignPrinterScreen(),
     EmployeeSalaryScreen(),
     SaleSummaryReportScreen(),
-    SaleInvoiceReportScreen(),
-    SaleReturnReportScreen(),
-    SaleExchangeReportScreen(),
+    BranchTargetReportScreen(),
   ];
 
   @override
