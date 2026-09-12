@@ -33,7 +33,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: AppIcon(icon, color: Colors.grey.shade600),
+        prefixIcon: AppIcon(icon, size: 20, color: Colors.grey.shade600),
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey.shade100,

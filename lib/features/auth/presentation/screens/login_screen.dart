@@ -122,7 +122,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         child: AppIcon(
                           AppIcons.storeMallDirectoryRounded,
-                          size: 42,
+                          size: 32,
                           color: Theme.of(context).primaryColor,
                         ),
                       ),
@@ -178,6 +178,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           _obscurePassword
                               ? AppIcons.visibilityOffOutlined
                               : AppIcons.visibilityOutlined,
+                          size: 20,
                           color: Colors.grey.shade600,
                         ),
                         onPressed: () => setState(
