@@ -328,11 +328,12 @@ class _WeeklySaleChart extends StatelessWidget {
           else
             SizedBox(
               height: 200,
-              child: BarChart(
-                BarChartData(
+              child: LineChart(
+                LineChartData(
                   minY: 0,
                   maxY: maxY,
-                  alignment: BarChartAlignment.spaceAround,
+                  minX: 0,
+                  maxX: (rows.length - 1).toDouble(),
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
@@ -355,6 +356,7 @@ class _WeeklySaleChart extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 24,
+                        interval: 1,
                         getTitlesWidget: (value, meta) {
                           final i = value.round();
                           if (i < 0 || i >= rows.length) {
@@ -374,39 +376,71 @@ class _WeeklySaleChart extends StatelessWidget {
                       ),
                     ),
                   ),
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        final i = group.x;
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipItems: (spots) => spots.map((spot) {
+                        final i = spot.x.round();
                         final day = i >= 0 && i < rows.length
                             ? _weekday[rows[i].day.weekday - 1]
                             : '';
-                        return BarTooltipItem(
-                          '$day\nRs. ${_pkrShort(rod.toY)}',
+                        return LineTooltipItem(
+                          '$day\nRs. ${_pkrShort(spot.y)}',
                           const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
                         );
-                      },
+                      }).toList(),
                     ),
+                    getTouchedSpotIndicator: (barData, indexes) => indexes
+                        .map((_) => TouchedSpotIndicatorData(
+                              FlLine(color: _accent.withOpacity(0.3), strokeWidth: 2),
+                              FlDotData(
+                                getDotPainter: (spot, percent, bar, index) =>
+                                    FlDotCirclePainter(
+                                  radius: 5,
+                                  color: _accent,
+                                  strokeWidth: 2,
+                                  strokeColor: Colors.white,
+                                ),
+                              ),
+                            ))
+                        .toList(),
                   ),
-                  barGroups: [
-                    for (var i = 0; i < rows.length; i++)
-                      BarChartGroupData(
-                        x: i,
-                        barRods: [
-                          BarChartRodData(
-                            toY: rows[i].amount,
-                            width: 16,
-                            color: _accent,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(4),
-                            ),
-                          ),
-                        ],
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [
+                        for (var i = 0; i < rows.length; i++)
+                          FlSpot(i.toDouble(), rows[i].amount),
+                      ],
+                      isCurved: true,
+                      curveSmoothness: 0.3,
+                      preventCurveOverShooting: true,
+                      color: _accent,
+                      barWidth: 3,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) =>
+                            FlDotCirclePainter(
+                          radius: 4,
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                          strokeColor: _accent,
+                        ),
                       ),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            _accent.withOpacity(0.28),
+                            _accent.withOpacity(0.0),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
