@@ -8,6 +8,7 @@ import '../auth/presentation/screens/login_screen.dart';
 import '../superadmin/branch/presentation/screens/branches_screen.dart';
 import '../superadmin/branch_target/presentation/screens/branch_target_screen.dart';
 import '../superadmin/discount/presentation/screens/branch_invoice_discount_screen.dart';
+import '../superadmin/discount/presentation/screens/sale_discount_tiers_screen.dart';
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
@@ -106,6 +107,11 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Discount',
     ),
     SidebarItem(
+      icon: AppIcons.sellOutlined,
+      label: 'Sale Discount Tiers',
+      group: 'Discount',
+    ),
+    SidebarItem(
       icon: AppIcons.flagOutlined,
       label: 'Branch Target',
       group: 'Target',
@@ -169,6 +175,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     IncomingBranchReturnsScreen(),
     HeadOfficeScreen(),
     BranchInvoiceDiscountScreen(),
+    SaleDiscountTiersScreen(),
     BranchTargetScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),

@@ -503,6 +503,14 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
             '- ${state.totalDiscount.toStringAsFixed(0)}',
             color: Colors.orange.shade700,
           ),
+          if (state.autoDiscount > 0) ...[
+            const SizedBox(width: 28),
+            _stat(
+              'Bulk Discount',
+              '- ${state.autoDiscount.toStringAsFixed(0)}',
+              color: Colors.green.shade700,
+            ),
+          ],
           if (allowDiscount) ...[
             const SizedBox(width: 20),
             SizedBox(

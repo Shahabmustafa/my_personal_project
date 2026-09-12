@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../superadmin/branch/presentation/providers/branch_provider.dart';
+import '../../../../superadmin/discount/data/model/sale_discount_tier_model.dart';
+import '../../../../superadmin/discount/presentation/providers/sale_discount_tier_provider.dart';
 import '../../../shared/current_branch_provider.dart';
 import '../../../branch_stock_inventory/data/datasource/branch_stock_datasource.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
@@ -159,6 +161,10 @@ class SaleInvoiceState {
   /// max % (superadmin set) tak clamp hota hai. Rupees amount [invoiceDiscount]
   /// getter se nikalta hai taaki cart badalne par apne aap recalculate ho.
   final double invoiceDiscountPct;
+
+  /// Head office ki "Sale Discount Tiers" screen se — sab tiers, highest
+  /// min_sale_amount pehle. Load hote hi ek dafa fetch ho jate hain.
+  final List<SaleDiscountTierModel> discountTiers;
   final bool isSaving;
   final String? error;
   final SaleInvoiceModel? lastSavedInvoice;
@@ -176,6 +182,7 @@ class SaleInvoiceState {
     this.note = '',
     this.cartItems = const [],
     this.invoiceDiscountPct = 0,
+    this.discountTiers = const [],
     this.isSaving = false,
     this.error,
     this.lastSavedInvoice,
@@ -183,6 +190,18 @@ class SaleInvoiceState {
 
   /// Invoice-wise extra discount, rupees mein — % of items total.
   double get invoiceDiscount => itemsTotal * invoiceDiscountPct / 100;
+
+  /// Head office ki tier jo [itemsTotal] par qualify karti hai — sab se
+  /// zyada min_sale_amount wali jeet ti hai (stacking nahi hoti).
+  SaleDiscountTierModel? get matchedDiscountTier {
+    final eligible = discountTiers.where((t) => itemsTotal >= t.minSaleAmount);
+    if (eligible.isEmpty) return null;
+    return eligible.reduce((a, b) => a.minSaleAmount >= b.minSaleAmount ? a : b);
+  }
+
+  /// Matched tier ka discount, rupees mein — cashier isko badal nahi sakta,
+  /// items total qualify hote hi automatically lagta hai.
+  double get autoDiscount => matchedDiscountTier?.discountFor(itemsTotal) ?? 0;
 
   /// 'cash_card' ke liye card portion = total - cash (0 se kam nahi ho sakta).
   double get cardAmount => (totalAmount - cashAmount).clamp(0, double.infinity);
@@ -195,7 +214,7 @@ class SaleInvoiceState {
   /// Items ka net total, invoice-wise extra discount lagne se pehle.
   double get itemsTotal => cartItems.fold(0, (sum, i) => sum + i.lineTotal);
   double get totalAmount =>
-      (itemsTotal - invoiceDiscount).clamp(0, double.infinity);
+      (itemsTotal - invoiceDiscount - autoDiscount).clamp(0, double.infinity);
   int get totalQuantity => cartItems.fold(0, (sum, i) => sum + i.quantity);
 
   SaleInvoiceState copyWith({
@@ -216,6 +235,7 @@ class SaleInvoiceState {
     String? note,
     List<SaleCartItem>? cartItems,
     double? invoiceDiscountPct,
+    List<SaleDiscountTierModel>? discountTiers,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -233,6 +253,7 @@ class SaleInvoiceState {
     note: note ?? this.note,
     cartItems: cartItems ?? this.cartItems,
     invoiceDiscountPct: invoiceDiscountPct ?? this.invoiceDiscountPct,
+    discountTiers: discountTiers ?? this.discountTiers,
     isSaving: isSaving ?? this.isSaving,
     error: clearError ? null : error ?? this.error,
     lastSavedInvoice: lastSavedInvoice ?? this.lastSavedInvoice,
@@ -249,6 +270,19 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     _loadInvoiceNumber();
     _loadDefaultCustomer();
     _loadDefaultEmployees();
+    _loadDiscountTiers();
+  }
+
+  /// Head office ki "Sale Discount Tiers" — ek dafa load karke rakh lete
+  /// hain taake cart badalne par [SaleInvoiceState.autoDiscount] turant
+  /// recalculate ho sake, koi extra network call ki zaroorat nahi.
+  Future<void> _loadDiscountTiers() async {
+    try {
+      final tiers = await _ref.read(saleDiscountTiersProvider.future);
+      if (mounted) state = state.copyWith(discountTiers: tiers);
+    } catch (_) {
+      // Tiers load na hon to bhi invoice normal (bina auto discount) ban sakti hai.
+    }
   }
 
   /// Manager branch se auto-resolve hota hai (koi dropdown nahi — cashier
@@ -508,7 +542,9 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           managerId: manager.id,
           subtotal: state.subtotal,
           totalDiscount: state.totalDiscount,
-          invoiceDiscount: state.invoiceDiscount,
+          // Manual invoice discount + head office ka automatic sale-tier
+          // discount — dono ek hi column mein combine ho kar save hote hain.
+          invoiceDiscount: state.invoiceDiscount + state.autoDiscount,
           totalAmount: state.totalAmount,
           salesmanCommissionPercent: salesmanCommissionPercent,
           salesmanCommissionAmount: salesmanCommissionAmount,
