@@ -31,24 +31,18 @@ class SaleReturnScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Text('Sale Return', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              if (state.originalInvoice != null) ...[
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text('Against ${state.originalInvoice!.invoiceNumber}',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent)),
-                ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 14),
+          if (state.originalInvoice != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text('Against ${state.originalInvoice!.invoiceNumber}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: accent)),
+            ),
+            const SizedBox(height: 8),
+          ],
 
           // ── Return header card ──────────────────────────────────────────
           Container(
@@ -107,12 +101,12 @@ class SaleReturnScreen extends ConsumerWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           // ── Printer / Bank / Cash amount ─────────────────────────────
           const _ReturnMetaRow(),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
           if (state.originalInvoice != null) ...[
             if (state.originalInvoiceLoading)
@@ -124,7 +118,7 @@ class SaleReturnScreen extends ConsumerWidget {
               const Expanded(child: SaleReturnItemsPicker()),
           ] else ...[
             const SaleReturnProductSelector(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
@@ -232,7 +226,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
