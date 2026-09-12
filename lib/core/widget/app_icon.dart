@@ -7,19 +7,22 @@ import 'package:flutter_svg/flutter_svg.dart';
 class AppIcon extends StatelessWidget {
   const AppIcon(this.assetPath, {super.key, this.size = 24, this.color});
 
+  /// Renders slightly smaller than [size] across the whole app, since the
+  /// hand-drawn outline set reads a bit large next to the old Material glyphs.
+  static const double _scale = 0.7;
+
   final String assetPath;
   final double size;
   final Color? color;
 
   @override
   Widget build(BuildContext context) {
+    final renderSize = size * _scale;
     return SvgPicture.asset(
       assetPath,
-      width: size,
-      height: size,
-      colorFilter: color == null
-          ? null
-          : ColorFilter.mode(color!, BlendMode.srcIn),
+      width: renderSize,
+      height: renderSize,
+      colorFilter: color == null ? null : ColorFilter.mode(color!, BlendMode.srcIn),
     );
   }
 }
