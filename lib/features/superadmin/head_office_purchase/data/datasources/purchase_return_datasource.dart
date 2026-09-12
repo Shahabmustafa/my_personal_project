@@ -40,7 +40,7 @@ class PurchaseReturnDatasource {
 
   Future<String> generateReturnNumber() async {
     final res = await _client
-        .from('ho_purchase_returns')
+        .from('purchase_returns')
         .select('return_number')
         .like('return_number', 'PR-%');
 
@@ -106,10 +106,12 @@ class PurchaseReturnDatasource {
 
   // ── Invoice numbers (for linking a return to an invoice) ─────────────────
 
-  Future<List<Map<String, String>>> fetchInvoiceNumbers() async {
+  Future<List<Map<String, String>>> fetchInvoiceNumbers(
+      String headOfficeId) async {
     final res = await _client
-        .from('ho_purchase_invoices')
+        .from('purchase_invoices')
         .select('id, invoice_number')
+        .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 
     return (res as List)
@@ -139,6 +141,7 @@ class PurchaseReturnDatasource {
 
   Future<PurchaseReturnModel> savePurchaseReturn({
     required String returnNumber,
+    required String headOfficeId,
     String? companyId,
     String? originalInvoiceId,
     required double totalAmount,
@@ -148,11 +151,12 @@ class PurchaseReturnDatasource {
     String? notes,
   }) async {
     final returnRes = await _client
-        .from('ho_purchase_returns')
+        .from('purchase_returns')
         .insert({
           'return_number': returnNumber,
           'original_invoice_id': originalInvoiceId,
           'company_id': companyId,
+          'head_office_id': headOfficeId,
           'total_amount': totalAmount,
           'total_discount': totalDiscount,
           'net_amount': netAmount,
@@ -184,7 +188,7 @@ class PurchaseReturnDatasource {
             })
         .toList();
 
-    await _client.from('ho_purchase_return_items').insert(itemsPayload);
+    await _client.from('purchase_return_items').insert(itemsPayload);
 
     // STOCK DECREASE
     for (final item in cartItems) {
@@ -207,10 +211,11 @@ class PurchaseReturnDatasource {
 
   // ── Fetch all returns ────────────────────────────────────────────────────
 
-  Future<List<PurchaseReturnModel>> fetchReturns() async {
+  Future<List<PurchaseReturnModel>> fetchReturns(String headOfficeId) async {
     final res = await _client
-        .from('ho_purchase_returns')
+        .from('purchase_returns')
         .select('*, companies(name)')
+        .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 
     return (res as List)
@@ -220,13 +225,13 @@ class PurchaseReturnDatasource {
 
   Future<PurchaseReturnModel> fetchReturnDetail(String returnId) async {
     final returnRes = await _client
-        .from('ho_purchase_returns')
+        .from('purchase_returns')
         .select('*, companies(name)')
         .eq('id', returnId)
         .single();
 
     final itemsRes = await _client
-        .from('ho_purchase_return_items')
+        .from('purchase_return_items')
         .select('''
           *,
           products(article_name),

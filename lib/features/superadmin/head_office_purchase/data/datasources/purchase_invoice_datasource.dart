@@ -5,7 +5,9 @@ import '../models/warehouse_stock_model.dart';
 // ignore_for_file: unused_import
 
 /// Head office purchase invoice datasource — warehouse ke baghair.
-/// Stock: public.stock_inventory  |  Invoices: public.ho_purchase_invoices
+/// Stock: public.stock_inventory  |  Invoices: public.purchase_invoices
+/// (head_office_id se filtered — warehouse purchases isi table mein
+/// warehouse_id ke sath rehte hain, dono mutually exclusive hain).
 class PurchaseInvoiceDatasource {
   final SupabaseClient _client;
 
@@ -41,7 +43,7 @@ class PurchaseInvoiceDatasource {
 
   Future<String> generateInvoiceNumber() async {
     final res = await _client
-        .from('ho_purchase_invoices')
+        .from('purchase_invoices')
         .select('invoice_number')
         .like('invoice_number', 'Pur-%');
 
@@ -131,6 +133,7 @@ class PurchaseInvoiceDatasource {
 
   Future<PurchaseInvoiceModel> savePurchaseInvoice({
     required String invoiceNumber,
+    required String headOfficeId,
     String? companyId,
     required double totalAmount,
     required double totalDiscount,
@@ -142,10 +145,11 @@ class PurchaseInvoiceDatasource {
     String? notes,
   }) async {
     final invoiceRes = await _client
-        .from('ho_purchase_invoices')
+        .from('purchase_invoices')
         .insert({
           'invoice_number': invoiceNumber,
           'company_id': companyId,
+          'head_office_id': headOfficeId,
           'total_amount': totalAmount,
           'total_discount': totalDiscount,
           'net_amount': netAmount,
@@ -180,7 +184,7 @@ class PurchaseInvoiceDatasource {
             })
         .toList();
 
-    await _client.from('ho_purchase_invoice_items').insert(itemsPayload);
+    await _client.from('purchase_invoice_items').insert(itemsPayload);
 
     // STOCK INCREASE
     for (final item in cartItems) {
@@ -204,10 +208,11 @@ class PurchaseInvoiceDatasource {
 
   // ── Fetch all invoices ────────────────────────────────────────────────────
 
-  Future<List<PurchaseInvoiceModel>> fetchInvoices() async {
+  Future<List<PurchaseInvoiceModel>> fetchInvoices(String headOfficeId) async {
     final res = await _client
-        .from('ho_purchase_invoices')
+        .from('purchase_invoices')
         .select('*, companies(name)')
+        .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 
     return (res as List)
@@ -219,13 +224,13 @@ class PurchaseInvoiceDatasource {
 
   Future<PurchaseInvoiceModel> fetchInvoiceDetail(String invoiceId) async {
     final invoiceRes = await _client
-        .from('ho_purchase_invoices')
+        .from('purchase_invoices')
         .select('*, companies(name)')
         .eq('id', invoiceId)
         .single();
 
     final itemsRes = await _client
-        .from('ho_purchase_invoice_items')
+        .from('purchase_invoice_items')
         .select('''
           *,
           products(article_name),

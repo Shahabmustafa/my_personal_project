@@ -6,6 +6,7 @@ import '../../data/models/purchase_invoice_model.dart';
 import '../../data/models/purchase_return_model.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/purchase_invoice_repository.dart';
+import '../../../shared/current_head_office_provider.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final purchaseInvoiceDatasourceProvider = Provider<PurchaseInvoiceDatasource>(
@@ -90,13 +91,15 @@ class InvoiceListState {
 
 class InvoiceListNotifier extends StateNotifier<InvoiceListState> {
   final PurchaseInvoiceRepository _repo;
+  final String _headOfficeId;
 
-  InvoiceListNotifier(this._repo) : super(const InvoiceListState());
+  InvoiceListNotifier(this._repo, this._headOfficeId)
+      : super(const InvoiceListState());
 
   Future<void> loadInvoices() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final list = await _repo.getInvoices();
+      final list = await _repo.getInvoices(_headOfficeId);
       state = state.copyWith(invoices: list, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -106,7 +109,10 @@ class InvoiceListNotifier extends StateNotifier<InvoiceListState> {
 
 final invoiceListProvider =
     StateNotifierProvider<InvoiceListNotifier, InvoiceListState>((ref) {
-  return InvoiceListNotifier(ref.read(purchaseInvoiceRepositoryProvider));
+  return InvoiceListNotifier(
+    ref.read(purchaseInvoiceRepositoryProvider),
+    ref.watch(currentHeadOfficeIdProvider),
+  );
 });
 
 // ── Head office stock cache ──────────────────────────────────────────────
@@ -162,8 +168,9 @@ class PurchaseInvoiceState {
 
 class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
   final PurchaseInvoiceRepository _repo;
+  final String _headOfficeId;
 
-  PurchaseInvoiceNotifier(this._repo)
+  PurchaseInvoiceNotifier(this._repo, this._headOfficeId)
       : super(const PurchaseInvoiceState()) {
     _loadInvoiceNumber();
   }
@@ -171,7 +178,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
   static Future<String> _generateNextNumber() async {
     final client = Supabase.instance.client;
     final res = await client
-        .from('ho_purchase_invoices')
+        .from('purchase_invoices')
         .select('invoice_number')
         .like('invoice_number', 'Pur-%');
 
@@ -308,6 +315,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
 
       await repo.savePurchaseInvoice(
         invoiceNumber: freshNumber,
+        headOfficeId: _headOfficeId,
         companyId: state.selectedCompany?.id,
         totalAmount: state.totalAmount,
         totalDiscount: state.totalDiscount,
@@ -332,6 +340,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
 
           await repo.savePurchaseInvoice(
             invoiceNumber: retryNumber,
+            headOfficeId: _headOfficeId,
             companyId: state.selectedCompany?.id,
             totalAmount: state.totalAmount,
             totalDiscount: state.totalDiscount,
@@ -371,5 +380,8 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
 
 final purchaseInvoiceProvider =
     StateNotifierProvider<PurchaseInvoiceNotifier, PurchaseInvoiceState>(
-  (ref) => PurchaseInvoiceNotifier(ref.read(purchaseInvoiceRepositoryProvider)),
+  (ref) => PurchaseInvoiceNotifier(
+    ref.read(purchaseInvoiceRepositoryProvider),
+    ref.watch(currentHeadOfficeIdProvider),
+  ),
 );

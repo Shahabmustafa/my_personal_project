@@ -31,6 +31,7 @@ class PurchaseInvoiceRepository {
 
   Future<PurchaseInvoiceModel> savePurchaseInvoice({
     required String invoiceNumber,
+    required String headOfficeId,
     String? companyId,
     required double totalAmount,
     required double totalDiscount,
@@ -43,6 +44,7 @@ class PurchaseInvoiceRepository {
   }) =>
       _datasource.savePurchaseInvoice(
         invoiceNumber: invoiceNumber,
+        headOfficeId: headOfficeId,
         companyId: companyId,
         totalAmount: totalAmount,
         totalDiscount: totalDiscount,
@@ -54,8 +56,8 @@ class PurchaseInvoiceRepository {
         notes: notes,
       );
 
-  Future<List<PurchaseInvoiceModel>> getInvoices() =>
-      _datasource.fetchInvoices();
+  Future<List<PurchaseInvoiceModel>> getInvoices(String headOfficeId) =>
+      _datasource.fetchInvoices(headOfficeId);
 
   Future<PurchaseInvoiceModel> getInvoiceDetail(String invoiceId) =>
       _datasource.fetchInvoiceDetail(invoiceId);

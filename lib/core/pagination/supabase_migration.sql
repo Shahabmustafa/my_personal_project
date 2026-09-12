@@ -16,7 +16,8 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 --   products.article_name, customers.name, customers.phone_number,
 --   {stock_inventory, warehouse_stock_inventory, branch_stock_inventory}.barcode,
 --   {sale_invoices, sale_returns, sale_exchanges, purchase_invoices,
---    ho_purchase_invoices, purchase_returns, ho_purchase_returns,
+--    purchase_returns (warehouse_id/head_office_id both live here now —
+--    ho_purchase_invoices/ho_purchase_returns were merged in and dropped),
 --    assign_stock_to_branch, branch_stock_returns,
 --    branch_return_to_warehouse}.<number column>
 --

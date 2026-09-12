@@ -22,11 +22,12 @@ class PurchaseReturnRepository {
   Future<List<StockLookupItem>> getCompanies() =>
       _datasource.fetchCompanies();
 
-  Future<List<Map<String, String>>> getInvoiceNumbers() =>
-      _datasource.fetchInvoiceNumbers();
+  Future<List<Map<String, String>>> getInvoiceNumbers(String headOfficeId) =>
+      _datasource.fetchInvoiceNumbers(headOfficeId);
 
   Future<PurchaseReturnModel> savePurchaseReturn({
     required String returnNumber,
+    required String headOfficeId,
     String? companyId,
     String? originalInvoiceId,
     required double totalAmount,
@@ -37,6 +38,7 @@ class PurchaseReturnRepository {
   }) =>
       _datasource.savePurchaseReturn(
         returnNumber: returnNumber,
+        headOfficeId: headOfficeId,
         companyId: companyId,
         originalInvoiceId: originalInvoiceId,
         totalAmount: totalAmount,
@@ -46,7 +48,8 @@ class PurchaseReturnRepository {
         notes: notes,
       );
 
-  Future<List<PurchaseReturnModel>> getReturns() => _datasource.fetchReturns();
+  Future<List<PurchaseReturnModel>> getReturns(String headOfficeId) =>
+      _datasource.fetchReturns(headOfficeId);
 
   Future<PurchaseReturnModel> getReturnDetail(String returnId) =>
       _datasource.fetchReturnDetail(returnId);

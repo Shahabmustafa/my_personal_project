@@ -5,6 +5,7 @@ import '../../data/datasources/purchase_return_datasource.dart';
 import '../../data/models/purchase_return_model.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/purchase_return_repository.dart';
+import '../../../shared/current_head_office_provider.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final purchaseReturnDatasourceProvider = Provider<PurchaseReturnDatasource>(
@@ -61,13 +62,15 @@ class ReturnListState {
 
 class ReturnListNotifier extends StateNotifier<ReturnListState> {
   final PurchaseReturnRepository _repo;
+  final String _headOfficeId;
 
-  ReturnListNotifier(this._repo) : super(const ReturnListState());
+  ReturnListNotifier(this._repo, this._headOfficeId)
+      : super(const ReturnListState());
 
   Future<void> loadReturns() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      final list = await _repo.getReturns();
+      final list = await _repo.getReturns(_headOfficeId);
       state = state.copyWith(returns: list, isLoading: false);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -77,7 +80,10 @@ class ReturnListNotifier extends StateNotifier<ReturnListState> {
 
 final returnListProvider =
     StateNotifierProvider<ReturnListNotifier, ReturnListState>((ref) {
-  return ReturnListNotifier(ref.read(purchaseReturnRepositoryProvider));
+  return ReturnListNotifier(
+    ref.read(purchaseReturnRepositoryProvider),
+    ref.watch(currentHeadOfficeIdProvider),
+  );
 });
 
 // ── Lookup providers ──────────────────────────────────────────────────────
@@ -87,7 +93,9 @@ final returnCompaniesProvider = FutureProvider<List<StockLookupItem>>(
 
 final returnInvoiceNumbersProvider =
     FutureProvider<List<Map<String, String>>>(
-  (ref) => ref.read(purchaseReturnRepositoryProvider).getInvoiceNumbers(),
+  (ref) => ref
+      .read(purchaseReturnRepositoryProvider)
+      .getInvoiceNumbers(ref.watch(currentHeadOfficeIdProvider)),
 );
 
 final returnWarehouseStockProvider =
@@ -155,8 +163,9 @@ class PurchaseReturnState {
 
 class PurchaseReturnNotifier extends StateNotifier<PurchaseReturnState> {
   final PurchaseReturnRepository _repo;
+  final String _headOfficeId;
 
-  PurchaseReturnNotifier(this._repo)
+  PurchaseReturnNotifier(this._repo, this._headOfficeId)
       : super(const PurchaseReturnState()) {
     _loadReturnNumber();
   }
@@ -287,6 +296,7 @@ class PurchaseReturnNotifier extends StateNotifier<PurchaseReturnState> {
 
       await _repo.savePurchaseReturn(
         returnNumber: freshNumber,
+        headOfficeId: _headOfficeId,
         companyId: state.selectedCompany?.id,
         originalInvoiceId: state.selectedInvoiceId,
         totalAmount: state.totalAmount,
@@ -309,6 +319,7 @@ class PurchaseReturnNotifier extends StateNotifier<PurchaseReturnState> {
 
           await _repo.savePurchaseReturn(
             returnNumber: retryNumber,
+            headOfficeId: _headOfficeId,
             companyId: state.selectedCompany?.id,
             originalInvoiceId: state.selectedInvoiceId,
             totalAmount: state.totalAmount,
@@ -345,5 +356,8 @@ class PurchaseReturnNotifier extends StateNotifier<PurchaseReturnState> {
 
 final purchaseReturnProvider =
     StateNotifierProvider<PurchaseReturnNotifier, PurchaseReturnState>((ref) {
-  return PurchaseReturnNotifier(ref.read(purchaseReturnRepositoryProvider));
+  return PurchaseReturnNotifier(
+    ref.read(purchaseReturnRepositoryProvider),
+    ref.watch(currentHeadOfficeIdProvider),
+  );
 });

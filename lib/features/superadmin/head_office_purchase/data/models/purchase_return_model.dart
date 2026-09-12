@@ -6,7 +6,7 @@ class PurchaseReturnModel {
   final String? originalInvoiceId;
   final String? companyId;
   final String? companyName;
-  final String warehouseId;
+  final String? headOfficeId;
   final DateTime returnDate;
   final double totalAmount;
   final double totalDiscount;
@@ -21,7 +21,7 @@ class PurchaseReturnModel {
     this.originalInvoiceId,
     this.companyId,
     this.companyName,
-    required this.warehouseId,
+    this.headOfficeId,
     required this.returnDate,
     required this.totalAmount,
     required this.totalDiscount,
@@ -42,7 +42,7 @@ class PurchaseReturnModel {
       companyId: json['company_id'] as String?,
       companyName:
       (json['companies'] as Map<String, dynamic>?)?['name'] as String?,
-      warehouseId: json['warehouse_id'] as String? ?? '',
+      headOfficeId: json['head_office_id'] as String?,
       returnDate: DateTime.parse(json['return_date'] as String),
       totalAmount: (json['total_amount'] as num).toDouble(),
       totalDiscount: (json['total_discount'] as num).toDouble(),

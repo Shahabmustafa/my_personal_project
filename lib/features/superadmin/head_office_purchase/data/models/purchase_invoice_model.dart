@@ -3,7 +3,7 @@ class PurchaseInvoiceModel {
   final String invoiceNumber;
   final String? companyId;
   final String? companyName;
-  final String warehouseId;
+  final String? headOfficeId;
   final DateTime invoiceDate;
   final double totalAmount;
   final double totalDiscount;
@@ -20,7 +20,7 @@ class PurchaseInvoiceModel {
     required this.invoiceNumber,
     this.companyId,
     this.companyName,
-    required this.warehouseId,
+    this.headOfficeId,
     required this.invoiceDate,
     required this.totalAmount,
     required this.totalDiscount,
@@ -41,7 +41,7 @@ class PurchaseInvoiceModel {
       companyId: json['company_id'] as String?,
       companyName:
       (json['companies'] as Map<String, dynamic>?)?['name'] as String?,
-      warehouseId: json['warehouse_id'] as String? ?? '',
+      headOfficeId: json['head_office_id'] as String?,
       invoiceDate: DateTime.parse(json['invoice_date'] as String),
       totalAmount: (json['total_amount'] as num).toDouble(),
       totalDiscount: (json['total_discount'] as num).toDouble(),
