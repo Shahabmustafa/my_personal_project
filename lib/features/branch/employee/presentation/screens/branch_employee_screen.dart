@@ -146,7 +146,6 @@ class _DesktopTable extends StatelessWidget {
                   _TH('Salary', flex: 2, alignEnd: true),
                   _TH('Commission', flex: 2, alignEnd: true),
                   _TH('Sale', flex: 2, alignEnd: true),
-                  _TH('Return', flex: 2, alignEnd: true),
                   _TH('Net Salary', flex: 2, alignEnd: true),
                 ]),
               ),
@@ -208,23 +207,8 @@ class _DesktopTable extends StatelessWidget {
                           child: _TD(
                             child: Align(
                               alignment: Alignment.centerRight,
-                              child: Text('Rs. ${_fmtAmt(e.totalSales)}',
+                              child: Text('Rs. ${_fmtAmt(e.netSale)}',
                                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: _TD(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                  e.totalSalesReturn > 0 ? '- Rs. ${_fmtAmt(e.totalSalesReturn)}' : 'Rs. 0',
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: e.totalSalesReturn > 0
-                                          ? Colors.red.shade400
-                                          : const Color(0xFF8A8FA3))),
                             ),
                           ),
                         ),
@@ -308,12 +292,7 @@ class _MobileList extends StatelessWidget {
                   _statColumn('Commission', '${_fmtAmt(e.commissionPercent)}%',
                       const Color(0xFF8A8FA3)),
                   const SizedBox(width: 20),
-                  _statColumn('Sale', 'Rs. ${_fmtAmt(e.totalSales)}', const Color(0xFF2D2D3A)),
-                  const SizedBox(width: 20),
-                  _statColumn(
-                      'Return',
-                      e.totalSalesReturn > 0 ? '- Rs. ${_fmtAmt(e.totalSalesReturn)}' : 'Rs. 0',
-                      e.totalSalesReturn > 0 ? Colors.red.shade400 : const Color(0xFF8A8FA3)),
+                  _statColumn('Sale', 'Rs. ${_fmtAmt(e.netSale)}', const Color(0xFF2D2D3A)),
                 ],
               ),
               const SizedBox(height: 10),

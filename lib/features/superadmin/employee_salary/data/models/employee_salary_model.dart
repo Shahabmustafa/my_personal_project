@@ -12,6 +12,11 @@ class EmployeeSalaryModel {
   final double netSalary;
   final DateTime createdAt;
 
+  /// Sale − Return (exchange ka collect/pay difference [totalSales] mein
+  /// pehle se shamil hai, DB trigger ke zariye) — yehi "Sale" ke taur par
+  /// dikhaya jata hai, alag "Return" column ki zaroorat nahi.
+  double get netSale => totalSales - totalSalesReturn;
+
   EmployeeSalaryModel({
     required this.id,
     required this.userId,
