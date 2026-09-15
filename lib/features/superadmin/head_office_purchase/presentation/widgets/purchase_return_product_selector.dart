@@ -7,6 +7,10 @@ import '../providers/purchase_return_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+
+/// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
+/// (color/size/category/type ke sath) hai, is liye alag Size/Color/
+/// Category/Type dropdowns ki zaroorat nahi.
 class PurchaseReturnProductSelector extends ConsumerStatefulWidget {
   const PurchaseReturnProductSelector({super.key});
 
@@ -22,11 +26,6 @@ class _PurchaseReturnProductSelectorState
   final _qtyCtrl = TextEditingController(text: '1');
 
   WarehouseStockModel? _selectedStock;
-  _ProductItem? _selectedProduct;
-  WarehouseStockModel? _selectedSizeStock;
-  WarehouseStockModel? _selectedColorStock;
-  WarehouseStockModel? _selectedCategoryStock;
-  WarehouseStockModel? _selectedTypeStock;
   bool _barcodeNotFound = false;
 
   @override
@@ -37,97 +36,31 @@ class _PurchaseReturnProductSelectorState
     super.dispose();
   }
 
-  // ── Build unique product list ─────────────────────────────────────────────
-
-  List<_ProductItem> _buildProducts(List<WarehouseStockModel> all) {
-    final seen = <String, _ProductItem>{};
-    for (final s in all) {
-      seen.putIfAbsent(
-          s.productId,
-          () => _ProductItem(
-                id: s.productId,
-                name: s.productName ?? s.productId,
-                salePrice: s.salePrice,
-                purchasePrice: s.purchasePrice,
-              ));
-    }
-    return seen.values.toList()..sort((a, b) => a.name.compareTo(b.name));
+  List<WarehouseStockModel> _filterStock(List<WarehouseStockModel> all, String query) {
+    if (query.trim().isEmpty) return all;
+    final q = query.toLowerCase();
+    return all.where((s) {
+      final haystack = [
+        s.productName ?? '',
+        s.colorName ?? '',
+        s.sizeName ?? '',
+        s.categoryName ?? '',
+        s.typeName ?? '',
+        s.barcode,
+      ].join(' ').toLowerCase();
+      return haystack.contains(q);
+    }).toList();
   }
 
-  // ── Cascade helpers ───────────────────────────────────────────────────────
-
-  List<WarehouseStockModel> _sizesFor(
-      List<WarehouseStockModel> all, String productId) {
-    final seen = <String, WarehouseStockModel>{};
-    for (final s in all.where((s) => s.productId == productId)) {
-      seen.putIfAbsent(s.sizeId, () => s);
-    }
-    return seen.values.toList()
-      ..sort((a, b) => (a.sizeName ?? '').compareTo(b.sizeName ?? ''));
+  String _variantLine(WarehouseStockModel s) {
+    final parts = [
+      if ((s.colorName ?? '').isNotEmpty) s.colorName!,
+      if ((s.sizeName ?? '').isNotEmpty) 'Size ${s.sizeName!}',
+      if ((s.categoryName ?? '').isNotEmpty) s.categoryName!,
+      if ((s.typeName ?? '').isNotEmpty) s.typeName!,
+    ];
+    return parts.join(' • ');
   }
-
-  List<WarehouseStockModel> _colorsFor(
-      List<WarehouseStockModel> all, String productId, String sizeId) {
-    final seen = <String, WarehouseStockModel>{};
-    for (final s
-        in all.where((s) => s.productId == productId && s.sizeId == sizeId)) {
-      seen.putIfAbsent(s.colorId, () => s);
-    }
-    return seen.values.toList();
-  }
-
-  List<WarehouseStockModel> _categoriesFor(
-      List<WarehouseStockModel> all,
-      String productId,
-      String sizeId,
-      String colorId) {
-    final seen = <String, WarehouseStockModel>{};
-    for (final s in all.where((s) =>
-        s.productId == productId &&
-        s.sizeId == sizeId &&
-        s.colorId == colorId)) {
-      seen.putIfAbsent(s.categoryId, () => s);
-    }
-    return seen.values.toList();
-  }
-
-  List<WarehouseStockModel> _typesFor(
-      List<WarehouseStockModel> all,
-      String productId,
-      String sizeId,
-      String colorId,
-      String categoryId) {
-    final seen = <String, WarehouseStockModel>{};
-    for (final s in all.where((s) =>
-        s.productId == productId &&
-        s.sizeId == sizeId &&
-        s.colorId == colorId &&
-        s.categoryId == categoryId)) {
-      seen.putIfAbsent(s.typeId, () => s);
-    }
-    return seen.values.toList();
-  }
-
-  WarehouseStockModel? _findStock(
-      List<WarehouseStockModel> all,
-      String productId,
-      String sizeId,
-      String colorId,
-      String categoryId,
-      String typeId) {
-    try {
-      return all.firstWhere((s) =>
-          s.productId == productId &&
-          s.sizeId == sizeId &&
-          s.colorId == colorId &&
-          s.categoryId == categoryId &&
-          s.typeId == typeId);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  // ── Barcode submit ────────────────────────────────────────────────────────
 
   void _onBarcodeSubmit(List<WarehouseStockModel> allStock) {
     final barcode = _barcodeCtrl.text.trim();
@@ -137,16 +70,6 @@ class _PurchaseReturnProductSelectorState
       setState(() {
         _barcodeNotFound = false;
         _selectedStock = stock;
-        _selectedProduct = _ProductItem(
-          id: stock.productId,
-          name: stock.productName ?? stock.productId,
-          salePrice: stock.salePrice,
-          purchasePrice: stock.purchasePrice,
-        );
-        _selectedSizeStock = stock;
-        _selectedColorStock = stock;
-        _selectedCategoryStock = stock;
-        _selectedTypeStock = stock;
       });
     } catch (_) {
       setState(() {
@@ -155,8 +78,6 @@ class _PurchaseReturnProductSelectorState
       });
     }
   }
-
-  // ── Add to cart ───────────────────────────────────────────────────────────
 
   void _addToCart() {
     if (_selectedStock == null) return;
@@ -168,11 +89,6 @@ class _PurchaseReturnProductSelectorState
     _qtyCtrl.text = '1';
     setState(() {
       _selectedStock = null;
-      _selectedProduct = null;
-      _selectedSizeStock = null;
-      _selectedColorStock = null;
-      _selectedCategoryStock = null;
-      _selectedTypeStock = null;
       _barcodeNotFound = false;
     });
     _barcodeFocus.requestFocus();
@@ -181,62 +97,11 @@ class _PurchaseReturnProductSelectorState
   @override
   Widget build(BuildContext context) {
     final stockAsync = ref.watch(returnWarehouseStockProvider);
-    const primaryColor = Colors.orange;
 
     return stockAsync.when(
-      loading: () =>
-          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      error: (e, _) =>
-          Text('Error: $e', style: const TextStyle(color: Colors.red)),
+      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
       data: (allStock) {
-        final products = _buildProducts(allStock);
-
-        final sizes = _selectedProduct != null
-            ? _sizesFor(allStock, _selectedProduct!.id)
-            : <WarehouseStockModel>[];
-
-        final colors =
-            (_selectedProduct != null && _selectedSizeStock != null)
-                ? _colorsFor(allStock, _selectedProduct!.id,
-                    _selectedSizeStock!.sizeId)
-                : <WarehouseStockModel>[];
-
-        final categories = (_selectedProduct != null &&
-                _selectedSizeStock != null &&
-                _selectedColorStock != null)
-            ? _categoriesFor(allStock, _selectedProduct!.id,
-                _selectedSizeStock!.sizeId, _selectedColorStock!.colorId)
-            : <WarehouseStockModel>[];
-
-        final types = (_selectedProduct != null &&
-                _selectedSizeStock != null &&
-                _selectedColorStock != null &&
-                _selectedCategoryStock != null)
-            ? _typesFor(
-                allStock,
-                _selectedProduct!.id,
-                _selectedSizeStock!.sizeId,
-                _selectedColorStock!.colorId,
-                _selectedCategoryStock!.categoryId)
-            : <WarehouseStockModel>[];
-
-        // Resolve final stock
-        if (_selectedProduct != null &&
-            _selectedSizeStock != null &&
-            _selectedColorStock != null &&
-            _selectedCategoryStock != null &&
-            _selectedTypeStock != null &&
-            _selectedStock == null) {
-          _selectedStock = _findStock(
-            allStock,
-            _selectedProduct!.id,
-            _selectedSizeStock!.sizeId,
-            _selectedColorStock!.colorId,
-            _selectedCategoryStock!.categoryId,
-            _selectedTypeStock!.typeId,
-          );
-        }
-
         final stock = _selectedStock;
         final totalQty = stock?.quantity ?? 0;
         final purchasePrice = stock?.purchasePrice ?? 0.0;
@@ -255,13 +120,12 @@ class _PurchaseReturnProductSelectorState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── ROW 1: Barcode | Product | Size | Color | Category | Type ─
+              // ── ROW 1: Barcode | Article ────────────────────────────────
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Barcode
                   Expanded(
-                    flex: 3,
+                    flex: 2,
                     child: TextField(
                       controller: _barcodeCtrl,
                       focusNode: _barcodeFocus,
@@ -270,183 +134,69 @@ class _PurchaseReturnProductSelectorState
                         labelText: 'Bar Code',
                         hintText: 'Scan barcode...',
                         prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 12),
-                        errorText:
-                            _barcodeNotFound ? 'Not found' : null,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                        errorText: _barcodeNotFound ? 'Not found' : null,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(
-                              color: Colors.orange.shade200),
+                          borderSide: BorderSide(color: Colors.orange.shade200),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 14, horizontal: 12),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                       ),
                       onSubmitted: (_) => _onBarcodeSubmit(allStock),
                     ),
                   ),
                   const SizedBox(width: 10),
-
-                  // Product
                   Expanded(
                     flex: 3,
-                    child: DropdownSearch<_ProductItem>(
-                      items: (f, _) => products
-                          .where((p) => p.name
-                              .toLowerCase()
-                              .contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedProduct,
-                      itemAsString: (p) => p.name,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: (p) => setState(() {
-                        _selectedProduct = p;
-                        _selectedSizeStock = null;
-                        _selectedColorStock = null;
-                        _selectedCategoryStock = null;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
+                    child: DropdownSearch<WarehouseStockModel>(
+                      items: (f, _) => _filterStock(allStock, f),
+                      selectedItem: _selectedStock,
+                      itemAsString: (s) {
+                        final variant = _variantLine(s);
+                        final name = s.productName ?? s.productId;
+                        return variant.isEmpty ? name : '$name — $variant';
+                      },
+                      compareFn: (a, b) =>
+                          a.productId == b.productId &&
+                          a.sizeId == b.sizeId &&
+                          a.colorId == b.colorId &&
+                          a.categoryId == b.categoryId &&
+                          a.typeId == b.typeId,
+                      onSelected: (s) => setState(() {
+                        _selectedStock = s;
                         _barcodeCtrl.clear();
                         _barcodeNotFound = false;
                       }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Product')),
+                      decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Article')),
                       popupProps: PopupProps.menu(
                         showSearchBox: true,
-                        constraints:
-                            const BoxConstraints(maxHeight: 260),
+                        constraints: const BoxConstraints(maxHeight: 320),
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
-                            hintText: 'Search...',
+                            hintText: 'Search article, color, size, category...',
                             prefixIcon: TextFieldIcon(AppIcons.search, size: 12),
                             isDense: true,
                           ),
                         ),
+                        itemBuilder: (context, s, isSelected, isFocused) {
+                          final variant = _variantLine(s);
+                          return ListTile(
+                            dense: true,
+                            selected: isSelected,
+                            title: Text(s.productName ?? s.productId,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            subtitle: Text(
+                              variant.isEmpty ? 'Barcode: ${s.barcode}' : '$variant  •  Barcode: ${s.barcode}',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                            ),
+                            trailing: Text('Qty ${s.quantity}',
+                                style: TextStyle(
+                                    fontSize: 11,
+                                    color: s.quantity > 0 ? Colors.green.shade700 : Colors.red)),
+                          );
+                        },
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // Size
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<WarehouseStockModel>(
-                      enabled: _selectedProduct != null,
-                      items: (f, _) => sizes
-                          .where((s) => (s.sizeName ?? '')
-                              .toLowerCase()
-                              .contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedSizeStock,
-                      itemAsString: (s) => s.sizeName ?? s.sizeId,
-                      compareFn: (a, b) => a.sizeId == b.sizeId,
-                      onSelected: (s) => setState(() {
-                        _selectedSizeStock = s;
-                        _selectedColorStock = null;
-                        _selectedCategoryStock = null;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Size',
-                              enabled: _selectedProduct != null)),
-                      popupProps: const PopupProps.menu(
-                          constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // Color
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<WarehouseStockModel>(
-                      enabled: _selectedProduct != null &&
-                          _selectedSizeStock != null,
-                      items: (f, _) => colors
-                          .where((s) => (s.colorName ?? '')
-                              .toLowerCase()
-                              .contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedColorStock,
-                      itemAsString: (s) => s.colorName ?? s.colorId,
-                      compareFn: (a, b) => a.colorId == b.colorId,
-                      onSelected: (s) => setState(() {
-                        _selectedColorStock = s;
-                        _selectedCategoryStock = null;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Color',
-                              enabled: _selectedProduct != null &&
-                                  _selectedSizeStock != null)),
-                      popupProps: const PopupProps.menu(
-                          constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // Category
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<WarehouseStockModel>(
-                      enabled: _selectedProduct != null &&
-                          _selectedSizeStock != null &&
-                          _selectedColorStock != null,
-                      items: (f, _) => categories
-                          .where((s) => (s.categoryName ?? '')
-                              .toLowerCase()
-                              .contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedCategoryStock,
-                      itemAsString: (s) =>
-                          s.categoryName ?? s.categoryId,
-                      compareFn: (a, b) =>
-                          a.categoryId == b.categoryId,
-                      onSelected: (s) => setState(() {
-                        _selectedCategoryStock = s;
-                        _selectedTypeStock = null;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Category',
-                              enabled: _selectedProduct != null &&
-                                  _selectedSizeStock != null &&
-                                  _selectedColorStock != null)),
-                      popupProps: const PopupProps.menu(
-                          constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-
-                  // Type
-                  Expanded(
-                    flex: 2,
-                    child: DropdownSearch<WarehouseStockModel>(
-                      enabled: _selectedProduct != null &&
-                          _selectedSizeStock != null &&
-                          _selectedColorStock != null &&
-                          _selectedCategoryStock != null,
-                      items: (f, _) => types
-                          .where((s) => (s.typeName ?? '')
-                              .toLowerCase()
-                              .contains(f.toLowerCase()))
-                          .toList(),
-                      selectedItem: _selectedTypeStock,
-                      itemAsString: (s) => s.typeName ?? s.typeId,
-                      compareFn: (a, b) => a.typeId == b.typeId,
-                      onSelected: (s) => setState(() {
-                        _selectedTypeStock = s;
-                        _selectedStock = null;
-                      }),
-                      decoratorProps: DropDownDecoratorProps(
-                          decoration: _dropDecor('Type',
-                              enabled: _selectedProduct != null &&
-                                  _selectedSizeStock != null &&
-                                  _selectedColorStock != null &&
-                                  _selectedCategoryStock != null)),
-                      popupProps: const PopupProps.menu(
-                          constraints: BoxConstraints(maxHeight: 260)),
                     ),
                   ),
                 ],
@@ -458,45 +208,33 @@ class _PurchaseReturnProductSelectorState
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // S.Price
                   Expanded(
                     flex: 2,
                     child: _InfoBox(
                       label: 'S.Price',
-                      value: stock != null
-                          ? salePrice.toStringAsFixed(0)
-                          : null,
+                      value: stock != null ? salePrice.toStringAsFixed(0) : null,
                     ),
                   ),
                   const SizedBox(width: 10),
-
-                  // P.Price
                   Expanded(
                     flex: 2,
                     child: _InfoBox(
                       label: 'P.Price',
-                      value: stock != null
-                          ? purchasePrice.toStringAsFixed(0)
-                          : null,
+                      value: stock != null ? purchasePrice.toStringAsFixed(0) : null,
                       valueColor: Colors.purple.shade600,
                     ),
                   ),
                   const SizedBox(width: 10),
-
-                  // T.Quantity
                   Expanded(
                     flex: 2,
                     child: _InfoBox(
                       label: 'T.Quantity',
                       value: stock != null ? '$totalQty' : null,
-                      valueColor: (stock != null && totalQty == 0)
-                          ? Colors.red
-                          : Colors.green.shade700,
+                      valueColor:
+                          (stock != null && totalQty == 0) ? Colors.red : Colors.green.shade700,
                     ),
                   ),
                   const SizedBox(width: 10),
-
-                  // Discount
                   Expanded(
                     flex: 3,
                     child: _InfoBox(
@@ -508,21 +246,15 @@ class _PurchaseReturnProductSelectorState
                     ),
                   ),
                   const SizedBox(width: 10),
-
-                  // Net Price (purchase based)
                   Expanded(
                     flex: 2,
                     child: _InfoBox(
                       label: 'Net Price',
-                      value: stock != null
-                          ? netPrice.toStringAsFixed(0)
-                          : null,
+                      value: stock != null ? netPrice.toStringAsFixed(0) : null,
                       valueColor: Colors.green.shade700,
                     ),
                   ),
                   const SizedBox(width: 10),
-
-                  // Quantity stepper
                   _QtyStepperInput(
                     controller: _qtyCtrl,
                     enabled: stock != null,
@@ -530,8 +262,6 @@ class _PurchaseReturnProductSelectorState
                     onSubmit: (_) => _addToCart(),
                   ),
                   const SizedBox(width: 10),
-
-                  // Add Return button
                   SizedBox(
                     height: 48,
                     child: FilledButton.icon(
@@ -539,10 +269,8 @@ class _PurchaseReturnProductSelectorState
                       label: const Text('Add Return'),
                       style: FilledButton.styleFrom(
                         backgroundColor: Colors.orange.shade700,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 0),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                       ),
                       onPressed: stock != null ? _addToCart : null,
                     ),
@@ -562,46 +290,18 @@ class _PurchaseReturnProductSelectorState
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(
-            color:
-                enabled ? Colors.orange.shade200 : Colors.grey.shade200),
+        borderSide: BorderSide(color: enabled ? Colors.orange.shade200 : Colors.grey.shade200),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: Colors.grey.shade200),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       filled: !enabled,
       fillColor: Colors.grey.shade50,
     );
   }
 }
-
-// ── Data classes ──────────────────────────────────────────────────────────
-
-class _ProductItem {
-  final String id;
-  final String name;
-  final double salePrice;
-  final double purchasePrice;
-
-  const _ProductItem({
-    required this.id,
-    required this.name,
-    required this.salePrice,
-    required this.purchasePrice,
-  });
-
-  @override
-  bool operator ==(Object other) =>
-      other is _ProductItem && other.id == id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
-
-// ── Read-only info box ────────────────────────────────────────────────────
 
 class _InfoBox extends StatelessWidget {
   final String label;
@@ -617,14 +317,11 @@ class _InfoBox extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label,
-            style:
-                TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         const SizedBox(height: 4),
         Container(
           width: double.infinity,
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
             borderRadius: BorderRadius.circular(8),
@@ -634,12 +331,8 @@ class _InfoBox extends StatelessWidget {
             isEmpty ? '—' : value!,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: (!isEmpty && valueColor != null)
-                  ? FontWeight.w600
-                  : FontWeight.normal,
-              color: isEmpty
-                  ? Colors.grey.shade400
-                  : (valueColor ?? Colors.black87),
+              fontWeight: (!isEmpty && valueColor != null) ? FontWeight.w600 : FontWeight.normal,
+              color: isEmpty ? Colors.grey.shade400 : (valueColor ?? Colors.black87),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -648,8 +341,6 @@ class _InfoBox extends StatelessWidget {
     );
   }
 }
-
-// ── Quantity stepper ──────────────────────────────────────────────────────
 
 class _QtyStepperInput extends StatelessWidget {
   final TextEditingController controller;
@@ -664,106 +355,43 @@ class _QtyStepperInput extends StatelessWidget {
     required this.onSubmit,
   });
 
-  void _inc() {
-    final v = int.tryParse(controller.text) ?? 0;
-    controller.text = '${v + 1}';
-  }
-
-  void _dec() {
-    final v = int.tryParse(controller.text) ?? 2;
-    if (v > 1) controller.text = '${v - 1}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Quantity',
-            style:
-                TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text('Quantity', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         const SizedBox(height: 4),
-        Container(
+        SizedBox(
+          width: 64,
           height: 48,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: enabled
-                  ? primaryColor.withOpacity(0.5)
-                  : Colors.grey.shade200,
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: enabled ? primaryColor : Colors.grey.shade400,
             ),
-            color: enabled ? Colors.white : Colors.grey.shade50,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              InkWell(
-                borderRadius: const BorderRadius.horizontal(
-                    left: Radius.circular(7)),
-                onTap: enabled ? _dec : null,
-                child: Container(
-                  width: 36,
-                  height: double.infinity,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: enabled
-                        ? primaryColor.withOpacity(0.08)
-                        : Colors.grey.shade100,
-                    borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(7)),
-                  ),
-                  child: AppIcon(AppIcons.remove,
-                      size: 16,
-                      color: enabled
-                          ? primaryColor
-                          : Colors.grey.shade400),
-                ),
+            decoration: InputDecoration(
+              isDense: true,
+              filled: !enabled,
+              fillColor: Colors.grey.shade50,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: primaryColor.withOpacity(0.5)),
               ),
-              SizedBox(
-                width: 48,
-                child: TextField(
-                  controller: controller,
-                  enabled: enabled,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color:
-                        enabled ? primaryColor : Colors.grey.shade400,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 13),
-                  ),
-                  onSubmitted: onSubmit,
-                ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade200),
               ),
-              InkWell(
-                borderRadius: const BorderRadius.horizontal(
-                    right: Radius.circular(7)),
-                onTap: enabled ? _inc : null,
-                child: Container(
-                  width: 36,
-                  height: double.infinity,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color:
-                        enabled ? primaryColor : Colors.grey.shade100,
-                    borderRadius: const BorderRadius.horizontal(
-                        right: Radius.circular(7)),
-                  ),
-                  child: AppIcon(AppIcons.add,
-                      size: 16,
-                      color: enabled
-                          ? Colors.white
-                          : Colors.grey.shade400),
-                ),
-              ),
-            ],
+              contentPadding: const EdgeInsets.symmetric(vertical: 13),
+            ),
+            onSubmitted: onSubmit,
           ),
         ),
       ],
