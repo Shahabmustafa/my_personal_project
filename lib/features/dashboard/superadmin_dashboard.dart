@@ -10,6 +10,7 @@ import '../superadmin/branch_target/presentation/screens/branch_target_screen.da
 import '../superadmin/discount/presentation/screens/branch_invoice_discount_screen.dart';
 import '../superadmin/discount/presentation/screens/sale_discount_tiers_screen.dart';
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
+import '../superadmin/head_office_cash_counter/presentation/screens/head_office_cash_counter_screen.dart';
 import '../superadmin/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
@@ -102,6 +103,8 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     ),
     SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
     SidebarItem(
+        icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
+    SidebarItem(
       icon: AppIcons.percentOutlined,
       label: 'Branch Invoice Discount',
       group: 'Discount',
@@ -174,6 +177,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // Branches se Admin (Head Office) ko jo stock returns aate hain — accept/reject.
     IncomingBranchReturnsScreen(),
     HeadOfficeScreen(),
+    HeadOfficeCashCounterScreen(),
     BranchInvoiceDiscountScreen(),
     SaleDiscountTiersScreen(),
     BranchTargetScreen(),

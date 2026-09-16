@@ -112,7 +112,7 @@ class _AssignStockTab extends ConsumerWidget {
               ),
             );
           }),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const HoAssignProductSelector(),
           const SizedBox(height: 12),
           Expanded(
