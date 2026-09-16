@@ -248,7 +248,9 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
       quantity: quantity,
       salePrice: stock.salePrice,
       purchasePrice: stock.purchasePrice,
-      discountPct: stock.discountPct,
+      // Purchase invoice mein discount concept use nahi hota — sirf
+      // purchase price par based totals.
+      discountPct: 0,
     );
 
     state = state.copyWith(
@@ -264,21 +266,6 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     }
     final updated = state.cartItems
         .map((i) => i.stockId == stockId ? i.copyWith(quantity: quantity) : i)
-        .toList();
-    state = state.copyWith(cartItems: updated);
-  }
-
-  void updateItemDiscount(String stockId, double discountPct) {
-    final updated = state.cartItems
-        .map((i) =>
-            i.stockId == stockId ? i.copyWith(discountPct: discountPct) : i)
-        .toList();
-    state = state.copyWith(cartItems: updated);
-  }
-
-  void updateItemSalePrice(String stockId, double price) {
-    final updated = state.cartItems
-        .map((i) => i.stockId == stockId ? i.copyWith(salePrice: price) : i)
         .toList();
     state = state.copyWith(cartItems: updated);
   }

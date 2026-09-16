@@ -340,9 +340,6 @@ class _ReturnFooter extends ConsumerWidget {
                   runSpacing: 8,
                   children: [
                     _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-                    _stat('Discount',
-                        '- ${state.totalDiscount.toStringAsFixed(0)}',
-                        color: Colors.orange.shade700),
                     _stat('Items', '${state.cartItems.length}',
                         color: Colors.blue.shade700),
                   ],
@@ -362,10 +359,6 @@ class _ReturnFooter extends ConsumerWidget {
           : Row(
               children: [
                 _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-                const SizedBox(width: 28),
-                _stat('Discount',
-                    '- ${state.totalDiscount.toStringAsFixed(0)}',
-                    color: Colors.orange.shade700),
                 const SizedBox(width: 28),
                 _stat('Items', '${state.cartItems.length}',
                     color: Colors.blue.shade700),
@@ -428,9 +421,6 @@ class _ReturnFooter extends ConsumerWidget {
             const Divider(height: 16),
             _dialogRow(
                 'Sub Total', state.totalAmount.toStringAsFixed(0)),
-            _dialogRow('Discount',
-                '- ${state.totalDiscount.toStringAsFixed(0)}',
-                color: Colors.orange.shade700),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

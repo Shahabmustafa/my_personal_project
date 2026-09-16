@@ -106,11 +106,7 @@ class _PurchaseProductSelectorState
       data: (allStock) {
         final stock = _selectedStock;
         final totalQty = stock?.quantity ?? 0;
-        final salePrice = stock?.salePrice ?? 0.0;
         final purchasePrice = stock?.purchasePrice ?? 0.0;
-        final discountPct = stock?.discountPct ?? 0.0;
-        final discountAmt = salePrice * discountPct / 100;
-        final netPrice = salePrice - discountAmt;
         final isMobile = Responsive(context).isMobile;
 
         final barcodeField = TextField(
@@ -183,10 +179,6 @@ class _PurchaseProductSelectorState
           ),
         );
 
-        final sPriceBox = _InfoBox(
-          label: 'S.Price',
-          value: stock != null ? salePrice.toStringAsFixed(0) : null,
-        );
         final pPriceBox = _InfoBox(
           label: 'P.Price',
           value: stock != null ? purchasePrice.toStringAsFixed(0) : null,
@@ -197,18 +189,6 @@ class _PurchaseProductSelectorState
           value: stock != null ? '$totalQty' : null,
           valueColor:
               (stock != null && totalQty == 0) ? Colors.red : Colors.green.shade700,
-        );
-        final discountBox = _InfoBox(
-          label: 'Discount',
-          value: stock != null
-              ? '${discountPct.toStringAsFixed(0)}%  (- ${discountAmt.toStringAsFixed(0)})'
-              : null,
-          valueColor: Colors.orange.shade700,
-        );
-        final netPriceBox = _InfoBox(
-          label: 'Net Price',
-          value: stock != null ? netPrice.toStringAsFixed(0) : null,
-          valueColor: Colors.green.shade700,
         );
         final qtyStepper = _QtyStepperInput(
           controller: _qtyCtrl,
@@ -258,7 +238,7 @@ class _PurchaseProductSelectorState
 
               const SizedBox(height: 10),
 
-              // ── ROW 2: S.Price | P.Price | T.Qty | Discount | Net | Qty | Add ──
+              // ── ROW 2: P.Price | T.Qty | Qty | Add ──
               isMobile
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,22 +246,11 @@ class _PurchaseProductSelectorState
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Expanded(child: sPriceBox),
-                            const SizedBox(width: 10),
                             Expanded(child: pPriceBox),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Expanded(child: tQtyBox),
                             const SizedBox(width: 10),
-                            Expanded(child: discountBox),
+                            Expanded(child: tQtyBox),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        netPriceBox,
                         const SizedBox(height: 10),
                         Row(
                           children: [
@@ -300,15 +269,9 @@ class _PurchaseProductSelectorState
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Expanded(flex: 2, child: sPriceBox),
-                        const SizedBox(width: 10),
                         Expanded(flex: 2, child: pPriceBox),
                         const SizedBox(width: 10),
                         Expanded(flex: 2, child: tQtyBox),
-                        const SizedBox(width: 10),
-                        Expanded(flex: 3, child: discountBox),
-                        const SizedBox(width: 10),
-                        Expanded(flex: 2, child: netPriceBox),
                         const SizedBox(width: 10),
                         qtyStepper,
                         const SizedBox(width: 10),

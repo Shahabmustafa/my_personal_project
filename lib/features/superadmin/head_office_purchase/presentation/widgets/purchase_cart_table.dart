@@ -70,10 +70,7 @@ class _DesktopTable extends ConsumerWidget {
             _h('Color', flex: 2),
             _h('Type', flex: 2),
             _h('Category', flex: 2),
-            _h('S.Price', flex: 2),
             _h('P.Price', flex: 2),
-            _h('Disc%', flex: 2),
-            _h('Net Price', flex: 2),
             _h('Qty', flex: 3),
             _h('Total', flex: 2),
             _h('', flex: 1),
@@ -113,20 +110,14 @@ class _CartRow extends ConsumerStatefulWidget {
 }
 
 class _CartRowState extends ConsumerState<_CartRow> {
-  late TextEditingController _priceCtrl;
   late TextEditingController _ppCtrl;
-  late TextEditingController _discCtrl;
   late TextEditingController _qtyCtrl;
 
   @override
   void initState() {
     super.initState();
-    _priceCtrl =
-        TextEditingController(text: widget.item.salePrice.toStringAsFixed(0));
     _ppCtrl = TextEditingController(
         text: widget.item.purchasePrice.toStringAsFixed(0));
-    _discCtrl = TextEditingController(
-        text: widget.item.discountPct.toStringAsFixed(0));
     _qtyCtrl =
         TextEditingController(text: widget.item.quantity.toString());
   }
@@ -134,21 +125,15 @@ class _CartRowState extends ConsumerState<_CartRow> {
   @override
   void didUpdateWidget(_CartRow old) {
     super.didUpdateWidget(old);
-    if (old.item.salePrice != widget.item.salePrice)
-      _priceCtrl.text = widget.item.salePrice.toStringAsFixed(0);
     if (old.item.purchasePrice != widget.item.purchasePrice)
       _ppCtrl.text = widget.item.purchasePrice.toStringAsFixed(0);
-    if (old.item.discountPct != widget.item.discountPct)
-      _discCtrl.text = widget.item.discountPct.toStringAsFixed(0);
     if (old.item.quantity != widget.item.quantity)
       _qtyCtrl.text = widget.item.quantity.toString();
   }
 
   @override
   void dispose() {
-    _priceCtrl.dispose();
     _ppCtrl.dispose();
-    _discCtrl.dispose();
     _qtyCtrl.dispose();
     super.dispose();
   }
@@ -182,19 +167,6 @@ class _CartRowState extends ConsumerState<_CartRow> {
           // Category
           _c(item.categoryName, flex: 2),
 
-          // S.Price editable
-          Expanded(
-            flex: 2,
-            child: _EditField(
-              controller: _priceCtrl,
-              onCommit: (v) {
-                final p = double.tryParse(v);
-                if (p != null && p >= 0)
-                  notifier.updateItemSalePrice(item.stockId, p);
-              },
-            ),
-          ),
-
           // P.Price editable
           Expanded(
             flex: 2,
@@ -208,28 +180,6 @@ class _CartRowState extends ConsumerState<_CartRow> {
               },
             ),
           ),
-
-          // Disc% editable
-          Expanded(
-            flex: 2,
-            child: _EditField(
-              controller: _discCtrl,
-              suffix: '%',
-              onCommit: (v) {
-                final d = double.tryParse(v);
-                if (d != null && d >= 0 && d <= 100)
-                  notifier.updateItemDiscount(item.stockId, d);
-              },
-            ),
-          ),
-
-          // Net Price (purchase price - discount)
-          _c(item.purchaseNetPrice.toStringAsFixed(0),
-              flex: 2,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green.shade700)),
 
           // Qty stepper
           Expanded(
@@ -283,14 +233,12 @@ class _CartRowState extends ConsumerState<_CartRow> {
 
 class _EditField extends StatelessWidget {
   final TextEditingController controller;
-  final String? suffix;
   final Color? textColor;
   final void Function(String) onCommit;
 
   const _EditField(
       {required this.controller,
         required this.onCommit,
-        this.suffix,
         this.textColor});
 
   @override
@@ -318,9 +266,6 @@ class _EditField extends StatelessWidget {
             borderSide: BorderSide(
                 color: Theme.of(context).colorScheme.primary, width: 1.5),
           ),
-          suffixText: suffix,
-          suffixStyle:
-          const TextStyle(fontSize: 11, color: Colors.grey),
         ),
         onSubmitted: onCommit,
         onTapOutside: (_) => onCommit(controller.text),
@@ -412,7 +357,6 @@ class _Footer extends StatelessWidget {
     final totalQty = items.fold(0, (s, i) => s + i.quantity);
     // Purchase invoice: company ko purchasePrice pay karte hain
     final totalAmt = items.fold(0.0, (s, i) => s + i.purchasePrice * i.quantity);
-    final totalDisc = items.fold(0.0, (s, i) => s + i.purchaseDiscountAmount * i.quantity);
     final net = items.fold(0.0, (s, i) => s + i.purchaseLineTotal);
     final primary = Theme.of(context).colorScheme.primary;
 
@@ -431,30 +375,12 @@ class _Footer extends StatelessWidget {
             child: Text('TOTALS',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
           ),
-          // S.Price total
+          // P.Price total
           Expanded(
             flex: 2,
             child: Text(totalAmt.toStringAsFixed(0),
                 style: const TextStyle(
                     fontWeight: FontWeight.w600, fontSize: 12)),
-          ),
-          // P.Price (empty)
-          const Expanded(flex: 2, child: SizedBox()),
-          // Disc total
-          Expanded(
-            flex: 2,
-            child: Text('- ${totalDisc.toStringAsFixed(0)}',
-                style: TextStyle(
-                    fontSize: 12, color: Colors.orange.shade700)),
-          ),
-          // Net price (empty)
-          Expanded(
-            flex: 2,
-            child: Text(net.toStringAsFixed(0),
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.green.shade700)),
           ),
           // Qty total
           Expanded(
@@ -531,8 +457,6 @@ class _MobileList extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
                     _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
                         color: Colors.purple.shade600),
                     const Spacer(),

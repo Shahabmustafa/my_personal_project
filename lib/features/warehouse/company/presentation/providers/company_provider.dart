@@ -2,6 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/providers/stock_provider.dart'
     show stockCompaniesProvider;
+import 'package:safishoe_app/features/superadmin/head_office_purchase/presentation/providers/purchase_invoice_provider.dart'
+    show purchaseCompaniesProvider;
+import 'package:safishoe_app/features/superadmin/head_office_purchase/presentation/providers/purchase_return_provider.dart'
+    show returnCompaniesProvider;
 import '../../data/datasource/company_remote_datasource.dart';
 import '../../data/model/company_model.dart';
 import '../../data/repository/company_repository.dart';
@@ -20,10 +24,14 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
   final Ref _ref;
   CompanyNotifier(this._repo, this._ref) : super(const CompanyState());
 
-  /// Stock dialogs cache the company lookup in a plain [FutureProvider]; bust it
-  /// after any write so new companies show in their dropdowns without a page
-  /// reload.
-  void _invalidateLookups() => _ref.invalidate(stockCompaniesProvider);
+  /// Stock/purchase dialogs cache the company lookup in a plain
+  /// [FutureProvider]; bust them after any write so new companies show in
+  /// their dropdowns without a page reload.
+  void _invalidateLookups() {
+    _ref.invalidate(stockCompaniesProvider);
+    _ref.invalidate(purchaseCompaniesProvider);
+    _ref.invalidate(returnCompaniesProvider);
+  }
 
   Future<void> loadAllCompanies() async {
     state = state.copyWith(status: CompanyStatus.loading, errorMessage: null);

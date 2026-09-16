@@ -250,10 +250,6 @@ class _InvoiceFooter extends ConsumerWidget {
                 Row(
                   children: [
                     _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-                    const SizedBox(width: 28),
-                    _stat('Discount',
-                        '- ${state.totalDiscount.toStringAsFixed(0)}',
-                        color: Colors.orange.shade700),
                     const Spacer(),
                     netAmountBlock,
                   ],
@@ -271,10 +267,6 @@ class _InvoiceFooter extends ConsumerWidget {
           : Row(
               children: [
                 _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-                const SizedBox(width: 28),
-                _stat('Discount',
-                    '- ${state.totalDiscount.toStringAsFixed(0)}',
-                    color: Colors.orange.shade700),
                 const Spacer(),
                 netAmountBlock,
                 const SizedBox(width: 20),

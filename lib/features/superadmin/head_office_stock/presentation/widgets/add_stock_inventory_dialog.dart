@@ -15,6 +15,12 @@ import 'package:safishoe_app/features/warehouse/stock_inventory/presentation/pro
         stockTypesProvider;
 import '../../data/model/stock_inventory_model.dart';
 import '../providers/stock_inventory_provider.dart';
+import 'package:safishoe_app/features/superadmin/head_office_purchase/presentation/providers/purchase_invoice_provider.dart'
+    show warehouseStockCacheProvider;
+import 'package:safishoe_app/features/superadmin/head_office_purchase/presentation/providers/purchase_return_provider.dart'
+    show returnWarehouseStockProvider;
+import 'package:safishoe_app/features/superadmin/head_office_assign_stock/presentation/providers/ho_assign_stock_provider.dart'
+    show hoAssignStockListProvider;
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -174,6 +180,12 @@ class _AddStockInventoryDialogState
     }
 
     ref.invalidate(headOfficeStockProvider);
+    // Purchase/return/assign-stock screens cache the head-office stock list
+    // in their own FutureProviders — bust them so newly added stock shows
+    // in their Article dropdowns without an app restart.
+    ref.invalidate(warehouseStockCacheProvider);
+    ref.invalidate(returnWarehouseStockProvider);
+    ref.invalidate(hoAssignStockListProvider);
 
     final saved = stocks.length - result.skipped.length;
     if (result.skipped.isNotEmpty) {
