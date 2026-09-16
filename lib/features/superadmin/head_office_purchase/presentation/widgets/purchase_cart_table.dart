@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../providers/purchase_invoice_provider.dart';
@@ -110,34 +111,6 @@ class _CartRow extends ConsumerStatefulWidget {
 }
 
 class _CartRowState extends ConsumerState<_CartRow> {
-  late TextEditingController _ppCtrl;
-  late TextEditingController _qtyCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ppCtrl = TextEditingController(
-        text: widget.item.purchasePrice.toStringAsFixed(0));
-    _qtyCtrl =
-        TextEditingController(text: widget.item.quantity.toString());
-  }
-
-  @override
-  void didUpdateWidget(_CartRow old) {
-    super.didUpdateWidget(old);
-    if (old.item.purchasePrice != widget.item.purchasePrice)
-      _ppCtrl.text = widget.item.purchasePrice.toStringAsFixed(0);
-    if (old.item.quantity != widget.item.quantity)
-      _qtyCtrl.text = widget.item.quantity.toString();
-  }
-
-  @override
-  void dispose() {
-    _ppCtrl.dispose();
-    _qtyCtrl.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -167,19 +140,13 @@ class _CartRowState extends ConsumerState<_CartRow> {
           // Category
           _c(item.categoryName, flex: 2),
 
-          // P.Price editable
-          Expanded(
-            flex: 2,
-            child: _EditField(
-              controller: _ppCtrl,
-              textColor: Colors.purple.shade600,
-              onCommit: (v) {
-                final p = double.tryParse(v);
-                if (p != null && p >= 0)
-                  notifier.updateItemPurchasePrice(item.stockId, p);
-              },
-            ),
-          ),
+          // P.Price (read-only)
+          _c(item.purchasePrice.toStringAsFixed(0),
+              flex: 2,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.purple.shade600)),
 
           // Qty stepper
           Expanded(
@@ -229,51 +196,6 @@ class _CartRowState extends ConsumerState<_CartRow> {
   );
 }
 
-// ── Inline edit field ─────────────────────────────────────────────────────
-
-class _EditField extends StatelessWidget {
-  final TextEditingController controller;
-  final Color? textColor;
-  final void Function(String) onCommit;
-
-  const _EditField(
-      {required this.controller,
-        required this.onCommit,
-        this.textColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-      child: TextField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        textAlign: TextAlign.center,
-        style: TextStyle(
-            fontSize: 12,
-            color: textColor ?? Colors.black87),
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding:
-          const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
-            borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary, width: 1.5),
-          ),
-        ),
-        onSubmitted: onCommit,
-        onTapOutside: (_) => onCommit(controller.text),
-      ),
-    );
-  }
-}
-
 // ── Qty stepper inside row ────────────────────────────────────────────────
 
 class _QtyRowStepper extends StatefulWidget {
@@ -314,9 +236,21 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
     super.dispose();
   }
 
-  void _commit() {
-    final v = int.tryParse(_ctrl.text) ?? widget.value;
+  void _commit([int? value]) {
+    final v = value ?? int.tryParse(_ctrl.text) ?? widget.value;
     widget.onChanged(v > 0 ? v : 1);
+  }
+
+  Widget _stepBtn(IconData icon, VoidCallback onTap, Color color) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: SizedBox(
+        width: 26,
+        height: 26,
+        child: Icon(icon, size: 15, color: color),
+      ),
+    );
   }
 
   @override
@@ -326,21 +260,35 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
     return Container(
       height: 34,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withOpacity(0.4)),
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.35)),
       ),
-      child: TextField(
-        controller: _ctrl,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
-        decoration: const InputDecoration(
-          isDense: true,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-        ),
-        onSubmitted: (_) => _commit(),
-        onTapOutside: (_) => _commit(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(width: 2),
+          _stepBtn(Icons.remove, () => _commit(widget.value - 1), color),
+          Expanded(
+            child: TextField(
+              controller: _ctrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w700, color: color),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onSubmitted: (_) => _commit(),
+              onTapOutside: (_) => _commit(),
+            ),
+          ),
+          _stepBtn(Icons.add, () => _commit(widget.value + 1), color),
+          const SizedBox(width: 2),
+        ],
       ),
     );
   }

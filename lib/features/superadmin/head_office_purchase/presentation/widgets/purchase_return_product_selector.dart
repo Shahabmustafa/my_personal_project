@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_return_provider.dart';
@@ -411,6 +412,7 @@ class _QtyStepperInput extends StatelessWidget {
             controller: controller,
             enabled: enabled,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,

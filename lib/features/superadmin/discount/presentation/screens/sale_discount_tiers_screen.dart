@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_discount_tier_model.dart';
 import '../providers/sale_discount_tier_provider.dart';
@@ -341,6 +342,9 @@ class _TierFormDialogState extends ConsumerState<_TierFormDialog> {
             TextFormField(
               controller: _minCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+              ],
               decoration: const InputDecoration(
                 labelText: 'Minimum Sale Amount (Rs.)',
                 border: OutlineInputBorder(),
@@ -380,6 +384,9 @@ class _TierFormDialogState extends ConsumerState<_TierFormDialog> {
             TextFormField(
               controller: _valueCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+              ],
               decoration: InputDecoration(
                 labelText: _type == DiscountTierType.flat ? 'Discount Amount (Rs.)' : 'Discount (%)',
                 border: const OutlineInputBorder(),

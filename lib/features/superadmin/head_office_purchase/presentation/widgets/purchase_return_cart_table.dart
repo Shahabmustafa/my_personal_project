@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_return_model.dart';
 import '../providers/purchase_return_provider.dart';
@@ -249,6 +250,9 @@ class _EditField extends StatelessWidget {
         controller: controller,
         keyboardType:
         const TextInputType.numberWithOptions(decimal: true),
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+        ],
         textAlign: TextAlign.center,
         style: TextStyle(
             fontSize: 12, color: textColor ?? Colors.black87),
@@ -331,6 +335,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
       child: TextField(
         controller: _ctrl,
         keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
         decoration: const InputDecoration(

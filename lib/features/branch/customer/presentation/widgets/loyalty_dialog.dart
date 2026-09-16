@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/customer_model.dart';
 import '../providers/customer_provider.dart';
@@ -183,6 +184,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
               TextFormField(
                 controller: _ctrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: InputDecoration(
                   labelText: _isAdd ? 'Points to Add' : 'Points to Redeem',
                   hintText: 'e.g. 50',

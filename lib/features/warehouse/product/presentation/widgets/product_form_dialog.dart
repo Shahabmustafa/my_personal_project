@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../data/model/product_model.dart';
@@ -255,6 +255,9 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   icon: AppIcons.sellOutlined,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                  ],
                   validator: (v) {
                     if (v == null || v.trim().isEmpty)
                       return 'Sale price is required';
@@ -271,6 +274,9 @@ class _ProductFormDialogState extends ConsumerState<ProductFormDialog> {
                   icon: AppIcons.shoppingCartOutlined,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                  ],
                   validator: (v) {
                     if (v == null || v.trim().isEmpty)
                       return 'Purchase price is required';
@@ -329,6 +335,7 @@ class _Field extends StatelessWidget {
   final String hint;
   final String icon;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final String? Function(String?)? validator;
   final void Function(String)? onChanged;
 
@@ -338,6 +345,7 @@ class _Field extends StatelessWidget {
     required this.hint,
     required this.icon,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
     this.validator,
     this.onChanged,
   });
@@ -347,6 +355,7 @@ class _Field extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       validator: validator,
       onChanged: onChanged,
       autovalidateMode: AutovalidateMode.onUserInteraction,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/widget/app_dropdown.dart';
 import '../../data/model/expense_entry_model.dart';
@@ -187,6 +188,9 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
                 decoration: _decor('Amount').copyWith(prefixText: 'Rs. '),
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                ],
                 validator: (v) {
                   final n = double.tryParse(v ?? '');
                   if (n == null || n <= 0) return 'Enter a valid amount';

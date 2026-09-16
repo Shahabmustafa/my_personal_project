@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../data/model/warehouse_cash_counter_model.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
@@ -220,6 +221,9 @@ class _AmountField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+      ],
       validator: (v) {
         if (required && (v == null || v.trim().isEmpty)) {
           return '$label is required';

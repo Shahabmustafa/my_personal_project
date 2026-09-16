@@ -215,6 +215,7 @@ void _showEditDialog(
                 TextFormField(
                   controller: qtyCtrl,
                   keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
                     prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 24),
@@ -235,6 +236,9 @@ void _showEditDialog(
                   controller: discountCtrl,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                  ],
                   decoration: InputDecoration(
                     labelText: 'Discount %',
                     prefixIcon: const TextFieldIcon(AppIcons.percentOutlined, size: 24),

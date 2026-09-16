@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasource/branch_warehouse_return_cart_item.dart';
 import '../providers/branch_warehouse_return_provider.dart';
@@ -216,6 +217,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
       child: TextField(
         controller: _ctrl,
         keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
         decoration: const InputDecoration(

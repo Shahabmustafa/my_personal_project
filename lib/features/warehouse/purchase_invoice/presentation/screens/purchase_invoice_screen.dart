@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../../data/models/purchase_return_model.dart';
@@ -502,6 +503,10 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                       controller: _payCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*$')),
+                      ],
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,

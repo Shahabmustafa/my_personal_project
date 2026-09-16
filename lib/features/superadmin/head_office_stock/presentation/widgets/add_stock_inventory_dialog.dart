@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/core/widget/app_dropdown.dart';
 import 'package:safishoe_app/features/warehouse/stock_inventory/data/models/warehouse_stock_model.dart'
@@ -355,6 +356,10 @@ class _AddStockInventoryDialogState
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                       decimal: true),
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(
+                                    RegExp(r'^\d*\.?\d*$')),
+                              ],
                               decoration: InputDecoration(
                                 labelText: 'Discount %',
                                 prefixIcon: const TextFieldIcon(AppIcons.percentOutlined,
@@ -610,6 +615,7 @@ class _SizeQtyRow extends StatelessWidget {
           child: TextFormField(
             controller: entry.qtyCtrl,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               labelText: 'Quantity *',
               prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 24),

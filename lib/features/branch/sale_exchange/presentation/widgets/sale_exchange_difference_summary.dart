@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../sale_invoice/data/model/sale_invoice_model.dart';
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
@@ -118,6 +119,9 @@ class _SaleExchangeDifferenceSummaryState
                     child: TextField(
                       controller: _cashAmountCtrl,
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                      ],
                       onChanged: (v) => notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
                       decoration: _decor('Cash Amount *').copyWith(
                         helperText: 'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',

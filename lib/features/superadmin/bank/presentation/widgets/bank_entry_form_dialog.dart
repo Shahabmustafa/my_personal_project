@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/bank_head_model.dart';
 import '../providers/bank_providers.dart';
@@ -103,6 +104,9 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
                     icon: AppIcons.currencyRupeeOutlined,
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                    ],
                     required: true,
                     isNumeric: true,
                   ),
@@ -183,12 +187,14 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
     required String label,
     required String icon,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
     bool required = false,
     bool isNumeric = false,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       decoration: _decor(label, icon),
       validator: (v) {
         if (required && (v == null || v.trim().isEmpty)) {

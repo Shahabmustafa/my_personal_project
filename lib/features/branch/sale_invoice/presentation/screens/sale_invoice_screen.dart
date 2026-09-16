@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/service/print/print_service.dart';
 import '../../../../superadmin/employee_salary/presentation/providers/employee_salary_providers.dart';
@@ -366,6 +367,9 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                      ],
                       onChanged: (v) => notifier
                           .setCashAmount(double.tryParse(v.trim()) ?? 0),
                       decoration: _decor('Cash Amount *').copyWith(
@@ -514,6 +518,9 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                ],
                 onChanged: (v) => ref
                     .read(saleInvoiceProvider.notifier)
                     .setInvoiceDiscountPct(

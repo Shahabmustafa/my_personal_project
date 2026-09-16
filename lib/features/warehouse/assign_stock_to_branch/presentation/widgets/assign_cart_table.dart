@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/assign_stock_model.dart';
 import '../providers/assign_stock_provider.dart';
@@ -307,6 +308,7 @@ class _QtyStepperState extends State<_QtyStepper> {
       child: TextField(
         controller: _ctrl,
         keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
         decoration: const InputDecoration(

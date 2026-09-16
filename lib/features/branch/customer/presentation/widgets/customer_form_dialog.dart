@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../data/model/customer_model.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
@@ -122,6 +123,9 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
                   hint: '0.00',
                   icon: AppIcons.accountBalanceWalletOutlined,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                  ],
                   validator: (v) {
                     if (v != null && v.isNotEmpty) {
                       if (double.tryParse(v) == null) return 'Enter a valid amount';
@@ -175,6 +179,7 @@ class _Field extends StatelessWidget {
   final String hint;
   final String icon;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final String? Function(String?)? validator;
   final int maxLines;
 
@@ -184,6 +189,7 @@ class _Field extends StatelessWidget {
     required this.hint,
     required this.icon,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
     this.validator,
     this.maxLines = 1,
   });
@@ -193,6 +199,7 @@ class _Field extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       maxLines: maxLines,
       validator: validator,
       decoration: InputDecoration(

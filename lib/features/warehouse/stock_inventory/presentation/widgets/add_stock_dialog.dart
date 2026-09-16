@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../../core/widget/app_dropdown.dart';
 import '../../data/models/warehouse_stock_model.dart';
@@ -619,6 +620,7 @@ class _SizeQtyRow extends StatelessWidget {
           child: TextFormField(
             controller: entry.qtyCtrl,
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: InputDecoration(
               labelText: 'Quantity *',
               prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 18),
