@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../../data/models/purchase_return_model.dart';
@@ -333,22 +334,18 @@ class _PaymentDialog extends ConsumerStatefulWidget {
 }
 
 class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
-  late TextEditingController _customerNameCtrl;
   late TextEditingController _payCtrl;
   bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
-    _customerNameCtrl = TextEditingController(
-        text: widget.invoiceState.selectedCompany?.label ?? '');
     _payCtrl = TextEditingController(
         text: widget.invoiceState.netAmount.toStringAsFixed(0));
   }
 
   @override
   void dispose() {
-    _customerNameCtrl.dispose();
     _payCtrl.dispose();
     super.dispose();
   }
@@ -407,14 +404,9 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
             const Divider(height: 20),
 
             _fieldRow(
-              label: 'Customer Name',
+              label: 'Company Name',
               icon: AppIcons.personOutline,
-              child: TextField(
-                controller: _customerNameCtrl,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600),
-                decoration: _inputDeco(context, 'Enter customer name'),
-              ),
+              child: _readOnlyField(value: company?.label ?? '—'),
             ),
             const SizedBox(height: 12),
 
@@ -461,6 +453,10 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                       controller: _payCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d*\.?\d*$')),
+                      ],
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
