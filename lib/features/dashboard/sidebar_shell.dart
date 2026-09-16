@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/constants/app_constants.dart';
 
 class SidebarItem {
   final String icon;
@@ -46,12 +47,52 @@ class _SidebarShellState extends State<SidebarShell> {
   static const double _collapsedWidth = 76;
 
   bool _collapsed = false;
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   Widget build(BuildContext context) {
     final safeIndex = widget.selectedIndex < widget.pages.length
         ? widget.selectedIndex
         : 0;
+    final isMobile =
+        MediaQuery.of(context).size.width < AppConstants.mobileMaxWidth;
+
+    if (isMobile) {
+      return Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: _bg,
+        appBar: AppBar(
+          backgroundColor: _bg,
+          foregroundColor: _textDark,
+          elevation: 0.5,
+          surfaceTintColor: _bg,
+          titleSpacing: 4,
+          title: Text(
+            widget.navItems.isNotEmpty ? widget.navItems[safeIndex].label : '',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: _textDark,
+            ),
+          ),
+          iconTheme: const IconThemeData(color: _textDark),
+        ),
+        drawer: Drawer(
+          backgroundColor: _bg,
+          child: SafeArea(
+            child: _sidebarContent(
+              collapsed: false,
+              safeIndex: safeIndex,
+              onSelect: (i) {
+                Navigator.of(context).pop();
+                widget.onSelect(i);
+              },
+            ),
+          ),
+        ),
+        body: widget.pages[safeIndex],
+      );
+    }
 
     return Scaffold(
       body: Row(
@@ -75,209 +116,10 @@ class _SidebarShellState extends State<SidebarShell> {
                     final collapsed =
                         constraints.maxWidth <
                         (_expandedWidth + _collapsedWidth) / 2;
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Brand
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                          child: Row(
-                            mainAxisAlignment: collapsed
-                                ? MainAxisAlignment.center
-                                : MainAxisAlignment.start,
-                            children: [
-                              Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [_accent, Color(0xFF5B7FEF)],
-                                  ),
-                                ),
-                                alignment: Alignment.center,
-                                child: const Text(
-                                  'A',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                              if (!collapsed) ...[
-                                const SizedBox(width: 10),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Admin Panel',
-                                        style: TextStyle(
-                                          color: _textDark,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Management Console',
-                                        style: TextStyle(
-                                          color: _textDim,
-                                          fontSize: 11,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        const Divider(color: _line, height: 1),
-
-                        if (!collapsed)
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
-                            child: Text(
-                              'MENU',
-                              style: TextStyle(
-                                color: _textDim,
-                                fontSize: 11,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          )
-                        else
-                          const SizedBox(height: 12),
-
-                        // Nav items — scrollable so grouped/expanded items never
-                        // overflow the sidebar's fixed height.
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(horizontal: 10),
-                            child: Column(
-                              children: collapsed
-                                  ? _buildNavTreeCollapsed(safeIndex)
-                                  : _buildNavTree(safeIndex),
-                            ),
-                          ),
-                        ),
-                        const Divider(color: _line, height: 1),
-
-                        // User info + logout
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: collapsed
-                              ? Column(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 17,
-                                      backgroundColor: _accentSoft,
-                                      child: Text(
-                                        widget.userName.isNotEmpty
-                                            ? widget.userName[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: _accent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Tooltip(
-                                      message: 'Logout',
-                                      child: InkWell(
-                                        onTap: widget.onLogout,
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(7),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFEECEC),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: const AppIcon(
-                                            AppIcons.logout,
-                                            size: 16,
-                                            color: Color(0xFFC62828),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 17,
-                                      backgroundColor: _accentSoft,
-                                      child: Text(
-                                        widget.userName.isNotEmpty
-                                            ? widget.userName[0].toUpperCase()
-                                            : '?',
-                                        style: const TextStyle(
-                                          color: _accent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            widget.userName,
-                                            style: const TextStyle(
-                                              color: _textDark,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          Text(
-                                            widget.userRole,
-                                            style: const TextStyle(
-                                              color: _textDim,
-                                              fontSize: 11,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Tooltip(
-                                      message: 'Logout',
-                                      child: InkWell(
-                                        onTap: widget.onLogout,
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(7),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFEECEC),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: const AppIcon(
-                                            AppIcons.logout,
-                                            size: 16,
-                                            color: Color(0xFFC62828),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ],
+                    return _sidebarContent(
+                      collapsed: collapsed,
+                      safeIndex: safeIndex,
+                      onSelect: widget.onSelect,
                     );
                   },
                 ),
@@ -329,15 +171,226 @@ class _SidebarShellState extends State<SidebarShell> {
     );
   }
 
+  // Full sidebar body — brand header, nav tree, user footer. Shared by the
+  // desktop rail (collapsible) and the mobile Drawer (always expanded).
+  Widget _sidebarContent({
+    required bool collapsed,
+    required int safeIndex,
+    required ValueChanged<int> onSelect,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Brand
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          child: Row(
+            mainAxisAlignment: collapsed
+                ? MainAxisAlignment.center
+                : MainAxisAlignment.start,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [_accent, Color(0xFF5B7FEF)],
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: const Text(
+                  'A',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+              if (!collapsed) ...[
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin Panel',
+                        style: TextStyle(
+                          color: _textDark,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Management Console',
+                        style: TextStyle(
+                          color: _textDim,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const Divider(color: _line, height: 1),
+
+        if (!collapsed)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(20, 14, 20, 6),
+            child: Text(
+              'MENU',
+              style: TextStyle(
+                color: _textDim,
+                fontSize: 11,
+                letterSpacing: 0.8,
+              ),
+            ),
+          )
+        else
+          const SizedBox(height: 12),
+
+        // Nav items — scrollable so grouped/expanded items never
+        // overflow the sidebar's fixed height.
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Column(
+              children: collapsed
+                  ? _buildNavTreeCollapsed(safeIndex, onSelect)
+                  : _buildNavTree(safeIndex, onSelect),
+            ),
+          ),
+        ),
+        const Divider(color: _line, height: 1),
+
+        // User info + logout
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: collapsed
+              ? Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 17,
+                      backgroundColor: _accentSoft,
+                      child: Text(
+                        widget.userName.isNotEmpty
+                            ? widget.userName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: _accent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Tooltip(
+                      message: 'Logout',
+                      child: InkWell(
+                        onTap: widget.onLogout,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEECEC),
+                            borderRadius: BorderRadius.circular(
+                              8,
+                            ),
+                          ),
+                          child: const AppIcon(
+                            AppIcons.logout,
+                            size: 16,
+                            color: Color(0xFFC62828),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 17,
+                      backgroundColor: _accentSoft,
+                      child: Text(
+                        widget.userName.isNotEmpty
+                            ? widget.userName[0].toUpperCase()
+                            : '?',
+                        style: const TextStyle(
+                          color: _accent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.userName,
+                            style: const TextStyle(
+                              color: _textDark,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            widget.userRole,
+                            style: const TextStyle(
+                              color: _textDim,
+                              fontSize: 11,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Tooltip(
+                      message: 'Logout',
+                      child: InkWell(
+                        onTap: widget.onLogout,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEECEC),
+                            borderRadius: BorderRadius.circular(
+                              8,
+                            ),
+                          ),
+                          child: const AppIcon(
+                            AppIcons.logout,
+                            size: 16,
+                            color: Color(0xFFC62828),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+
   // Consecutive items sharing the same `group` are bundled into one
   // ExpansionTile; ungrouped items render as flat tiles like before.
-  List<Widget> _buildNavTree(int safeIndex) {
+  List<Widget> _buildNavTree(int safeIndex, ValueChanged<int> onSelect) {
     final widgets = <Widget>[];
     int i = 0;
     while (i < widget.navItems.length) {
       final group = widget.navItems[i].group;
       if (group == null) {
-        widgets.add(_navTile(i, safeIndex));
+        widgets.add(_navTile(i, safeIndex, onSelect));
         i++;
       } else {
         final start = i;
@@ -346,7 +399,7 @@ class _SidebarShellState extends State<SidebarShell> {
           i++;
         }
         final indices = List.generate(i - start, (k) => start + k);
-        widgets.add(_groupTile(group, indices, safeIndex));
+        widgets.add(_groupTile(group, indices, safeIndex, onSelect));
       }
     }
     return widgets;
@@ -354,14 +407,17 @@ class _SidebarShellState extends State<SidebarShell> {
 
   // Collapsed rail: every item (grouped or not) renders as a single
   // icon-only tile so nothing depends on expandable width.
-  List<Widget> _buildNavTreeCollapsed(int safeIndex) {
+  List<Widget> _buildNavTreeCollapsed(
+    int safeIndex,
+    ValueChanged<int> onSelect,
+  ) {
     return List.generate(
       widget.navItems.length,
-      (i) => _navTileCollapsed(i, safeIndex),
+      (i) => _navTileCollapsed(i, safeIndex, onSelect),
     );
   }
 
-  Widget _navTileCollapsed(int i, int safeIndex) {
+  Widget _navTileCollapsed(int i, int safeIndex, ValueChanged<int> onSelect) {
     final item = widget.navItems[i];
     final active = i == safeIndex;
     return Padding(
@@ -372,7 +428,7 @@ class _SidebarShellState extends State<SidebarShell> {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(9),
-            onTap: () => widget.onSelect(i),
+            onTap: () => onSelect(i),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 11),
@@ -398,7 +454,7 @@ class _SidebarShellState extends State<SidebarShell> {
     );
   }
 
-  Widget _navTile(int i, int safeIndex) {
+  Widget _navTile(int i, int safeIndex, ValueChanged<int> onSelect) {
     final item = widget.navItems[i];
     final active = i == safeIndex;
     return Padding(
@@ -407,7 +463,7 @@ class _SidebarShellState extends State<SidebarShell> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(9),
-          onTap: () => widget.onSelect(i),
+          onTap: () => onSelect(i),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
@@ -445,7 +501,12 @@ class _SidebarShellState extends State<SidebarShell> {
     );
   }
 
-  Widget _groupTile(String group, List<int> indices, int safeIndex) {
+  Widget _groupTile(
+    String group,
+    List<int> indices,
+    int safeIndex,
+    ValueChanged<int> onSelect,
+  ) {
     final containsActive = indices.contains(safeIndex);
     return Theme(
       data: ThemeData(dividerColor: Colors.transparent),
@@ -470,7 +531,8 @@ class _SidebarShellState extends State<SidebarShell> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          children: indices.map((i) => _navTile(i, safeIndex)).toList(),
+          children:
+              indices.map((i) => _navTile(i, safeIndex, onSelect)).toList(),
         ),
       ),
     );

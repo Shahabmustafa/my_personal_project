@@ -8,6 +8,7 @@ import '../providers/ho_assign_stock_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 
 /// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
 /// (color/size/category/type ke sath) hai, is liye alag Size/Color/
@@ -124,6 +125,7 @@ class _HoAssignProductSelectorState
   Widget build(BuildContext context) {
     final stockAsync = ref.watch(hoAssignStockListProvider);
     const primary = Color(0xFF1565C0);
+    final isMobile = Responsive(context).isMobile;
 
     return stockAsync.when(
       loading: () =>
@@ -137,6 +139,153 @@ class _HoAssignProductSelectorState
         final purchasePrice = stock?.purchasePrice ?? 0.0;
         final discountPct = stock?.discountPct ?? 0.0;
 
+        final barcodeField = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Barcode',
+                style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+            const SizedBox(height: 4),
+            TextField(
+              controller: _barcodeCtrl,
+              focusNode: _barcodeFocus,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Scan barcode...',
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 14),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                      color: _barcodeNotFound
+                          ? Colors.red
+                          : Colors.grey.shade300),
+                ),
+                suffixIcon: _barcodeNotFound
+                    ? const AppIcon(AppIcons.errorOutline,
+                        color: Colors.red, size: 18)
+                    : null,
+              ),
+              onSubmitted: (_) => _onBarcodeSubmit(allStock),
+            ),
+          ],
+        );
+
+        final articleDropdown = DropdownSearch<WarehouseStockModel>(
+          items: (f, _) => _filterStock(allStock, f),
+          selectedItem: _selectedStock,
+          itemAsString: (s) {
+            final variant = _variantLine(s);
+            final name = s.productName ?? s.productId;
+            return variant.isEmpty ? name : '$name — $variant';
+          },
+          compareFn: (a, b) =>
+              a.productId == b.productId &&
+              a.sizeId == b.sizeId &&
+              a.colorId == b.colorId &&
+              a.categoryId == b.categoryId &&
+              a.typeId == b.typeId,
+          onSelected: (s) => setState(() {
+            _selectedStock = s;
+            _barcodeCtrl.clear();
+            _barcodeNotFound = false;
+          }),
+          decoratorProps:
+              DropDownDecoratorProps(decoration: _dropDecor('Article')),
+          popupProps: PopupProps.menu(
+            showSearchBox: true,
+            constraints: const BoxConstraints(maxHeight: 320),
+            searchFieldProps: const TextFieldProps(
+              decoration: InputDecoration(
+                hintText: 'Search article, color, size, category...',
+                prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
+                isDense: true,
+              ),
+            ),
+            itemBuilder: (context, s, isSelected, isFocused) {
+              final variant = _variantLine(s);
+              return ListTile(
+                dense: true,
+                selected: isSelected,
+                title: Text(s.productName ?? s.productId,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 13)),
+                subtitle: Text(
+                  variant.isEmpty
+                      ? 'Barcode: ${s.barcode}'
+                      : '$variant  •  Barcode: ${s.barcode}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+                trailing: Text('Qty ${s.quantity}',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: s.quantity > 0
+                            ? Colors.green.shade700
+                            : Colors.red)),
+              );
+            },
+          ),
+        );
+
+        final ministatsWrap = Wrap(
+          spacing: 18,
+          runSpacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            _MiniStat(
+              label: 'Head Office Stock',
+              value: stock != null ? '$totalQty pairs' : '—',
+              color:
+                  totalQty > 0 ? Colors.green.shade700 : Colors.red.shade700,
+            ),
+            _MiniStat(
+              label: 'Purchase Price',
+              value: stock != null
+                  ? 'PKR ${purchasePrice.toStringAsFixed(0)}'
+                  : '—',
+              color: Colors.blueGrey.shade700,
+            ),
+            _MiniStat(
+              label: 'Sale Price',
+              value: stock != null ? 'PKR ${salePrice.toStringAsFixed(0)}' : '—',
+              color: primary,
+            ),
+            _MiniStat(
+              label: 'Discount',
+              value:
+                  stock != null ? '${discountPct.toStringAsFixed(0)}%' : '—',
+              color: Colors.orange.shade800,
+            ),
+          ],
+        );
+
+        final qtyInput = _QtyStepperInput(
+          controller: _qtyCtrl,
+          enabled: stock != null && totalQty > 0,
+          max: totalQty,
+          primaryColor: primary,
+          onSubmit: (_) => _addToCart(),
+        );
+
+        final addButton = SizedBox(
+          height: 46,
+          child: FilledButton.icon(
+            icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
+            label: const Text('Add Product'),
+            style: FilledButton.styleFrom(
+              backgroundColor: primary,
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+            ),
+            onPressed: (stock != null && totalQty > 0) ? _addToCart : null,
+          ),
+        );
+
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
           decoration: BoxDecoration(
@@ -146,182 +295,48 @@ class _HoAssignProductSelectorState
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Row 1: Barcode + Article ─────────────────────────────────
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    width: 180,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+            children: isMobile
+                ? [
+                    // Mobile: barcode, article, stats and qty/add all stack
+                    // vertically instead of the desktop's two side-by-side
+                    // rows, which otherwise force fixed widths wider than a
+                    // phone screen.
+                    barcodeField,
+                    const SizedBox(height: 12),
+                    articleDropdown,
+                    const SizedBox(height: 12),
+                    ministatsWrap,
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Text('Barcode',
-                            style: TextStyle(
-                                fontSize: 11, color: Colors.grey.shade500)),
-                        const SizedBox(height: 4),
-                        TextField(
-                          controller: _barcodeCtrl,
-                          focusNode: _barcodeFocus,
-                          autofocus: true,
-                          decoration: InputDecoration(
-                            hintText: 'Scan barcode...',
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 14),
-                            border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8)),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              borderSide: BorderSide(
-                                  color: _barcodeNotFound
-                                      ? Colors.red
-                                      : Colors.grey.shade300),
-                            ),
-                            suffixIcon: _barcodeNotFound
-                                ? const AppIcon(AppIcons.errorOutline,
-                                    color: Colors.red, size: 18)
-                                : null,
-                          ),
-                          onSubmitted: (_) => _onBarcodeSubmit(allStock),
-                        ),
+                        Expanded(child: qtyInput),
+                        const SizedBox(width: 10),
+                        Expanded(child: addButton),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: DropdownSearch<WarehouseStockModel>(
-                      items: (f, _) => _filterStock(allStock, f),
-                      selectedItem: _selectedStock,
-                      itemAsString: (s) {
-                        final variant = _variantLine(s);
-                        final name = s.productName ?? s.productId;
-                        return variant.isEmpty ? name : '$name — $variant';
-                      },
-                      compareFn: (a, b) =>
-                          a.productId == b.productId &&
-                          a.sizeId == b.sizeId &&
-                          a.colorId == b.colorId &&
-                          a.categoryId == b.categoryId &&
-                          a.typeId == b.typeId,
-                      onSelected: (s) => setState(() {
-                        _selectedStock = s;
-                        _barcodeCtrl.clear();
-                        _barcodeNotFound = false;
-                      }),
-                      decoratorProps:
-                          DropDownDecoratorProps(decoration: _dropDecor('Article')),
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        constraints: const BoxConstraints(maxHeight: 320),
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Search article, color, size, category...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
-                            isDense: true,
-                          ),
-                        ),
-                        itemBuilder: (context, s, isSelected, isFocused) {
-                          final variant = _variantLine(s);
-                          return ListTile(
-                            dense: true,
-                            selected: isSelected,
-                            title: Text(s.productName ?? s.productId,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600, fontSize: 13)),
-                            subtitle: Text(
-                              variant.isEmpty
-                                  ? 'Barcode: ${s.barcode}'
-                                  : '$variant  •  Barcode: ${s.barcode}',
-                              style:
-                                  TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                            ),
-                            trailing: Text('Qty ${s.quantity}',
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: s.quantity > 0
-                                        ? Colors.green.shade700
-                                        : Colors.red)),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Expanded(
-                    child: Wrap(
-                      spacing: 18,
-                      runSpacing: 8,
-                      crossAxisAlignment: WrapCrossAlignment.end,
+                  ]
+                : [
+                    // ── Row 1: Barcode + Article ─────────────────────────
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        _MiniStat(
-                          label: 'Head Office Stock',
-                          value: stock != null ? '$totalQty pairs' : '—',
-                          color: totalQty > 0
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
-                        ),
-                        _MiniStat(
-                          label: 'Purchase Price',
-                          value: stock != null
-                              ? 'PKR ${purchasePrice.toStringAsFixed(0)}'
-                              : '—',
-                          color: Colors.blueGrey.shade700,
-                        ),
-                        _MiniStat(
-                          label: 'Sale Price',
-                          value: stock != null
-                              ? 'PKR ${salePrice.toStringAsFixed(0)}'
-                              : '—',
-                          color: primary,
-                        ),
-                        _MiniStat(
-                          label: 'Discount',
-                          value: stock != null
-                              ? '${discountPct.toStringAsFixed(0)}%'
-                              : '—',
-                          color: Colors.orange.shade800,
-                        ),
+                        SizedBox(width: 180, child: barcodeField),
+                        const SizedBox(width: 10),
+                        Expanded(child: articleDropdown),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 208,
-                    child: _QtyStepperInput(
-                      controller: _qtyCtrl,
-                      enabled: stock != null && totalQty > 0,
-                      max: totalQty,
-                      primaryColor: primary,
-                      onSubmit: (_) => _addToCart(),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(child: ministatsWrap),
+                        const SizedBox(width: 12),
+                        SizedBox(width: 208, child: qtyInput),
+                        const SizedBox(width: 10),
+                        addButton,
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  SizedBox(
-                    height: 46,
-                    child: FilledButton.icon(
-                      icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
-                      label: const Text('Add Product'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: primary,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 0),
-                      ),
-                      onPressed:
-                          (stock != null && totalQty > 0) ? _addToCart : null,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
           ),
         );
       },

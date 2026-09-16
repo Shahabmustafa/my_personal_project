@@ -166,6 +166,65 @@ class _BranchTargetRowState extends ConsumerState<_BranchTargetRow> {
   Widget build(BuildContext context) {
     final b = widget.branch;
     final daily = BranchTargetRow.dailyTargetFor(b.monthlyTarget);
+    final isMobile = MediaQuery.of(context).size.width < 768;
+
+    final icon = Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEAEFFD),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: const AppIcon(AppIcons.flagOutlined, color: Color(0xFF3E63DD), size: 20),
+    );
+
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(b.branchName,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(
+          b.monthlyTarget > 0
+              ? 'Daily target: Rs. ${daily.toStringAsFixed(0)}'
+              : 'No target set',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: b.monthlyTarget > 0
+                ? const Color(0xFF2E7D32)
+                : const Color(0xFF8A8FA3),
+          ),
+        ),
+      ],
+    );
+
+    final field = TextField(
+      controller: _ctrl,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+      ],
+      textAlign: TextAlign.end,
+      onChanged: (_) => setState(() {}),
+      onSubmitted: (_) => _save(),
+      decoration: InputDecoration(
+        labelText: 'Monthly Target',
+        prefixText: 'Rs. ',
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+
+    final saveBtn = FilledButton(
+      onPressed: _dirty ? _save : null,
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: const Text('Save'),
+    );
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -174,70 +233,29 @@ class _BranchTargetRowState extends ConsumerState<_BranchTargetRow> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE7E9F0)),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEAEFFD),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const AppIcon(AppIcons.flagOutlined, color: Color(0xFF3E63DD), size: 20),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
+      child: isMobile
+          ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(b.branchName,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                Text(
-                  b.monthlyTarget > 0
-                      ? 'Daily target: Rs. ${daily.toStringAsFixed(0)}'
-                      : 'No target set',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: b.monthlyTarget > 0
-                        ? const Color(0xFF2E7D32)
-                        : const Color(0xFF8A8FA3),
-                  ),
-                ),
+                Row(children: [icon, const SizedBox(width: 14), Expanded(child: info)]),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Expanded(child: field),
+                  const SizedBox(width: 8),
+                  saveBtn,
+                ]),
+              ],
+            )
+          : Row(
+              children: [
+                icon,
+                const SizedBox(width: 14),
+                Expanded(child: info),
+                SizedBox(width: 150, child: field),
+                const SizedBox(width: 8),
+                saveBtn,
               ],
             ),
-          ),
-          SizedBox(
-            width: 150,
-            child: TextField(
-              controller: _ctrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-              ],
-              textAlign: TextAlign.end,
-              onChanged: (_) => setState(() {}),
-              onSubmitted: (_) => _save(),
-              decoration: InputDecoration(
-                labelText: 'Monthly Target',
-                prefixText: 'Rs. ',
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: _dirty ? _save : null,
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -10,6 +10,7 @@ import '../widgets/purchase_return_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 class PurchaseReturnScreen extends ConsumerWidget {
   const PurchaseReturnScreen({super.key});
 
@@ -18,6 +19,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
     final state = ref.watch(purchaseReturnProvider);
     final companiesAsync = ref.watch(returnCompaniesProvider);
     final invoicesAsync = ref.watch(returnInvoiceNumbersProvider);
+    final isMobile = Responsive(context).isMobile;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -65,168 +67,177 @@ class PurchaseReturnScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.orange.shade200),
             ),
-            child: Row(
-              children: [
-                // Return Number
-                Column(
+            child: Builder(builder: (context) {
+              final returnNumberBlock = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Return Number :',
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey.shade500)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      state.returnLoading
+                          ? const SizedBox(
+                              width: 80,
+                              child: LinearProgressIndicator(minHeight: 2))
+                          : Text(
+                              state.returnNumber.isEmpty
+                                  ? '...'
+                                  : state.returnNumber,
+                              style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.orange.shade700),
+                            ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(4),
+                        onTap: () => ref
+                            .read(purchaseReturnProvider.notifier)
+                            .resetReturn(),
+                        child: const AppIcon(AppIcons.refresh,
+                            size: 17, color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+
+              final companyDropdown = companiesAsync.when(
+                loading: () => const SizedBox(
+                    height: 48,
+                    child: Center(child: LinearProgressIndicator())),
+                error: (e, _) => Text('Error: $e',
+                    style: const TextStyle(color: Colors.red, fontSize: 12)),
+                data: (companies) => DropdownSearch<StockLookupItem>(
+                  items: (filter, _) => companies
+                      .where((c) => c.label
+                          .toLowerCase()
+                          .contains(filter.toLowerCase()))
+                      .toList(),
+                  selectedItem: state.selectedCompany,
+                  itemAsString: (c) => c.label,
+                  compareFn: (a, b) => a.id == b.id,
+                  onSelected: (c) => ref
+                      .read(purchaseReturnProvider.notifier)
+                      .selectCompany(c),
+                  decoratorProps: DropDownDecoratorProps(
+                    decoration: InputDecoration(
+                      labelText: 'Company (optional)',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            BorderSide(color: Colors.orange.shade200),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                    ),
+                  ),
+                  popupProps: PopupProps.menu(
+                    showSearchBox: true,
+                    constraints: const BoxConstraints(maxHeight: 260),
+                    searchFieldProps: const TextFieldProps(
+                      decoration: InputDecoration(
+                        hintText: 'Search company...',
+                        prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+
+              final invoiceDropdown = invoicesAsync.when(
+                loading: () => const SizedBox(
+                    height: 48,
+                    child: Center(child: LinearProgressIndicator())),
+                error: (e, _) => const SizedBox(),
+                data: (invoices) => DropdownButtonFormField<String>(
+                  value: state.selectedInvoiceId,
+                  hint: const Text('Ref Invoice (optional)',
+                      style: TextStyle(fontSize: 12)),
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 14),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide:
+                          BorderSide(color: Colors.orange.shade200),
+                    ),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String>(
+                        value: null, child: Text('No Reference')),
+                    ...invoices.map((inv) => DropdownMenuItem<String>(
+                          value: inv['id'],
+                          child: Text(inv['label'] ?? '',
+                              style: const TextStyle(fontSize: 12)),
+                        )),
+                  ],
+                  onChanged: (id) {
+                    final label = id == null
+                        ? null
+                        : invoices.firstWhere((i) => i['id'] == id,
+                            orElse: () => {})['label'];
+                    ref
+                        .read(purchaseReturnProvider.notifier)
+                        .selectInvoice(id, label);
+                  },
+                ),
+              );
+
+              final dateBlock = Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Date',
+                      style: TextStyle(
+                          fontSize: 11, color: Colors.grey.shade500)),
+                  const SizedBox(height: 4),
+                  Text(_formatDate(DateTime.now()),
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w500)),
+                ],
+              );
+
+              if (isMobile) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Return Number :',
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        state.returnLoading
-                            ? const SizedBox(
-                                width: 80,
-                                child:
-                                    LinearProgressIndicator(minHeight: 2))
-                            : Text(
-                                state.returnNumber.isEmpty
-                                    ? '...'
-                                    : state.returnNumber,
-                                style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.orange.shade700),
-                              ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref
-                              .read(purchaseReturnProvider.notifier)
-                              .resetReturn(),
-                          child: const AppIcon(AppIcons.refresh,
-                              size: 17, color: Colors.red),
-                        ),
+                        Expanded(child: returnNumberBlock),
+                        const SizedBox(width: 16),
+                        dateBlock,
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    companyDropdown,
+                    const SizedBox(height: 12),
+                    invoiceDropdown,
                   ],
-                ),
-                const SizedBox(width: 16),
+                );
+              }
 
-                // Company dropdown
-                Expanded(
-                  flex: 3,
-                  child: companiesAsync.when(
-                    loading: () => const SizedBox(
-                        height: 48,
-                        child: Center(child: LinearProgressIndicator())),
-                    error: (e, _) => Text('Error: $e',
-                        style: const TextStyle(
-                            color: Colors.red, fontSize: 12)),
-                    data: (companies) => DropdownSearch<StockLookupItem>(
-                      items: (filter, _) => companies
-                          .where((c) => c.label
-                              .toLowerCase()
-                              .contains(filter.toLowerCase()))
-                          .toList(),
-                      selectedItem: state.selectedCompany,
-                      itemAsString: (c) => c.label,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: (c) => ref
-                          .read(purchaseReturnProvider.notifier)
-                          .selectCompany(c),
-                      decoratorProps: DropDownDecoratorProps(
-                        decoration: InputDecoration(
-                          labelText: 'Company (optional)',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                                color: Colors.orange.shade200),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 14),
-                        ),
-                      ),
-                      popupProps: PopupProps.menu(
-                        showSearchBox: true,
-                        constraints: const BoxConstraints(maxHeight: 260),
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Search company...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Invoice reference dropdown (optional)
-                Expanded(
-                  flex: 3,
-                  child: invoicesAsync.when(
-                    loading: () => const SizedBox(
-                        height: 48,
-                        child: Center(child: LinearProgressIndicator())),
-                    error: (e, _) => const SizedBox(),
-                    data: (invoices) =>
-                        DropdownButtonFormField<String>(
-                      value: state.selectedInvoiceId,
-                      hint: const Text('Ref Invoice (optional)',
-                          style: TextStyle(fontSize: 12)),
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 14),
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                              BorderSide(color: Colors.orange.shade200),
-                        ),
-                      ),
-                      items: [
-                        const DropdownMenuItem<String>(
-                            value: null,
-                            child: Text('No Reference')),
-                        ...invoices.map((inv) =>
-                            DropdownMenuItem<String>(
-                              value: inv['id'],
-                              child: Text(inv['label'] ?? '',
-                                  style:
-                                      const TextStyle(fontSize: 12)),
-                            )),
-                      ],
-                      onChanged: (id) {
-                        final label = id == null
-                            ? null
-                            : invoices
-                                .firstWhere((i) => i['id'] == id,
-                                    orElse: () => {})['label'];
-                        ref
-                            .read(purchaseReturnProvider.notifier)
-                            .selectInvoice(id, label);
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // Date
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Date',
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    Text(_formatDate(DateTime.now()),
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ],
-            ),
+              return Row(
+                children: [
+                  returnNumberBlock,
+                  const SizedBox(width: 16),
+                  Expanded(flex: 3, child: companyDropdown),
+                  const SizedBox(width: 12),
+                  Expanded(flex: 3, child: invoiceDropdown),
+                  const SizedBox(width: 16),
+                  dateBlock,
+                ],
+              );
+            }),
           ),
 
           const SizedBox(height: 12),
@@ -263,6 +274,55 @@ class _ReturnFooter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(purchaseReturnProvider);
+    final isMobile = Responsive(context).isMobile;
+
+    final netAmountBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const Text('Net Return Amount',
+            style: TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(
+          state.netAmount.toStringAsFixed(0),
+          style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.orange.shade700),
+        ),
+      ],
+    );
+
+    final clearButton = OutlinedButton.icon(
+      icon: const AppIcon(AppIcons.clearAll, size: 18),
+      label: const Text('Clear'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.red,
+        side: const BorderSide(color: Colors.red),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      onPressed: state.cartItems.isEmpty
+          ? null
+          : () => ref.read(purchaseReturnProvider.notifier).clearCart(),
+    );
+
+    final saveButton = FilledButton.icon(
+      icon: state.isSaving
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.white))
+          : const AppIcon(AppIcons.keyboardReturn, size: 18),
+      label: const Text('Save Return'),
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.orange.shade700,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      onPressed: state.isSaving || state.cartItems.isEmpty
+          ? null
+          : () => _onSaveReturn(context, ref),
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -271,77 +331,52 @@ class _ReturnFooter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.orange.shade200),
       ),
-      child: Row(
-        children: [
-          _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-          const SizedBox(width: 28),
-          _stat('Discount',
-              '- ${state.totalDiscount.toStringAsFixed(0)}',
-              color: Colors.orange.shade700),
-          const SizedBox(width: 28),
-          _stat('Items', '${state.cartItems.length}',
-              color: Colors.blue.shade700),
-          const Spacer(),
-
-          // Net Amount
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text('Net Return Amount',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
-              Text(
-                state.netAmount.toStringAsFixed(0),
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 8,
+                  children: [
+                    _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
+                    _stat('Discount',
+                        '- ${state.totalDiscount.toStringAsFixed(0)}',
+                        color: Colors.orange.shade700),
+                    _stat('Items', '${state.cartItems.length}',
+                        color: Colors.blue.shade700),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Align(alignment: Alignment.centerRight, child: netAmountBlock),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(child: clearButton),
+                    const SizedBox(width: 10),
+                    Expanded(child: saveButton),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
+                const SizedBox(width: 28),
+                _stat('Discount',
+                    '- ${state.totalDiscount.toStringAsFixed(0)}',
                     color: Colors.orange.shade700),
-              ),
-            ],
-          ),
-          const SizedBox(width: 20),
-
-          // Clear
-          OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                const SizedBox(width: 28),
+                _stat('Items', '${state.cartItems.length}',
+                    color: Colors.blue.shade700),
+                const Spacer(),
+                netAmountBlock,
+                const SizedBox(width: 20),
+                clearButton,
+                const SizedBox(width: 10),
+                saveButton,
+              ],
             ),
-            onPressed: state.cartItems.isEmpty
-                ? null
-                : () =>
-                    ref.read(purchaseReturnProvider.notifier).clearCart(),
-          ),
-          const SizedBox(width: 10),
-
-          // Save Return
-          FilledButton.icon(
-            icon: state.isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const AppIcon(AppIcons.keyboardReturn, size: 18),
-            label: const Text('Save Return'),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.orange.shade700,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: state.isSaving || state.cartItems.isEmpty
-                ? null
-                : () => _onSaveReturn(context, ref),
-          ),
-        ],
-      ),
     );
   }
 

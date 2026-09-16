@@ -29,6 +29,7 @@ class _IncomingBranchReturnsScreenState
   @override
   Widget build(BuildContext context) {
     final returnsAsync = ref.watch(incomingBranchReturnsProvider);
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -43,11 +44,12 @@ class _IncomingBranchReturnsScreenState
                 size: 24,
               ),
               const SizedBox(width: 8),
-              const Text(
-                'Incoming Branch Returns',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              const Expanded(
+                child: Text(
+                  'Incoming Branch Returns',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
               ),
-              const Spacer(),
               IconButton(
                 onPressed: () => ref.invalidate(incomingBranchReturnsProvider),
                 icon: const AppIcon(AppIcons.refresh, color: _primary),
@@ -59,22 +61,21 @@ class _IncomingBranchReturnsScreenState
           returnsAsync.when(
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
-            data: (returns) => Row(
+            data: (returns) => Wrap(
+              spacing: 8,
+              runSpacing: 8,
               children: [
                 _filterChip('All', 'all', returns.length),
-                const SizedBox(width: 8),
                 _filterChip(
                   'Pending',
                   'pending',
                   returns.where((r) => r.status == 'pending').length,
                 ),
-                const SizedBox(width: 8),
                 _filterChip(
                   'Accepted',
                   'accepted',
                   returns.where((r) => r.status == 'accepted').length,
                 ),
-                const SizedBox(width: 8),
                 _filterChip(
                   'Rejected',
                   'rejected',
@@ -111,6 +112,38 @@ class _IncomingBranchReturnsScreenState
                     ? returns
                     : returns.where((r) => r.status == _filterStatus).toList();
 
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppIcon(
+                          AppIcons.inboxOutlined,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _filterStatus == 'all'
+                              ? 'No returns received yet'
+                              : 'No $_filterStatus returns',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (isMobile) {
+                  return ListView.builder(
+                    itemCount: filtered.length,
+                    itemBuilder: (_, i) => _ReturnCard(item: filtered[i]),
+                  );
+                }
+
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -139,38 +172,15 @@ class _IncomingBranchReturnsScreenState
                           ),
                         ),
                         Expanded(
-                          child: filtered.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AppIcon(
-                                        AppIcons.inboxOutlined,
-                                        size: 64,
-                                        color: Colors.grey.shade300,
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        _filterStatus == 'all'
-                                            ? 'No returns received yet'
-                                            : 'No $_filterStatus returns',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade500,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              : ListView.separated(
-                                  itemCount: filtered.length,
-                                  separatorBuilder: (_, __) => Divider(
-                                    height: 1,
-                                    color: Colors.grey.shade100,
-                                  ),
-                                  itemBuilder: (_, i) =>
-                                      _ListRow(item: filtered[i], index: i),
-                                ),
+                          child: ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) => Divider(
+                              height: 1,
+                              color: Colors.grey.shade100,
+                            ),
+                            itemBuilder: (_, i) =>
+                                _ListRow(item: filtered[i], index: i),
+                          ),
                         ),
                       ],
                     ),
@@ -334,7 +344,7 @@ class _ListRow extends ConsumerWidget {
                       SizedBox(
                         height: 32,
                         child: FilledButton(
-                          onPressed: () => _onAccept(context, ref),
+                          onPressed: () => _onAccept(context, ref, item),
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.green,
                             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -354,7 +364,7 @@ class _ListRow extends ConsumerWidget {
                       SizedBox(
                         height: 32,
                         child: OutlinedButton(
-                          onPressed: () => _onReject(context, ref),
+                          onPressed: () => _onReject(context, ref, item),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.red,
                             side: const BorderSide(color: Colors.red),
@@ -389,8 +399,123 @@ class _ListRow extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Future<void> _onAccept(BuildContext context, WidgetRef ref) async {
+// ── Mobile Card ───────────────────────────────────────────────────────────────
+
+class _ReturnCard extends ConsumerWidget {
+  final BranchWarehouseReturnModel item;
+  const _ReturnCard({required this.item});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  item.returnNumber,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: _primary,
+                  ),
+                ),
+              ),
+              StatusChip(item.status),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const AppIcon(AppIcons.storeOutlined, size: 14, color: Colors.grey),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  item.branchName ?? item.branchId,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${_fmtDate(item.returnedAt)} · '
+            '${item.items.fold<int>(0, (s, i) => s + i.quantity)} items',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+          ),
+          if (item.status == 'pending') ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 36,
+                    child: FilledButton(
+                      onPressed: () => _onAccept(context, ref, item),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text('Accept', style: TextStyle(fontSize: 13)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SizedBox(
+                    height: 36,
+                    child: OutlinedButton(
+                      onPressed: () => _onReject(context, ref, item),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text('Reject', style: TextStyle(fontSize: 13)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            Text(
+              item.status == 'accepted'
+                  ? 'Accepted ${_fmtDate(item.acceptedAt ?? item.returnedAt)}'
+                  : 'Rejected',
+              style: TextStyle(
+                fontSize: 11,
+                color: item.status == 'accepted'
+                    ? Colors.green.shade700
+                    : Colors.red.shade700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+Future<void> _onAccept(
+    BuildContext context, WidgetRef ref, BranchWarehouseReturnModel item) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -433,9 +558,10 @@ class _ListRow extends ConsumerWidget {
         }
       }
     }
-  }
+}
 
-  Future<void> _onReject(BuildContext context, WidgetRef ref) async {
+Future<void> _onReject(
+    BuildContext context, WidgetRef ref, BranchWarehouseReturnModel item) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -478,8 +604,7 @@ class _ListRow extends ConsumerWidget {
         }
       }
     }
-  }
-
-  String _fmtDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
+
+String _fmtDate(DateTime dt) =>
+    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';

@@ -8,6 +8,7 @@ import '../../../../branch/shared/current_branch_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 
 /// Har branch ka monthly target (baaki bache dinon se divide = aaj ka target), aaj ki net sale, aur
 /// target achieve hua ya nahi — ek jagah.
@@ -27,6 +28,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(branchTargetReportProvider);
     final notifier = ref.read(branchTargetReportProvider.notifier);
+    final isMobile = Responsive(context).isMobile;
 
     final rows = restrictToOwnBranch
         ? state.rows.where((r) => r.branchId == ref.watch(currentBranchIdProvider)).toList()
@@ -107,19 +109,25 @@ class BranchTargetReportScreen extends ConsumerWidget {
                 ? const Center(child: CircularProgressIndicator())
                 : rows.isEmpty
                     ? const Center(child: Text('No branches found'))
-                    : SingleChildScrollView(
-                        child: ReportTableShell(
-                          columns: [
-                            if (!restrictToOwnBranch) const DataColumn(label: Text('Branch')),
-                            const DataColumn(label: Text('Monthly Target'), numeric: true),
-                            const DataColumn(label: Text('Sale Target'), numeric: true),
-                            const DataColumn(label: Text('Total Sale'), numeric: true),
-                            const DataColumn(label: Text('Status')),
-                            const DataColumn(label: Text('Date & Time')),
-                          ],
-                          rows: rows.map((r) => _row(r, state.asOf)).toList(),
-                        ),
-                      ),
+                    : isMobile
+                        ? _MobileBranchTargetList(
+                            rows: rows,
+                            restrictToOwnBranch: restrictToOwnBranch,
+                            asOf: state.asOf,
+                          )
+                        : SingleChildScrollView(
+                            child: ReportTableShell(
+                              columns: [
+                                if (!restrictToOwnBranch) const DataColumn(label: Text('Branch')),
+                                const DataColumn(label: Text('Monthly Target'), numeric: true),
+                                const DataColumn(label: Text('Sale Target'), numeric: true),
+                                const DataColumn(label: Text('Total Sale'), numeric: true),
+                                const DataColumn(label: Text('Status')),
+                                const DataColumn(label: Text('Date & Time')),
+                              ],
+                              rows: rows.map((r) => _row(r, state.asOf)).toList(),
+                            ),
+                          ),
           ),
         ],
       ),
@@ -203,4 +211,89 @@ class _StatusBadge extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Mobile-width fallback for the branch target table — one compact card per
+/// branch instead of a six-column DataTable that would overflow or need
+/// horizontal scrolling on a phone.
+class _MobileBranchTargetList extends StatelessWidget {
+  final List<BranchTargetRow> rows;
+  final bool restrictToOwnBranch;
+  final DateTime? asOf;
+
+  const _MobileBranchTargetList({
+    required this.rows,
+    required this.restrictToOwnBranch,
+    required this.asOf,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.only(bottom: 8),
+      itemCount: rows.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) {
+        final r = rows[i];
+        final hasTarget = r.monthlyTarget > 0;
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE7E9F0)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(restrictToOwnBranch ? 'Today' : r.branchName,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  Text(asOf != null ? BranchTargetReportScreen._fmtDateTime(asOf!) : '—',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3))),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _stat('Monthly Target',
+                      hasTarget ? 'Rs. ${r.monthlyTarget.toStringAsFixed(0)}' : '—'),
+                  _stat('Sale Target',
+                      hasTarget ? 'Rs. ${r.dailyTarget.toStringAsFixed(0)}' : '—'),
+                  _stat(
+                    'Total Sale',
+                    'Rs. ${r.netSaleToday.toStringAsFixed(0)}',
+                    color: r.netSaleToday < 0 ? Colors.red : const Color(0xFF2D2D3A),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              hasTarget
+                  ? _StatusBadge(row: r)
+                  : const Text('No target set',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3))),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _stat(String label, String value, {Color? color}) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 10, color: Color(0xFF8A8FA3))),
+          const SizedBox(height: 2),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: color ?? const Color(0xFF2D2D3A))),
+        ],
+      );
 }

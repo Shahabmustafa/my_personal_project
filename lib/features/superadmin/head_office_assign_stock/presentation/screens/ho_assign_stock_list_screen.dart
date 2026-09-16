@@ -10,6 +10,7 @@ import '../providers/ho_assign_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 /// Head office → branch stock assignment history. Lays the data out the same
 /// way as the sale reports: summary cards, a scrollable [ReportTableShell]
 /// table, a right slide-in detail panel on "View", and a pagination bar.
@@ -70,122 +71,159 @@ class _HoAssignStockListScreenState
     final totalValue = filtered.fold<double>(0, (s, a) => s + a.totalValue);
     final pendingCount =
         filtered.where((a) => a.status == 'pending').length;
+    final isMobile = Responsive(context).isMobile;
+
+    final titleRow = Row(
+      children: [
+        const AppIcon(AppIcons.history, color: _accent, size: 24),
+        const SizedBox(width: 8),
+        const Expanded(
+          child: Text('Assignment History',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+
+    final headerActions = Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        if (_hasDateFilter)
+          TextButton.icon(
+            onPressed: () => setState(() {
+              _startDate = null;
+              _endDate = null;
+              _page = 1;
+            }),
+            icon: const AppIcon(AppIcons.clear, size: 16),
+            label: Text(_rangeLabel(_startDate, _endDate)),
+          ),
+        OutlinedButton.icon(
+          icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
+          label: const Text('Filter'),
+          onPressed: () async {
+            final result = await showDialog<(DateTime?, DateTime?)?>(
+              context: context,
+              builder: (_) => ReportDateFilterDialog(
+                  initialStart: _startDate, initialEnd: _endDate),
+            );
+            if (result != null) {
+              setState(() {
+                _startDate = result.$1;
+                _endDate = result.$2;
+                _page = 1;
+              });
+            }
+          },
+        ),
+        IconButton(
+          icon: const AppIcon(AppIcons.refresh),
+          tooltip: 'Refresh',
+          onPressed: notifier.loadAssignments,
+        ),
+      ],
+    );
+
+    final summaryCards = [
+      ReportSummaryCard(
+        label: 'Total Assignments',
+        value: '$totalCount',
+        icon: AppIcons.assignmentOutlined,
+        color: _accent,
+      ),
+      ReportSummaryCard(
+        label: 'Pairs Assigned',
+        value: '$totalPairs',
+        icon: AppIcons.inventory2Outlined,
+        color: const Color(0xFF6A1B9A),
+      ),
+      ReportSummaryCard(
+        label: 'Total Purchase Value',
+        value: 'Rs. ${_money(totalValue)}',
+        icon: AppIcons.accountBalanceWalletOutlined,
+        color: const Color(0xFF22A06B),
+      ),
+      ReportSummaryCard(
+        label: 'Pending',
+        value: '$pendingCount',
+        icon: AppIcons.hourglassEmptyOutlined,
+        color: const Color(0xFFE56A00),
+      ),
+    ];
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const AppIcon(AppIcons.history, color: _accent, size: 24),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text('Assignment History',
-                    style:
-                        TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-              ),
-              if (_hasDateFilter)
-                TextButton.icon(
-                  onPressed: () => setState(() {
-                    _startDate = null;
-                    _endDate = null;
-                    _page = 1;
-                  }),
-                  icon: const AppIcon(AppIcons.clear, size: 16),
-                  label: Text(_rangeLabel(_startDate, _endDate)),
+          isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    titleRow,
+                    const SizedBox(height: 8),
+                    headerActions,
+                  ],
+                )
+              : Row(
+                  children: [
+                    const AppIcon(AppIcons.history, color: _accent, size: 24),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text('Assignment History',
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold)),
+                    ),
+                    headerActions,
+                  ],
                 ),
-              const SizedBox(width: 8),
-              OutlinedButton.icon(
-                icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
-                label: const Text('Filter'),
-                onPressed: () async {
-                  final result = await showDialog<(DateTime?, DateTime?)?>(
-                    context: context,
-                    builder: (_) => ReportDateFilterDialog(
-                        initialStart: _startDate, initialEnd: _endDate),
-                  );
-                  if (result != null) {
-                    setState(() {
-                      _startDate = result.$1;
-                      _endDate = result.$2;
-                      _page = 1;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const AppIcon(AppIcons.refresh),
-                tooltip: 'Refresh',
-                onPressed: notifier.loadAssignments,
-              ),
-            ],
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (ctx, c) {
+              final w = c.maxWidth;
+              final cols = w > 900 ? 4 : w > 560 ? 2 : 1;
+              const gap = 14.0;
+              final cardW = (w - gap * (cols - 1)) / cols;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final card in summaryCards)
+                    SizedBox(width: cardW, child: card),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 16),
-          Row(children: [
-            Expanded(
-              child: ReportSummaryCard(
-                label: 'Total Assignments',
-                value: '$totalCount',
-                icon: AppIcons.assignmentOutlined,
-                color: _accent,
-              ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _filterChip('All', 'all', listState.assignments.length),
+                const SizedBox(width: 8),
+                _filterChip(
+                    'Pending',
+                    'pending',
+                    listState.assignments
+                        .where((a) => a.status == 'pending')
+                        .length),
+                const SizedBox(width: 8),
+                _filterChip(
+                    'Accepted',
+                    'accepted',
+                    listState.assignments
+                        .where((a) => a.status == 'accepted')
+                        .length),
+                const SizedBox(width: 8),
+                _filterChip(
+                    'Rejected',
+                    'rejected',
+                    listState.assignments
+                        .where((a) => a.status == 'rejected')
+                        .length),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: ReportSummaryCard(
-                label: 'Pairs Assigned',
-                value: '$totalPairs',
-                icon: AppIcons.inventory2Outlined,
-                color: const Color(0xFF6A1B9A),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: ReportSummaryCard(
-                label: 'Total Purchase Value',
-                value: 'Rs. ${_money(totalValue)}',
-                icon: AppIcons.accountBalanceWalletOutlined,
-                color: const Color(0xFF22A06B),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: ReportSummaryCard(
-                label: 'Pending',
-                value: '$pendingCount',
-                icon: AppIcons.hourglassEmptyOutlined,
-                color: const Color(0xFFE56A00),
-              ),
-            ),
-          ]),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _filterChip('All', 'all', listState.assignments.length),
-              const SizedBox(width: 8),
-              _filterChip(
-                  'Pending',
-                  'pending',
-                  listState.assignments
-                      .where((a) => a.status == 'pending')
-                      .length),
-              const SizedBox(width: 8),
-              _filterChip(
-                  'Accepted',
-                  'accepted',
-                  listState.assignments
-                      .where((a) => a.status == 'accepted')
-                      .length),
-              const SizedBox(width: 8),
-              _filterChip(
-                  'Rejected',
-                  'rejected',
-                  listState.assignments
-                      .where((a) => a.status == 'rejected')
-                      .length),
-            ],
           ),
           const SizedBox(height: 16),
           Expanded(

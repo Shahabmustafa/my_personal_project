@@ -33,8 +33,9 @@ class ReportDetailPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
-      width: 400,
+      width: screenWidth < 480 ? screenWidth : 400,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
