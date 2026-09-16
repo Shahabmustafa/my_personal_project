@@ -149,7 +149,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search company...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 12),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
                             isDense: true,
                           ),
                         ),

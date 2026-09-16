@@ -100,7 +100,7 @@ class _DateField extends StatelessWidget {
           labelText: label,
           isDense: true,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          suffixIcon: const TextFieldIcon(AppIcons.calendarTodayOutlined, size: 12),
+          suffixIcon: const TextFieldIcon(AppIcons.calendarTodayOutlined, size: 9),
         ),
         child: Text(value, style: const TextStyle(fontSize: 13)),
       ),

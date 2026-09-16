@@ -453,7 +453,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (c) => c.label,
                             errorText: _categoriesError,
                             isRequired: true,
-                            prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 12),
+                            prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 9),
                             onChanged: (c) => setState(() {
                               _category = c;
                               _previewed = false;
@@ -469,7 +469,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         itemLabel: (t) => t.label,
                         errorText: _typesError,
                         isRequired: true,
-                        prefixIcon: const TextFieldIcon(AppIcons.styleOutlined, size: 12),
+                        prefixIcon: const TextFieldIcon(AppIcons.styleOutlined, size: 9),
                         onChanged: (t) => setState(() {
                           _type = t;
                           _previewed = false;
@@ -608,7 +608,7 @@ class _SizeQtyRow extends StatelessWidget {
             selectedItem: entry.size,
             itemLabel: (s) => s.label,
             isRequired: true,
-            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 12),
+            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 9),
             onChanged: onSizeChanged,
           ),
         ),
@@ -621,7 +621,7 @@ class _SizeQtyRow extends StatelessWidget {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Quantity *',
-              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 12),
+              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 9),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10)),
               enabledBorder: OutlineInputBorder(

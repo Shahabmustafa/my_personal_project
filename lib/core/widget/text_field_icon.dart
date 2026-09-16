@@ -8,7 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 /// app-wide icon scale factor, so field icons stay a fixed, predictable
 /// size regardless of that global setting.
 class TextFieldIcon extends StatelessWidget {
-  const TextFieldIcon(this.assetPath, {super.key, this.size = 12, this.color});
+  const TextFieldIcon(this.assetPath, {super.key, this.size = 9, this.color});
 
   final String assetPath;
   final double size;
