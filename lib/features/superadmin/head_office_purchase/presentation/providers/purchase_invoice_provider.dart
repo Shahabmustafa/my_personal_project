@@ -270,13 +270,6 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     state = state.copyWith(cartItems: updated);
   }
 
-  void updateItemPurchasePrice(String stockId, double price) {
-    final updated = state.cartItems
-        .map((i) =>
-            i.stockId == stockId ? i.copyWith(purchasePrice: price) : i)
-        .toList();
-    state = state.copyWith(cartItems: updated);
-  }
 
   void removeItem(String stockId) {
     state = state.copyWith(

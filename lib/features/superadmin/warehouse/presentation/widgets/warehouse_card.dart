@@ -34,7 +34,7 @@ class WarehouseCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(color: const Color(0xFFE8F5E9), borderRadius: BorderRadius.circular(10)),
-            child: const AppIcon(AppIcons.warehouseOutlined, color: Color(0xFF2E7D32), size: 22),
+            child: Center(child: const AppIcon(AppIcons.warehouseOutlined, color: Color(0xFF2E7D32), size: 22)),
           ),
           const SizedBox(width: 14),
           Expanded(

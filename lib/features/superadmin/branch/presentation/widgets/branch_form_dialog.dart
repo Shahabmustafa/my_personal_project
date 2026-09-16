@@ -42,12 +42,20 @@ class _BranchFormDialogState extends State<BranchFormDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.branch != null;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 480;
+    final dialogWidth = isMobile ? screenWidth - 48 : 400.0;
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: isMobile
+          ? const EdgeInsets.symmetric(horizontal: 24, vertical: 24)
+          : const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+      scrollable: true,
       title: Text(isEdit ? 'Edit Branch' : 'Add Branch',
           style: const TextStyle(fontWeight: FontWeight.w600)),
       content: SizedBox(
-        width: 400,
+        width: dialogWidth,
         child: Form(
           key: _formKey,
           child: Column(

@@ -37,7 +37,7 @@ class BranchCard extends StatelessWidget {
               color: const Color(0xFFEAEFFD),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const AppIcon(AppIcons.apartmentOutlined, color: Color(0xFF3E63DD), size: 22),
+            child: Center(child: const AppIcon(AppIcons.apartmentOutlined, color: Color(0xFF3E63DD), size: 22)),
           ),
           const SizedBox(width: 14),
           Expanded(
