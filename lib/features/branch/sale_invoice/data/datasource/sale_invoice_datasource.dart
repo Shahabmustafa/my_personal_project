@@ -194,6 +194,22 @@ class SaleInvoiceDatasource {
         .toList();
   }
 
+  /// Sirf jin invoices par logged-in manager assign hai — manager ki
+  /// "My Sales" screen ke liye (manager commission ke sath).
+  Future<List<SaleInvoiceModel>> fetchInvoicesByManager(
+      String branchId, String managerId) async {
+    final res = await _client
+        .from('sale_invoices')
+        .select(_invoiceSelect)
+        .eq('branch_id', branchId)
+        .eq('manager_id', managerId)
+        .order('created_at', ascending: false);
+
+    return (res as List)
+        .map((e) => SaleInvoiceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<SaleInvoiceModel> fetchInvoiceDetail(String invoiceId) async {
     final invoiceRes = await _client
         .from('sale_invoices')

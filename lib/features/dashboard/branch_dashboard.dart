@@ -17,6 +17,10 @@ import '../branch/return_stock_to_warehouse/presentation/screens/branch_warehous
 import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
+import '../manager/my_activity/presentation/screens/manager_exchanges_screen.dart';
+import '../manager/my_activity/presentation/screens/manager_returns_screen.dart';
+import '../manager/my_activity/presentation/screens/manager_sales_screen.dart';
+import '../manager/profile/presentation/screens/manager_profile_screen.dart';
 import '../superadmin/report/presentation/screens/branch_target_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 
@@ -101,12 +105,41 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     BranchTargetReportScreen(restrictToOwnBranch: true),
   ];
 
+  // Manager ke apne commission/salary ka khulasa — cashier ko ye nahi
+  // dikhta, sirf manager role ke liye extra nav items add hote hain.
+  static const _managerNavItems = [
+    SidebarItem(
+        icon: AppIcons.receiptLongOutlined,
+        label: 'My Sales',
+        group: 'My Activity'),
+    SidebarItem(
+        icon: AppIcons.assignmentReturnOutlined,
+        label: 'My Returns',
+        group: 'My Activity'),
+    SidebarItem(
+        icon: AppIcons.swapHorizOutlined,
+        label: 'My Exchanges',
+        group: 'My Activity'),
+    SidebarItem(icon: AppIcons.personOutline, label: 'My Profile'),
+  ];
+
+  static const _managerPages = [
+    ManagerSalesScreen(),
+    ManagerReturnsScreen(),
+    ManagerExchangesScreen(),
+    ManagerProfileScreen(),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final isManager = user?.isManager ?? false;
+    final navItems =
+        isManager ? [..._navItems, ..._managerNavItems] : _navItems;
+    final pages = isManager ? [..._pages, ..._managerPages] : _pages;
     return SidebarShell(
-      navItems: _navItems,
-      pages: _pages,
+      navItems: navItems,
+      pages: pages,
       selectedIndex: _index,
       userName: user?.username ?? '',
       userRole: user?.roleDisplayName ?? '',
