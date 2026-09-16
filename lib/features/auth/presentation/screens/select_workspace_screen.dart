@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/branch_dashboard.dart';
+import '../../../dashboard/salesman_dashboard.dart';
 import '../../../dashboard/warehouse_dashboard.dart';
 import '../../../superadmin/branch/data/model/branch_model.dart';
 import '../../../superadmin/branch/presentation/providers/branch_provider.dart';
@@ -68,9 +69,13 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
   Future<void> _pickBranch(String branchId) async {
     await ref.read(selectedBranchIdProvider.notifier).select(branchId);
     if (!mounted) return;
+    final isSalesman = ref.read(authProvider).user?.isSalesman ?? false;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const BranchDashboard()),
+      MaterialPageRoute(
+        builder: (_) =>
+            isSalesman ? const SalesmanDashboard() : const BranchDashboard(),
+      ),
     );
   }
 

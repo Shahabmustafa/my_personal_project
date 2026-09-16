@@ -29,6 +29,19 @@ class EmployeeSalaryDatasource {
         .toList();
   }
 
+  /// Logged-in salesman ka apna salary/commission record — salesman
+  /// dashboard ki "My Profile" screen ke liye.
+  Future<EmployeeSalaryModel?> fetchByUser(String userId) async {
+    final response = await _client
+        .from('employee_salary')
+        .select('*, users(username, role), branches(branch_name)')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    if (response == null) return null;
+    return EmployeeSalaryModel.fromMap(response);
+  }
+
   Future<void> insertEmployeeSalary({
     required String userId,
     required String branchId,

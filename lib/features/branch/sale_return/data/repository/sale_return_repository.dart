@@ -40,4 +40,8 @@ class SaleReturnRepository {
 
   Future<List<SaleReturnModel>> getReturns(String branchId) =>
       _datasource.fetchReturns(branchId);
+
+  Future<List<SaleReturnModel>> getReturnsBySalesman(
+          String branchId, String salesmanId) =>
+      _datasource.fetchReturnsBySalesman(branchId, salesmanId);
 }

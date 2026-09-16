@@ -12,6 +12,9 @@ class EmployeeSalaryRepository {
   Future<List<EmployeeSalaryModel>> getByBranch(String branchId) =>
       _datasource.fetchByBranch(branchId);
 
+  Future<EmployeeSalaryModel?> getByUser(String userId) =>
+      _datasource.fetchByUser(userId);
+
   Future<void> addEmployeeSalary({
     required String userId,
     required String branchId,

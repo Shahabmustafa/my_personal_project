@@ -54,4 +54,8 @@ class SaleExchangeRepository {
 
   Future<List<SaleExchangeModel>> getExchanges(String branchId) =>
       _datasource.fetchExchanges(branchId);
+
+  Future<List<SaleExchangeModel>> getExchangesBySalesman(
+          String branchId, String salesmanId) =>
+      _datasource.fetchExchangesBySalesman(branchId, salesmanId);
 }

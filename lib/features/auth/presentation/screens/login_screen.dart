@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../dashboard/branch_dashboard.dart';
+import '../../../dashboard/salesman_dashboard.dart';
 import '../../../dashboard/superadmin_dashboard.dart';
 import '../../../dashboard/warehouse_dashboard.dart';
 import '../providers/auth_provider.dart';
@@ -45,11 +46,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       case 'superadmin':
         return const SuperAdminDashboard();
 
-      // ── Branch sidebar → cashier, manager, salesman
+      // ── Branch sidebar → cashier, manager
       case 'cashier':
       case 'manager':
-      case 'salesman':
         return const BranchDashboard();
+
+      // ── Salesman → apna, restricted dashboard (sale/return/exchange +
+      // apni history + profile)
+      case 'salesman':
+        return const SalesmanDashboard();
       case 'warehouse_manager':
       case 'inventory_manager':
         return const WarehouseDashboard();

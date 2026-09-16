@@ -21,7 +21,7 @@ import '../superadmin/report/presentation/screens/branch_target_report_screen.da
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 
 import 'package:safishoe_app/core/constants/app_icons.dart';
-// Roles: cashier, manager, salesman
+// Roles: cashier, manager (salesman ke liye alag SalesmanDashboard hai)
 
 class BranchDashboard extends ConsumerStatefulWidget {
   const BranchDashboard({super.key});

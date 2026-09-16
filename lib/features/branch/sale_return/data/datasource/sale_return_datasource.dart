@@ -105,4 +105,20 @@ class SaleReturnDatasource {
         .map((e) => SaleReturnModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  /// Sirf logged-in salesman ke apne returns — salesman dashboard ki
+  /// "My Returns" screen ke liye.
+  Future<List<SaleReturnModel>> fetchReturnsBySalesman(
+      String branchId, String salesmanId) async {
+    final res = await _client
+        .from('sale_returns')
+        .select(_returnSelect)
+        .eq('branch_id', branchId)
+        .eq('salesman_id', salesmanId)
+        .order('created_at', ascending: false);
+
+    return (res as List)
+        .map((e) => SaleReturnModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }

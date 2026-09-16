@@ -150,4 +150,20 @@ class SaleExchangeDatasource {
         .map((e) => SaleExchangeModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  /// Sirf logged-in salesman ke apne exchanges — salesman dashboard ki
+  /// "My Exchanges" screen ke liye.
+  Future<List<SaleExchangeModel>> fetchExchangesBySalesman(
+      String branchId, String salesmanId) async {
+    final res = await _client
+        .from('sale_exchanges')
+        .select(_exchangeSelect)
+        .eq('branch_id', branchId)
+        .eq('salesman_id', salesmanId)
+        .order('created_at', ascending: false);
+
+    return (res as List)
+        .map((e) => SaleExchangeModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 }

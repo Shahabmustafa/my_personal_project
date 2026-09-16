@@ -178,6 +178,22 @@ class SaleInvoiceDatasource {
         .toList();
   }
 
+  /// Sirf logged-in salesman ke apne invoices — salesman dashboard ki
+  /// "My Sales" screen ke liye.
+  Future<List<SaleInvoiceModel>> fetchInvoicesBySalesman(
+      String branchId, String salesmanId) async {
+    final res = await _client
+        .from('sale_invoices')
+        .select(_invoiceSelect)
+        .eq('branch_id', branchId)
+        .eq('salesman_id', salesmanId)
+        .order('created_at', ascending: false);
+
+    return (res as List)
+        .map((e) => SaleInvoiceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   Future<SaleInvoiceModel> fetchInvoiceDetail(String invoiceId) async {
     final invoiceRes = await _client
         .from('sale_invoices')
