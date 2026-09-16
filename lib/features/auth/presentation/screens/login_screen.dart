@@ -157,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _emailController,
                       label: 'Email',
                       hint: 'you@example.com',
-                      icon: AppIcons.emailOutlined,
+                      icon: TextFieldIcon(AppIcons.emailOutlined,size: 24,),
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
@@ -177,11 +177,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       controller: _passwordController,
                       label: 'Password',
                       hint: 'Enter your password',
-                      icon: AppIcons.lockOutline,
+                      icon: TextFieldIcon(AppIcons.lockOutline),
                       obscureText: _obscurePassword,
                       suffixIcon: IconButton(
                         icon: TextFieldIcon(_obscurePassword ? AppIcons.visibilityOffOutlined : AppIcons.visibilityOutlined,
-                          size: 12,
+                          size: 24,
                           color: Colors.grey.shade600,
                         ),
                         onPressed: () => setState(

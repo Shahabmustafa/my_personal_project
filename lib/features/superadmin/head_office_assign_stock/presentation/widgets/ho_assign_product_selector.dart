@@ -201,7 +201,7 @@ class _HoAssignProductSelectorState
             searchFieldProps: const TextFieldProps(
               decoration: InputDecoration(
                 hintText: 'Search article, color, size, category...',
-                prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
+                prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
                 isDense: true,
               ),
             ),

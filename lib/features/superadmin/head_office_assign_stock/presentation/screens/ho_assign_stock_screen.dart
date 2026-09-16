@@ -119,7 +119,7 @@ class _AssignStockTab extends ConsumerWidget {
                   searchFieldProps: const TextFieldProps(
                     decoration: InputDecoration(
                       hintText: 'Search branch...',
-                      prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
+                      prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
                       isDense: true,
                     ),
                   ),

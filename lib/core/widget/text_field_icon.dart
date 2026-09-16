@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -8,7 +9,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 /// app-wide icon scale factor, so field icons stay a fixed, predictable
 /// size regardless of that global setting.
 class TextFieldIcon extends StatelessWidget {
-  const TextFieldIcon(this.assetPath, {super.key, this.size = 9, this.color});
+  const TextFieldIcon(this.assetPath, {super.key, this.size = 24, this.color});
 
   final String assetPath;
   final double size;
@@ -16,11 +17,14 @@ class TextFieldIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.asset(
-      assetPath,
-      width: size,
-      height: size,
-      colorFilter: color == null ? null : ColorFilter.mode(color!, BlendMode.srcIn),
+    return IconButton(
+      onPressed: (){},
+      icon: SvgPicture.asset(
+        assetPath,
+        width: size,
+        height: size,
+        colorFilter: color == null ? null : ColorFilter.mode(color!, BlendMode.srcIn),
+      ),
     );
   }
 }

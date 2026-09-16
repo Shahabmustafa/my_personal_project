@@ -7,7 +7,7 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
   final String hint;
-  final String icon;
+  final Widget icon;
   final bool obscureText;
   final Widget? suffixIcon;
   final TextInputType keyboardType;
@@ -36,7 +36,7 @@ class CustomTextField extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: SvgPicture.asset(icon,),
+        prefixIcon: icon,
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: Colors.grey.shade100,

@@ -120,7 +120,7 @@ class _PurchaseProductSelectorState
           decoration: InputDecoration(
             labelText: 'Bar Code',
             hintText: 'Scan barcode...',
-            prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 9),
+            prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 24),
             errorText: _barcodeNotFound ? 'Not found' : null,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             enabledBorder: OutlineInputBorder(
@@ -159,7 +159,7 @@ class _PurchaseProductSelectorState
             searchFieldProps: const TextFieldProps(
               decoration: InputDecoration(
                 hintText: 'Search article, color, size, category...',
-                prefixIcon: TextFieldIcon(AppIcons.search, size: 9),
+                prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
                 isDense: true,
               ),
             ),
