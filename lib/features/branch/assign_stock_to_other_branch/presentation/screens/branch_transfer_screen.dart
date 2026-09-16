@@ -101,7 +101,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                 message: 'Refresh',
                 child: IconButton(
                   onPressed: () => ref.invalidate(sentTransfersProvider),
-                  icon: const AppIcon(AppIcons.refresh),
+                  icon: const AppIcon(AppIcons.refresh, size: 18),
                 ),
               ),
               const SizedBox(width: 8),

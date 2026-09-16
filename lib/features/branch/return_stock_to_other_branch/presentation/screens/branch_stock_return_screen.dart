@@ -94,7 +94,7 @@ class _BranchStockReturnScreenState
                 message: 'Refresh',
                 child: IconButton(
                   onPressed: () => ref.invalidate(sentStockReturnsProvider),
-                  icon: const AppIcon(AppIcons.refresh),
+                  icon: const AppIcon(AppIcons.refresh, size: 18),
                 ),
               ),
               const SizedBox(width: 8),

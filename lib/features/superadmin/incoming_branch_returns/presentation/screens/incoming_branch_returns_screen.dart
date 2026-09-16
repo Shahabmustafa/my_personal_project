@@ -52,7 +52,7 @@ class _IncomingBranchReturnsScreenState
               ),
               IconButton(
                 onPressed: () => ref.invalidate(incomingBranchReturnsProvider),
-                icon: const AppIcon(AppIcons.refresh, color: _primary),
+                icon: const AppIcon(AppIcons.refresh, size: 18, color: _primary),
                 tooltip: 'Refresh',
               ),
             ],

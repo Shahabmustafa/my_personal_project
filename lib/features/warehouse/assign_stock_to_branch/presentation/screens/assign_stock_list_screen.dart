@@ -56,7 +56,7 @@ class _AssignStockListScreenState
               IconButton(
                 onPressed: () =>
                     ref.read(assignListProvider.notifier).loadAssignments(),
-                icon: const AppIcon(AppIcons.refresh,
+                icon: const AppIcon(AppIcons.refresh, size: 18,
                     color: Color(0xFF1565C0)),
                 tooltip: 'Refresh',
               ),

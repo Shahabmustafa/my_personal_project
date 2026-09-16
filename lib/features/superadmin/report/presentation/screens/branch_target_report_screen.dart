@@ -50,7 +50,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
                     style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),
               IconButton(
-                icon: const AppIcon(AppIcons.refresh),
+                icon: const AppIcon(AppIcons.refresh, size: 18),
                 onPressed: notifier.load,
               ),
             ],

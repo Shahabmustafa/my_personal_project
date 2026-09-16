@@ -71,7 +71,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                     notifier.refresh();
                     ref.invalidate(headOfficeStockStatsProvider);
                   },
-                  icon: const AppIcon(AppIcons.refresh),
+                  icon: const AppIcon(AppIcons.refresh, size: 18),
                   tooltip: 'Refresh',
                   color: const Color(0xFF3E63DD),
                 ),

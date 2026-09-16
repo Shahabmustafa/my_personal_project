@@ -42,7 +42,7 @@ class _IncomingStockReturnsScreenState
               const Spacer(),
               IconButton(
                 onPressed: () => ref.invalidate(incomingStockReturnsProvider),
-                icon: const AppIcon(AppIcons.refresh, color: _primary),
+                icon: const AppIcon(AppIcons.refresh, size: 18, color: _primary),
                 tooltip: 'Refresh',
               ),
             ],

@@ -47,7 +47,7 @@ class OverviewScreen extends ConsumerWidget {
                 ),
                 IconButton(
                   onPressed: () => ref.invalidate(overviewStatsProvider),
-                  icon: const AppIcon(AppIcons.refresh, color: _accent),
+                  icon: const AppIcon(AppIcons.refresh, size: 18, color: _accent),
                   tooltip: 'Refresh',
                 ),
               ],

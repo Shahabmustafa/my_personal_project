@@ -118,7 +118,7 @@ class _HoAssignStockListScreenState
           },
         ),
         IconButton(
-          icon: const AppIcon(AppIcons.refresh),
+          icon: const AppIcon(AppIcons.refresh, size: 18),
           tooltip: 'Refresh',
           onPressed: notifier.loadAssignments,
         ),

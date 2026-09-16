@@ -58,7 +58,7 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 message: 'Refresh',
                 child: IconButton(
                   onPressed: () => ref.read(saleInvoiceListProvider.notifier).loadInvoices(),
-                  icon: const AppIcon(AppIcons.refresh),
+                  icon: const AppIcon(AppIcons.refresh, size: 18),
                 ),
               ),
               if (widget.showNewInvoiceButton)

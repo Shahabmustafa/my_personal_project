@@ -122,7 +122,7 @@ class _BranchAssignListScreenState
                 ),
               IconButton(
                 tooltip: 'Refresh',
-                icon: const AppIcon(AppIcons.refresh),
+                icon: const AppIcon(AppIcons.refresh, size: 18),
                 onPressed: () =>
                     ref.read(branchAssignProvider.notifier).loadAssignments(),
               ),

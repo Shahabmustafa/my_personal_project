@@ -89,7 +89,7 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
                 const Spacer(),
                 IconButton(
                   onPressed: notifier.refresh,
-                  icon: const AppIcon(AppIcons.refresh),
+                  icon: const AppIcon(AppIcons.refresh, size: 18),
                   tooltip: 'Refresh',
                   color: const Color(0xFF3E63DD),
                 ),

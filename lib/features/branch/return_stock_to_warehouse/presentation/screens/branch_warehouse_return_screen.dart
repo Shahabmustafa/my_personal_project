@@ -101,7 +101,7 @@ class _BranchWarehouseReturnScreenState
                 message: 'Refresh',
                 child: IconButton(
                   onPressed: () => ref.invalidate(sentWarehouseReturnsProvider),
-                  icon: const AppIcon(AppIcons.refresh),
+                  icon: const AppIcon(AppIcons.refresh, size: 18),
                 ),
               ),
               const SizedBox(width: 8),

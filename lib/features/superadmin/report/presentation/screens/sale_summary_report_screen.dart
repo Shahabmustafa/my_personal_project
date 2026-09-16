@@ -122,7 +122,7 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   ),
                   IconButton(
-                    icon: const AppIcon(AppIcons.refresh),
+                    icon: const AppIcon(AppIcons.refresh, size: 18),
                     onPressed: notifier.load,
                   ),
                 ],
@@ -173,7 +173,7 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
               ),
               const SizedBox(width: 8),
               IconButton(
-                icon: const AppIcon(AppIcons.refresh),
+                icon: const AppIcon(AppIcons.refresh, size: 18),
                 onPressed: notifier.load,
               ),
             ],
