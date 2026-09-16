@@ -289,7 +289,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             isRequired: true,
                             prefixIcon: const TextFieldIcon(
                                 AppIcons.inventory2Outlined,
-                                size: 24),
+                                size: 18),
                             onChanged: (p) => setState(() {
                               _product = p;
                               _previewed = false;
@@ -307,7 +307,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             isRequired: true,
                             prefixIcon: const TextFieldIcon(
                                 AppIcons.brandingWatermarkOutlined,
-                                size: 24),
+                                size: 18),
                             onChanged: (b) => setState(() {
                               _brand = b;
                               _previewed = false;
@@ -327,7 +327,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                               selectedItem: _company,
                               itemLabel: (c) => c.label,
                               prefixIcon: const TextFieldIcon(
-                                  AppIcons.businessOutlined, size: 24),
+                                  AppIcons.businessOutlined, size: 18),
                               onChanged: (c) => setState(() {
                                 _company = c;
                                 _previewed = false;
@@ -344,7 +344,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                               decoration: InputDecoration(
                                 labelText: 'Discount %',
                                 prefixIcon: const TextFieldIcon(
-                                    AppIcons.percentOutlined, size: 24),
+                                    AppIcons.percentOutlined, size: 18),
                                 border: OutlineInputBorder(
                                     borderRadius:
                                         BorderRadius.circular(10)),
@@ -437,7 +437,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             isRequired: true,
                             prefixIcon: const TextFieldIcon(
                                 AppIcons.colorLensOutlined,
-                                size: 24),
+                                size: 18),
                             onChanged: (c) => setState(() {
                               _color = c;
                               _previewed = false;
@@ -453,7 +453,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                             itemLabel: (c) => c.label,
                             errorText: _categoriesError,
                             isRequired: true,
-                            prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 24),
+                            prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 18),
                             onChanged: (c) => setState(() {
                               _category = c;
                               _previewed = false;
@@ -469,7 +469,7 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                         itemLabel: (t) => t.label,
                         errorText: _typesError,
                         isRequired: true,
-                        prefixIcon: const TextFieldIcon(AppIcons.styleOutlined, size: 24),
+                        prefixIcon: const TextFieldIcon(AppIcons.styleOutlined, size: 18),
                         onChanged: (t) => setState(() {
                           _type = t;
                           _previewed = false;
@@ -608,7 +608,7 @@ class _SizeQtyRow extends StatelessWidget {
             selectedItem: entry.size,
             itemLabel: (s) => s.label,
             isRequired: true,
-            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 24),
+            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 18),
             onChanged: onSizeChanged,
           ),
         ),
@@ -621,7 +621,7 @@ class _SizeQtyRow extends StatelessWidget {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Quantity *',
-              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 24),
+              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 18),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10)),
               enabledBorder: OutlineInputBorder(

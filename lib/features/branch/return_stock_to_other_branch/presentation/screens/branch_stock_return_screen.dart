@@ -659,7 +659,7 @@ class _NewReturnForm extends ConsumerWidget {
                         searchFieldProps: const TextFieldProps(
                           decoration: InputDecoration(
                             hintText: 'Search branch...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
+                            prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
                             isDense: true,
                           ),
                         ),

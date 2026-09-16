@@ -58,7 +58,7 @@ class _CategoryFormDialogState extends State<CategoryFormDialog> {
               labelText: 'Category *',
               hintText: 'e.g. Male',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 24, color: Color(0xFF8A8FA3)),
+              prefixIcon: const TextFieldIcon(AppIcons.categoryOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),

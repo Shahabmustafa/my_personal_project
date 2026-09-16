@@ -58,7 +58,7 @@ class _ColorFormDialogState extends State<ColorFormDialog> {
               labelText: 'Color Name *',
               hintText: 'e.g. Red',
               labelStyle: const TextStyle(fontSize: 13),
-              prefixIcon: const TextFieldIcon(AppIcons.colorLensOutlined, size: 24, color: Color(0xFF8A8FA3)),
+              prefixIcon: const TextFieldIcon(AppIcons.colorLensOutlined, size: 18, color: Color(0xFF8A8FA3)),
               isDense: true,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
