@@ -1,14 +1,11 @@
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 import '../widgets/ho_assign_cart_table.dart';
 import '../widgets/ho_assign_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
-import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 /// SuperAdmin — Head Office se Branch ko stock assign karna (form only).
 /// History ab alag sidebar item hai ([HoAssignStockListScreen]).
@@ -27,8 +24,6 @@ class _AssignStockTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(hoAssignStockProvider);
-    final branchesAsync = ref.watch(hoAssignBranchesProvider);
-    final isMobile = Responsive(context).isMobile;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -85,59 +80,6 @@ class _AssignStockTab extends ConsumerWidget {
               ],
             );
 
-            final branchDropdown = branchesAsync.when(
-              loading: () => const SizedBox(
-                  height: 48, child: Center(child: LinearProgressIndicator())),
-              error: (e, _) => Text('Error: $e',
-                  style: const TextStyle(color: Colors.red, fontSize: 12)),
-              data: (branches) => DropdownSearch<HoBranchModel>(
-                items: (filter, _) => branches
-                    .where((b) =>
-                        b.label.toLowerCase().contains(filter.toLowerCase()))
-                    .toList(),
-                selectedItem: state.selectedBranch,
-                itemAsString: (b) => b.label,
-                compareFn: (a, b) => a.id == b.id,
-                onSelected: (b) =>
-                    ref.read(hoAssignStockProvider.notifier).selectBranch(b),
-                decoratorProps: DropDownDecoratorProps(
-                  decoration: InputDecoration(
-                    labelText: 'Select Branch *',
-                    border:
-                        OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
-                  ),
-                ),
-                popupProps: PopupProps.menu(
-                  showSearchBox: true,
-                  constraints: const BoxConstraints(maxHeight: 260),
-                  searchFieldProps: const TextFieldProps(
-                    decoration: InputDecoration(
-                      hintText: 'Search branch...',
-                      prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
-                      isDense: true,
-                    ),
-                  ),
-                  itemBuilder: (ctx, branch, isSelected, _) => ListTile(
-                    leading: const AppIcon(AppIcons.storeOutlined,
-                        size: 18, color: Color(0xFF1565C0)),
-                    title: Text(branch.branchName,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w600)),
-                    subtitle: branch.city != null
-                        ? Text(branch.city!, style: const TextStyle(fontSize: 11))
-                        : null,
-                    selected: isSelected,
-                  ),
-                ),
-              ),
-            );
-
             final dateWidget = Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
@@ -160,31 +102,14 @@ class _AssignStockTab extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: isMobile
-                  ? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(child: assignmentNoWidget),
-                            const SizedBox(width: 12),
-                            dateWidget,
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        branchDropdown,
-                      ],
-                    )
-                  : Row(
-                      children: [
-                        assignmentNoWidget,
-                        const SizedBox(width: 20),
-                        Expanded(flex: 4, child: branchDropdown),
-                        const SizedBox(width: 16),
-                        dateWidget,
-                      ],
-                    ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: assignmentNoWidget),
+                  const SizedBox(width: 12),
+                  dateWidget,
+                ],
+              ),
             );
           }),
           const SizedBox(height: 12),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../head_office_purchase/data/models/warehouse_stock_model.dart';
+import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
@@ -124,6 +125,8 @@ class _HoAssignProductSelectorState
   @override
   Widget build(BuildContext context) {
     final stockAsync = ref.watch(hoAssignStockListProvider);
+    final branchesAsync = ref.watch(hoAssignBranchesProvider);
+    final assignState = ref.watch(hoAssignStockProvider);
     const primary = Color(0xFF1565C0);
     final isMobile = Responsive(context).isMobile;
 
@@ -138,6 +141,49 @@ class _HoAssignProductSelectorState
         final salePrice = stock?.salePrice ?? 0.0;
         final purchasePrice = stock?.purchasePrice ?? 0.0;
         final discountPct = stock?.discountPct ?? 0.0;
+
+        final branchDropdown = branchesAsync.when(
+          loading: () => const SizedBox(
+              height: 48, child: Center(child: LinearProgressIndicator())),
+          error: (e, _) => Text('Error: $e',
+              style: const TextStyle(color: Colors.red, fontSize: 12)),
+          data: (branches) => DropdownSearch<HoBranchModel>(
+            items: (filter, _) => branches
+                .where((b) =>
+                    b.label.toLowerCase().contains(filter.toLowerCase()))
+                .toList(),
+            selectedItem: assignState.selectedBranch,
+            itemAsString: (b) => b.label,
+            compareFn: (a, b) => a.id == b.id,
+            onSelected: (b) =>
+                ref.read(hoAssignStockProvider.notifier).selectBranch(b),
+            decoratorProps: DropDownDecoratorProps(
+              decoration: _dropDecor('Select Branch *'),
+            ),
+            popupProps: PopupProps.menu(
+              showSearchBox: true,
+              constraints: const BoxConstraints(maxHeight: 260),
+              searchFieldProps: const TextFieldProps(
+                decoration: InputDecoration(
+                  hintText: 'Search branch...',
+                  prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
+                  isDense: true,
+                ),
+              ),
+              itemBuilder: (ctx, branch, isSelected, _) => ListTile(
+                leading: const AppIcon(AppIcons.storeOutlined,
+                    size: 18, color: primary),
+                title: Text(branch.branchName,
+                    style: const TextStyle(
+                        fontSize: 13, fontWeight: FontWeight.w600)),
+                subtitle: branch.city != null
+                    ? Text(branch.city!, style: const TextStyle(fontSize: 11))
+                    : null,
+                selected: isSelected,
+              ),
+            ),
+          ),
+        );
 
         final barcodeField = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,10 +343,12 @@ class _HoAssignProductSelectorState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: isMobile
                 ? [
-                    // Mobile: barcode, article, stats and qty/add all stack
-                    // vertically instead of the desktop's two side-by-side
+                    // Mobile: branch, barcode, article, stats and qty/add all
+                    // stack vertically instead of the desktop's side-by-side
                     // rows, which otherwise force fixed widths wider than a
                     // phone screen.
+                    branchDropdown,
+                    const SizedBox(height: 12),
                     barcodeField,
                     const SizedBox(height: 12),
                     articleDropdown,
@@ -316,13 +364,15 @@ class _HoAssignProductSelectorState
                     ),
                   ]
                 : [
-                    // ── Row 1: Barcode + Article ─────────────────────────
+                    // ── Row 1: Branch + Barcode + Article ────────────────
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        Expanded(flex: 3, child: branchDropdown),
+                        const SizedBox(width: 10),
                         SizedBox(width: 180, child: barcodeField),
                         const SizedBox(width: 10),
-                        Expanded(child: articleDropdown),
+                        Expanded(flex: 3, child: articleDropdown),
                       ],
                     ),
                     const SizedBox(height: 12),

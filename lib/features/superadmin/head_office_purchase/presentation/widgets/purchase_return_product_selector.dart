@@ -98,6 +98,8 @@ class _PurchaseReturnProductSelectorState
   @override
   Widget build(BuildContext context) {
     final stockAsync = ref.watch(returnWarehouseStockProvider);
+    final companiesAsync = ref.watch(returnCompaniesProvider);
+    final returnState = ref.watch(purchaseReturnProvider);
 
     return stockAsync.when(
       loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -107,6 +109,38 @@ class _PurchaseReturnProductSelectorState
         final totalQty = stock?.quantity ?? 0;
         final purchasePrice = stock?.purchasePrice ?? 0.0;
         final isMobile = Responsive(context).isMobile;
+
+        final companyDropdown = companiesAsync.when(
+          loading: () => const SizedBox(
+              height: 48, child: Center(child: LinearProgressIndicator())),
+          error: (e, _) => Text('Error: $e',
+              style: const TextStyle(color: Colors.red, fontSize: 12)),
+          data: (companies) => DropdownSearch<StockLookupItem>(
+            items: (filter, _) => companies
+                .where((c) =>
+                    c.label.toLowerCase().contains(filter.toLowerCase()))
+                .toList(),
+            selectedItem: returnState.selectedCompany,
+            itemAsString: (c) => c.label,
+            compareFn: (a, b) => a.id == b.id,
+            onSelected: (c) =>
+                ref.read(purchaseReturnProvider.notifier).selectCompany(c),
+            decoratorProps: DropDownDecoratorProps(
+              decoration: _dropDecor('Company (optional)'),
+            ),
+            popupProps: PopupProps.menu(
+              showSearchBox: true,
+              constraints: const BoxConstraints(maxHeight: 260),
+              searchFieldProps: const TextFieldProps(
+                decoration: InputDecoration(
+                  hintText: 'Search company...',
+                  prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
+                  isDense: true,
+                ),
+              ),
+            ),
+          ),
+        );
 
         final barcodeField = TextField(
           controller: _barcodeCtrl,
@@ -216,11 +250,13 @@ class _PurchaseReturnProductSelectorState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── ROW 1: Barcode | Article ────────────────────────────────
+              // ── ROW 1: Company | Barcode | Article ──────────────────────
               isMobile
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        companyDropdown,
+                        const SizedBox(height: 10),
                         barcodeField,
                         const SizedBox(height: 10),
                         articleDropdown,
@@ -229,6 +265,8 @@ class _PurchaseReturnProductSelectorState
                   : Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Expanded(flex: 2, child: companyDropdown),
+                        const SizedBox(width: 10),
                         Expanded(flex: 2, child: barcodeField),
                         const SizedBox(width: 10),
                         Expanded(flex: 3, child: articleDropdown),

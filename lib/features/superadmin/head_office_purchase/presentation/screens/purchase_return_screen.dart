@@ -1,15 +1,12 @@
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_return_model.dart';
-import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_return_provider.dart';
 import '../widgets/purchase_return_cart_table.dart';
 import '../widgets/purchase_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
-import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 class PurchaseReturnScreen extends ConsumerWidget {
   const PurchaseReturnScreen({super.key});
@@ -17,7 +14,6 @@ class PurchaseReturnScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(purchaseReturnProvider);
-    final companiesAsync = ref.watch(returnCompaniesProvider);
     final invoicesAsync = ref.watch(returnInvoiceNumbersProvider);
     final isMobile = Responsive(context).isMobile;
 
@@ -105,52 +101,6 @@ class PurchaseReturnScreen extends ConsumerWidget {
                 ],
               );
 
-              final companyDropdown = companiesAsync.when(
-                loading: () => const SizedBox(
-                    height: 48,
-                    child: Center(child: LinearProgressIndicator())),
-                error: (e, _) => Text('Error: $e',
-                    style: const TextStyle(color: Colors.red, fontSize: 12)),
-                data: (companies) => DropdownSearch<StockLookupItem>(
-                  items: (filter, _) => companies
-                      .where((c) => c.label
-                          .toLowerCase()
-                          .contains(filter.toLowerCase()))
-                      .toList(),
-                  selectedItem: state.selectedCompany,
-                  itemAsString: (c) => c.label,
-                  compareFn: (a, b) => a.id == b.id,
-                  onSelected: (c) => ref
-                      .read(purchaseReturnProvider.notifier)
-                      .selectCompany(c),
-                  decoratorProps: DropDownDecoratorProps(
-                    decoration: InputDecoration(
-                      labelText: 'Company (optional)',
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            BorderSide(color: Colors.orange.shade200),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 14),
-                    ),
-                  ),
-                  popupProps: PopupProps.menu(
-                    showSearchBox: true,
-                    constraints: const BoxConstraints(maxHeight: 260),
-                    searchFieldProps: const TextFieldProps(
-                      decoration: InputDecoration(
-                        hintText: 'Search company...',
-                        prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
-                        isDense: true,
-                      ),
-                    ),
-                  ),
-                ),
-              );
-
               final invoiceDropdown = invoicesAsync.when(
                 loading: () => const SizedBox(
                     height: 48,
@@ -219,8 +169,6 @@ class PurchaseReturnScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    companyDropdown,
-                    const SizedBox(height: 12),
                     invoiceDropdown,
                   ],
                 );
@@ -230,8 +178,6 @@ class PurchaseReturnScreen extends ConsumerWidget {
                 children: [
                   returnNumberBlock,
                   const SizedBox(width: 16),
-                  Expanded(flex: 3, child: companyDropdown),
-                  const SizedBox(width: 12),
                   Expanded(flex: 3, child: invoiceDropdown),
                   const SizedBox(width: 16),
                   dateBlock,

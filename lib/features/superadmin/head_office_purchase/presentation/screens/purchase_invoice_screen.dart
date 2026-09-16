@@ -1,16 +1,13 @@
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../../data/models/purchase_return_model.dart';
-import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_invoice_provider.dart';
 import '../widgets/purchase_cart_table.dart';
 import '../widgets/purchase_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
-import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 class PurchaseInvoiceScreen extends ConsumerWidget {
   const PurchaseInvoiceScreen({super.key});
@@ -18,8 +15,6 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(purchaseInvoiceProvider);
-    final companiesAsync = ref.watch(purchaseCompaniesProvider);
-    final isMobile = Responsive(context).isMobile;
 
     final invoiceNumberBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,46 +51,6 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
       ],
     );
 
-    final companyDropdown = companiesAsync.when(
-      loading: () => const SizedBox(
-          height: 48, child: Center(child: LinearProgressIndicator())),
-      error: (e, _) => Text('Error: $e',
-          style: const TextStyle(color: Colors.red, fontSize: 12)),
-      data: (companies) => DropdownSearch<StockLookupItem>(
-        items: (filter, _) => companies
-            .where((c) => c.label.toLowerCase().contains(filter.toLowerCase()))
-            .toList(),
-        selectedItem: state.selectedCompany,
-        itemAsString: (c) => c.label,
-        compareFn: (a, b) => a.id == b.id,
-        onSelected: (c) =>
-            ref.read(purchaseInvoiceProvider.notifier).selectCompany(c),
-        decoratorProps: DropDownDecoratorProps(
-          decoration: InputDecoration(
-            labelText: 'Select Company',
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          ),
-        ),
-        popupProps: PopupProps.menu(
-          showSearchBox: true,
-          constraints: const BoxConstraints(maxHeight: 260),
-          searchFieldProps: const TextFieldProps(
-            decoration: InputDecoration(
-              hintText: 'Search company...',
-              prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
-              isDense: true,
-            ),
-          ),
-        ),
-      ),
-    );
-
     final dateBlock = Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -126,30 +81,13 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: isMobile
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: invoiceNumberBlock),
-                          const SizedBox(width: 16),
-                          dateBlock,
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      companyDropdown,
-                    ],
-                  )
-                : Row(
-                    children: [
-                      invoiceNumberBlock,
-                      const SizedBox(width: 20),
-                      Expanded(flex: 4, child: companyDropdown),
-                      const SizedBox(width: 16),
-                      dateBlock,
-                    ],
-                  ),
+            child: Row(
+              children: [
+                Expanded(child: invoiceNumberBlock),
+                const SizedBox(width: 16),
+                dateBlock,
+              ],
+            ),
           ),
 
           const SizedBox(height: 12),
