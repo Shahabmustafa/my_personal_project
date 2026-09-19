@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart'
+    show PrinterLookupItem;
 import '../providers/ho_assign_stock_provider.dart';
 import '../widgets/ho_assign_cart_table.dart';
 import '../widgets/ho_assign_product_selector.dart';
@@ -7,6 +9,8 @@ import '../widgets/ho_assign_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/widget/printer_picker_field.dart';
 /// SuperAdmin — Head Office se Branch ko stock assign karna (form only).
 /// History ab alag sidebar item hai ([HoAssignStockListScreen]).
 /// Warehouse ke "Assign Stock to Branch" jaisa hi, bas source head office
@@ -299,7 +303,7 @@ class _AssignFooter extends ConsumerWidget {
       return;
     }
 
-    final confirm = await showDialog<bool>(
+    final choice = await showDialog<_SendChoice>(
       context: context,
       builder: (_) => _ConfirmSendDialog(
         branchName: state.selectedBranch!.branchName,
@@ -308,9 +312,18 @@ class _AssignFooter extends ConsumerWidget {
         totalValue: state.totalPurchaseValue,
       ),
     );
-    if (confirm != true) return;
+    if (choice == null) return;
 
     final branchName = state.selectedBranch?.branchName ?? 'branch';
+    // Cart is cleared right after saving — keep what the slip needs.
+    final slipLines = state.cartItems
+        .map((i) => StockSlipLine(
+              name: i.productName,
+              sizeName: i.sizeName,
+              colorName: i.colorName,
+              quantity: i.quantity,
+            ))
+        .toList();
     final error =
         await ref.read(hoAssignStockProvider.notifier).saveAssignment();
 
@@ -330,9 +343,33 @@ class _AssignFooter extends ConsumerWidget {
           backgroundColor: Colors.green.shade700,
         ),
       );
+      final assignmentNumber =
+          ref.read(hoAssignStockProvider).assignmentNumber;
       ref.read(hoAssignStockProvider.notifier).clearCart();
       ref.read(hoAssignListProvider.notifier).loadAssignments();
       ref.invalidate(hoAssignStockListProvider);
+
+      try {
+        await ThermalPrintService.printStockSlip(
+          title: 'STOCK ASSIGNMENT',
+          documentNumberLabel: 'Assignment #',
+          documentNumber: assignmentNumber,
+          date: DateTime.now(),
+          fromName: 'Head Office',
+          toName: branchName,
+          lines: slipLines,
+          printer: choice.printer,
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Print failed: $e'),
+              backgroundColor: Colors.orange.shade700,
+            ),
+          );
+        }
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -344,7 +381,13 @@ class _AssignFooter extends ConsumerWidget {
   }
 }
 
-class _ConfirmSendDialog extends StatelessWidget {
+/// What the confirm dialog hands back (null = cancelled).
+class _SendChoice {
+  final PrinterLookupItem? printer;
+  const _SendChoice(this.printer);
+}
+
+class _ConfirmSendDialog extends StatefulWidget {
   final String branchName;
   final int totalQty;
   final int totalItems;
@@ -356,6 +399,18 @@ class _ConfirmSendDialog extends StatelessWidget {
     required this.totalItems,
     required this.totalValue,
   });
+
+  @override
+  State<_ConfirmSendDialog> createState() => _ConfirmSendDialogState();
+}
+
+class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
+  PrinterLookupItem? _printer;
+
+  String get branchName => widget.branchName;
+  int get totalQty => widget.totalQty;
+  int get totalItems => widget.totalItems;
+  double get totalValue => widget.totalValue;
 
   @override
   Widget build(BuildContext context) {
@@ -419,15 +474,23 @@ class _ConfirmSendDialog extends StatelessWidget {
             style:
                 TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: 360,
+            child: PrinterPickerField(
+              provider: hoPrintersProvider,
+              onChanged: (p) => _printer = p,
+            ),
+          ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () => Navigator.pop(context, _SendChoice(_printer)),
           style: FilledButton.styleFrom(
             backgroundColor: const Color(0xFF1565C0),
             shape: RoundedRectangleBorder(

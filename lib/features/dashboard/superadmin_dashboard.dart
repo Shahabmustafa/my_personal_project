@@ -12,6 +12,7 @@ import '../superadmin/discount/presentation/screens/sale_discount_tiers_screen.d
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/head_office_cash_counter/presentation/screens/head_office_cash_counter_screen.dart';
 import '../superadmin/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
+import '../superadmin/branch_payments/presentation/screens/branch_payments_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
 import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
@@ -104,6 +105,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
     SidebarItem(
         icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
+    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
     SidebarItem(
       icon: AppIcons.percentOutlined,
       label: 'Branch Invoice Discount',
@@ -178,6 +180,8 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     IncomingBranchReturnsScreen(),
     HeadOfficeScreen(),
     HeadOfficeCashCounterScreen(),
+    // Branches ne Head Office ko jo amount pay ki — accept/reject + report.
+    BranchPaymentsScreen(),
     BranchInvoiceDiscountScreen(),
     SaleDiscountTiersScreen(),
     BranchTargetScreen(),

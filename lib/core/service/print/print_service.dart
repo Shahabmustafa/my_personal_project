@@ -111,6 +111,145 @@ class ThermalPrintService {
     await _dispatch(doc, jobName: 'Return_${saleReturn.returnNumber}', printer: printer);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // STOCK SLIP (Head Office -> Branch assignment / Branch -> Branch transfer)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /// Delivery slip for stock moving between locations. Quantities only —
+  /// purchase/sale prices are internal and deliberately left off.
+  static Future<void> printStockSlip({
+    required String title,
+    required String documentNumberLabel,
+    required String documentNumber,
+    required DateTime date,
+    String? fromName,
+    required String toName,
+    required List<StockSlipLine> lines,
+    PrinterLookupItem? printer,
+    String? shopName,
+    String footerNote =
+        'Stock stays pending until the receiving branch accepts it.',
+  }) async {
+    final doc = pw.Document();
+    final logo = await _fetchLogo(printer?.imageUrl);
+    final totalPairs = lines.fold<int>(0, (s, l) => s + l.quantity);
+
+    pw.Widget th(String t, int flex, {pw.TextAlign align = pw.TextAlign.left}) =>
+        pw.Expanded(
+            flex: flex,
+            child: pw.Text(t,
+                style: pw.TextStyle(font: _boldFont, fontSize: 8), textAlign: align));
+    pw.Widget td(String t, int flex, {pw.TextAlign align = pw.TextAlign.left, bool bold = false}) =>
+        pw.Expanded(
+            flex: flex,
+            child: pw.Text(t,
+                style: pw.TextStyle(font: bold ? _boldFont : _regularFont, fontSize: 8),
+                textAlign: align));
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.roll80,
+        build: (pw.Context ctx) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            if (logo != null)
+              pw.Center(
+                child: pw.Container(
+                  width: 55,
+                  height: 55,
+                  margin: const pw.EdgeInsets.only(bottom: 8),
+                  child: pw.Image(logo, fit: pw.BoxFit.contain),
+                ),
+              ),
+            pw.Center(
+              child: pw.Text(
+                (shopName ?? _defaultShopName).toUpperCase(),
+                style: pw.TextStyle(font: _boldFont, fontSize: 14, letterSpacing: 1.5),
+              ),
+            ),
+            if (printer != null && printer.address.isNotEmpty)
+              pw.Center(
+                child: pw.Text(printer.address,
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
+              ),
+            if (printer != null && printer.phoneNumber.isNotEmpty)
+              pw.Center(
+                child: pw.Text(printer.phoneNumber,
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
+              ),
+            pw.SizedBox(height: 10),
+            pw.Center(
+              child: pw.Text(title,
+                  style: pw.TextStyle(font: _boldFont, fontSize: 10.5, letterSpacing: 1.5)),
+            ),
+            pw.SizedBox(height: 4),
+            _dashedDivider(),
+            pw.SizedBox(height: 4),
+
+            _kv(documentNumberLabel, documentNumber),
+            _kv('Date', _formatDateTime(date)),
+            if (fromName != null && fromName.isNotEmpty) _kv('From', fromName),
+            _kv('To', toName),
+
+            pw.SizedBox(height: 4),
+            _dashedDivider(),
+            pw.SizedBox(height: 4),
+
+            pw.Row(children: [
+              th('ITEM', 4),
+              th('COLOR', 2, align: pw.TextAlign.center),
+              th('SIZE', 2, align: pw.TextAlign.center),
+              th('QTY', 1, align: pw.TextAlign.right),
+            ]),
+            _dashedDivider(),
+            pw.SizedBox(height: 2),
+            for (final l in lines)
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 6),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    td(l.name, 4),
+                    td(l.colorName ?? '-', 2, align: pw.TextAlign.center),
+                    td(l.sizeName ?? '-', 2, align: pw.TextAlign.center),
+                    td('${l.quantity}', 1, align: pw.TextAlign.right, bold: true),
+                  ],
+                ),
+              ),
+
+            _dashedDivider(),
+            pw.SizedBox(height: 4),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('TOTAL PAIRS', style: pw.TextStyle(font: _boldFont, fontSize: 12)),
+                pw.Text('$totalPairs', style: pw.TextStyle(font: _boldFont, fontSize: 12)),
+              ],
+            ),
+
+            pw.SizedBox(height: 14),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text('Sent by: ________',
+                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+                pw.Text('Received by: ________',
+                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+              ],
+            ),
+            pw.SizedBox(height: 8),
+            _dashedDivider(),
+            pw.SizedBox(height: 6),
+            pw.Text(footerNote,
+                style: pw.TextStyle(font: _regularFont, fontSize: 6.5, color: PdfColors.grey700)),
+          ],
+        ),
+      ),
+    );
+
+    await _dispatch(doc, jobName: 'Stock_$documentNumber', printer: printer);
+  }
+
   static const _footwearNotes = [
     '1) No warranty without original invoice.',
     '2) No exchange on worn or used footwear.',
@@ -184,7 +323,7 @@ class ThermalPrintService {
                 child: pw.Container(
                   width: 55,
                   height: 55,
-                  margin: const pw.EdgeInsets.only(bottom: 4),
+                  margin: const pw.EdgeInsets.only(bottom: 8),
                   child: pw.Image(logo, fit: pw.BoxFit.contain),
                 ),
               ),
@@ -197,17 +336,17 @@ class ThermalPrintService {
             if (printer != null && printer.address.isNotEmpty)
               pw.Center(
                 child: pw.Text(printer.address,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
               ),
             if (printer != null && printer.phoneNumber.isNotEmpty)
               pw.Center(
                 child: pw.Text(printer.phoneNumber,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
               ),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 10),
             pw.Center(
               child: pw.Text('SALE EXCHANGE',
-                  style: pw.TextStyle(font: _boldFont, fontSize: 9, letterSpacing: 1)),
+                  style: pw.TextStyle(font: _boldFont, fontSize: 10.5, letterSpacing: 1.5)),
             ),
             pw.SizedBox(height: 4),
             _dashedDivider(),
@@ -225,8 +364,8 @@ class ThermalPrintService {
               _dashedDivider(),
               pw.SizedBox(height: 4),
               pw.Text('RETURNED ITEMS',
-                  style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
-              pw.SizedBox(height: 2),
+                  style: pw.TextStyle(font: _boldFont, fontSize: 8, color: PdfColors.grey700)),
+              pw.SizedBox(height: 4),
               _itemsHeader(),
               _dashedDivider(),
               pw.SizedBox(height: 2),
@@ -267,8 +406,8 @@ class ThermalPrintService {
               _dashedDivider(),
               pw.SizedBox(height: 4),
               pw.Text('PAYMENT',
-                  style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
-              pw.SizedBox(height: 2),
+                  style: pw.TextStyle(font: _boldFont, fontSize: 8, color: PdfColors.grey700)),
+              pw.SizedBox(height: 4),
               for (final p in exchange.payments.where((p) => p.amount > 0.01))
                 _kv(
                     '${p.direction == 'refund' ? 'Refunded' : 'Collected'} (${_payLabel(p.paymentType)})',
@@ -282,11 +421,11 @@ class ThermalPrintService {
             pw.Text('Exchanged pairs are subject to inspection before acceptance.',
                 style: pw.TextStyle(font: _regularFont, fontSize: 6.5, color: PdfColors.grey700)),
 
-            pw.SizedBox(height: 6),
+            pw.SizedBox(height: 12),
             pw.Center(
               child: pw.Text(
                 'Thank you for shopping with us!',
-                style: pw.TextStyle(font: _regularFont, fontSize: 8, color: PdfColors.grey700),
+                style: pw.TextStyle(font: _regularFont, fontSize: 9, color: PdfColors.grey700),
               ),
             ),
           ],
@@ -337,7 +476,7 @@ class ThermalPrintService {
                 child: pw.Container(
                   width: 55,
                   height: 55,
-                  margin: const pw.EdgeInsets.only(bottom: 4),
+                  margin: const pw.EdgeInsets.only(bottom: 8),
                   child: pw.Image(logo, fit: pw.BoxFit.contain),
                 ),
               ),
@@ -350,17 +489,17 @@ class ThermalPrintService {
             if (printer != null && printer.address.isNotEmpty)
               pw.Center(
                 child: pw.Text(printer.address,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
               ),
             if (printer != null && printer.phoneNumber.isNotEmpty)
               pw.Center(
                 child: pw.Text(printer.phoneNumber,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
               ),
-            pw.SizedBox(height: 4),
+            pw.SizedBox(height: 10),
             pw.Center(
               child: pw.Text(title,
-                  style: pw.TextStyle(font: _boldFont, fontSize: 9, letterSpacing: 1)),
+                  style: pw.TextStyle(font: _boldFont, fontSize: 10.5, letterSpacing: 1.5)),
             ),
             pw.SizedBox(height: 4),
             _dashedDivider(),
@@ -391,8 +530,8 @@ class ThermalPrintService {
             pw.Row(
               mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
-                pw.Text(grandTotalLabel, style: pw.TextStyle(font: _boldFont, fontSize: 12)),
-                pw.Text(_fmt(grandTotal), style: pw.TextStyle(font: _boldFont, fontSize: 12)),
+                pw.Text(grandTotalLabel, style: pw.TextStyle(font: _boldFont, fontSize: 14)),
+                pw.Text(_fmt(grandTotal), style: pw.TextStyle(font: _boldFont, fontSize: 14)),
               ],
             ),
 
@@ -401,8 +540,8 @@ class ThermalPrintService {
               _dashedDivider(),
               pw.SizedBox(height: 4),
               pw.Text(paymentsHeading,
-                  style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
-              pw.SizedBox(height: 2),
+                  style: pw.TextStyle(font: _boldFont, fontSize: 8, color: PdfColors.grey700)),
+              pw.SizedBox(height: 4),
               for (final p in payments.where((p) => p.amount > 0.01)) _kv(_payLabel(p.method), _fmt(p.amount)),
             ],
 
@@ -411,13 +550,16 @@ class ThermalPrintService {
             pw.SizedBox(height: 6),
 
             for (final note in footerNotes)
-              pw.Text(note, style: pw.TextStyle(font: _regularFont, fontSize: 6.5, color: PdfColors.grey700)),
+              pw.Padding(
+                padding: const pw.EdgeInsets.only(bottom: 3),
+                child: pw.Text(note, style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+              ),
 
-            pw.SizedBox(height: 6),
+            pw.SizedBox(height: 12),
             pw.Center(
               child: pw.Text(
                 'Thank you for shopping with us!',
-                style: pw.TextStyle(font: _regularFont, fontSize: 8, color: PdfColors.grey700),
+                style: pw.TextStyle(font: _regularFont, fontSize: 9, color: PdfColors.grey700),
               ),
             ),
           ],
@@ -432,79 +574,79 @@ class ThermalPrintService {
         pw.Expanded(
             flex: 3,
             child: pw.Text('ITEM',
-                style: pw.TextStyle(font: _boldFont, fontSize: 7.5))),
+                style: pw.TextStyle(font: _boldFont, fontSize: 8))),
         pw.Expanded(
             flex: 2,
             child: pw.Text('COLOR',
-                style: pw.TextStyle(font: _boldFont, fontSize: 7.5),
+                style: pw.TextStyle(font: _boldFont, fontSize: 8),
                 textAlign: pw.TextAlign.center)),
         pw.Expanded(
             flex: 2,
             child: pw.Text('SIZE',
-                style: pw.TextStyle(font: _boldFont, fontSize: 7.5),
+                style: pw.TextStyle(font: _boldFont, fontSize: 8),
                 textAlign: pw.TextAlign.center)),
         pw.Expanded(
             flex: 1,
             child: pw.Text('QTY',
-                style: pw.TextStyle(font: _boldFont, fontSize: 7.5),
+                style: pw.TextStyle(font: _boldFont, fontSize: 8),
                 textAlign: pw.TextAlign.center)),
         pw.Expanded(
             flex: 2,
             child: pw.Text('DIS',
-                style: pw.TextStyle(font: _boldFont, fontSize: 7.5),
+                style: pw.TextStyle(font: _boldFont, fontSize: 8),
                 textAlign: pw.TextAlign.center)),
         pw.Expanded(
             flex: 2,
             child: pw.Text('TOTAL',
-                style: pw.TextStyle(font: _boldFont, fontSize: 7.5),
+                style: pw.TextStyle(font: _boldFont, fontSize: 8),
                 textAlign: pw.TextAlign.right)),
       ]);
 
   static pw.Widget _itemRow(_ReceiptLine line) => pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 3),
+        padding: const pw.EdgeInsets.only(bottom: 6),
         child: pw.Row(
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Expanded(
                 flex: 3,
                 child: pw.Text(line.name,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5), maxLines: 2)),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8), maxLines: 2)),
             pw.Expanded(
                 flex: 2,
                 child: pw.Text(line.colorName ?? '-',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
                     textAlign: pw.TextAlign.center)),
             pw.Expanded(
                 flex: 2,
                 child: pw.Text(line.sizeName ?? '-',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
                     textAlign: pw.TextAlign.center)),
             pw.Expanded(
                 flex: 1,
                 child: pw.Text('${line.quantity}',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
                     textAlign: pw.TextAlign.center)),
             pw.Expanded(
                 flex: 2,
                 child: pw.Text(line.discount > 0 ? line.discount.toStringAsFixed(0) : '-',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 7.5),
+                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
                     textAlign: pw.TextAlign.center)),
             pw.Expanded(
                 flex: 2,
                 child: pw.Text(line.total.toStringAsFixed(0),
-                    style: pw.TextStyle(font: _boldFont, fontSize: 7.5),
+                    style: pw.TextStyle(font: _boldFont, fontSize: 8),
                     textAlign: pw.TextAlign.right)),
           ],
         ),
       );
 
   static pw.Widget _kv(String label, String value) => pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 2),
+        padding: const pw.EdgeInsets.only(bottom: 4),
         child: pw.Row(
           mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
           children: [
-            pw.Text(label, style: pw.TextStyle(font: _regularFont, fontSize: 8, color: PdfColors.grey700)),
-            pw.Text(value, style: pw.TextStyle(font: _boldFont, fontSize: 8)),
+            pw.Text(label, style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
+            pw.Text(value, style: pw.TextStyle(font: _boldFont, fontSize: 8.5)),
           ],
         ),
       );
@@ -512,6 +654,7 @@ class ThermalPrintService {
   static pw.Widget _dashedDivider() => pw.Container(
         width: double.infinity,
         height: 0.7,
+        margin: const pw.EdgeInsets.symmetric(vertical: 4),
         decoration: const pw.BoxDecoration(
           border: pw.Border(
             bottom: pw.BorderSide(
@@ -609,6 +752,21 @@ class ThermalPrintService {
       return null;
     }
   }
+}
+
+/// One product line on a stock slip.
+class StockSlipLine {
+  final String name;
+  final String? sizeName;
+  final String? colorName;
+  final int quantity;
+
+  const StockSlipLine({
+    required this.name,
+    this.sizeName,
+    this.colorName,
+    required this.quantity,
+  });
 }
 
 class _ReceiptLine {

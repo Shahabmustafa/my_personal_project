@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../branch_payment/presentation/providers/branch_payment_provider.dart';
 import '../../../shared/current_branch_provider.dart';
 import '../../data/model/branch_cash_counter_model.dart';
 import '../providers/branch_cash_counter_provider.dart';
@@ -29,6 +31,24 @@ class _BranchCashCounterScreenState
     });
   }
 
+  /// [available] is today's running balance — the most recent record is
+  /// today's counter (rows are loaded newest first).
+  Future<void> _onPay(double available) async {
+    final paid = await showDialog<bool>(
+      context: context,
+      builder: (_) => _PayToHeadOfficeDialog(available: available),
+    );
+    if (paid != true || !mounted) return;
+    final branchId = ref.read(currentBranchIdProvider);
+    ref.read(branchCashCounterProvider.notifier).loadByBranch(branchId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Payment sent — waiting for Head Office to accept'),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(branchCashCounterProvider);
@@ -49,16 +69,30 @@ class _BranchCashCounterScreenState
           // ── Header ────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                const Text('Cash Counter',
-                    style: TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
-                Text(
-                    '${state.records.length} record${state.records.length == 1 ? '' : 's'} — read only',
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF8A8FA3))),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Cash Counter',
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold)),
+                      Text(
+                          '${state.records.length} record${state.records.length == 1 ? '' : 's'} — read only',
+                          style: const TextStyle(
+                              fontSize: 13, color: Color(0xFF8A8FA3))),
+                    ],
+                  ),
+                ),
+                FilledButton.icon(
+                  onPressed: state.records.isEmpty
+                      ? null
+                      : () => _onPay(state.records.first.totalAmount),
+                  icon: const AppIcon(AppIcons.sendOutlined,
+                      size: 16, color: Colors.white),
+                  label: Text(isMobile ? 'Pay' : 'Pay to Head Office'),
+                ),
               ],
             ),
           ),
@@ -552,3 +586,139 @@ InputDecoration _searchDecor(String hint) => InputDecoration(
           borderSide:
               const BorderSide(color: Color(0xFF3E63DD), width: 1.5)),
     );
+
+
+// ── Pay to Head Office dialog ─────────────────────────────────────────────────
+
+class _PayToHeadOfficeDialog extends ConsumerStatefulWidget {
+  final double available;
+  const _PayToHeadOfficeDialog({required this.available});
+
+  @override
+  ConsumerState<_PayToHeadOfficeDialog> createState() =>
+      _PayToHeadOfficeDialogState();
+}
+
+class _PayToHeadOfficeDialogState
+    extends ConsumerState<_PayToHeadOfficeDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountCtrl = TextEditingController();
+  final _notesCtrl = TextEditingController();
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _amountCtrl.dispose();
+    _notesCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await ref.read(branchPaymentRepositoryProvider).pay(
+            branchId: ref.read(currentBranchIdProvider),
+            amount: double.parse(_amountCtrl.text),
+            notes: _notesCtrl.text,
+          );
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = e.toString().replaceAll('Exception: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: const Row(
+        children: [
+          AppIcon(AppIcons.sendOutlined, color: Color(0xFF3E63DD), size: 22),
+          SizedBox(width: 8),
+          Text('Pay to Head Office'),
+        ],
+      ),
+      content: SizedBox(
+        width: 380,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Available in cash counter: Rs. ${_fmtAmt(widget.available)}',
+                style: const TextStyle(
+                    fontSize: 13, color: Color(0xFF8A8FA3)),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _amountCtrl,
+                autofocus: true,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$')),
+                ],
+                decoration: const InputDecoration(
+                  labelText: 'Amount',
+                  prefixText: 'Rs. ',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) {
+                  final n = double.tryParse(v ?? '');
+                  if (n == null || n <= 0) return 'Enter a valid amount';
+                  if (n > widget.available) {
+                    return 'Exceeds available balance';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _notesCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Notes (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context, false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _saving ? null : _submit,
+          child: _saving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white),
+                )
+              : const Text('Pay'),
+        ),
+      ],
+    );
+  }
+}

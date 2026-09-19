@@ -1,56 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../branch/branch_payment/data/model/branch_payment_model.dart';
+import '../../../../branch/branch_payment/presentation/providers/branch_payment_provider.dart';
+import '../../../../branch/return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart'
+    show StatusChip;
+import '../../../report/presentation/widgets/report_branch_filter_dropdown.dart';
 import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
 import '../../../report/presentation/widgets/report_table_shell.dart';
-import '../../data/models/ho_assign_stock_model.dart';
-import '../providers/ho_assign_stock_provider.dart';
+import '../providers/branch_payments_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
-import 'package:safishoe_app/core/service/print/print_service.dart';
-import 'package:safishoe_app/core/widget/printer_picker_field.dart';
-/// Head office → branch stock assignment history. Lays the data out the same
-/// way as the sale reports: summary cards, a scrollable [ReportTableShell]
-/// table, a right slide-in detail panel on "View", and a pagination bar.
-class HoAssignStockListScreen extends ConsumerStatefulWidget {
-  const HoAssignStockListScreen({super.key});
+
+/// Transaction report of the amounts branches have paid to Head Office.
+/// Accepting a pending payment adds it to the Head Office cash counter's net
+/// amount; rejecting it returns the money to the branch's cash counter.
+/// Laid out like the other reports: summary cards, table, slide-in detail
+/// panel on "View", and a pagination bar.
+class BranchPaymentsScreen extends ConsumerStatefulWidget {
+  const BranchPaymentsScreen({super.key});
 
   @override
-  ConsumerState<HoAssignStockListScreen> createState() =>
-      _HoAssignStockListScreenState();
+  ConsumerState<BranchPaymentsScreen> createState() =>
+      _BranchPaymentsScreenState();
 }
 
-class _HoAssignStockListScreenState
-    extends ConsumerState<HoAssignStockListScreen> {
+class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
   static const _accent = Color(0xFF1565C0);
   static const _pageSize = 20;
 
-  String _filterStatus = 'all';
+  String _filterStatus = 'all'; // all | pending | accepted | rejected
+  String? _branchId;
   DateTime? _startDate;
   DateTime? _endDate;
   int _page = 1;
-  HoAssignStockModel? _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.microtask(
-        () => ref.read(hoAssignListProvider.notifier).loadAssignments());
-  }
+  BranchPaymentModel? _selected;
 
   bool get _hasDateFilter => _startDate != null || _endDate != null;
 
-  List<HoAssignStockModel> _applyFilters(List<HoAssignStockModel> all) {
+  /// Branch + date scope. Status chips count within this, so they always add
+  /// up to what the table can show.
+  List<BranchPaymentModel> _applyScope(List<BranchPaymentModel> all) {
     DateTime dayOf(DateTime d) => DateTime(d.year, d.month, d.day);
     final from = _startDate == null ? null : dayOf(_startDate!);
     final to = _endDate == null ? null : dayOf(_endDate!);
-    return all.where((a) {
-      if (_filterStatus != 'all' && a.status != _filterStatus) return false;
-      final d = dayOf(a.assignedAt);
+    return all.where((p) {
+      if (_branchId != null && p.branchId != _branchId) return false;
+      final d = dayOf(p.paidAt);
       if (from != null && d.isBefore(from)) return false;
       if (to != null && d.isAfter(to)) return false;
       return true;
@@ -59,28 +59,33 @@ class _HoAssignStockListScreenState
 
   @override
   Widget build(BuildContext context) {
-    final listState = ref.watch(hoAssignListProvider);
-    final notifier = ref.read(hoAssignListProvider.notifier);
+    final paymentsAsync = ref.watch(incomingBranchPaymentsProvider);
+    final all = paymentsAsync.value ?? const <BranchPaymentModel>[];
+    final isMobile = Responsive(context).isMobile;
 
-    final filtered = _applyFilters(listState.assignments);
+    final scoped = _applyScope(all);
+    final filtered = _filterStatus == 'all'
+        ? scoped
+        : scoped.where((p) => p.status == _filterStatus).toList();
+
     final totalCount = filtered.length;
     final totalPages = totalCount == 0 ? 1 : ((totalCount - 1) ~/ _pageSize) + 1;
     final page = _page.clamp(1, totalPages);
     final pageRows =
         filtered.skip((page - 1) * _pageSize).take(_pageSize).toList();
 
-    final totalPairs = filtered.fold<int>(0, (s, a) => s + a.totalPairs);
-    final totalValue = filtered.fold<double>(0, (s, a) => s + a.totalValue);
-    final pendingCount =
-        filtered.where((a) => a.status == 'pending').length;
-    final isMobile = Responsive(context).isMobile;
+    double sum(Iterable<BranchPaymentModel> l) =>
+        l.fold<double>(0, (s, p) => s + p.amount);
+    final totalAmount = sum(filtered);
+    final acceptedAmount = sum(filtered.where((p) => p.status == 'accepted'));
+    final pendingAmount = sum(filtered.where((p) => p.status == 'pending'));
 
     final titleRow = Row(
       children: [
-        const AppIcon(AppIcons.history, color: _accent, size: 24),
+        const AppIcon(AppIcons.paymentsOutlined, color: _accent, size: 24),
         const SizedBox(width: 8),
         const Expanded(
-          child: Text('Assignment History',
+          child: Text('Branch Payments',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         ),
       ],
@@ -91,6 +96,13 @@ class _HoAssignStockListScreenState
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        ReportBranchFilterDropdown(
+          value: _branchId,
+          onChanged: (v) => setState(() {
+            _branchId = v;
+            _page = 1;
+          }),
+        ),
         if (_hasDateFilter)
           TextButton.icon(
             onPressed: () => setState(() {
@@ -122,33 +134,33 @@ class _HoAssignStockListScreenState
         IconButton(
           icon: const AppIcon(AppIcons.refresh, size: 18),
           tooltip: 'Refresh',
-          onPressed: notifier.loadAssignments,
+          onPressed: () => ref.invalidate(incomingBranchPaymentsProvider),
         ),
       ],
     );
 
     final summaryCards = [
       ReportSummaryCard(
-        label: 'Total Assignments',
+        label: 'Total Payments',
         value: '$totalCount',
-        icon: AppIcons.assignmentOutlined,
+        icon: AppIcons.receiptLongOutlined,
         color: _accent,
       ),
       ReportSummaryCard(
-        label: 'Pairs Assigned',
-        value: '$totalPairs',
-        icon: AppIcons.inventory2Outlined,
+        label: 'Total Amount',
+        value: 'Rs. ${_money(totalAmount)}',
+        icon: AppIcons.accountBalanceWalletOutlined,
         color: const Color(0xFF6A1B9A),
       ),
       ReportSummaryCard(
-        label: 'Total Purchase Value',
-        value: 'Rs. ${_money(totalValue)}',
-        icon: AppIcons.accountBalanceWalletOutlined,
+        label: 'Accepted Amount',
+        value: 'Rs. ${_money(acceptedAmount)}',
+        icon: AppIcons.checkCircleOutline,
         color: const Color(0xFF22A06B),
       ),
       ReportSummaryCard(
-        label: 'Pending',
-        value: '$pendingCount',
+        label: 'Pending Amount',
+        value: 'Rs. ${_money(pendingAmount)}',
         icon: AppIcons.hourglassEmptyOutlined,
         color: const Color(0xFFE56A00),
       ),
@@ -162,18 +174,15 @@ class _HoAssignStockListScreenState
           isMobile
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    titleRow,
-                    const SizedBox(height: 8),
-                    headerActions,
-                  ],
+                  children: [titleRow, const SizedBox(height: 8), headerActions],
                 )
               : Row(
                   children: [
-                    const AppIcon(AppIcons.history, color: _accent, size: 24),
+                    const AppIcon(AppIcons.paymentsOutlined,
+                        color: _accent, size: 24),
                     const SizedBox(width: 8),
                     const Expanded(
-                      child: Text('Assignment History',
+                      child: Text('Branch Payments',
                           style: TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold)),
                     ),
@@ -202,28 +211,16 @@ class _HoAssignStockListScreenState
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _filterChip('All', 'all', listState.assignments.length),
+                _filterChip('All', 'all', scoped.length),
                 const SizedBox(width: 8),
-                _filterChip(
-                    'Pending',
-                    'pending',
-                    listState.assignments
-                        .where((a) => a.status == 'pending')
-                        .length),
+                _filterChip('Pending', 'pending',
+                    scoped.where((p) => p.status == 'pending').length),
                 const SizedBox(width: 8),
-                _filterChip(
-                    'Accepted',
-                    'accepted',
-                    listState.assignments
-                        .where((a) => a.status == 'accepted')
-                        .length),
+                _filterChip('Accepted', 'accepted',
+                    scoped.where((p) => p.status == 'accepted').length),
                 const SizedBox(width: 8),
-                _filterChip(
-                    'Rejected',
-                    'rejected',
-                    listState.assignments
-                        .where((a) => a.status == 'rejected')
-                        .length),
+                _filterChip('Rejected', 'rejected',
+                    scoped.where((p) => p.status == 'rejected').length),
               ],
             ),
           ),
@@ -232,19 +229,20 @@ class _HoAssignStockListScreenState
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: listState.isLoading
+                  child: paymentsAsync.isLoading && !paymentsAsync.hasValue
                       ? const Center(child: CircularProgressIndicator())
-                      : listState.error != null
+                      : paymentsAsync.hasError && !paymentsAsync.hasValue
                           ? _ErrorView(
-                              message: listState.error!,
-                              onRetry: notifier.loadAssignments,
+                              message: '${paymentsAsync.error}',
+                              onRetry: () =>
+                                  ref.invalidate(incomingBranchPaymentsProvider),
                             )
                           : pageRows.isEmpty
                               ? Center(
                                   child: Text(
-                                    _filterStatus == 'all' && !_hasDateFilter
-                                        ? 'No assignments yet'
-                                        : 'No assignments match this filter',
+                                    all.isEmpty
+                                        ? 'No payments received yet'
+                                        : 'No payments match this filter',
                                     style: TextStyle(
                                         color: Colors.grey.shade500,
                                         fontSize: 15),
@@ -252,36 +250,34 @@ class _HoAssignStockListScreenState
                                 )
                               : ReportTableShell(
                                   columns: const [
-                                    DataColumn(label: Text('Assignment No')),
-                                    DataColumn(label: Text('Branch')),
+                                    DataColumn(label: Text('Payment No')),
+                                    DataColumn(label: Text('From Branch')),
                                     DataColumn(
-                                        label: Text('Pairs'), numeric: true),
-                                    DataColumn(
-                                        label: Text('Purchase Value'),
-                                        numeric: true),
+                                        label: Text('Amount'), numeric: true),
                                     DataColumn(label: Text('Date')),
                                     DataColumn(label: Text('Status')),
                                     DataColumn(label: Text('Actions')),
                                   ],
                                   rows: [
-                                    for (final a in pageRows)
+                                    for (final p in pageRows)
                                       DataRow(
-                                        selected: _selected?.id == a.id,
+                                        selected: _selected?.id == p.id,
                                         cells: [
-                                          DataCell(Text(a.assignmentNumber,
+                                          DataCell(Text(p.paymentNumber,
                                               style: const TextStyle(
                                                   fontWeight: FontWeight.w700,
                                                   fontFamily: 'monospace',
                                                   color: _accent))),
-                                          DataCell(Text(
-                                              a.branchName ?? a.branchId)),
-                                          DataCell(Text('${a.totalPairs}')),
-                                          DataCell(Text(
-                                              a.totalValue.toStringAsFixed(0))),
                                           DataCell(
-                                              Text(_fmtDate(a.assignedAt))),
-                                          DataCell(_StatusChip(a.status)),
-                                          DataCell(_rowActions(a)),
+                                              Text(p.branchName ?? p.branchId)),
+                                          DataCell(Text(
+                                              'Rs. ${_money(p.amount)}',
+                                              style: const TextStyle(
+                                                  fontWeight:
+                                                      FontWeight.w600))),
+                                          DataCell(Text(_fmtDate(p.paidAt))),
+                                          DataCell(StatusChip(p.status)),
+                                          DataCell(_rowActions(p)),
                                         ],
                                       ),
                                   ],
@@ -289,12 +285,12 @@ class _HoAssignStockListScreenState
                 ),
                 if (_selected != null)
                   ReportDetailOverlay(
-                    title: _selected!.assignmentNumber,
+                    title: _selected!.paymentNumber,
                     subtitle:
-                        '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.assignedAt)}',
+                        '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.paidAt)}',
                     accent: _accent,
                     onClose: () => setState(() => _selected = null),
-                    child: _AssignmentDetailBody(assignmentId: _selected!.id),
+                    child: _PaymentDetailBody(payment: _selected!),
                   ),
               ],
             ),
@@ -312,98 +308,54 @@ class _HoAssignStockListScreenState
     );
   }
 
-  Widget _rowActions(HoAssignStockModel a) {
+  Widget _rowActions(BranchPaymentModel p) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           icon: const AppIcon(AppIcons.visibilityOutlined, size: 19),
           tooltip: 'View',
-          onPressed: () => setState(() => _selected = a),
+          onPressed: () => setState(() => _selected = p),
         ),
-        IconButton(
-          icon: const AppIcon(AppIcons.printOutlined, size: 19),
-          tooltip: 'Print slip',
-          onPressed: () => _onPrint(a),
-        ),
-        if (a.status == 'pending') ...[
+        if (p.status == 'pending') ...[
           IconButton(
             icon: AppIcon(AppIcons.checkCircleOutline,
                 size: 19, color: Colors.green.shade600),
             tooltip: 'Accept',
-            onPressed: () => _onAccept(a),
+            onPressed: () => _onAccept(p),
           ),
           IconButton(
             icon: AppIcon(AppIcons.cancelOutlined,
                 size: 19, color: Colors.red.shade600),
             tooltip: 'Reject',
-            onPressed: () => _onReject(a),
+            onPressed: () => _onReject(p),
           ),
         ],
       ],
     );
   }
 
-  Future<void> _onPrint(HoAssignStockModel a) async {
-    final choice = await pickPrinterForSlip(context, hoPrintersProvider);
-    if (choice == null || !mounted) return;
-    try {
-      // The list rows only carry totals — load the items for the slip.
-      final detail =
-          await ref.read(hoAssignmentDetailProvider(a.id).future);
-      await ThermalPrintService.printStockSlip(
-        title: 'STOCK ASSIGNMENT',
-        documentNumberLabel: 'Assignment #',
-        documentNumber: a.assignmentNumber,
-        date: a.assignedAt,
-        fromName: 'Head Office',
-        toName: a.branchName ?? '-',
-        lines: detail.items
-            .map((i) => StockSlipLine(
-                  name: i.productName ?? '-',
-                  sizeName: i.sizeName,
-                  colorName: i.colorName,
-                  quantity: i.quantity,
-                ))
-            .toList(),
-        printer: choice.printer,
-        footerNote: switch (a.status) {
-          'accepted' => 'Accepted by the receiving branch.',
-          'rejected' => 'Rejected by the receiving branch.',
-          _ => 'Stock stays pending until the receiving branch accepts it.',
-        },
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Print failed: $e'),
-          backgroundColor: Colors.orange.shade700,
-        ),
-      );
-    }
-  }
-
-  Future<void> _onAccept(HoAssignStockModel a) async {
+  Future<void> _onAccept(BranchPaymentModel p) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
             AppIcon(AppIcons.checkCircleOutline, color: Colors.green, size: 22),
             SizedBox(width: 8),
-            Text('Accept Assignment?'),
+            Text('Accept Payment?'),
           ],
         ),
-        content: const Text(
-          'Stock branch inventory mein add ho jayega.\n\nYe action undo nahi ho sakta.',
+        content: Text(
+          'Rs. ${_money(p.amount)} will be added to the Head Office cash '
+          'counter net amount.\n\nThis action cannot be undone.',
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.green),
@@ -413,33 +365,32 @@ class _HoAssignStockListScreenState
       ),
     );
     if (confirm != true) return;
-    await ref.read(hoAssignListProvider.notifier).acceptAssignment(a.id);
-    if (!mounted) return;
-    ref.invalidate(hoAssignStockListProvider);
-    ref.invalidate(hoAssignmentDetailProvider(a.id));
-    setState(() => _selected = null);
+    await _run(() => ref
+        .read(branchPaymentRepositoryProvider)
+        .acceptPayment(p.id));
   }
 
-  Future<void> _onReject(HoAssignStockModel a) async {
+  Future<void> _onReject(BranchPaymentModel p) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: const Row(
           children: [
             AppIcon(AppIcons.cancelOutlined, color: Colors.red, size: 22),
             SizedBox(width: 8),
-            Text('Reject Assignment?'),
+            Text('Reject Payment?'),
           ],
         ),
-        content: const Text(
-          'Assignment rejected ho jayegi aur stock wapas head office mein aa jayega.',
+        content: Text(
+          'This payment will be marked as rejected. Rs. ${_money(p.amount)} '
+          'goes back to the branch cash counter.',
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -449,11 +400,23 @@ class _HoAssignStockListScreenState
       ),
     );
     if (confirm != true) return;
-    await ref.read(hoAssignListProvider.notifier).rejectAssignment(a.id);
-    if (!mounted) return;
-    ref.invalidate(hoAssignStockListProvider);
-    ref.invalidate(hoAssignmentDetailProvider(a.id));
-    setState(() => _selected = null);
+    await _run(() => ref
+        .read(branchPaymentRepositoryProvider)
+        .rejectPayment(p.id));
+  }
+
+  Future<void> _run(Future<void> Function() action) async {
+    try {
+      await action();
+      if (!mounted) return;
+      ref.invalidate(incomingBranchPaymentsProvider);
+      setState(() => _selected = null);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Widget _filterChip(String label, String value, int count) {
@@ -484,8 +447,8 @@ class _HoAssignStockListScreenState
         decoration: BoxDecoration(
           color: isSelected ? chipColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: isSelected ? chipColor : Colors.grey.shade300),
+          border:
+              Border.all(color: isSelected ? chipColor : Colors.grey.shade300),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -500,8 +463,7 @@ class _HoAssignStockListScreenState
             ),
             const SizedBox(width: 6),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected
                     ? Colors.white.withValues(alpha: 0.25)
@@ -532,59 +494,29 @@ class _HoAssignStockListScreenState
 
 // ── Detail panel body ─────────────────────────────────────────────────────
 
-class _AssignmentDetailBody extends ConsumerWidget {
-  final String assignmentId;
-  const _AssignmentDetailBody({required this.assignmentId});
+class _PaymentDetailBody extends StatelessWidget {
+  final BranchPaymentModel payment;
+  const _PaymentDetailBody({required this.payment});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final detail = ref.watch(hoAssignmentDetailProvider(assignmentId));
-    return detail.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
-      error: (e, _) =>
-          Text('Error: $e', style: const TextStyle(color: Colors.red)),
-      data: (a) {
-        final items = a.items;
-        final pairs = items.fold<int>(0, (s, it) => s + it.quantity);
-        final purchaseVal = items.fold<double>(
-            0, (s, it) => s + it.purchasePrice * it.quantity);
-        final saleVal = items.fold<double>(
-            0, (s, it) => s + it.salePrice * it.quantity);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DetailKV('Branch', a.branchName ?? '—'),
-            DetailKV('Assigned', _fmtDate(a.assignedAt)),
-            DetailKV(
-              'Status',
-              a.status[0].toUpperCase() + a.status.substring(1),
-              valueColor: _statusColor(a.status),
-            ),
-            if (a.acceptedAt != null)
-              DetailKV('Accepted', _fmtDate(a.acceptedAt!)),
-            if ((a.notes ?? '').isNotEmpty) DetailKV('Notes', a.notes!),
-            const DetailDivider(),
-            DetailSectionLabel('ITEMS (${items.length})'),
-            for (final it in items)
-              DetailProductRow(
-                name: it.productName ?? 'Item',
-                sizeName: it.sizeName,
-                colorName: it.colorName,
-                quantity: it.quantity,
-                total: it.purchasePrice * it.quantity,
-              ),
-            const DetailDivider(),
-            DetailKV('Total Pairs', '$pairs'),
-            DetailKV('Purchase Value', 'Rs. ${purchaseVal.toStringAsFixed(0)}',
-                bold: true, valueColor: const Color(0xFF22A06B)),
-            DetailKV('Sale Value', 'Rs. ${saleVal.toStringAsFixed(0)}'),
-          ],
-        );
-      },
+  Widget build(BuildContext context) {
+    final p = payment;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailKV('From Branch', p.branchName ?? '—'),
+        DetailKV('Paid On', _fmtDate(p.paidAt)),
+        DetailKV(
+          'Status',
+          p.status[0].toUpperCase() + p.status.substring(1),
+          valueColor: _statusColor(p.status),
+        ),
+        if (p.acceptedAt != null) DetailKV('Accepted', _fmtDate(p.acceptedAt!)),
+        if ((p.notes ?? '').isNotEmpty) DetailKV('Notes', p.notes!),
+        const DetailDivider(),
+        DetailKV('Amount', 'Rs. ${_money(p.amount)}',
+            bold: true, valueColor: const Color(0xFF22A06B)),
+      ],
     );
   }
 }
@@ -604,66 +536,13 @@ class _ErrorView extends StatelessWidget {
         children: [
           const AppIcon(AppIcons.errorOutline, color: Colors.red, size: 40),
           const SizedBox(height: 8),
-          Text('Error: $message',
-              style: const TextStyle(color: Colors.red)),
+          Text('Error: $message', style: const TextStyle(color: Colors.red)),
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: onRetry,
             icon: const AppIcon(AppIcons.refresh, size: 16),
             label: const Text('Retry'),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final String status;
-  const _StatusChip(this.status);
-
-  @override
-  Widget build(BuildContext context) {
-    Color bg;
-    Color fg;
-    String label;
-    String icon;
-
-    switch (status) {
-      case 'accepted':
-        bg = Colors.green.shade50;
-        fg = Colors.green.shade700;
-        label = 'Accepted';
-        icon = AppIcons.checkCircleOutline;
-        break;
-      case 'rejected':
-        bg = Colors.red.shade50;
-        fg = Colors.red.shade700;
-        label = 'Rejected';
-        icon = AppIcons.cancelOutlined;
-        break;
-      default:
-        bg = Colors.orange.shade50;
-        fg = Colors.orange.shade700;
-        label = 'Pending';
-        icon = AppIcons.hourglassEmptyOutlined;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: fg.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(icon, size: 12, color: fg),
-          const SizedBox(width: 4),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
         ],
       ),
     );
@@ -686,13 +565,16 @@ String _fmtDate(DateTime dt) =>
     '${dt.month.toString().padLeft(2, '0')}/'
     '${dt.year}';
 
-/// Whole-rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
+/// Rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
+/// Paise are kept only when present, e.g. 1500.5 -> "1,500.50".
 String _money(double v) {
-  final s = v.round().toString();
+  final fixed = v.toStringAsFixed(v == v.roundToDouble() ? 0 : 2);
+  final parts = fixed.split('.');
+  final s = parts[0];
   final buf = StringBuffer();
   for (var i = 0; i < s.length; i++) {
     if (i != 0 && (s.length - i) % 3 == 0) buf.write(',');
     buf.write(s[i]);
   }
-  return buf.toString();
+  return parts.length > 1 ? '$buf.${parts[1]}' : buf.toString();
 }

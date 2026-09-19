@@ -1,9 +1,15 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../../superadmin/report/presentation/widgets/report_detail_panel.dart';
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
+import '../../../sale_invoice/data/model/sale_invoice_model.dart'
+    show PrinterLookupItem;
+import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
+    show printersForSaleProvider;
+import '../../../shared/current_branch_provider.dart';
 import '../providers/branch_transfer_provider.dart';
 import '../widgets/branch_transfer_cart_table.dart';
 import '../widgets/branch_transfer_product_selector.dart';
@@ -11,6 +17,8 @@ import '../widgets/branch_transfer_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/widget/printer_picker_field.dart';
 const _primary = Color(0xFF1565C0);
 
 /// Sending branch's screen for transferring stock directly to another
@@ -36,6 +44,56 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
   AssignStockModel? _selected; // list row (brief)
   AssignStockModel? _detail; // loaded detail (items with names)
   bool _loadingDetail = false;
+
+  Future<void> _printSlip(AssignStockModel a) async {
+    final choice = await pickPrinterForSlip(context, printersForSaleProvider);
+    if (choice == null || !mounted) return;
+    try {
+      // The list rows only carry totals — load the items for the slip.
+      final detail = await ref
+          .read(branchTransferRepositoryProvider)
+          .getTransferDetail(a.id);
+      String? fromName;
+      try {
+        fromName = (await ref
+                .read(branchRepositoryProvider)
+                .getBranchById(ref.read(currentBranchIdProvider)))
+            .branchName;
+      } catch (_) {
+        // Slip still prints without the sender name.
+      }
+      await ThermalPrintService.printStockSlip(
+        title: 'STOCK TRANSFER',
+        documentNumberLabel: 'Transfer #',
+        documentNumber: a.assignmentNumber,
+        date: a.assignedAt,
+        fromName: fromName,
+        toName: a.branchName ?? '-',
+        lines: detail.items
+            .map((i) => StockSlipLine(
+                  name: i.productName ?? '-',
+                  sizeName: i.sizeName,
+                  colorName: i.colorName,
+                  quantity: i.quantity,
+                ))
+            .toList(),
+        printer: choice.printer,
+        footerNote: switch (a.status) {
+          'accepted' => 'Accepted by the receiving branch.',
+          'rejected' => 'Rejected by the receiving branch.',
+          _ => 'Stock stays pending until the receiving branch accepts it.',
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Print failed: $e'),
+          backgroundColor: Colors.orange.shade700,
+        ),
+      );
+    }
+  }
 
   Future<void> _openDetail(AssignStockModel a) async {
     setState(() {
@@ -267,6 +325,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                         rows: filtered,
                         selectedId: _selected?.id,
                         onView: _openDetail,
+                        onPrint: _printSlip,
                       );
                     },
                   ),
@@ -687,7 +746,7 @@ class _TransferFooter extends ConsumerWidget {
       return;
     }
 
-    final confirm = await showDialog<bool>(
+    final choice = await showDialog<_SendChoice>(
       context: context,
       builder: (_) => _ConfirmSendDialog(
         branchName: state.destinationBranch!.branchName,
@@ -695,9 +754,18 @@ class _TransferFooter extends ConsumerWidget {
         totalItems: state.cartItems.length,
       ),
     );
-    if (confirm != true) return;
+    if (choice == null) return;
 
     final branchName = state.destinationBranch?.branchName ?? 'branch';
+    // Cart is cleared right after saving — keep what the slip needs.
+    final slipLines = state.cartItems
+        .map((i) => StockSlipLine(
+              name: i.productName,
+              sizeName: i.sizeName,
+              colorName: i.colorName,
+              quantity: i.quantity,
+            ))
+        .toList();
     final error = await ref
         .read(branchTransferProvider.notifier)
         .saveTransfer();
@@ -721,8 +789,40 @@ class _TransferFooter extends ConsumerWidget {
           backgroundColor: Colors.green.shade700,
         ),
       );
+      final transferNumber = ref.read(branchTransferProvider).transferNumber;
       ref.read(branchTransferProvider.notifier).clearCart();
       ref.invalidate(sentTransfersProvider);
+
+      try {
+        String? fromName;
+        try {
+          fromName = (await ref
+                  .read(branchRepositoryProvider)
+                  .getBranchById(ref.read(currentBranchIdProvider)))
+              .branchName;
+        } catch (_) {
+          // Slip still prints without the sender name.
+        }
+        await ThermalPrintService.printStockSlip(
+          title: 'STOCK TRANSFER',
+          documentNumberLabel: 'Transfer #',
+          documentNumber: transferNumber,
+          date: DateTime.now(),
+          fromName: fromName,
+          toName: branchName,
+          lines: slipLines,
+          printer: choice.printer,
+        );
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Print failed: $e'),
+              backgroundColor: Colors.orange.shade700,
+            ),
+          );
+        }
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
@@ -733,7 +833,13 @@ class _TransferFooter extends ConsumerWidget {
 
 // ── Confirm send dialog ───────────────────────────────────────────────────
 
-class _ConfirmSendDialog extends StatelessWidget {
+/// What the confirm dialog hands back (null = cancelled).
+class _SendChoice {
+  final PrinterLookupItem? printer;
+  const _SendChoice(this.printer);
+}
+
+class _ConfirmSendDialog extends StatefulWidget {
   final String branchName;
   final int totalQty;
   final int totalItems;
@@ -743,6 +849,17 @@ class _ConfirmSendDialog extends StatelessWidget {
     required this.totalQty,
     required this.totalItems,
   });
+
+  @override
+  State<_ConfirmSendDialog> createState() => _ConfirmSendDialogState();
+}
+
+class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
+  PrinterLookupItem? _printer;
+
+  String get branchName => widget.branchName;
+  int get totalQty => widget.totalQty;
+  int get totalItems => widget.totalItems;
 
   @override
   Widget build(BuildContext context) {
@@ -801,15 +918,23 @@ class _ConfirmSendDialog extends StatelessWidget {
             'Stock is deducted from your branch now; the destination branch must accept it before it lands in their inventory.',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: 360,
+            child: PrinterPickerField(
+              provider: printersForSaleProvider,
+              onChanged: (p) => _printer = p,
+            ),
+          ),
         ],
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, true),
+          onPressed: () => Navigator.pop(context, _SendChoice(_printer)),
           style: FilledButton.styleFrom(
             backgroundColor: _primary,
             shape: RoundedRectangleBorder(
@@ -839,7 +964,7 @@ String _fmtDate(DateTime dt) =>
 
 // ── Table (flex-based — poori width par phailti hai) ─────────────────────
 
-const _colFlex = <int>[1, 3, 5, 3, 2, 2, 3, 2];
+const _colFlex = <int>[1, 3, 5, 3, 2, 2, 3, 3];
 const _colLabels = <String>[
   '#',
   'Transfer #',
@@ -855,11 +980,13 @@ class _TransferTable extends StatelessWidget {
   final List<AssignStockModel> rows;
   final String? selectedId;
   final void Function(AssignStockModel) onView;
+  final void Function(AssignStockModel) onPrint;
 
   const _TransferTable({
     required this.rows,
     required this.selectedId,
     required this.onView,
+    required this.onPrint,
   });
 
   @override
@@ -983,11 +1110,22 @@ class _TransferTable extends StatelessWidget {
             ),
             Expanded(
               flex: _colFlex[7],
-              child: _ActionIcon(
-                icon: AppIcons.visibilityOutlined,
-                tooltip: 'View',
-                color: _primary,
-                onTap: () => onView(a),
+              child: Row(
+                children: [
+                  _ActionIcon(
+                    icon: AppIcons.visibilityOutlined,
+                    tooltip: 'View',
+                    color: _primary,
+                    onTap: () => onView(a),
+                  ),
+                  const SizedBox(width: 6),
+                  _ActionIcon(
+                    icon: AppIcons.printOutlined,
+                    tooltip: 'Print slip',
+                    color: _primary,
+                    onTap: () => onPrint(a),
+                  ),
+                ],
               ),
             ),
           ],

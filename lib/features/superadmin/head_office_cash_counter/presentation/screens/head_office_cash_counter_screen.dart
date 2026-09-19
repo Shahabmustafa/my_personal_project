@@ -92,44 +92,37 @@ class _HeadOfficeCashCounterScreenState
                         Row(children: [
                           Expanded(
                               child: _SummaryCard(
-                                  label: 'Net Amount',
-                                  amount: state.totalNetAmount,
-                                  icon: AppIcons.monetizationOnOutlined,
-                                  color: const Color(0xFF3E63DD))),
-                          const SizedBox(width: 12),
-                          Expanded(
-                              child: _SummaryCard(
                                   label: 'Total Purchase',
                                   amount: state.totalPurchase,
                                   icon: AppIcons.shoppingCartOutlined,
                                   color: const Color(0xFF22A06B))),
-                        ]),
-                        const SizedBox(height: 12),
-                        Row(children: [
+                          const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Return',
                                   amount: state.totalReturn,
                                   icon: AppIcons.assignmentReturnOutlined,
                                   color: const Color(0xFFE2483D))),
-                          const SizedBox(width: 12),
+                        ]),
+                        const SizedBox(height: 12),
+                        Row(children: [
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Expense',
                                   amount: state.totalExpense,
                                   icon: AppIcons.receiptLongOutlined,
                                   color: const Color(0xFFE56A00))),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: _SummaryCard(
+                                  label: 'Net Amount',
+                                  amount: state.totalNetAmount,
+                                  icon: AppIcons.monetizationOnOutlined,
+                                  color: const Color(0xFF3E63DD))),
                         ]),
                       ],
                     )
                   : Row(children: [
-                      Expanded(
-                          child: _SummaryCard(
-                              label: 'Net Amount',
-                              amount: state.totalNetAmount,
-                              icon: AppIcons.monetizationOnOutlined,
-                              color: const Color(0xFF3E63DD))),
-                      const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Purchase',
@@ -150,6 +143,13 @@ class _HeadOfficeCashCounterScreenState
                               amount: state.totalExpense,
                               icon: AppIcons.receiptLongOutlined,
                               color: const Color(0xFFE56A00))),
+                      const SizedBox(width: 14),
+                      Expanded(
+                          child: _SummaryCard(
+                              label: 'Net Amount',
+                              amount: state.totalNetAmount,
+                              icon: AppIcons.monetizationOnOutlined,
+                              color: const Color(0xFF3E63DD))),
                     ]),
             ),
 
@@ -279,10 +279,10 @@ class _DesktopTable extends StatelessWidget {
                 ),
                 child: const Row(children: [
                   _TH('Date', flex: 2),
-                  _TH('Net Amount', flex: 2),
                   _TH('Total Purchase', flex: 2),
                   _TH('Total Return', flex: 2),
                   _TH('Expense', flex: 2),
+                  _TH('Net Amount', flex: 2),
                 ]),
               ),
               Expanded(
@@ -325,17 +325,6 @@ class _DesktopTable extends StatelessWidget {
                           flex: 2,
                           child: _TD(
                               child: Text(
-                            'Rs. ${_fmtAmt(r.netAmount)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: Color(0xFF3E63DD)),
-                          )),
-                        ),
-                        Expanded(
-                          flex: 2,
-                          child: _TD(
-                              child: Text(
                             'Rs. ${_fmtAmt(r.totalPurchase)}',
                             style: const TextStyle(
                                 fontSize: 13,
@@ -367,6 +356,17 @@ class _DesktopTable extends StatelessWidget {
                                     ? const Color(0xFFE56A00)
                                     : const Color(0xFF8A8FA3),
                                 fontWeight: FontWeight.w500),
+                          )),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: _TD(
+                              child: Text(
+                            'Rs. ${_fmtAmt(r.netAmount)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: Color(0xFF3E63DD)),
                           )),
                         ),
                       ]),
@@ -426,13 +426,6 @@ class _MobileList extends StatelessWidget {
               const Divider(height: 1, color: Color(0xFFE7E9F0)),
               const SizedBox(height: 12),
               _MobileRow(
-                icon: AppIcons.monetizationOnOutlined,
-                label: 'Net Amount',
-                value: 'Rs. ${_fmtAmt(r.netAmount)}',
-                valueColor: const Color(0xFF3E63DD),
-              ),
-              const SizedBox(height: 8),
-              _MobileRow(
                 icon: AppIcons.shoppingCartOutlined,
                 label: 'Purchase',
                 value: 'Rs. ${_fmtAmt(r.totalPurchase)}',
@@ -455,6 +448,13 @@ class _MobileList extends StatelessWidget {
                 valueColor: r.expense > 0
                     ? const Color(0xFFE56A00)
                     : const Color(0xFF8A8FA3),
+              ),
+              const SizedBox(height: 8),
+              _MobileRow(
+                icon: AppIcons.monetizationOnOutlined,
+                label: 'Net Amount',
+                value: 'Rs. ${_fmtAmt(r.netAmount)}',
+                valueColor: const Color(0xFF3E63DD),
               ),
             ],
           ),

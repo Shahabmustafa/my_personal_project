@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart'
+    show PrinterLookupItem;
 import '../../../head_office_purchase/data/models/warehouse_stock_model.dart';
+import '../../../printer/presentation/providers/printer_providers.dart';
 import '../../../shared/current_head_office_provider.dart';
 import '../../data/datasources/ho_assign_stock_datasource.dart';
 import '../../data/models/ho_assign_stock_model.dart';
@@ -20,6 +23,21 @@ final hoAssignStockRepositoryProvider = Provider<HoAssignStockRepository>(
 final hoAssignBranchesProvider = FutureProvider<List<HoBranchModel>>(
   (ref) => ref.watch(hoAssignStockRepositoryProvider).getBranches(),
 );
+
+// ── Printers (slip header) ───────────────────────────────────────────────
+/// Head office isn't tied to a branch, so every printer head is selectable.
+final hoPrintersProvider = FutureProvider<List<PrinterLookupItem>>((ref) async {
+  final heads = await ref.watch(printerHeadsProvider.future);
+  return heads
+      .map((h) => PrinterLookupItem(
+            id: h.id,
+            label: h.name,
+            address: h.address,
+            phoneNumber: h.phoneNumber,
+            imageUrl: h.imageUrl,
+          ))
+      .toList();
+});
 
 // ── Head office stock cache ──────────────────────────────────────────────
 final hoAssignStockListProvider = FutureProvider<List<WarehouseStockModel>>(

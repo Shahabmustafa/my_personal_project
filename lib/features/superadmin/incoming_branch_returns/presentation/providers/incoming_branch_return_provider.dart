@@ -13,3 +13,12 @@ final incomingBranchReturnsProvider =
           .watch(branchWarehouseReturnRepositoryProvider)
           .getIncomingReturns(ref.watch(currentHeadOfficeIdProvider)),
     );
+
+/// One return with items resolved to product/size/color names — for the
+/// detail panel (the list query only carries raw item ids).
+final incomingBranchReturnDetailProvider =
+    FutureProvider.family<BranchWarehouseReturnModel, String>(
+      (ref, id) => ref
+          .read(branchWarehouseReturnRepositoryProvider)
+          .getReturnDetail(id),
+    );

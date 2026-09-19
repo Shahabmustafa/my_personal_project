@@ -6,6 +6,7 @@ import '../auth/presentation/screens/login_screen.dart';
 import '../branch/assign_stock_to_my_branch/presentation/screen/branch_assign_list_screen.dart';
 import '../branch/assign_stock_to_other_branch/presentation/screens/branch_transfer_screen.dart';
 import '../branch/branch_cash_counter/presentation/screens/branch_cash_counter_screen.dart';
+import '../branch/branch_payment/presentation/screens/branch_payments_history_screen.dart';
 import '../branch/branch_stock_inventory/presentation/screen/branch_stock_screen.dart';
 import '../branch/customer/presentation/screens/customers_screen.dart';
 import '../branch/dashboard/presentation/screen/branch_overview_screen.dart';
@@ -17,10 +18,6 @@ import '../branch/return_stock_to_warehouse/presentation/screens/branch_warehous
 import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
-import '../manager/my_activity/presentation/screens/manager_exchanges_screen.dart';
-import '../manager/my_activity/presentation/screens/manager_returns_screen.dart';
-import '../manager/my_activity/presentation/screens/manager_sales_screen.dart';
-import '../manager/profile/presentation/screens/manager_profile_screen.dart';
 import '../superadmin/report/presentation/screens/branch_target_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 
@@ -63,6 +60,7 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         group: 'Stock Returns'),
     SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Stock Inventory'),
     SidebarItem(icon: AppIcons.pointOfSaleOutlined, label: 'Cash Counter'),
+    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
     SidebarItem(icon: AppIcons.receiptLongOutlined, label: 'Expense'),
     SidebarItem(
         icon: AppIcons.shoppingCartCheckoutOutlined,
@@ -97,6 +95,7 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     BranchWarehouseReturnScreen(),
     BranchStockScreen(),
     BranchCashCounterScreen(),
+    BranchPaymentsHistoryScreen(),
     ExpenseScreen(),
     SaleInvoiceScreen(),
     SaleReturnScreen(),
@@ -105,41 +104,12 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     BranchTargetReportScreen(restrictToOwnBranch: true),
   ];
 
-  // Manager ke apne commission/salary ka khulasa — cashier ko ye nahi
-  // dikhta, sirf manager role ke liye extra nav items add hote hain.
-  static const _managerNavItems = [
-    SidebarItem(
-        icon: AppIcons.receiptLongOutlined,
-        label: 'My Sales',
-        group: 'My Activity'),
-    SidebarItem(
-        icon: AppIcons.assignmentReturnOutlined,
-        label: 'My Returns',
-        group: 'My Activity'),
-    SidebarItem(
-        icon: AppIcons.swapHorizOutlined,
-        label: 'My Exchanges',
-        group: 'My Activity'),
-    SidebarItem(icon: AppIcons.personOutline, label: 'My Profile'),
-  ];
-
-  static const _managerPages = [
-    ManagerSalesScreen(),
-    ManagerReturnsScreen(),
-    ManagerExchangesScreen(),
-    ManagerProfileScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final isManager = user?.isManager ?? false;
-    final navItems =
-        isManager ? [..._navItems, ..._managerNavItems] : _navItems;
-    final pages = isManager ? [..._pages, ..._managerPages] : _pages;
     return SidebarShell(
-      navItems: navItems,
-      pages: pages,
+      navItems: _navItems,
+      pages: _pages,
       selectedIndex: _index,
       userName: user?.username ?? '',
       userRole: user?.roleDisplayName ?? '',

@@ -36,7 +36,7 @@ class OverviewScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Sab branches ka overview',
+                        'Overview of all branches',
                         style: TextStyle(
                           fontSize: 13,
                           color: Color(0xFF8A8FA3),
@@ -234,7 +234,7 @@ class _WeeklySaleChart extends StatelessWidget {
               height: 160,
               child: Center(
                 child: Text(
-                  'Data nahi',
+                  'No data',
                   style: TextStyle(color: Color(0xFF8A8FA3)),
                 ),
               ),
@@ -360,13 +360,13 @@ class _TopArticleCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Sab Se Zyada Bikne Wala Article',
+            'Top Selling Article',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 14),
           if (a == null)
             const Text(
-              'Abhi tak koi sale nahi',
+              'No sales yet',
               style: TextStyle(color: Color(0xFF8A8FA3)),
             )
           else
@@ -501,7 +501,7 @@ class _TodayByBranch extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.fromLTRB(18, 16, 18, 10),
             child: Text(
-              "Aaj Ki Sale — Branch Wise",
+              "Today's Sale — Branch Wise",
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
           ),
@@ -511,7 +511,7 @@ class _TodayByBranch extends StatelessWidget {
               padding: EdgeInsets.all(24),
               child: Center(
                 child: Text(
-                  'Aaj abhi tak koi sale nahi',
+                  'No sales today yet',
                   style: TextStyle(color: Color(0xFF8A8FA3)),
                 ),
               ),
