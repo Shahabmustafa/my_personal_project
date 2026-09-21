@@ -1,11 +1,11 @@
 {
-    "name": "safishoe_app",
-    "short_name": "safishoe_app",
+    "name": "Safi Shoes",
+    "short_name": "Safi Shoes",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
+    "background_color": "#FFFFFF",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Safi Shoes - shoe shop POS and inventory management.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
