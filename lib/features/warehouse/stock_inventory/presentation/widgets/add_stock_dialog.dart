@@ -404,7 +404,11 @@ class _AddStockDialogState extends ConsumerState<AddStockDialog> {
                           child: _SizeQtyRow(
                             index: idx,
                             entry: row,
-                            allSizes: sizesAsync.value ?? [],
+                            allSizes: (sizesAsync.value ?? [])
+                                .where((s) => !_sizeRows.any((r) =>
+                                    !identical(r, row) &&
+                                    r.size?.id == s.id))
+                                .toList(),
                             canRemove: _sizeRows.length > 1,
                             onSizeChanged: (size) => setState(() {
                               row.size = size;
