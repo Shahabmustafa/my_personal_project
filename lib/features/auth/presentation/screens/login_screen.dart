@@ -10,7 +10,6 @@ import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
 import 'select_workspace_screen.dart';
 
-import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 class LoginScreen extends ConsumerStatefulWidget {
@@ -117,26 +116,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     const SizedBox(height: 48),
 
-                    // Logo
+                    // Logo — source image ka background halka grey (#F3F3F3) hai;
+                    // filter usay white kar deta hai taake white page par
+                    // dabba na dikhe (black/red waise hi rehte hain).
                     Center(
-                      child: Container(
-                        height: 84,
-                        width: 84,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: AppIcon(
-                          AppIcons.storeMallDirectoryRounded,
-                          size: 26,
-                          color: Theme.of(context).primaryColor,
+                      child: ColorFiltered(
+                        colorFilter: const ColorFilter.matrix(<double>[
+                          1.0494, 0, 0, 0, 0, //
+                          0, 1.0494, 0, 0, 0, //
+                          0, 0, 1.0494, 0, 0, //
+                          0, 0, 0, 1, 0,
+                        ]),
+                        child: Image.asset(
+                          'assets/images/safi.png',
+                          height: 130,
+                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     const Text(
-                      'Shoe Shop POS',
+                      'Safi Shoes',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 26,
