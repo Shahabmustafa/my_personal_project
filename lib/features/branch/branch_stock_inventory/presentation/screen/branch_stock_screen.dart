@@ -299,8 +299,6 @@ class _StockRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLowStock = item.quantity <= 5;
-
     return Container(
       color: index.isEven ? const Color(0xFFFAFBFF) : Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -390,47 +388,15 @@ class _StockRow extends StatelessWidget {
             ),
           ),
 
-          // ── Stock Badge (FIX: tight width, MainAxisSize.min) ─────────
+          // Stock
           Expanded(
             flex: 2,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: isLowStock
-                      ? Colors.orange.shade50
-                      : Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: isLowStock
-                        ? Colors.orange.shade300
-                        : Colors.green.shade200,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min, // ← KEY FIX
-                  children: [
-                    if (isLowStock) ...[
-                      AppIcon(AppIcons.warningAmberRounded,
-                          size: 12,
-                          color: Colors.orange.shade700),
-                      const SizedBox(width: 4),
-                    ],
-                    Text(
-                      '${item.quantity}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: isLowStock
-                            ? Colors.orange.shade700
-                            : Colors.green.shade700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            child: Text(
+              '${item.quantity}',
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A2E)),
             ),
           ),
 
