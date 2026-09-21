@@ -5,6 +5,9 @@ import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_
 import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_heads_screen.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
+import '../branch/sale_claim/presentation/providers/sale_claim_provider.dart'
+    show incomingSaleClaimsProvider;
+import '../superadmin/sale_claims/presentation/screens/incoming_sale_claims_screen.dart';
 import '../superadmin/branch/presentation/screens/branches_screen.dart';
 import '../superadmin/branch_target/presentation/screens/branch_target_screen.dart';
 import '../superadmin/discount/presentation/screens/branch_invoice_discount_screen.dart';
@@ -102,6 +105,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       label: 'Incoming Branch Returns',
       group: 'Assign Stock',
     ),
+    SidebarItem(icon: AppIcons.warningAmberOutlined, label: 'Branch Sale Claims'),
     SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
     SidebarItem(
         icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
@@ -178,6 +182,8 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     HoAssignStockListScreen(),
     // Branches se Admin (Head Office) ko jo stock returns aate hain — accept/reject.
     IncomingBranchReturnsScreen(),
+    // Branches ke sale claims (kharab product) — approve par branch stock se minus.
+    IncomingSaleClaimsScreen(),
     HeadOfficeScreen(),
     HeadOfficeCashCounterScreen(),
     // Branches ne Head Office ko jo amount pay ki — accept/reject + report.
@@ -197,8 +203,19 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final pendingClaims = ref
+            .watch(incomingSaleClaimsProvider)
+            .value
+            ?.where((c) => c.isPending)
+            .length ??
+        0;
     return SidebarShell(
-      navItems: _navItems,
+      navItems: [
+        for (final item in _navItems)
+          item.label == 'Branch Sale Claims'
+              ? item.withBadge(pendingClaims)
+              : item,
+      ],
       pages: _pages,
       selectedIndex: _index,
       userName: user?.username ?? '',

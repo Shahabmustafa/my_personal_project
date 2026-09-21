@@ -15,6 +15,7 @@ import '../branch/expense/presentation/screen/expense_screen.dart';
 import '../branch/return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart';
 import '../branch/return_stock_to_other_branch/presentation/screens/incoming_stock_returns_screen.dart';
 import '../branch/return_stock_to_warehouse/presentation/screens/branch_warehouse_return_screen.dart';
+import '../branch/sale_claim/presentation/screens/sale_claims_screen.dart';
 import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
@@ -75,6 +76,10 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         label: 'Sale Exchange',
         group: 'Sales'),
     SidebarItem(
+        icon: AppIcons.warningAmberOutlined,
+        label: 'Sale Claim',
+        group: 'Sales'),
+    SidebarItem(
         icon: AppIcons.listAlt,
         label: 'Sale Summary',
         group: 'Reports'),
@@ -100,6 +105,7 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     SaleInvoiceScreen(),
     SaleReturnScreen(),
     SaleExchangeInvoicePickerScreen(),
+    SaleClaimsScreen(),
     SaleSummaryReportScreen(restrictToOwnBranch: true),
     BranchTargetReportScreen(restrictToOwnBranch: true),
   ];

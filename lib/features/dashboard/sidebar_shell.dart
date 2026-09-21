@@ -8,7 +8,43 @@ class SidebarItem {
   final String icon;
   final String label;
   final String? group;
-  const SidebarItem({required this.icon, required this.label, this.group});
+
+  /// Pending/unread count — 0 ho to badge nahi dikhta.
+  final int badge;
+  const SidebarItem({
+    required this.icon,
+    required this.label,
+    this.group,
+    this.badge = 0,
+  });
+
+  SidebarItem withBadge(int count) =>
+      SidebarItem(icon: icon, label: label, group: group, badge: count);
+}
+
+/// Sidebar item ke sath chhota orange count pill.
+class _SidebarBadge extends StatelessWidget {
+  final int count;
+  const _SidebarBadge(this.count);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE56A00),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        count > 99 ? '99+' : '$count',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
 }
 
 class SidebarShell extends StatefulWidget {
@@ -442,10 +478,15 @@ class _SidebarShellState extends State<SidebarShell> {
                 ),
               ),
               alignment: Alignment.center,
-              child: AppIcon(
-                item.icon,
-                size: 19,
-                color: active ? _accent : _textDim,
+              child: Badge(
+                isLabelVisible: item.badge > 0,
+                backgroundColor: const Color(0xFFE56A00),
+                label: Text('${item.badge}'),
+                child: AppIcon(
+                  item.icon,
+                  size: 19,
+                  color: active ? _accent : _textDim,
+                ),
               ),
             ),
           ),
@@ -493,6 +534,10 @@ class _SidebarShellState extends State<SidebarShell> {
                     ),
                   ),
                 ),
+                if (item.badge > 0) ...[
+                  const SizedBox(width: 8),
+                  _SidebarBadge(item.badge),
+                ],
               ],
             ),
           ),
