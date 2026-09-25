@@ -5,8 +5,7 @@ class BranchOverviewData {
   final int totalSalesman;
   final double todayExpense;
 
-  /// Branch ka monthly target ho to aaj ka target (current date se mahine
-  /// ke aakhir tak bache dinon mein taqseem karke) — 0 = target set nahi.
+  /// Aaj ke din ka target (admin ne din-wise set kiya) — 0 = target set nahi.
   final double todayTarget;
   final List<DaySale> weeklySale;
   final List<TopArticle> topArticles;

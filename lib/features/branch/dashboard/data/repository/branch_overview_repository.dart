@@ -1,4 +1,3 @@
-import '../../../../superadmin/report/data/model/branch_target_row.dart';
 import '../datasource/branch_overview_datasource.dart';
 import '../model/branch_overview_model.dart';
 
@@ -14,7 +13,7 @@ class BranchOverviewRepository {
     ]);
     final counter = await _datasource.fetchTodayCounter(branchId);
     final extras = await _datasource.fetchDashboardExtras(branchId);
-    final monthlyTarget = await _datasource.fetchMonthlyTarget(branchId);
+    final todayTarget = await _datasource.fetchTodayTarget(branchId);
 
     return BranchOverviewData(
       totalArticles: results[0],
@@ -22,7 +21,7 @@ class BranchOverviewRepository {
       totalSalesman: results[2],
       todaySale: counter.todaySale,
       todayExpense: counter.todayExpense,
-      todayTarget: BranchTargetRow.dailyTargetFor(monthlyTarget),
+      todayTarget: todayTarget,
       weeklySale: extras.weekly,
       topArticles: extras.topArticles,
     );

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../superadmin/branch_target/data/branch_target_datasource.dart';
 
 import '../model/branch_overview_model.dart';
 
@@ -57,17 +58,18 @@ class BranchOverviewDatasource {
     );
   }
 
-  /// Branch ka monthly sale target (Rs.) — admin/superadmin "Branch Target"
-  /// screen se set karta hai. 0 = target set nahi.
-  Future<double> fetchMonthlyTarget(String branchId) async {
+  /// Aaj ka sale target (Rs.) — admin "Branch Target" screen se din-wise set
+  /// hota hai. 0 = aaj ka target set nahi.
+  Future<double> fetchTodayTarget(String branchId) async {
     if (branchId.isEmpty) return 0.0;
     final res = await _client
-        .from('branches')
-        .select('monthly_target')
-        .eq('id', branchId)
+        .from('branch_daily_targets')
+        .select('amount')
+        .eq('branch_id', branchId)
+        .eq('target_date', BranchTargetDatasource.dateKey(DateTime.now()))
         .maybeSingle();
     if (res == null) return 0.0;
-    return _toDouble(res['monthly_target']);
+    return _toDouble(res['amount']);
   }
 
   /// Pichhle 7 din ki din-wise sale + top 10 bikne wale articles.

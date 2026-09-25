@@ -10,7 +10,7 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 
-/// Har branch ka monthly target (baaki bache dinon se divide = aaj ka target), aaj ki net sale, aur
+/// Har branch ka aaj ka target (admin ne din-wise set kiya), aaj ki net sale, aur
 /// target achieve hua ya nahi — ek jagah.
 class BranchTargetReportScreen extends ConsumerWidget {
   /// Branch-role users ke liye: true hone par sirf apni branch ka target
@@ -34,7 +34,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
         ? state.rows.where((r) => r.branchId == ref.watch(currentBranchIdProvider)).toList()
         : state.rows;
 
-    final withTarget = rows.where((r) => r.monthlyTarget > 0).toList();
+    final withTarget = rows.where((r) => r.hasTarget).toList();
     final achievedCount = withTarget.where((r) => r.isAchieved).length;
     final myTarget = restrictToOwnBranch && rows.isNotEmpty ? rows.first : null;
 
@@ -61,8 +61,8 @@ class BranchTargetReportScreen extends ConsumerWidget {
               Expanded(
                 child: ReportSummaryCard(
                   label: 'Sale Target (Today)',
-                  value: myTarget.monthlyTarget > 0
-                      ? 'Rs. ${myTarget.dailyTarget.toStringAsFixed(0)}'
+                  value: myTarget.hasTarget
+                      ? 'Rs. ${myTarget.todayTarget.toStringAsFixed(0)}'
                       : 'Not set',
                   icon: AppIcons.flagOutlined,
                   color: _accent,
@@ -119,7 +119,6 @@ class BranchTargetReportScreen extends ConsumerWidget {
                             child: ReportTableShell(
                               columns: [
                                 if (!restrictToOwnBranch) const DataColumn(label: Text('Branch')),
-                                const DataColumn(label: Text('Monthly Target'), numeric: true),
                                 const DataColumn(label: Text('Sale Target'), numeric: true),
                                 const DataColumn(label: Text('Total Sale'), numeric: true),
                                 const DataColumn(label: Text('Status')),
@@ -135,15 +134,12 @@ class BranchTargetReportScreen extends ConsumerWidget {
   }
 
   DataRow _row(BranchTargetRow r, DateTime? asOf) {
-    final hasTarget = r.monthlyTarget > 0;
+    final hasTarget = r.hasTarget;
     return DataRow(cells: [
       if (!restrictToOwnBranch)
         DataCell(Text(r.branchName, style: const TextStyle(fontWeight: FontWeight.w600))),
       DataCell(Text(
-        hasTarget ? 'Rs. ${r.monthlyTarget.toStringAsFixed(0)}' : '—',
-      )),
-      DataCell(Text(
-        hasTarget ? 'Rs. ${r.dailyTarget.toStringAsFixed(0)}' : '—',
+        hasTarget ? 'Rs. ${r.todayTarget.toStringAsFixed(0)}' : '—',
       )),
       DataCell(Text(
         'Rs. ${r.netSaleToday.toStringAsFixed(0)}',
@@ -235,7 +231,7 @@ class _MobileBranchTargetList extends StatelessWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         final r = rows[i];
-        final hasTarget = r.monthlyTarget > 0;
+        final hasTarget = r.hasTarget;
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -261,10 +257,8 @@ class _MobileBranchTargetList extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _stat('Monthly Target',
-                      hasTarget ? 'Rs. ${r.monthlyTarget.toStringAsFixed(0)}' : '—'),
                   _stat('Sale Target',
-                      hasTarget ? 'Rs. ${r.dailyTarget.toStringAsFixed(0)}' : '—'),
+                      hasTarget ? 'Rs. ${r.todayTarget.toStringAsFixed(0)}' : '—'),
                   _stat(
                     'Total Sale',
                     'Rs. ${r.netSaleToday.toStringAsFixed(0)}',
