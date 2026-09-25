@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/branch_target_row.dart';
 import '../providers/branch_target_report_provider.dart';
 import '../widgets/report_summary_card.dart';
+import '../widgets/branch_target_detail_dialog.dart';
 import '../widgets/report_table_shell.dart';
 import '../../../../branch/shared/current_branch_provider.dart';
 
@@ -124,7 +125,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
                                 const DataColumn(label: Text('Status')),
                                 const DataColumn(label: Text('Date & Time')),
                               ],
-                              rows: rows.map((r) => _row(r, state.asOf)).toList(),
+                              rows: rows.map((r) => _row(context, r, state.asOf)).toList(),
                             ),
                           ),
           ),
@@ -133,9 +134,9 @@ class BranchTargetReportScreen extends ConsumerWidget {
     );
   }
 
-  DataRow _row(BranchTargetRow r, DateTime? asOf) {
+  DataRow _row(BuildContext context, BranchTargetRow r, DateTime? asOf) {
     final hasTarget = r.hasTarget;
-    return DataRow(cells: [
+    return DataRow(onSelectChanged: (_) => BranchTargetDetailDialog.show(context, r), cells: [
       if (!restrictToOwnBranch)
         DataCell(Text(r.branchName, style: const TextStyle(fontWeight: FontWeight.w600))),
       DataCell(Text(
@@ -232,7 +233,10 @@ class _MobileBranchTargetList extends StatelessWidget {
       itemBuilder: (context, i) {
         final r = rows[i];
         final hasTarget = r.hasTarget;
-        return Container(
+        return InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => BranchTargetDetailDialog.show(context, r),
+          child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -273,7 +277,7 @@ class _MobileBranchTargetList extends StatelessWidget {
                       style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3))),
             ],
           ),
-        );
+        ));
       },
     );
   }

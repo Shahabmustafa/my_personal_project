@@ -373,4 +373,44 @@ class SaleReportDatasource {
     }
     return net;
   }
+
+  /// Ek branch ki [from]..[to] (dono din samet) har din ki net sale —
+  /// {sirf-date: amount}. Din ki hadd fetchNetSaleByBranch jaisi (UTC+5).
+  Future<Map<DateTime, double>> fetchNetSaleByDay(
+      String branchId, DateTime from, DateTime to) async {
+    final start = _startOfDayUtc(from).toIso8601String();
+    final end = _startOfNextDayUtc(to).toIso8601String();
+
+    Future<List<Map<String, dynamic>>> load(String table, String col) async {
+      final res = await _client
+          .from(table)
+          .select('created_at, $col')
+          .eq('branch_id', branchId)
+          .gte('created_at', start)
+          .lt('created_at', end) as List;
+      return res.cast<Map<String, dynamic>>();
+    }
+
+    final invoices = await load('sale_invoices', 'total_amount');
+    final returns = await load('sale_returns', 'total_amount');
+    final exchanges = await load('sale_exchanges', 'difference_amount');
+
+    final net = <DateTime, double>{};
+    void add(Map<String, dynamic> row, String col, double sign) {
+      final t = DateTime.parse(row['created_at'].toString()).toUtc().add(const Duration(hours: 5));
+      final day = DateTime(t.year, t.month, t.day);
+      net[day] = (net[day] ?? 0) + sign * (row[col] as num? ?? 0).toDouble();
+    }
+
+    for (final r in invoices) {
+      add(r, 'total_amount', 1);
+    }
+    for (final r in returns) {
+      add(r, 'total_amount', -1);
+    }
+    for (final r in exchanges) {
+      add(r, 'difference_amount', 1);
+    }
+    return net;
+  }
 }
