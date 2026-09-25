@@ -20,4 +20,6 @@ ALTER TABLE public.branch_daily_targets ENABLE ROW LEVEL SECURITY;
 CREATE POLICY authenticated_full_access ON public.branch_daily_targets
   FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.branch_daily_targets TO authenticated;
+
 NOTIFY pgrst, 'reload schema';
