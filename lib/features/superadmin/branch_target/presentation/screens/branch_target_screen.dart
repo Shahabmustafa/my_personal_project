@@ -21,6 +21,13 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
 
   final _totalCtrl = TextEditingController();
   final Map<DateTime, TextEditingController> _dayCtrls = {};
+
+  /// Wo din jinka target admin ne haath se badla — auto-divide inhe nahi
+  /// chhedta, baaki dinon mein bacha hua amount barabar taqseem hota hai.
+  final Set<DateTime> _locked = {};
+
+  /// Poora target amount jo saare dinon mein divide hona hai.
+  double _total = 0;
   final DateTime _start = BranchTargetDatasource.dateOnly(DateTime.now());
 
   String? _branchId;
@@ -61,6 +68,26 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
       c.dispose();
     }
     _dayCtrls.clear();
+    _locked.clear();
+  }
+
+  /// Kisi din ka target badalne par baaki (haath se na badle) dinon mein
+  /// `total − badle hue dinon ka jama` barabar taqseem karta hai, taake
+  /// poora amount hamesha wahi rahe. Remainder aakhri free din mein jata hai.
+  void _onDayEdited(DateTime edited) {
+    _locked.add(edited);
+    final free = _sortedDays.where((d) => !_locked.contains(d)).toList();
+    if (free.isNotEmpty) {
+      final lockedSum = _locked.fold(
+          0.0, (s, d) => s + (double.tryParse(_dayCtrls[d]!.text.trim()) ?? 0));
+      final remaining = (_total - lockedSum).clamp(0, double.infinity).toDouble();
+      final base = (remaining / free.length).floorToDouble();
+      for (var i = 0; i < free.length; i++) {
+        final amt = i == free.length - 1 ? remaining - base * (free.length - 1) : base;
+        _dayCtrls[free[i]]!.text = _fmtAmt(amt);
+      }
+    }
+    setState(() {});
   }
 
   void _snack(String msg, {bool error = false}) {
@@ -90,7 +117,8 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
         }
         if (existing.isNotEmpty) {
           _end = _sortedDays.last;
-          _totalCtrl.text = _fmtAmt(_daysSum);
+          _total = _daysSum;
+          _totalCtrl.text = _fmtAmt(_total);
         }
       });
     } catch (e) {
@@ -119,6 +147,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
     if (end == null) return _snack('End date select karein', error: true);
     if (total <= 0) return _snack('Target amount daalein', error: true);
 
+    _total = total;
     final days = end.difference(_start).inDays + 1;
     final base = (total / days).floorToDouble();
     setState(() {
@@ -276,8 +305,17 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
         children: [
           Row(children: [
             Expanded(
-              child: Text('${days.length} din  •  Total Rs. ${_fmtAmt(_daysSum)}',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+              child: Text.rich(TextSpan(
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                children: [
+                  TextSpan(text: '${days.length} din  •  Total Rs. ${_fmtAmt(_daysSum)}'),
+                  if ((_daysSum - _total).abs() > 0.5)
+                    TextSpan(
+                      text: '  (target Rs. ${_fmtAmt(_total)} se ${_daysSum > _total ? 'zyada' : 'kam'})',
+                      style: const TextStyle(color: Color(0xFFE56A00), fontSize: 12),
+                    ),
+                ],
+              )),
             ),
             FilledButton(
               onPressed: _saving ? null : _save,
@@ -331,7 +369,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
               textAlign: TextAlign.end,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => _onDayEdited(d),
               decoration: _dec('Target', prefix: 'Rs. '),
             ),
           ),
