@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/branch_target_row.dart';
 import '../providers/branch_target_report_provider.dart';
 import '../widgets/report_summary_card.dart';
-import '../widgets/branch_target_detail_dialog.dart';
+import '../widgets/branch_target_detail_screen.dart';
 import '../widgets/report_table_shell.dart';
 import '../../../../branch/shared/current_branch_provider.dart';
 
@@ -13,7 +13,7 @@ import 'package:safishoe_app/core/utils/responsive.dart';
 
 /// Har branch ka aaj ka target (admin ne din-wise set kiya), aaj ki net sale, aur
 /// target achieve hua ya nahi — ek jagah.
-class BranchTargetReportScreen extends ConsumerWidget {
+class BranchTargetReportScreen extends ConsumerStatefulWidget {
   /// Branch-role users ke liye: true hone par sirf apni branch ka target
   /// dikhta hai (aur "Branch" column / branches-wide summary cards hide ho
   /// jate hain).
@@ -21,12 +21,49 @@ class BranchTargetReportScreen extends ConsumerWidget {
 
   const BranchTargetReportScreen({super.key, this.restrictToOwnBranch = false});
 
+  @override
+  ConsumerState<BranchTargetReportScreen> createState() => _BranchTargetReportScreenState();
+
   static const _accent = Color(0xFF3E63DD);
   static const _achievedColor = Color(0xFF22A06B);
   static const _pendingColor = Color(0xFFE56A00);
 
+  static String _fmtDateTime(DateTime d) {
+    final local = d.toLocal();
+    final date =
+        '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
+    final hour24 = local.hour;
+    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    final time =
+        '${hour12.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')} $period';
+    return '$date $time';
+  }
+}
+
+class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScreen> {
+  /// Set hone par report ki jagah us branch ki din-wise detail screen dikhti hai
+  /// (sidebar wahi rehta hai).
+  BranchTargetRow? _selected;
+
+  bool get restrictToOwnBranch => widget.restrictToOwnBranch;
+
+  static const _accent = BranchTargetReportScreen._accent;
+  static const _achievedColor = BranchTargetReportScreen._achievedColor;
+  static const _pendingColor = BranchTargetReportScreen._pendingColor;
+
+  void _open(BranchTargetRow r) => setState(() => _selected = r);
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final selected = _selected;
+    if (selected != null) {
+      return BranchTargetDetailScreen(
+        key: ValueKey(selected.branchId),
+        row: selected,
+        onBack: () => setState(() => _selected = null),
+      );
+    }
     final state = ref.watch(branchTargetReportProvider);
     final notifier = ref.read(branchTargetReportProvider.notifier);
     final isMobile = Responsive(context).isMobile;
@@ -113,6 +150,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
                     : isMobile
                         ? _MobileBranchTargetList(
                             rows: rows,
+                            onOpen: _open,
                             restrictToOwnBranch: restrictToOwnBranch,
                             asOf: state.asOf,
                           )
@@ -136,7 +174,7 @@ class BranchTargetReportScreen extends ConsumerWidget {
 
   DataRow _row(BuildContext context, BranchTargetRow r, DateTime? asOf) {
     final hasTarget = r.hasTarget;
-    return DataRow(onSelectChanged: (_) => BranchTargetDetailDialog.show(context, r), cells: [
+    return DataRow(onSelectChanged: (_) => _open(r), cells: [
       if (!restrictToOwnBranch)
         DataCell(Text(r.branchName, style: const TextStyle(fontWeight: FontWeight.w600))),
       DataCell(Text(
@@ -151,21 +189,9 @@ class BranchTargetReportScreen extends ConsumerWidget {
       )),
       DataCell(hasTarget ? _StatusBadge(row: r) : const Text('No target set',
           style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
-      DataCell(Text(asOf != null ? _fmtDateTime(asOf) : '—',
+      DataCell(Text(asOf != null ? BranchTargetReportScreen._fmtDateTime(asOf) : '—',
           style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
     ]);
-  }
-
-  static String _fmtDateTime(DateTime d) {
-    final local = d.toLocal();
-    final date =
-        '${local.day.toString().padLeft(2, '0')}/${local.month.toString().padLeft(2, '0')}/${local.year}';
-    final hour24 = local.hour;
-    final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
-    final period = hour24 < 12 ? 'AM' : 'PM';
-    final time =
-        '${hour12.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')} $period';
-    return '$date $time';
   }
 }
 
@@ -217,9 +243,11 @@ class _MobileBranchTargetList extends StatelessWidget {
   final List<BranchTargetRow> rows;
   final bool restrictToOwnBranch;
   final DateTime? asOf;
+  final void Function(BranchTargetRow) onOpen;
 
   const _MobileBranchTargetList({
     required this.rows,
+    required this.onOpen,
     required this.restrictToOwnBranch,
     required this.asOf,
   });
@@ -235,7 +263,7 @@ class _MobileBranchTargetList extends StatelessWidget {
         final hasTarget = r.hasTarget;
         return InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => BranchTargetDetailDialog.show(context, r),
+          onTap: () => onOpen(r),
           child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
