@@ -201,7 +201,7 @@ class _DesktopTable extends StatelessWidget {
                   _TH('City', flex: 2),
                   _TH('Address', flex: 4),
                   _TH('Phone', flex: 2),
-                  _TH('Status', flex: 2),
+                  _TH('Status', center: true, flex: 2),
                   if (canEdit) _TH('Actions', flex: 2),
                 ]),
               ),
@@ -264,7 +264,7 @@ class _DesktopTable extends StatelessWidget {
                         // Status
                         Expanded(
                           flex: 2,
-                          child: _TD(child: _StatusPill(isActive: b.isActive)),
+                          child: _TD(center: true, child: _StatusPill(isActive: b.isActive)),
                         ),
                         // Actions
                         if (canEdit)
@@ -332,7 +332,8 @@ class _MobileList extends StatelessWidget {
 class _TH extends StatelessWidget {
   final String text;
   final int flex;
-  const _TH(this.text, {this.flex = 1});
+  final bool center;
+  const _TH(this.text, {this.flex = 1, this.center = false});
 
   @override
   Widget build(BuildContext context) {
@@ -341,6 +342,7 @@ class _TH extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Text(text,
+            textAlign: center ? TextAlign.center : TextAlign.start,
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600,
                 color: Color(0xFF8A8FA3), letterSpacing: 0.3)),
       ),
@@ -350,13 +352,14 @@ class _TH extends StatelessWidget {
 
 class _TD extends StatelessWidget {
   final Widget child;
-  const _TD({required this.child});
+  final bool center;
+  const _TD({required this.child, this.center = false});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: child,
+      child: center ? Center(child: child) : child,
     );
   }
 }

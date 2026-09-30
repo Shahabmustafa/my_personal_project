@@ -155,7 +155,7 @@ final stockProvider = StateNotifierProvider<StockNotifier,
 // ── Admin: paginated stock across ALL warehouses (read-only) ───────────────
 class AdminStockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
   final StockRepository _repository;
-  AdminStockNotifier(this._repository);
+  AdminStockNotifier(this._repository) : super(pageSize: 100);
 
   @override
   Future<PageResult<WarehouseStockModel>> fetchPage(PageRequest request) =>
