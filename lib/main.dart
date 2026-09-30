@@ -1,9 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/core/storage/tab_scoped_supabase_storage.dart';
 import 'package:safishoe_app/core/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/website/website_app.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -11,6 +13,13 @@ const _supabaseUrl = 'https://jjqhglmaxlcrusmmxwgi.supabase.co';
 
 void main()async{
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Web serves the customer website, and the POS at /pos.
+  // Desktop/mobile builds always run the POS.
+  if (kIsWeb && !Uri.base.path.startsWith('/pos')) {
+    runApp(const ProviderScope(child: WebsiteApp()));
+    return;
+  }
 
   await Supabase.initialize(
     url: _supabaseUrl,
