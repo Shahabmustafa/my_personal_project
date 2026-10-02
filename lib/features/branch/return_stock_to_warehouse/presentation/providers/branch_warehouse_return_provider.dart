@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
@@ -35,11 +36,13 @@ final returnHeadOfficeProvider = FutureProvider<HeadOfficeModel?>(
 // ── Sent returns (branch side) ──────────────────────────────────────────────
 
 final sentWarehouseReturnsProvider =
-    FutureProvider<List<BranchWarehouseReturnModel>>(
-      (ref) => ref
+    FutureProvider<List<BranchWarehouseReturnModel>>((ref) {
+      // Realtime — Admin accept/reject kare to reload.
+      ref.watch(tableChangesProvider('branch_return_to_warehouse'));
+      return ref
           .watch(branchWarehouseReturnRepositoryProvider)
-          .getSentReturns(ref.watch(currentBranchIdProvider)),
-    );
+          .getSentReturns(ref.watch(currentBranchIdProvider));
+    });
 
 // ── Cart / active return state ─────────────────────────────────────────────
 

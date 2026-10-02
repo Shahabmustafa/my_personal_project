@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../superadmin/shared/current_head_office_provider.dart';
 import '../../../shared/current_branch_provider.dart';
@@ -12,6 +13,8 @@ final saleClaimRepositoryProvider = Provider<SaleClaimRepository>(
 
 /// Is branch ke apne claims.
 final branchSaleClaimsProvider = FutureProvider<List<SaleClaimModel>>((ref) {
+  // Realtime — Head Office approve/reject kare to reload.
+  ref.watch(tableChangesProvider('sale_claims'));
   final branchId = ref.watch(currentBranchIdProvider);
   if (branchId.isEmpty) return const [];
   return ref.watch(saleClaimRepositoryProvider).getBranchClaims(branchId);
@@ -21,6 +24,8 @@ final branchSaleClaimsProvider = FutureProvider<List<SaleClaimModel>>((ref) {
 final incomingSaleClaimsProvider = FutureProvider<List<SaleClaimModel>>((
   ref,
 ) async {
+  // Realtime — nayi claim aate hi list + sidebar badge reload.
+  ref.watch(tableChangesProvider('sale_claims'));
   final headOfficeId = await ref.watch(headOfficeIdProvider.future);
   if (headOfficeId.isEmpty) return const [];
   return ref.watch(saleClaimRepositoryProvider).getIncomingClaims(headOfficeId);

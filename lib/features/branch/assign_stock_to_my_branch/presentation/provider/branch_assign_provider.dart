@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/current_branch_provider.dart';
@@ -96,8 +97,14 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
 }
 
 final branchAssignProvider = StateNotifierProvider<BranchAssignNotifier, BranchAssignListState>(
-  (ref) => BranchAssignNotifier(
-    ref.read(branchAssignRepositoryProvider),
-    ref.watch(currentBranchIdProvider),
-  ),
+  (ref) {
+    final notifier = BranchAssignNotifier(
+      ref.read(branchAssignRepositoryProvider),
+      ref.watch(currentBranchIdProvider),
+    );
+    // Realtime — naya assignment aate hi list reload.
+    ref.listen(tableChangesProvider('assign_stock_to_branch'),
+        (_, _) => notifier.loadAssignments());
+    return notifier;
+  },
 );

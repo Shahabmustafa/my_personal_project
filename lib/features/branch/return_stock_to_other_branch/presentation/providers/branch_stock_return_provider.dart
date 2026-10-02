@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
@@ -31,17 +32,21 @@ final otherBranchesForReturnProvider = FutureProvider<List<BranchModel>>(
 
 // ── Sent / incoming returns lists ──────────────────────────────────────────
 
-final sentStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>(
-  (ref) => ref
+final sentStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((ref) {
+  // Realtime — doosri branch accept/reject kare to reload.
+  ref.watch(tableChangesProvider('branch_stock_returns'));
+  return ref
       .watch(branchStockReturnRepositoryProvider)
-      .getSentReturns(ref.watch(currentBranchIdProvider)),
-);
+      .getSentReturns(ref.watch(currentBranchIdProvider));
+});
 
-final incomingStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>(
-  (ref) => ref
+final incomingStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((ref) {
+  // Realtime — naya return aate hi reload.
+  ref.watch(tableChangesProvider('branch_stock_returns'));
+  return ref
       .watch(branchStockReturnRepositoryProvider)
-      .getIncomingReturns(ref.watch(currentBranchIdProvider)),
-);
+      .getIncomingReturns(ref.watch(currentBranchIdProvider));
+});
 
 // ── Cart / active return state ─────────────────────────────────────────────
 

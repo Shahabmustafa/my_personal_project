@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../purchase_invoice/data/models/warehouse_stock_model.dart';
@@ -95,10 +96,16 @@ class AssignListNotifier extends StateNotifier<AssignListState> {
 
 final assignListProvider =
     StateNotifierProvider<AssignListNotifier, AssignListState>(
-  (ref) => AssignListNotifier(
-    ref.read(assignStockRepositoryProvider),
-    ref.watch(currentWarehouseIdProvider),
-  ),
+  (ref) {
+    final notifier = AssignListNotifier(
+      ref.read(assignStockRepositoryProvider),
+      ref.watch(currentWarehouseIdProvider),
+    );
+    // Realtime — branch accept/reject kare to list reload.
+    ref.listen(tableChangesProvider('assign_stock_to_branch'),
+        (_, _) => notifier.loadAssignments());
+    return notifier;
+  },
 );
 
 // ── Cart / active assignment state ────────────────────────────────────────

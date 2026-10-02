@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
@@ -30,11 +31,13 @@ final otherBranchesProvider = FutureProvider<List<BranchModel>>(
 
 // ── Sent transfers history (is branch ne doosri branches ko jo bheja) ──────
 
-final sentTransfersProvider = FutureProvider<List<AssignStockModel>>(
-  (ref) => ref
+final sentTransfersProvider = FutureProvider<List<AssignStockModel>>((ref) {
+  // Realtime — lene wali branch accept/reject kare to reload.
+  ref.watch(tableChangesProvider('assign_stock_to_branch'));
+  return ref
       .watch(branchTransferRepositoryProvider)
-      .getSentTransfers(ref.watch(currentBranchIdProvider)),
-);
+      .getSentTransfers(ref.watch(currentBranchIdProvider));
+});
 
 // ── Cart / active transfer state ───────────────────────────────────────────
 

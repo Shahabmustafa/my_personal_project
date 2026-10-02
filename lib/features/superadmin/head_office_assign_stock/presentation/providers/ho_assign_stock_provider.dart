@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart'
@@ -129,20 +130,31 @@ class HoAssignListNotifier extends StateNotifier<HoAssignListState> {
 
 final hoAssignListProvider =
     StateNotifierProvider<HoAssignListNotifier, HoAssignListState>(
-  (ref) => HoAssignListNotifier(
-    ref.read(hoAssignStockRepositoryProvider),
-    ref.watch(currentHeadOfficeIdProvider),
-  ),
+  (ref) {
+    final notifier = HoAssignListNotifier(
+      ref.read(hoAssignStockRepositoryProvider),
+      ref.watch(currentHeadOfficeIdProvider),
+    );
+    // Realtime — branch accept/reject kare to list reload.
+    ref.listen(tableChangesProvider('assign_stock_to_branch'),
+        (_, _) => notifier.loadAssignments());
+    return notifier;
+  },
 );
 
 /// Branch → branch transfers (sab branches) — "Assign Stock by Branch" history.
 final hoBranchAssignListProvider =
     StateNotifierProvider<HoAssignListNotifier, HoAssignListState>(
-  (ref) => HoAssignListNotifier(
-    ref.read(hoAssignStockRepositoryProvider),
-    '',
-    byBranch: true,
-  ),
+  (ref) {
+    final notifier = HoAssignListNotifier(
+      ref.read(hoAssignStockRepositoryProvider),
+      '',
+      byBranch: true,
+    );
+    ref.listen(tableChangesProvider('assign_stock_to_branch'),
+        (_, _) => notifier.loadAssignments());
+    return notifier;
+  },
 );
 
 /// One assignment with its full item breakdown — for the history detail panel.
