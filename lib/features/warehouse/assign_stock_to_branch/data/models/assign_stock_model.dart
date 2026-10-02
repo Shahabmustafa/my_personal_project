@@ -28,9 +28,6 @@ class AssignStockModel {
   /// 'head_office' | 'warehouse' | 'branch' | null
   final String? sourceType;
 
-  /// Jis user ne assign kiya (agar `assigned_by` set ho).
-  final String? assignedByName;
-
   const AssignStockModel({
     required this.id,
     required this.assignmentNumber,
@@ -47,7 +44,6 @@ class AssignStockModel {
     this.items = const [],
     this.sourceName,
     this.sourceType,
-    this.assignedByName,
   });
 
   factory AssignStockModel.fromJson(
@@ -55,13 +51,12 @@ class AssignStockModel {
     List<AssignStockItemModel> items = const [],
     String? sourceName,
     String? sourceType,
-    String? assignedByName,
   }) {
     return AssignStockModel(
       id: json['id'] as String,
       assignmentNumber: json['assignment_number'] as String,
-      warehouseId: json['warehouse_id'] as String?,
-      branchId: json['branch_id'] as String,
+      warehouseId: json['assigned_by'] as String?,
+      branchId: json['assigned_to'] as String,
       branchName:
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
       headOfficeId: json['head_office_id'] as String?,
@@ -77,7 +72,6 @@ class AssignStockModel {
       items: items,
       sourceName: sourceName,
       sourceType: sourceType,
-      assignedByName: assignedByName,
     );
   }
 

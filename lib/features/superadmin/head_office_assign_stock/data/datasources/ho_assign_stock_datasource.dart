@@ -156,7 +156,8 @@ class HoAssignStockDatasource {
         .insert({
           'assignment_number': assignmentNumber,
           'head_office_id': headOfficeId,
-          'branch_id': branchId,
+          'assigned_by': headOfficeId,
+          'assigned_to': branchId,
           'status': 'pending',
           'notes': notes,
         })

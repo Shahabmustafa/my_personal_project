@@ -32,8 +32,8 @@ class AssignStockModel {
     return AssignStockModel(
       id: json['id'] as String,
       assignmentNumber: json['assignment_number'] as String,
-      warehouseId: json['warehouse_id'] as String,
-      branchId: json['branch_id'] as String,
+      warehouseId: json['assigned_by'] as String,
+      branchId: json['assigned_to'] as String,
       branchName:
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
       status: json['status'] as String? ?? 'pending',

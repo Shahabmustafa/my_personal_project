@@ -15,7 +15,7 @@ class BranchAssignDatasource {
         .from('assign_stock_to_branch')
         .select(
             '*, branches(branch_name), head_offices(head_office_name), assign_stock_to_branch_items(*)')
-        .eq('branch_id', branchId)
+        .eq('assigned_to', branchId)
         .order('created_at', ascending: false);
 
     final rows =
@@ -23,21 +23,16 @@ class BranchAssignDatasource {
 
     // "Kis ne assign kiya" resolve karna:
     //  - head_office_id set  → head office (embed se naam mil jata hai)
-    //  - warehouse_id kisi warehouse se match  → warehouse
-    //  - warehouse_id kisi branch se match (branch → branch transfer)  → branch
+    //  - assigned_by kisi warehouse se match  → warehouse
+    //  - assigned_by kisi branch se match (branch → branch transfer)  → branch
     final warehouseIds = <String>{
       for (final r in rows)
-        if (r['head_office_id'] == null && r['warehouse_id'] != null)
-          r['warehouse_id'] as String
-    };
-    final assignedByIds = <String>{
-      for (final r in rows)
-        if (r['assigned_by'] != null) r['assigned_by'] as String
+        if (r['head_office_id'] == null && r['assigned_by'] != null)
+          r['assigned_by'] as String
     };
 
     final warehouseNames = <String, String>{};
     final branchNames = <String, String>{};
-    final userNames = <String, String>{};
 
     if (warehouseIds.isNotEmpty) {
       final ids = warehouseIds.toList();
@@ -61,16 +56,6 @@ class BranchAssignDatasource {
       }
     }
 
-    if (assignedByIds.isNotEmpty) {
-      final uRes = await _client
-          .from('users')
-          .select('id, username')
-          .inFilter('id', assignedByIds.toList());
-      for (final u in (uRes as List)) {
-        userNames[u['id'] as String] = u['username'] as String? ?? '';
-      }
-    }
-
     return rows.map((json) {
       final itemsJson =
           (json['assign_stock_to_branch_items'] as List?) ?? const [];
@@ -84,8 +69,8 @@ class BranchAssignDatasource {
         sourceType = 'head_office';
         sourceName = (json['head_offices'] as Map<String, dynamic>?)?[
             'head_office_name'] as String? ?? 'Head Office';
-      } else if (json['warehouse_id'] != null) {
-        final wid = json['warehouse_id'] as String;
+      } else if (json['assigned_by'] != null) {
+        final wid = json['assigned_by'] as String;
         if (warehouseNames.containsKey(wid)) {
           sourceType = 'warehouse';
           sourceName = warehouseNames[wid];
@@ -100,9 +85,6 @@ class BranchAssignDatasource {
         items: items,
         sourceName: sourceName,
         sourceType: sourceType,
-        assignedByName: json['assigned_by'] != null
-            ? userNames[json['assigned_by'] as String]
-            : null,
       );
     }).toList();
   }
@@ -122,8 +104,8 @@ class BranchAssignDatasource {
       sourceType = 'head_office';
       sourceName = (headerRes['head_offices'] as Map<String, dynamic>?)?[
           'head_office_name'] as String? ?? 'Head Office';
-    } else if (headerRes['warehouse_id'] != null) {
-      final wid = headerRes['warehouse_id'] as String;
+    } else if (headerRes['assigned_by'] != null) {
+      final wid = headerRes['assigned_by'] as String;
       final w = await _client
           .from('warehouses')
           .select('warehouse_name')

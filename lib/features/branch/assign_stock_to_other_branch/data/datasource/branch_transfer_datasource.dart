@@ -4,9 +4,8 @@ import 'branch_transfer_cart_item.dart';
 
 /// Branch-to-branch stock transfer — reuses the same `assign_stock_to_branch`
 /// / `assign_stock_to_branch_items` tables the warehouse->branch feature
-/// uses. The sending branch's id goes into the `warehouse_id` column (no FK
-/// constraint on it, so this is safe) and the receiving branch's id goes
-/// into `branch_id` — exactly like a warehouse assignment. The destination
+/// uses. The sending branch's id goes into `assigned_by` and the receiving
+/// branch's id into `assigned_to` — exactly like a warehouse assignment. The destination
 /// branch accepts/rejects it from its existing "Assign Stock My Branch"
 /// screen without any changes there.
 class BranchTransferDatasource {
@@ -74,8 +73,8 @@ class BranchTransferDatasource {
         .from('assign_stock_to_branch')
         .insert({
           'assignment_number': assignmentNumber,
-          'warehouse_id': fromBranchId,
-          'branch_id': toBranchId,
+          'assigned_by': fromBranchId,
+          'assigned_to': toBranchId,
           'status': 'pending',
           'notes': notes,
         })
@@ -120,7 +119,7 @@ class BranchTransferDatasource {
     final res = await _client
         .from('assign_stock_to_branch')
         .select('*, branches(branch_name), assign_stock_to_branch_items(*)')
-        .eq('warehouse_id', fromBranchId)
+        .eq('assigned_by', fromBranchId)
         .order('created_at', ascending: false);
 
     return (res as List).map((e) {

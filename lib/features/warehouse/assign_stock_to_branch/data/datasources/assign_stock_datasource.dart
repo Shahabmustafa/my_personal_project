@@ -158,8 +158,8 @@ class AssignStockDatasource {
         .from('assign_stock_to_branch')
         .insert({
           'assignment_number': assignmentNumber,
-          'warehouse_id':      warehouseId,
-          'branch_id':         branchId,
+          'assigned_by':       warehouseId,
+          'assigned_to':       branchId,
           'status':            'pending',
           'notes':             notes,
         })
@@ -203,7 +203,7 @@ class AssignStockDatasource {
     final res = await _client
         .from('assign_stock_to_branch')
         .select('*, branches(branch_name)')
-        .eq('warehouse_id', warehouseId)
+        .eq('assigned_by', warehouseId)
         .order('created_at', ascending: false);
 
     return (res as List)

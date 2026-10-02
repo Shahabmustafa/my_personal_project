@@ -603,8 +603,6 @@ class _AssignDetailBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DetailKV('Assigned By', brief.sourceLabel),
-        if (brief.assignedByName != null && brief.assignedByName!.isNotEmpty)
-          DetailKV('Assigned By User', brief.assignedByName!),
         DetailKV('Assigned On', _fmtDate(brief.assignedAt)),
         DetailKV(
           'Status',
