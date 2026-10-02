@@ -10,11 +10,14 @@ class OverviewStats {
   /// Aaj ka profit (RPC `superadmin_dashboard_stats` se, server-side).
   final double todayProfit;
 
-  /// Aaj ki sale har branch ke hisaab se.
-  final List<BranchSaleToday> todaySaleByBranch;
+  /// Aaj sab branches ki sale / return / expense ka total.
+  final double todaySale;
+  final double todayReturn;
+  final double todayExpense;
 
-  /// Pichle 7 din (Asia/Karachi) ki daily sale — line graph ke liye.
-  final List<DaySale> weeklySale;
+  /// Aaj ki sale har branch ke hisaab se — sab active branches, jin ki sale
+  /// nahi hui wo 0 ke sath (bar graph ke liye).
+  final List<BranchSaleToday> todaySaleByBranch;
 
   /// Sab se zyada bikne wala article.
   final TopArticle? topArticle;
@@ -25,16 +28,12 @@ class OverviewStats {
     this.totalWarehouses = 0,
     this.branchStockPairs = 0,
     this.todayProfit = 0,
+    this.todaySale = 0,
+    this.todayReturn = 0,
+    this.todayExpense = 0,
     this.todaySaleByBranch = const [],
-    this.weeklySale = const [],
     this.topArticle,
   });
-}
-
-class DaySale {
-  final DateTime day;
-  final double amount;
-  const DaySale({required this.day, required this.amount});
 }
 
 class TopArticle {
@@ -98,18 +97,44 @@ class OverviewDatasource {
     // Counts, sums, profit, weekly series, top article — sab ek RPC call
     // mein server-side aggregate hote hain (indexes ke sath), poori tables
     // client tak fetch nahi hoti.
-    final results = await Future.wait([
+    final results = await Future.wait<dynamic>([
       _client.rpc('superadmin_dashboard_stats'),
       _client
           .from('sale_invoices')
           .select('total_amount, branch_id, branches(branch_name)')
           .gte('created_at', todayUtc),
+      _client
+          .from('branches')
+          .select('id, branch_name')
+          .eq('status', 'active')
+          .order('branch_name'),
+      _client
+          .from('sale_returns')
+          .select('total_amount')
+          .gte('created_at', todayUtc),
+      _client
+          .from('expense_entries')
+          .select('amount')
+          .gte('created_at', todayUtc),
     ]);
 
     final extras = results[0] as Map<String, dynamic>? ?? const {};
     final todayInvoices = results[1] as List<dynamic>;
+    final branches = results[2] as List<dynamic>;
+    final todayReturn = (results[3] as List<dynamic>)
+        .fold<double>(0, (s, r) => s + _toDouble((r as Map)['total_amount']));
+    final todayExpense = (results[4] as List<dynamic>)
+        .fold<double>(0, (s, r) => s + _toDouble((r as Map)['amount']));
 
-    final perBranch = <String, BranchSaleToday>{};
+    final perBranch = <String, BranchSaleToday>{
+      for (final b in branches)
+        (b as Map)['id'] as String: BranchSaleToday(
+          branchId: b['id'] as String,
+          branchName: b['branch_name'] as String? ?? 'Branch',
+          amount: 0,
+          invoiceCount: 0,
+        ),
+    };
     for (final r in todayInvoices) {
       final m = r as Map<String, dynamic>;
       final bid = m['branch_id'] as String? ?? '';
@@ -127,13 +152,6 @@ class OverviewDatasource {
     final todayByBranch = perBranch.values.toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final weekly = <DaySale>[
-      for (final r in (extras['weekly_sale'] as List? ?? const []))
-        DaySale(
-          day: DateTime.tryParse('${(r as Map)['day']}') ?? DateTime.now(),
-          amount: _toDouble(r['amount']),
-        ),
-    ];
     final topRaw = extras['top_article'] as Map<String, dynamic>?;
     final topArticle = topRaw == null
         ? null
@@ -150,8 +168,10 @@ class OverviewDatasource {
       totalWarehouses: _toInt(extras['total_warehouses']),
       branchStockPairs: _toInt(extras['branch_stock_pairs']),
       todayProfit: _toDouble(extras['today_profit']),
+      todaySale: todayByBranch.fold<double>(0, (s, b) => s + b.amount),
+      todayReturn: todayReturn,
+      todayExpense: todayExpense,
       todaySaleByBranch: todayByBranch,
-      weeklySale: weekly,
       topArticle: topArticle,
     );
   }

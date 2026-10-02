@@ -110,10 +110,22 @@ class _Content extends StatelessWidget {
   Widget build(BuildContext context) {
     final cards = <_StatCardData>[
       _StatCardData(
-        'All Branch Article',
-        '${stats.branchStockPairs} pairs',
-        AppIcons.storefrontOutlined,
-        const Color(0xFF7B1FA2),
+        "Today's Sale",
+        _pkr(stats.todaySale),
+        AppIcons.paymentsOutlined,
+        const Color(0xFF2E7D32),
+      ),
+      _StatCardData(
+        "Today's Return",
+        _pkr(stats.todayReturn),
+        AppIcons.assignmentReturnOutlined,
+        const Color(0xFFC62828),
+      ),
+      _StatCardData(
+        "Today's Expense",
+        _pkr(stats.todayExpense),
+        AppIcons.accountBalanceWalletOutlined,
+        const Color(0xFFE56A00),
       ),
       _StatCardData(
         "Today's Profit",
@@ -122,10 +134,10 @@ class _Content extends StatelessWidget {
         const Color(0xFF00796B),
       ),
       _StatCardData(
-        'Total Articles',
-        '${stats.totalArticles}',
-        AppIcons.inventory2Outlined,
-        const Color(0xFF3E63DD),
+        'Total Branches',
+        '${stats.totalBranches}',
+        AppIcons.apartmentOutlined,
+        const Color(0xFF00838F),
       ),
       _StatCardData(
         'Total Warehouses',
@@ -134,10 +146,16 @@ class _Content extends StatelessWidget {
         const Color(0xFF6A1B9A),
       ),
       _StatCardData(
-        'Total Branches',
-        '${stats.totalBranches}',
-        AppIcons.apartmentOutlined,
-        const Color(0xFF00838F),
+        'Total Articles',
+        '${stats.totalArticles}',
+        AppIcons.inventory2Outlined,
+        const Color(0xFF3E63DD),
+      ),
+      _StatCardData(
+        'All Branch Article',
+        '${stats.branchStockPairs} pairs',
+        AppIcons.storefrontOutlined,
+        const Color(0xFF7B1FA2),
       ),
     ];
 
@@ -170,7 +188,7 @@ class _Content extends StatelessWidget {
           },
         ),
         const SizedBox(height: 28),
-        _WeeklySaleChart(rows: stats.weeklySale),
+        _TodayBranchSaleChart(rows: stats.todaySaleByBranch),
         const SizedBox(height: 20),
         _TopArticleCard(article: stats.topArticle),
         const SizedBox(height: 20),
@@ -180,13 +198,12 @@ class _Content extends StatelessWidget {
   }
 }
 
-/// Pichle 7 din ki daily sale — fl_chart package se line graph.
-class _WeeklySaleChart extends StatelessWidget {
-  final List<DaySale> rows;
-  const _WeeklySaleChart({required this.rows});
+/// Aaj ki sale har branch ki — fl_chart package se bar graph.
+class _TodayBranchSaleChart extends StatelessWidget {
+  final List<BranchSaleToday> rows;
+  const _TodayBranchSaleChart({required this.rows});
 
   static const _accent = Color(0xFF3E63DD);
-  static const _weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   static String _pkrShort(double v) {
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
@@ -214,7 +231,7 @@ class _WeeklySaleChart extends StatelessWidget {
             children: [
               const Expanded(
                 child: Text(
-                  'Weekly Sale — Last 7 Days',
+                  "Today's Sale — All Branches",
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                 ),
               ),
@@ -234,18 +251,19 @@ class _WeeklySaleChart extends StatelessWidget {
               height: 160,
               child: Center(
                 child: Text(
-                  'No data',
+                  'No branches',
                   style: TextStyle(color: Color(0xFF8A8FA3)),
                 ),
               ),
             )
           else
             SizedBox(
-              height: 190,
-              child: LineChart(
-                LineChartData(
+              height: 220,
+              child: BarChart(
+                BarChartData(
                   minY: 0,
                   maxY: maxY,
+                  alignment: BarChartAlignment.spaceAround,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
@@ -261,13 +279,24 @@ class _WeeklySaleChart extends StatelessWidget {
                     rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
                     ),
-                    leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 44,
+                        interval: maxY / 3,
+                        getTitlesWidget: (value, meta) => Text(
+                          _pkrShort(value),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF8A8FA3),
+                          ),
+                        ),
+                      ),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 24,
+                        reservedSize: 30,
                         getTitlesWidget: (value, meta) {
                           final i = value.round();
                           if (i < 0 || i >= rows.length) {
@@ -276,7 +305,9 @@ class _WeeklySaleChart extends StatelessWidget {
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
                             child: Text(
-                              _weekday[rows[i].day.weekday - 1],
+                              rows[i].branchName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Color(0xFF8A8FA3),
@@ -287,51 +318,37 @@ class _WeeklySaleChart extends StatelessWidget {
                       ),
                     ),
                   ),
-                  lineTouchData: LineTouchData(
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipItems: (spots) => spots.map((s) {
-                        final i = s.x.round();
-                        final day = i >= 0 && i < rows.length
-                            ? _weekday[rows[i].day.weekday - 1]
-                            : '';
-                        return LineTooltipItem(
-                          '$day\nPKR ${_pkrShort(s.y)}',
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final r = rows[group.x];
+                        return BarTooltipItem(
+                          '${r.branchName}\nPKR ${r.amount.toStringAsFixed(0)}'
+                          ' · ${r.invoiceCount} inv',
                           const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
                             fontSize: 12,
                           ),
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: [
-                        for (var i = 0; i < rows.length; i++)
-                          FlSpot(i.toDouble(), rows[i].amount),
-                      ],
-                      isCurved: true,
-                      color: _accent,
-                      barWidth: 2.5,
-                      dotData: FlDotData(
-                        getDotPainter: (spot, percent, bar, index) =>
-                            FlDotCirclePainter(
-                              radius: 3,
-                              color: _accent,
-                              strokeWidth: 1.5,
-                              strokeColor: Colors.white,
+                  barGroups: [
+                    for (var i = 0; i < rows.length; i++)
+                      BarChartGroupData(
+                        x: i,
+                        barRods: [
+                          BarChartRodData(
+                            toY: rows[i].amount,
+                            color: _accent,
+                            width: 22,
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(6),
                             ),
+                          ),
+                        ],
                       ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color(0x333E63DD), Color(0x003E63DD)],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
