@@ -5,14 +5,12 @@ class OverviewStats {
   final int totalArticles;
   final int totalBranches;
   final int totalWarehouses;
-  final int branchStockPairs;
 
   /// Aaj ka profit (RPC `superadmin_dashboard_stats` se, server-side).
   final double todayProfit;
 
-  /// Aaj sab branches ki sale / return / expense ka total.
+  /// Aaj sab branches ki sale / expense ka total.
   final double todaySale;
-  final double todayReturn;
   final double todayExpense;
 
   /// Aaj ki sale har branch ke hisaab se — sab active branches, jin ki sale
@@ -26,10 +24,8 @@ class OverviewStats {
     this.totalArticles = 0,
     this.totalBranches = 0,
     this.totalWarehouses = 0,
-    this.branchStockPairs = 0,
     this.todayProfit = 0,
     this.todaySale = 0,
-    this.todayReturn = 0,
     this.todayExpense = 0,
     this.todaySaleByBranch = const [],
     this.topArticle,
@@ -109,10 +105,6 @@ class OverviewDatasource {
           .eq('status', 'active')
           .order('branch_name'),
       _client
-          .from('sale_returns')
-          .select('total_amount')
-          .gte('created_at', todayUtc),
-      _client
           .from('expense_entries')
           .select('amount')
           .gte('created_at', todayUtc),
@@ -121,9 +113,7 @@ class OverviewDatasource {
     final extras = results[0] as Map<String, dynamic>? ?? const {};
     final todayInvoices = results[1] as List<dynamic>;
     final branches = results[2] as List<dynamic>;
-    final todayReturn = (results[3] as List<dynamic>)
-        .fold<double>(0, (s, r) => s + _toDouble((r as Map)['total_amount']));
-    final todayExpense = (results[4] as List<dynamic>)
+    final todayExpense = (results[3] as List<dynamic>)
         .fold<double>(0, (s, r) => s + _toDouble((r as Map)['amount']));
 
     final perBranch = <String, BranchSaleToday>{
@@ -166,10 +156,8 @@ class OverviewDatasource {
       totalArticles: _toInt(extras['total_articles']),
       totalBranches: _toInt(extras['total_branches']),
       totalWarehouses: _toInt(extras['total_warehouses']),
-      branchStockPairs: _toInt(extras['branch_stock_pairs']),
       todayProfit: _toDouble(extras['today_profit']),
       todaySale: todayByBranch.fold<double>(0, (s, b) => s + b.amount),
-      todayReturn: todayReturn,
       todayExpense: todayExpense,
       todaySaleByBranch: todayByBranch,
       topArticle: topArticle,

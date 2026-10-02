@@ -116,12 +116,6 @@ class _Content extends StatelessWidget {
         const Color(0xFF2E7D32),
       ),
       _StatCardData(
-        "Today's Return",
-        _pkr(stats.todayReturn),
-        AppIcons.assignmentReturnOutlined,
-        const Color(0xFFC62828),
-      ),
-      _StatCardData(
         "Today's Expense",
         _pkr(stats.todayExpense),
         AppIcons.accountBalanceWalletOutlined,
@@ -150,12 +144,6 @@ class _Content extends StatelessWidget {
         '${stats.totalArticles}',
         AppIcons.inventory2Outlined,
         const Color(0xFF3E63DD),
-      ),
-      _StatCardData(
-        'All Branch Article',
-        '${stats.branchStockPairs} pairs',
-        AppIcons.storefrontOutlined,
-        const Color(0xFF7B1FA2),
       ),
     ];
 
