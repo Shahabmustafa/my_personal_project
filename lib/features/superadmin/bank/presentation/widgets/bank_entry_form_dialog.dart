@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../data/models/bank_head_model.dart';
 import '../providers/bank_providers.dart';
 
@@ -29,22 +30,12 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
   String? _selectedBankId;
   String? _selectedBranchId;
 
-  // Tumhari DB branches — dynamic chahiye to branchProvider use karo
-  static const List<Map<String, String>> _branches = [
-    {
-      'id':   '53743001-b131-4de8-8d1f-8613a88b1729',
-      'name': 'Safi Shoes Branch 2',
-    },
-    {
-      'id':   '6d597ef9-91ec-4003-a87b-7a0f63fb174d',
-      'name': 'Safi Shoe',
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
-    _selectedBranchId = _branches.first['id'];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(branchProvider.notifier).loadAllBranches();
+    });
   }
 
   @override
@@ -169,13 +160,21 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
   }
 
   Widget _buildBranchDropdown() {
+    // Sirf active branches — database se, sab branches.
+    final branches = ref
+        .watch(branchProvider)
+        .branches
+        .where((b) => b.isActive)
+        .toList();
     return DropdownButtonFormField<String>(
-      value: _selectedBranchId,
+      value: branches.any((b) => b.id == _selectedBranchId)
+          ? _selectedBranchId
+          : null,
       isExpanded: true,
       decoration: _decor('Branch *', AppIcons.storeOutlined),
-      items: _branches
+      items: branches
           .map((b) =>
-              DropdownMenuItem(value: b['id'], child: Text(b['name']!)))
+              DropdownMenuItem(value: b.id, child: Text(b.branchName)))
           .toList(),
       onChanged: (v) => setState(() => _selectedBranchId = v),
       validator: (v) => v == null ? 'Select a branch' : null,

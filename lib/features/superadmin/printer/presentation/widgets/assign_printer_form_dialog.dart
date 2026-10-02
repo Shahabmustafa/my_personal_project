@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/widget/app_dropdown.dart';
+import '../../../branch/data/model/branch_model.dart';
+import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../data/models/printer_head_model.dart';
 import '../providers/printer_providers.dart';
 
@@ -26,27 +28,21 @@ class _AssignPrinterFormDialogState
   String? _printerError;
   String? _branchError;
 
-  // Replace with branchProvider if dynamic branches needed
-  static const List<Map<String, String>> _branches = [
-    {
-      'id':   '53743001-b131-4de8-8d1f-8613a88b1729',
-      'name': 'Safi Shoes Branch 2',
-    },
-    {
-      'id':   '6d597ef9-91ec-4003-a87b-7a0f63fb174d',
-      'name': 'Safi Shoe',
-    },
-  ];
-
   @override
   void initState() {
     super.initState();
-    _selectedBranchId = _branches.first['id'];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(branchProvider.notifier).loadAllBranches();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final printersAsync = ref.watch(printerHeadsProvider);
+    final branchState = ref.watch(branchProvider);
+    // Sirf active branches — database se, sab branches.
+    final branches =
+        branchState.branches.where((b) => b.isActive).toList();
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -77,7 +73,7 @@ class _AssignPrinterFormDialogState
                 const SizedBox(height: 12),
 
                 // Branch dropdown
-                _buildBranchDropdown(),
+                _buildBranchDropdown(branches),
               ],
             );
           },
@@ -139,23 +135,23 @@ class _AssignPrinterFormDialogState
     );
   }
 
-  Widget _buildBranchDropdown() {
-    final selected = _branches
-        .where((b) => b['id'] == _selectedBranchId)
-        .isNotEmpty
-        ? _branches.firstWhere((b) => b['id'] == _selectedBranchId)
+  Widget _buildBranchDropdown(List<BranchModel> branches) {
+    final selected = branches
+            .where((b) => b.id == _selectedBranchId)
+            .isNotEmpty
+        ? branches.firstWhere((b) => b.id == _selectedBranchId)
         : null;
 
-    return AppSearchDropdown<Map<String, String>>(
+    return AppSearchDropdown<BranchModel>(
       label: 'Branch',
       isRequired: true,
-      items: _branches,
+      items: branches,
       selectedItem: selected,
-      itemLabel: (b) => b['name']!,
+      itemLabel: (b) => b.branchName,
       prefixIcon: const TextFieldIcon(AppIcons.storeOutlined, size: 24),
       errorText: _branchError,
       onChanged: (b) => setState(() {
-        _selectedBranchId = b?['id'];
+        _selectedBranchId = b?.id;
         _branchError = null;
       }),
     );
