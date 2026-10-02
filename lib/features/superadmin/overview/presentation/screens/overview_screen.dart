@@ -203,7 +203,10 @@ class _TodayBranchSaleChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = rows.fold<double>(0, (s, r) => s + r.amount);
     final maxVal = rows.fold<double>(0, (a, r) => r.amount > a ? r.amount : a);
+    // Return zyada ho to net sale minus mein ja sakti hai.
+    final minVal = rows.fold<double>(0, (a, r) => r.amount < a ? r.amount : a);
     final maxY = maxVal <= 0 ? 1.0 : maxVal * 1.2;
+    final minY = minVal < 0 ? minVal * 1.2 : 0.0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
@@ -249,13 +252,13 @@ class _TodayBranchSaleChart extends StatelessWidget {
               height: 220,
               child: BarChart(
                 BarChartData(
-                  minY: 0,
+                  minY: minY,
                   maxY: maxY,
                   alignment: BarChartAlignment.spaceAround,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval: maxY / 3,
+                    horizontalInterval: (maxY - minY) / 3,
                     getDrawingHorizontalLine: (_) =>
                         const FlLine(color: Color(0xFFEDEFF5), strokeWidth: 1),
                   ),
@@ -271,7 +274,7 @@ class _TodayBranchSaleChart extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 44,
-                        interval: maxY / 3,
+                        interval: (maxY - minY) / 3,
                         getTitlesWidget: (value, meta) => Text(
                           _pkrShort(value),
                           style: const TextStyle(
@@ -329,7 +332,9 @@ class _TodayBranchSaleChart extends StatelessWidget {
                         barRods: [
                           BarChartRodData(
                             toY: rows[i].amount,
-                            color: _accent,
+                            color: rows[i].amount < 0
+                                ? const Color(0xFFC62828)
+                                : _accent,
                             width: 22,
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(6),

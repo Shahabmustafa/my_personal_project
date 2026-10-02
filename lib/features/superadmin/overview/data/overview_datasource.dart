@@ -108,6 +108,14 @@ class OverviewDatasource {
           .from('expense_entries')
           .select('amount')
           .gte('created_at', todayUtc),
+      _client
+          .from('sale_returns')
+          .select('total_amount, branch_id')
+          .gte('created_at', todayUtc),
+      _client
+          .from('sale_exchanges')
+          .select('difference_amount, branch_id')
+          .gte('created_at', todayUtc),
     ]);
 
     final extras = results[0] as Map<String, dynamic>? ?? const {};
@@ -139,6 +147,29 @@ class OverviewDatasource {
         invoiceCount: (existing?.invoiceCount ?? 0) + 1,
       );
     }
+
+    // Net sale = invoices − returns + exchange ka farq (customer ne jo extra
+    // diya / wapas liya). Card aur bar graph dono yahi net amount dikhate hain.
+    void adjust(String? bid, double delta) {
+      final existing = perBranch[bid ?? ''];
+      if (existing == null) return;
+      perBranch[bid!] = BranchSaleToday(
+        branchId: existing.branchId,
+        branchName: existing.branchName,
+        amount: existing.amount + delta,
+        invoiceCount: existing.invoiceCount,
+      );
+    }
+
+    for (final r in results[4] as List<dynamic>) {
+      final m = r as Map<String, dynamic>;
+      adjust(m['branch_id'] as String?, -_toDouble(m['total_amount']));
+    }
+    for (final r in results[5] as List<dynamic>) {
+      final m = r as Map<String, dynamic>;
+      adjust(m['branch_id'] as String?, _toDouble(m['difference_amount']));
+    }
+
     final todayByBranch = perBranch.values.toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
