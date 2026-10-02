@@ -4,15 +4,10 @@ class AssignStockModel {
   final String id;
   final String assignmentNumber;
 
-  /// Head office se aayi assignment mein null hota hai (source warehouse nahi,
-  /// head office hai). Warehouse se aayi assignment mein set hota hai.
+  /// `assigned_by` — bhejne wale (head office / warehouse / branch) ki id.
   final String? warehouseId;
   final String branchId;
   final String? branchName;
-
-  /// Head office se aayi assignment mein set hota hai.
-  final String? headOfficeId;
-  final String? headOfficeName;
 
   final String status; // pending | accepted | rejected
   final String? notes;
@@ -34,8 +29,6 @@ class AssignStockModel {
     this.warehouseId,
     required this.branchId,
     this.branchName,
-    this.headOfficeId,
-    this.headOfficeName,
     required this.status,
     this.notes,
     required this.assignedAt,
@@ -59,9 +52,6 @@ class AssignStockModel {
       branchId: json['assigned_to'] as String,
       branchName:
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
-      headOfficeId: json['head_office_id'] as String?,
-      headOfficeName: (json['head_offices'] as Map<String, dynamic>?)?['head_office_name']
-          as String?,
       status: json['status'] as String? ?? 'pending',
       notes: json['notes'] as String?,
       assignedAt: DateTime.parse(json['assigned_at'] as String),
@@ -78,8 +68,6 @@ class AssignStockModel {
   /// UI ke liye ready label — "Head Office", warehouse ya branch ka naam.
   String get sourceLabel {
     if (sourceName != null && sourceName!.trim().isNotEmpty) return sourceName!;
-    if (headOfficeName != null) return headOfficeName!;
-    if (headOfficeId != null) return 'Head Office';
     return '—';
   }
 }

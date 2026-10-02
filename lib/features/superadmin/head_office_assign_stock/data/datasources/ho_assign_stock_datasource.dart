@@ -4,7 +4,7 @@ import '../models/ho_assign_stock_model.dart';
 
 /// Head office → branch stock assignment datasource.
 /// Source stock: public.stock_inventory  (warehouse_id ke baghair)
-/// Records: public.assign_stock_to_branch  (head_office_id set hota hai)
+/// Records: public.assign_stock_to_branch  (assigned_by = head office id)
 class HoAssignStockDatasource {
   final SupabaseClient _client;
 
@@ -155,7 +155,6 @@ class HoAssignStockDatasource {
         .from('assign_stock_to_branch')
         .insert({
           'assignment_number': assignmentNumber,
-          'head_office_id': headOfficeId,
           'assigned_by': headOfficeId,
           'assigned_to': branchId,
           'status': 'pending',
@@ -200,7 +199,7 @@ class HoAssignStockDatasource {
         .from('assign_stock_to_branch')
         .select(
             '*, branches(branch_name), assign_stock_to_branch_items(quantity, purchase_price)')
-        .eq('head_office_id', headOfficeId)
+        .eq('assigned_by', headOfficeId)
         .order('created_at', ascending: false);
 
     return (res as List)

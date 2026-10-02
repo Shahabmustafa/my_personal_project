@@ -13,48 +13,15 @@ class BranchAssignDatasource {
       String branchId) async {
     final res = await _client
         .from('assign_stock_to_branch')
-        .select(
-            '*, branches(branch_name), head_offices(head_office_name), assign_stock_to_branch_items(*)')
+        .select('*, branches(branch_name), assign_stock_to_branch_items(*)')
         .eq('assigned_to', branchId)
         .order('created_at', ascending: false);
 
     final rows =
         (res as List).map((e) => e as Map<String, dynamic>).toList();
-
-    // "Kis ne assign kiya" resolve karna:
-    //  - head_office_id set  → head office (embed se naam mil jata hai)
-    //  - assigned_by kisi warehouse se match  → warehouse
-    //  - assigned_by kisi branch se match (branch → branch transfer)  → branch
-    final warehouseIds = <String>{
-      for (final r in rows)
-        if (r['head_office_id'] == null && r['assigned_by'] != null)
-          r['assigned_by'] as String
-    };
-
-    final warehouseNames = <String, String>{};
-    final branchNames = <String, String>{};
-
-    if (warehouseIds.isNotEmpty) {
-      final ids = warehouseIds.toList();
-      final wRes = await _client
-          .from('warehouses')
-          .select('id, warehouse_name')
-          .inFilter('id', ids);
-      for (final w in (wRes as List)) {
-        warehouseNames[w['id'] as String] = w['warehouse_name'] as String? ?? '';
-      }
-      final missing =
-          ids.where((id) => !warehouseNames.containsKey(id)).toList();
-      if (missing.isNotEmpty) {
-        final bRes = await _client
-            .from('branches')
-            .select('id, branch_name')
-            .inFilter('id', missing);
-        for (final b in (bRes as List)) {
-          branchNames[b['id'] as String] = b['branch_name'] as String? ?? '';
-        }
-      }
-    }
+    final sources = await _resolveSources({
+      for (final r in rows) r['assigned_by'] as String,
+    });
 
     return rows.map((json) {
       final itemsJson =
@@ -62,70 +29,62 @@ class BranchAssignDatasource {
       final items = itemsJson
           .map((i) => AssignStockItemModel.fromJson(i as Map<String, dynamic>))
           .toList();
-
-      String? sourceName;
-      String? sourceType;
-      if (json['head_office_id'] != null) {
-        sourceType = 'head_office';
-        sourceName = (json['head_offices'] as Map<String, dynamic>?)?[
-            'head_office_name'] as String? ?? 'Head Office';
-      } else if (json['assigned_by'] != null) {
-        final wid = json['assigned_by'] as String;
-        if (warehouseNames.containsKey(wid)) {
-          sourceType = 'warehouse';
-          sourceName = warehouseNames[wid];
-        } else if (branchNames.containsKey(wid)) {
-          sourceType = 'branch';
-          sourceName = branchNames[wid];
-        }
-      }
+      final source = sources[json['assigned_by']];
 
       return AssignStockModel.fromJson(
         json,
         items: items,
-        sourceName: sourceName,
-        sourceType: sourceType,
+        sourceType: source?.type,
+        sourceName: source?.name,
       );
     }).toList();
+  }
+
+  // ── "Kis ne assign kiya" resolve karna ────────────────────────────────────
+  // assigned_by par FK nahi (id head office / warehouse / branch kisi ki bhi
+  // ho sakti hai), is liye teeno tables mein dhoondte hain.
+  Future<Map<String, ({String type, String name})>> _resolveSources(
+      Set<String> ids) async {
+    final out = <String, ({String type, String name})>{};
+    if (ids.isEmpty) return out;
+
+    Future<void> lookup(
+        String table, String nameCol, String type, String fallback) async {
+      final missing = ids.where((id) => !out.containsKey(id)).toList();
+      if (missing.isEmpty) return;
+      final res = await _client
+          .from(table)
+          .select('id, $nameCol')
+          .inFilter('id', missing);
+      for (final r in res as List) {
+        final name = r[nameCol] as String?;
+        out[r['id'] as String] = (
+          type: type,
+          name: (name == null || name.trim().isEmpty) ? fallback : name,
+        );
+      }
+    }
+
+    await lookup('head_offices', 'head_office_name', 'head_office',
+        'Head Office');
+    await lookup('warehouses', 'warehouse_name', 'warehouse', 'Warehouse');
+    await lookup('branches', 'branch_name', 'branch', 'Branch');
+    return out;
   }
 
   // ── Fetch assignment detail with items ────────────────────────────────────
   Future<AssignStockModel> fetchAssignmentDetail(String assignmentId) async {
     final headerRes = await _client
         .from('assign_stock_to_branch')
-        .select('*, branches(branch_name), head_offices(head_office_name)')
+        .select('*, branches(branch_name)')
         .eq('id', assignmentId)
         .single();
 
-    // Source resolve (same logic as list)
-    String? sourceName;
-    String? sourceType;
-    if (headerRes['head_office_id'] != null) {
-      sourceType = 'head_office';
-      sourceName = (headerRes['head_offices'] as Map<String, dynamic>?)?[
-          'head_office_name'] as String? ?? 'Head Office';
-    } else if (headerRes['assigned_by'] != null) {
-      final wid = headerRes['assigned_by'] as String;
-      final w = await _client
-          .from('warehouses')
-          .select('warehouse_name')
-          .eq('id', wid)
-          .maybeSingle();
-      if (w != null) {
-        sourceType = 'warehouse';
-        sourceName = w['warehouse_name'] as String?;
-      } else {
-        final b = await _client
-            .from('branches')
-            .select('branch_name')
-            .eq('id', wid)
-            .maybeSingle();
-        if (b != null) {
-          sourceType = 'branch';
-          sourceName = b['branch_name'] as String?;
-        }
-      }
-    }
+    final sources =
+        await _resolveSources({headerRes['assigned_by'] as String});
+    final source = sources[headerRes['assigned_by']];
+    final sourceName = source?.name;
+    final sourceType = source?.type;
 
     final itemsRes = await _client
         .from('assign_stock_to_branch_items')

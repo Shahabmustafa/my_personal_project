@@ -176,7 +176,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // Companies head-office se juri hain (system mein ek hi head office) —
     // koi warehouse choose karne ki zaroorat nahi.
     CompaniesScreen(),
-    // Head office se branch ko stock assign — head_office_id ke sath.
+    // Head office se branch ko stock assign — assigned_by = head office id.
     HoAssignStockScreen(),
     // Assignment history — alag page (sidebar "Assign Stock" group ke andar).
     HoAssignStockListScreen(),

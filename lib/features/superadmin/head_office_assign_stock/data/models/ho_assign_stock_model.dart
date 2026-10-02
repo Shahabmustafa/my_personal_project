@@ -63,7 +63,7 @@ class HoAssignStockModel {
     return HoAssignStockModel(
       id: json['id'] as String,
       assignmentNumber: json['assignment_number'] as String,
-      headOfficeId: json['head_office_id'] as String?,
+      headOfficeId: json['assigned_by'] as String?,
       branchId: json['assigned_to'] as String,
       branchName:
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,

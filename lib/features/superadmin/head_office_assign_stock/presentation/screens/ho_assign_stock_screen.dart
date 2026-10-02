@@ -14,7 +14,7 @@ import 'package:safishoe_app/core/widget/printer_picker_field.dart';
 /// SuperAdmin — Head Office se Branch ko stock assign karna (form only).
 /// History ab alag sidebar item hai ([HoAssignStockListScreen]).
 /// Warehouse ke "Assign Stock to Branch" jaisa hi, bas source head office
-/// ka stock_inventory hai aur record par head_office_id save hota hai.
+/// ka stock_inventory hai aur record par assigned_by = head office id save hota hai.
 class HoAssignStockScreen extends StatelessWidget {
   const HoAssignStockScreen({super.key});
 
