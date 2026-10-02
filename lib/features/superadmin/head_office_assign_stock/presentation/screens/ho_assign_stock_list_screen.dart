@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
@@ -13,11 +14,16 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
 import 'package:safishoe_app/core/widget/printer_picker_field.dart';
-/// Head office → branch stock assignment history. Lays the data out the same
-/// way as the sale reports: summary cards, a scrollable [ReportTableShell]
-/// table, a right slide-in detail panel on "View", and a pagination bar.
+/// Stock assignment history. Lays the data out the same way as the sale
+/// reports: summary cards, a scrollable [ReportTableShell] table, a right
+/// slide-in detail panel on "View", and a pagination bar.
+///
+/// [byBranch] false → "Assign Stock by Admin" (head office → branch).
+/// [byBranch] true  → "Assign Stock by Branch" (branch → branch transfers);
+/// sirf View/Print — accept/reject receiving branch khud karti hai.
 class HoAssignStockListScreen extends ConsumerStatefulWidget {
-  const HoAssignStockListScreen({super.key});
+  final bool byBranch;
+  const HoAssignStockListScreen({super.key, this.byBranch = false});
 
   @override
   ConsumerState<HoAssignStockListScreen> createState() =>
@@ -35,11 +41,21 @@ class _HoAssignStockListScreenState
   int _page = 1;
   HoAssignStockModel? _selected;
 
+  StateNotifierProvider<HoAssignListNotifier, HoAssignListState>
+      get _listProvider =>
+          widget.byBranch ? hoBranchAssignListProvider : hoAssignListProvider;
+
+  String get _title =>
+      widget.byBranch ? 'Assign Stock by Branch' : 'Assign Stock by Admin';
+
+  String _senderOf(HoAssignStockModel a) =>
+      a.assignedByName ?? (widget.byBranch ? '—' : 'Head Office');
+
   @override
   void initState() {
     super.initState();
     Future.microtask(
-        () => ref.read(hoAssignListProvider.notifier).loadAssignments());
+        () => ref.read(_listProvider.notifier).loadAssignments());
   }
 
   bool get _hasDateFilter => _startDate != null || _endDate != null;
@@ -59,8 +75,8 @@ class _HoAssignStockListScreenState
 
   @override
   Widget build(BuildContext context) {
-    final listState = ref.watch(hoAssignListProvider);
-    final notifier = ref.read(hoAssignListProvider.notifier);
+    final listState = ref.watch(_listProvider);
+    final notifier = ref.read(_listProvider.notifier);
 
     final filtered = _applyFilters(listState.assignments);
     final totalCount = filtered.length;
@@ -79,9 +95,10 @@ class _HoAssignStockListScreenState
       children: [
         const AppIcon(AppIcons.history, color: _accent, size: 24),
         const SizedBox(width: 8),
-        const Expanded(
-          child: Text('Assignment History',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        Expanded(
+          child: Text(_title,
+              style: const TextStyle(
+                  fontSize: 22, fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -172,9 +189,9 @@ class _HoAssignStockListScreenState
                   children: [
                     const AppIcon(AppIcons.history, color: _accent, size: 24),
                     const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text('Assignment History',
-                          style: TextStyle(
+                    Expanded(
+                      child: Text(_title,
+                          style: const TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold)),
                     ),
                     headerActions,
@@ -275,7 +292,7 @@ class _HoAssignStockListScreenState
                                                   fontFamily: 'monospace',
                                                   color: _accent))),
                                           DataCell(Text(
-                                              a.assignedByName ?? 'Head Office')),
+                                              _senderOf(a))),
                                           DataCell(Text(
                                               a.branchName ?? a.branchId)),
                                           DataCell(Text('${a.totalPairs}')),
@@ -329,7 +346,7 @@ class _HoAssignStockListScreenState
           tooltip: 'Print slip',
           onPressed: () => _onPrint(a),
         ),
-        if (a.status == 'pending') ...[
+        if (a.status == 'pending' && !widget.byBranch) ...[
           IconButton(
             icon: AppIcon(AppIcons.checkCircleOutline,
                 size: 19, color: Colors.green.shade600),
@@ -359,7 +376,7 @@ class _HoAssignStockListScreenState
         documentNumberLabel: 'Assignment #',
         documentNumber: a.assignmentNumber,
         date: a.assignedAt,
-        fromName: 'Head Office',
+        fromName: _senderOf(a),
         toName: a.branchName ?? '-',
         lines: detail.items
             .map((i) => StockSlipLine(
@@ -416,7 +433,7 @@ class _HoAssignStockListScreenState
       ),
     );
     if (confirm != true) return;
-    await ref.read(hoAssignListProvider.notifier).acceptAssignment(a.id);
+    await ref.read(_listProvider.notifier).acceptAssignment(a.id);
     if (!mounted) return;
     ref.invalidate(hoAssignStockListProvider);
     ref.invalidate(hoAssignmentDetailProvider(a.id));
@@ -452,7 +469,7 @@ class _HoAssignStockListScreenState
       ),
     );
     if (confirm != true) return;
-    await ref.read(hoAssignListProvider.notifier).rejectAssignment(a.id);
+    await ref.read(_listProvider.notifier).rejectAssignment(a.id);
     if (!mounted) return;
     ref.invalidate(hoAssignStockListProvider);
     ref.invalidate(hoAssignmentDetailProvider(a.id));
@@ -560,7 +577,7 @@ class _AssignmentDetailBody extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DetailKV('Assigned By', a.assignedByName ?? 'Head Office'),
+            DetailKV('Assigned By', a.assignedByName ?? '—'),
             DetailKV('Assigned To', a.branchName ?? '—'),
             DetailKV('Assigned', _fmtDate(a.assignedAt)),
             DetailKV(

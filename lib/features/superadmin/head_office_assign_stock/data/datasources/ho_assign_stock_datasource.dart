@@ -202,7 +202,7 @@ class HoAssignStockDatasource {
         .eq('assigned_by', headOfficeId)
         .order('created_at', ascending: false);
 
-    final names = await _headOfficeNames({headOfficeId});
+    final names = await _senderNames({headOfficeId});
 
     return (res as List)
         .map((e) => HoAssignStockModel.fromJson(e as Map<String, dynamic>,
@@ -210,17 +210,53 @@ class HoAssignStockDatasource {
         .toList();
   }
 
-  // ── assigned_by → head office ka naam ─────────────────────────────────────
-  // assigned_by par FK nahi, is liye embed ki jagah alag query.
-  Future<Map<String, String>> _headOfficeNames(Set<String> ids) async {
+  // ── Branch → branch transfers (sab branches ke) ───────────────────────────
+  // assigned_by kisi branch ki id ho to woh branch transfer hai.
+  Future<List<HoAssignStockModel>> fetchBranchTransfers() async {
+    final branchRes =
+        await _client.from('branches').select('id, branch_name');
+    final branchNames = {
+      for (final b in branchRes as List)
+        b['id'] as String: b['branch_name'] as String? ?? '',
+    };
+    if (branchNames.isEmpty) return [];
+
     final res = await _client
+        .from('assign_stock_to_branch')
+        .select(
+            '*, branches(branch_name), assign_stock_to_branch_items(quantity, purchase_price)')
+        .inFilter('assigned_by', branchNames.keys.toList())
+        .order('created_at', ascending: false);
+
+    return (res as List).map((e) {
+      final json = e as Map<String, dynamic>;
+      return HoAssignStockModel.fromJson(json,
+          assignedByName: branchNames[json['assigned_by']]);
+    }).toList();
+  }
+
+  // ── assigned_by → bhejne wale ka naam (head office ya branch) ─────────────
+  // assigned_by par FK nahi, is liye embed ki jagah alag query.
+  Future<Map<String, String>> _senderNames(Set<String> ids) async {
+    final out = <String, String>{};
+    final hoRes = await _client
         .from('head_offices')
         .select('id, head_office_name')
         .inFilter('id', ids.toList());
-    return {
-      for (final h in res as List)
-        h['id'] as String: h['head_office_name'] as String? ?? 'Head Office',
-    };
+    for (final h in hoRes as List) {
+      out[h['id'] as String] = h['head_office_name'] as String? ?? 'Head Office';
+    }
+    final missing = ids.where((id) => !out.containsKey(id)).toList();
+    if (missing.isNotEmpty) {
+      final bRes = await _client
+          .from('branches')
+          .select('id, branch_name')
+          .inFilter('id', missing);
+      for (final b in bRes as List) {
+        out[b['id'] as String] = b['branch_name'] as String? ?? '';
+      }
+    }
+    return out;
   }
 
   // ── Fetch assignment detail with items ────────────────────────────────────
@@ -249,7 +285,7 @@ class HoAssignStockDatasource {
         .toList();
 
     final assignedBy = headerRes['assigned_by'] as String;
-    final names = await _headOfficeNames({assignedBy});
+    final names = await _senderNames({assignedBy});
 
     return HoAssignStockModel.fromJson(
       headerRes,

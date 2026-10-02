@@ -33,6 +33,9 @@ class HoAssignStockRepository {
   Future<List<HoAssignStockModel>> getAssignments(String headOfficeId) =>
       _datasource.fetchAssignments(headOfficeId);
 
+  Future<List<HoAssignStockModel>> getBranchTransfers() =>
+      _datasource.fetchBranchTransfers();
+
   Future<HoAssignStockModel> getAssignmentDetail(String assignmentId) =>
       _datasource.fetchAssignmentDetail(assignmentId);
 

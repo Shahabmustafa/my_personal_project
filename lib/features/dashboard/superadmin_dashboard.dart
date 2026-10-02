@@ -99,7 +99,16 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       label: 'Assign Stock To Branch',
       group: 'Assign Stock',
     ),
-    SidebarItem(icon: AppIcons.history, label: 'History', group: 'Assign Stock'),
+    SidebarItem(
+      icon: AppIcons.history,
+      label: 'Assign Stock by Admin',
+      group: 'Assign Stock',
+    ),
+    SidebarItem(
+      icon: AppIcons.history,
+      label: 'Assign Stock by Branch',
+      group: 'Assign Stock',
+    ),
     SidebarItem(
       icon: AppIcons.moveToInboxOutlined,
       label: 'Incoming Branch Returns',
@@ -178,8 +187,10 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     CompaniesScreen(),
     // Head office se branch ko stock assign — assigned_by = head office id.
     HoAssignStockScreen(),
-    // Assignment history — alag page (sidebar "Assign Stock" group ke andar).
+    // Assignment history — head office ne jo stock branches ko diya.
     HoAssignStockListScreen(),
+    // Branch → branch transfers ki history (sab branches).
+    HoAssignStockListScreen(byBranch: true),
     // Branches se Admin (Head Office) ko jo stock returns aate hain — accept/reject.
     IncomingBranchReturnsScreen(),
     // Branches ke sale claims (kharab product) — approve par branch stock se minus.

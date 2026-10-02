@@ -74,12 +74,26 @@ class HoAssignListNotifier extends StateNotifier<HoAssignListState> {
   final HoAssignStockRepository _repo;
   final String _headOfficeId;
 
-  HoAssignListNotifier(this._repo, this._headOfficeId)
-      : super(const HoAssignListState()) {
+  /// true → head office ki jagah branch → branch transfers load hote hain.
+  final bool _byBranch;
+
+  HoAssignListNotifier(this._repo, this._headOfficeId, {bool byBranch = false})
+      : _byBranch = byBranch,
+        super(const HoAssignListState()) {
     loadAssignments();
   }
 
   Future<void> loadAssignments() async {
+    if (_byBranch) {
+      state = state.copyWith(isLoading: true, clearError: true);
+      try {
+        final list = await _repo.getBranchTransfers();
+        state = state.copyWith(assignments: list, isLoading: false);
+      } catch (e) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
+      return;
+    }
     if (_headOfficeId.isEmpty) {
       // Head office id abhi resolve ho raha hai (ya koi head office set nahi).
       state = state.copyWith(isLoading: true, clearError: true);
@@ -118,6 +132,16 @@ final hoAssignListProvider =
   (ref) => HoAssignListNotifier(
     ref.read(hoAssignStockRepositoryProvider),
     ref.watch(currentHeadOfficeIdProvider),
+  ),
+);
+
+/// Branch → branch transfers (sab branches) — "Assign Stock by Branch" history.
+final hoBranchAssignListProvider =
+    StateNotifierProvider<HoAssignListNotifier, HoAssignListState>(
+  (ref) => HoAssignListNotifier(
+    ref.read(hoAssignStockRepositoryProvider),
+    '',
+    byBranch: true,
   ),
 );
 
