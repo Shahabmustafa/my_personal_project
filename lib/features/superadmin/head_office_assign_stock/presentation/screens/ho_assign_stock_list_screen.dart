@@ -253,7 +253,8 @@ class _HoAssignStockListScreenState
                               : ReportTableShell(
                                   columns: const [
                                     DataColumn(label: Text('Assignment No')),
-                                    DataColumn(label: Text('Branch')),
+                                    DataColumn(label: Text('Assigned By')),
+                                    DataColumn(label: Text('Assigned To')),
                                     DataColumn(
                                         label: Text('Pairs'), numeric: true),
                                     DataColumn(
@@ -273,6 +274,8 @@ class _HoAssignStockListScreenState
                                                   fontWeight: FontWeight.w700,
                                                   fontFamily: 'monospace',
                                                   color: _accent))),
+                                          DataCell(Text(
+                                              a.assignedByName ?? 'Head Office')),
                                           DataCell(Text(
                                               a.branchName ?? a.branchId)),
                                           DataCell(Text('${a.totalPairs}')),
@@ -557,7 +560,8 @@ class _AssignmentDetailBody extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DetailKV('Branch', a.branchName ?? '—'),
+            DetailKV('Assigned By', a.assignedByName ?? 'Head Office'),
+            DetailKV('Assigned To', a.branchName ?? '—'),
             DetailKV('Assigned', _fmtDate(a.assignedAt)),
             DetailKV(
               'Status',

@@ -9,6 +9,8 @@ class HoAssignStockModel {
   final String? branchName;
   final String status; // pending | accepted | rejected
   final String? notes;
+  /// `assigned_by` (head office) ka naam.
+  final String? assignedByName;
   final DateTime assignedAt;
   final DateTime? acceptedAt;
   final DateTime createdAt;
@@ -30,6 +32,7 @@ class HoAssignStockModel {
     this.branchName,
     required this.status,
     this.notes,
+    this.assignedByName,
     required this.assignedAt,
     this.acceptedAt,
     required this.createdAt,
@@ -40,7 +43,7 @@ class HoAssignStockModel {
   });
 
   factory HoAssignStockModel.fromJson(Map<String, dynamic> json,
-      {List<HoAssignStockItemModel> items = const []}) {
+      {List<HoAssignStockItemModel> items = const [], String? assignedByName}) {
     final embedded =
         (json['assign_stock_to_branch_items'] as List?) ?? const [];
     final resolvedPairs = items.isNotEmpty
@@ -69,6 +72,7 @@ class HoAssignStockModel {
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
       status: json['status'] as String? ?? 'pending',
       notes: json['notes'] as String?,
+      assignedByName: assignedByName,
       assignedAt: DateTime.parse(json['assigned_at'] as String),
       acceptedAt: json['accepted_at'] != null
           ? DateTime.parse(json['accepted_at'] as String)

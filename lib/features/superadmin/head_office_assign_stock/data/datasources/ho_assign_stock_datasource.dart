@@ -202,9 +202,25 @@ class HoAssignStockDatasource {
         .eq('assigned_by', headOfficeId)
         .order('created_at', ascending: false);
 
+    final names = await _headOfficeNames({headOfficeId});
+
     return (res as List)
-        .map((e) => HoAssignStockModel.fromJson(e as Map<String, dynamic>))
+        .map((e) => HoAssignStockModel.fromJson(e as Map<String, dynamic>,
+            assignedByName: names[headOfficeId]))
         .toList();
+  }
+
+  // ── assigned_by → head office ka naam ─────────────────────────────────────
+  // assigned_by par FK nahi, is liye embed ki jagah alag query.
+  Future<Map<String, String>> _headOfficeNames(Set<String> ids) async {
+    final res = await _client
+        .from('head_offices')
+        .select('id, head_office_name')
+        .inFilter('id', ids.toList());
+    return {
+      for (final h in res as List)
+        h['id'] as String: h['head_office_name'] as String? ?? 'Head Office',
+    };
   }
 
   // ── Fetch assignment detail with items ────────────────────────────────────
@@ -232,9 +248,13 @@ class HoAssignStockDatasource {
         .map((e) => HoAssignStockItemModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
+    final assignedBy = headerRes['assigned_by'] as String;
+    final names = await _headOfficeNames({assignedBy});
+
     return HoAssignStockModel.fromJson(
       headerRes,
       items: items,
+      assignedByName: names[assignedBy],
     );
   }
 
