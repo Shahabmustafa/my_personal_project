@@ -14,9 +14,9 @@ const _supabaseUrl = 'https://jjqhglmaxlcrusmmxwgi.supabase.co';
 void main()async{
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Web serves the customer website, and the POS at /pos.
+  // Web serves the POS at /, and the customer website at /shop.
   // Desktop/mobile builds always run the POS.
-  if (kIsWeb && !Uri.base.path.startsWith('/pos')) {
+  if (kIsWeb && Uri.base.path.startsWith('/shop')) {
     runApp(const ProviderScope(child: WebsiteApp()));
     return;
   }
