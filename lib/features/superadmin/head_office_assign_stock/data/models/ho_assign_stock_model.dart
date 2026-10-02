@@ -9,7 +9,7 @@ class HoAssignStockModel {
   final String? branchName;
   final String status; // pending | accepted | rejected
   final String? notes;
-  /// Jis user ne assign kiya (`assigned_by` → users.username).
+  /// Jis head office ne assign kiya (`head_offices(head_office_name)` embed).
   final String? assignedByName;
   final DateTime assignedAt;
   final DateTime? acceptedAt;
@@ -43,7 +43,7 @@ class HoAssignStockModel {
   });
 
   factory HoAssignStockModel.fromJson(Map<String, dynamic> json,
-      {List<HoAssignStockItemModel> items = const [], String? assignedByName}) {
+      {List<HoAssignStockItemModel> items = const []}) {
     final embedded =
         (json['assign_stock_to_branch_items'] as List?) ?? const [];
     final resolvedPairs = items.isNotEmpty
@@ -72,7 +72,8 @@ class HoAssignStockModel {
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
       status: json['status'] as String? ?? 'pending',
       notes: json['notes'] as String?,
-      assignedByName: assignedByName,
+      assignedByName: (json['head_offices'] as Map<String, dynamic>?)?[
+          'head_office_name'] as String?,
       assignedAt: DateTime.parse(json['assigned_at'] as String),
       acceptedAt: json['accepted_at'] != null
           ? DateTime.parse(json['accepted_at'] as String)

@@ -159,8 +159,6 @@ class HoAssignStockDatasource {
           'branch_id': branchId,
           'status': 'pending',
           'notes': notes,
-          // History mein "Assigned By" dikhane ke liye.
-          'assigned_by': _client.auth.currentUser?.id,
         })
         .select()
         .single();
@@ -200,44 +198,20 @@ class HoAssignStockDatasource {
     final res = await _client
         .from('assign_stock_to_branch')
         .select(
-            '*, branches(branch_name), assign_stock_to_branch_items(quantity, purchase_price)')
+            '*, branches(branch_name), head_offices(head_office_name), assign_stock_to_branch_items(quantity, purchase_price)')
         .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 
-    final rows =
-        (res as List).map((e) => e as Map<String, dynamic>).toList();
-    final userNames = await _fetchUserNames(rows);
-
-    return rows
-        .map((e) => HoAssignStockModel.fromJson(e,
-            assignedByName: userNames[e['assigned_by']]))
+    return (res as List)
+        .map((e) => HoAssignStockModel.fromJson(e as Map<String, dynamic>))
         .toList();
-  }
-
-  // ── assigned_by → username ────────────────────────────────────────────────
-  // assigned_by par FK nahi hai, is liye embed ki jagah alag query.
-  Future<Map<String, String>> _fetchUserNames(
-      List<Map<String, dynamic>> rows) async {
-    final ids = <String>{
-      for (final r in rows)
-        if (r['assigned_by'] != null) r['assigned_by'] as String
-    };
-    if (ids.isEmpty) return {};
-    final res = await _client
-        .from('users')
-        .select('id, username')
-        .inFilter('id', ids.toList());
-    return {
-      for (final u in res as List)
-        u['id'] as String: u['username'] as String? ?? '',
-    };
   }
 
   // ── Fetch assignment detail with items ────────────────────────────────────
   Future<HoAssignStockModel> fetchAssignmentDetail(String assignmentId) async {
     final headerRes = await _client
         .from('assign_stock_to_branch')
-        .select('*, branches(branch_name)')
+        .select('*, branches(branch_name), head_offices(head_office_name)')
         .eq('id', assignmentId)
         .single();
 
@@ -258,12 +232,9 @@ class HoAssignStockDatasource {
         .map((e) => HoAssignStockItemModel.fromJson(e as Map<String, dynamic>))
         .toList();
 
-    final userNames = await _fetchUserNames([headerRes]);
-
     return HoAssignStockModel.fromJson(
       headerRes,
       items: items,
-      assignedByName: userNames[headerRes['assigned_by']],
     );
   }
 
