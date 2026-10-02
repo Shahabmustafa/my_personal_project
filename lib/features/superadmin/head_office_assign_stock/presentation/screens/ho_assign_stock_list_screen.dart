@@ -254,6 +254,7 @@ class _HoAssignStockListScreenState
                                   columns: const [
                                     DataColumn(label: Text('Assignment No')),
                                     DataColumn(label: Text('Branch')),
+                                    DataColumn(label: Text('Assigned By')),
                                     DataColumn(
                                         label: Text('Pairs'), numeric: true),
                                     DataColumn(
@@ -275,6 +276,8 @@ class _HoAssignStockListScreenState
                                                   color: _accent))),
                                           DataCell(Text(
                                               a.branchName ?? a.branchId)),
+                                          DataCell(
+                                              Text(a.assignedByName ?? '—')),
                                           DataCell(Text('${a.totalPairs}')),
                                           DataCell(Text(
                                               a.totalValue.toStringAsFixed(0))),
@@ -559,6 +562,7 @@ class _AssignmentDetailBody extends ConsumerWidget {
           children: [
             DetailKV('Branch', a.branchName ?? '—'),
             DetailKV('Assigned', _fmtDate(a.assignedAt)),
+            DetailKV('Assigned By', a.assignedByName ?? '—'),
             DetailKV(
               'Status',
               a.status[0].toUpperCase() + a.status.substring(1),
