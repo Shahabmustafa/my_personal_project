@@ -198,7 +198,7 @@ class HoAssignStockDatasource {
     final res = await _client
         .from('assign_stock_to_branch')
         .select(
-            '*, branches(branch_name), head_offices(head_office_name), assign_stock_to_branch_items(quantity, purchase_price)')
+            '*, branches(branch_name), assign_stock_to_branch_items(quantity, purchase_price)')
         .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 
@@ -211,7 +211,7 @@ class HoAssignStockDatasource {
   Future<HoAssignStockModel> fetchAssignmentDetail(String assignmentId) async {
     final headerRes = await _client
         .from('assign_stock_to_branch')
-        .select('*, branches(branch_name), head_offices(head_office_name)')
+        .select('*, branches(branch_name)')
         .eq('id', assignmentId)
         .single();
 

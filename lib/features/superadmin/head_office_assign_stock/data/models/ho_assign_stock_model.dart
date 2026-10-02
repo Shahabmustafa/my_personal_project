@@ -9,8 +9,6 @@ class HoAssignStockModel {
   final String? branchName;
   final String status; // pending | accepted | rejected
   final String? notes;
-  /// Jis head office ne assign kiya (`head_offices(head_office_name)` embed).
-  final String? assignedByName;
   final DateTime assignedAt;
   final DateTime? acceptedAt;
   final DateTime createdAt;
@@ -32,7 +30,6 @@ class HoAssignStockModel {
     this.branchName,
     required this.status,
     this.notes,
-    this.assignedByName,
     required this.assignedAt,
     this.acceptedAt,
     required this.createdAt,
@@ -72,8 +69,6 @@ class HoAssignStockModel {
           (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
       status: json['status'] as String? ?? 'pending',
       notes: json['notes'] as String?,
-      assignedByName: (json['head_offices'] as Map<String, dynamic>?)?[
-          'head_office_name'] as String?,
       assignedAt: DateTime.parse(json['assigned_at'] as String),
       acceptedAt: json['accepted_at'] != null
           ? DateTime.parse(json['accepted_at'] as String)
