@@ -164,7 +164,7 @@ class SaleInvoiceDatasource {
 
   static const _invoiceSelect =
       '*, sale_invoice_payments(payment_type, amount), customers(name), '
-      'sale_returns(id), sale_exchanges(id)';
+      'sale_returns(id, total_amount), sale_exchanges(id, difference_amount)';
 
   Future<List<SaleInvoiceModel>> fetchInvoices(String branchId) async {
     final res = await _client

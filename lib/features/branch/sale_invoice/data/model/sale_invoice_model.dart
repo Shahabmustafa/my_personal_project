@@ -25,6 +25,10 @@ class SaleInvoiceModel {
   final List<SaleInvoicePaymentModel> payments;
   final bool hasReturn;
   final bool hasExchange;
+  /// Is invoice par ab tak hue sab returns ka total (sale_returns.total_amount).
+  final double returnedAmount;
+  /// Exchanges ka farq — customer ne extra diya (+) ya wapas liya (−).
+  final double exchangeDifference;
 
   const SaleInvoiceModel({
     required this.id,
@@ -53,7 +57,15 @@ class SaleInvoiceModel {
     this.payments = const [],
     this.hasReturn = false,
     this.hasExchange = false,
+    this.returnedAmount = 0,
+    this.exchangeDifference = 0,
   });
+
+  /// Returns aur exchanges ke baad invoice ki asal (net) sale.
+  double get netAmount => totalAmount - returnedAmount + exchangeDifference;
+
+  /// Item-wise + invoice-wise dono discount.
+  double get allDiscount => totalDiscount + invoiceDiscount;
 
   /// Payments se resolve hone wala payment type (cash/card/cash+card) — display ke liye.
   String get paymentTypeLabel {
@@ -88,6 +100,8 @@ class SaleInvoiceModel {
         : ((json['sale_invoice_items'] as List?) ?? const [])
             .map((e) => SaleInvoiceItemModel.fromJson(e as Map<String, dynamic>))
             .toList();
+    final returnsJson = (json['sale_returns'] as List?) ?? const [];
+    final exchangesJson = (json['sale_exchanges'] as List?) ?? const [];
     return SaleInvoiceModel(
       id: json['id']?.toString() ?? '',
       invoiceNumber: json['invoice_number']?.toString() ?? '',
@@ -115,8 +129,12 @@ class SaleInvoiceModel {
           : DateTime.now(),
       items: itemsJson,
       payments: paymentsJson,
-      hasReturn: ((json['sale_returns'] as List?) ?? const []).isNotEmpty,
-      hasExchange: ((json['sale_exchanges'] as List?) ?? const []).isNotEmpty,
+      hasReturn: returnsJson.isNotEmpty,
+      hasExchange: exchangesJson.isNotEmpty,
+      returnedAmount: returnsJson.fold<double>(
+          0, (s, r) => s + _toDouble((r as Map)['total_amount'])),
+      exchangeDifference: exchangesJson.fold<double>(
+          0, (s, r) => s + _toDouble((r as Map)['difference_amount'])),
     );
   }
 }

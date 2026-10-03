@@ -174,6 +174,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
             _hcell('Type', flex: 1, style: headerStyle),
             _hcell('Sub Total', flex: 2, style: headerStyle),
             _hcell('Discount', flex: 2, style: headerStyle),
+            _hcell('Returned', flex: 2, style: headerStyle),
             _hcell('Net Amount', flex: 2, style: headerStyle),
             _hcell('', flex: 2, style: headerStyle),
           ]),
@@ -212,8 +213,10 @@ class _DesktopInvoiceTable extends StatelessWidget {
                   _dcell(_formatDate(inv.createdAt), flex: 2),
                   _dcell(inv.paymentTypeLabel.toUpperCase(), flex: 1),
                   _dcell(inv.subtotal.toStringAsFixed(0), flex: 2),
-                  _dcell('- ${inv.totalDiscount.toStringAsFixed(0)}', flex: 2, style: const TextStyle(color: Colors.orange)),
-                  _dcell(inv.totalAmount.toStringAsFixed(0), flex: 2,
+                  _dcell('- ${inv.allDiscount.toStringAsFixed(0)}', flex: 2, style: const TextStyle(color: Colors.orange)),
+                  _dcell(_returnedText(inv), flex: 2,
+                      style: const TextStyle(color: Colors.red)),
+                  _dcell(inv.netAmount.toStringAsFixed(0), flex: 2,
                       style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.green)),
                   Expanded(
                       flex: 2,
@@ -245,7 +248,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
           child: Row(
             children: [
               const Expanded(
-                  flex: 5, child: Text('TOTALS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                  flex: 7, child: Text('TOTALS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
               Expanded(
                 flex: 2,
                 child: Text(invoices.fold(0.0, (s, i) => s + i.subtotal).toStringAsFixed(0),
@@ -254,14 +257,21 @@ class _DesktopInvoiceTable extends StatelessWidget {
               Expanded(
                 flex: 2,
                 child: Text(
-                    '- ${invoices.fold(0.0, (s, i) => s + i.totalDiscount).toStringAsFixed(0)}',
+                    '- ${invoices.fold(0.0, (s, i) => s + i.allDiscount).toStringAsFixed(0)}',
                     style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.orange)),
               ),
               Expanded(
                 flex: 2,
-                child: Text(invoices.fold(0.0, (s, i) => s + i.totalAmount).toStringAsFixed(0),
+                child: Text(
+                    '- ${invoices.fold(0.0, (s, i) => s + i.returnedAmount - i.exchangeDifference).toStringAsFixed(0)}',
+                    style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.red)),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(invoices.fold(0.0, (s, i) => s + i.netAmount).toStringAsFixed(0),
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.green)),
               ),
+              const Spacer(flex: 2),
             ],
           ),
         ),
@@ -287,6 +297,13 @@ class _DesktopInvoiceTable extends StatelessWidget {
 
   String _formatDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+}
+
+/// Returns minus exchange ka farq — jitna invoice ki sale se kam hua.
+String _returnedText(SaleInvoiceModel inv) {
+  final v = inv.returnedAmount - inv.exchangeDifference;
+  if (v == 0) return '—';
+  return v > 0 ? '- ${v.toStringAsFixed(0)}' : '+ ${(-v).toStringAsFixed(0)}';
 }
 
 // ── Mobile list ───────────────────────────────────────────────────────────
@@ -367,8 +384,10 @@ class _MobileInvoiceList extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _stat('Sub Total', inv.subtotal.toStringAsFixed(0)),
-                    _stat('Discount', '- ${inv.totalDiscount.toStringAsFixed(0)}', color: Colors.orange),
-                    _stat('Net Amount', inv.totalAmount.toStringAsFixed(0), color: Colors.green.shade700),
+                    _stat('Discount', '- ${inv.allDiscount.toStringAsFixed(0)}', color: Colors.orange),
+                    if (inv.hasReturn || inv.hasExchange)
+                      _stat('Returned', _returnedText(inv), color: Colors.red),
+                    _stat('Net Amount', inv.netAmount.toStringAsFixed(0), color: Colors.green.shade700),
                   ],
                 ),
               ],

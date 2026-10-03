@@ -98,7 +98,8 @@ class SaleInvoiceListState {
     this.error,
   });
 
-  double get totalAmount => invoices.fold(0, (s, i) => s + i.totalAmount);
+  /// Returns/exchanges ke baad net total.
+  double get totalAmount => invoices.fold(0, (s, i) => s + i.netAmount);
 
   SaleInvoiceListState copyWith({
     List<SaleInvoiceModel>? invoices,
