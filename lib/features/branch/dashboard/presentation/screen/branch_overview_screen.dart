@@ -293,6 +293,9 @@ class _WeeklySaleChart extends StatelessWidget {
     final total = rows.fold<double>(0, (s, r) => s + r.amount);
     final maxVal = rows.fold<double>(0, (a, r) => r.amount > a ? r.amount : a);
     final maxY = maxVal <= 0 ? 1.0 : maxVal * 1.2;
+    // Return zyada ho to kisi din ki net sale minus mein ja sakti hai.
+    final minVal = rows.fold<double>(0, (a, r) => r.amount < a ? r.amount : a);
+    final minY = minVal < 0 ? minVal * 1.2 : 0.0;
 
     return _PanelCard(
       child: Column(
@@ -330,14 +333,14 @@ class _WeeklySaleChart extends StatelessWidget {
               height: 200,
               child: LineChart(
                 LineChartData(
-                  minY: 0,
+                  minY: minY,
                   maxY: maxY,
                   minX: 0,
                   maxX: (rows.length - 1).toDouble(),
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval: maxY / 3,
+                    horizontalInterval: (maxY - minY) / 3,
                     getDrawingHorizontalLine: (_) =>
                         const FlLine(color: Color(0xFFEDEFF5), strokeWidth: 1),
                   ),
