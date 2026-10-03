@@ -6,6 +6,9 @@ import 'sale_invoice_screen.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/widget/printer_picker_field.dart';
+
 class SaleInvoicesListScreen extends ConsumerStatefulWidget {
   final bool showNewInvoiceButton;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
@@ -28,6 +31,26 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(saleInvoiceListProvider.notifier).loadInvoices();
     });
+  }
+
+  Future<void> _onPrint(SaleInvoiceModel inv) async {
+    final choice = await pickPrinterForSlip(context, printersForSaleProvider);
+    if (choice == null || !mounted) return;
+    try {
+      // List rows mein items nahi hote — print ke liye poori invoice load karo.
+      final detail = await ref
+          .read(saleInvoiceRepositoryProvider)
+          .getInvoiceDetail(inv.id);
+      await ThermalPrintService.printSaleInvoice(detail, printer: choice.printer);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Print failed: $e'),
+          backgroundColor: Colors.orange.shade700,
+        ),
+      );
+    }
   }
 
   @override
@@ -110,9 +133,13 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 final isWide = constraints.maxWidth > 700;
                 return isWide
                     ? _DesktopInvoiceTable(
-                        invoices: state.invoices, onExchangeTap: widget.onExchangeTap)
+                        invoices: state.invoices,
+                        onExchangeTap: widget.onExchangeTap,
+                        onPrintTap: _onPrint)
                     : _MobileInvoiceList(
-                        invoices: state.invoices, onExchangeTap: widget.onExchangeTap);
+                        invoices: state.invoices,
+                        onExchangeTap: widget.onExchangeTap,
+                        onPrintTap: _onPrint);
               }),
             ),
         ],
@@ -126,13 +153,13 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
 class _DesktopInvoiceTable extends StatelessWidget {
   final List<SaleInvoiceModel> invoices;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
-  const _DesktopInvoiceTable({required this.invoices, this.onExchangeTap});
+  final void Function(SaleInvoiceModel invoice) onPrintTap;
+  const _DesktopInvoiceTable(
+      {required this.invoices, this.onExchangeTap, required this.onPrintTap});
 
   @override
   Widget build(BuildContext context) {
     const headerStyle = TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white);
-    final hasActions = onExchangeTap != null;
-
     return Column(
       children: [
         Container(
@@ -148,7 +175,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
             _hcell('Sub Total', flex: 2, style: headerStyle),
             _hcell('Discount', flex: 2, style: headerStyle),
             _hcell('Net Amount', flex: 2, style: headerStyle),
-            if (hasActions) _hcell('', flex: 2, style: headerStyle),
+            _hcell('', flex: 2, style: headerStyle),
           ]),
         ),
         Expanded(
@@ -188,12 +215,16 @@ class _DesktopInvoiceTable extends StatelessWidget {
                   _dcell('- ${inv.totalDiscount.toStringAsFixed(0)}', flex: 2, style: const TextStyle(color: Colors.orange)),
                   _dcell(inv.totalAmount.toStringAsFixed(0), flex: 2,
                       style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.green)),
-                  if (hasActions)
-                    Expanded(
+                  Expanded(
                       flex: 2,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          IconButton(
+                            icon: const AppIcon(AppIcons.printOutlined, size: 20),
+                            tooltip: 'Print',
+                            onPressed: () => onPrintTap(inv),
+                          ),
                           if (onExchangeTap != null)
                             IconButton(
                               icon: const AppIcon(AppIcons.swapHorizOutlined, size: 20),
@@ -263,7 +294,9 @@ class _DesktopInvoiceTable extends StatelessWidget {
 class _MobileInvoiceList extends StatelessWidget {
   final List<SaleInvoiceModel> invoices;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
-  const _MobileInvoiceList({required this.invoices, this.onExchangeTap});
+  final void Function(SaleInvoiceModel invoice) onPrintTap;
+  const _MobileInvoiceList(
+      {required this.invoices, this.onExchangeTap, required this.onPrintTap});
 
   @override
   Widget build(BuildContext context) {
@@ -307,6 +340,14 @@ class _MobileInvoiceList extends StatelessWidget {
                     ],
                     const Spacer(),
                     Text(_formatDate(inv.createdAt), style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const AppIcon(AppIcons.printOutlined, size: 18),
+                      tooltip: 'Print',
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () => onPrintTap(inv),
+                    ),
                     if (onExchangeTap != null)
                       IconButton(
                         icon: const AppIcon(AppIcons.swapHorizOutlined, size: 18),
