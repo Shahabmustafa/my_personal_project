@@ -1,17 +1,22 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../sale_invoice/data/model/sale_invoice_model.dart';
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
-    show salesmenProvider, printersForSaleProvider;
+    show salesmenProvider, printersForSaleProvider, bankEntriesForSaleProvider;
 import '../provider/sale_exchange_provider.dart';
-import '../widgets/sale_exchange_difference_summary.dart';
 import '../widgets/sale_exchange_new_cart_table.dart';
 import '../widgets/sale_exchange_new_item_selector.dart';
 import '../widgets/sale_exchange_return_items_picker.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+
+/// Layout bilkul SaleInvoiceScreen jaisa: header card (number + payment
+/// toggle + date), meta row (salesman / printer / bank / cash), return
+/// items, new item selector, cart jo bachi jagah bharta hai, aur neeche
+/// footer (totals + note + Collect/Refund + Clear/Save).
 class SaleExchangeScreen extends ConsumerWidget {
   const SaleExchangeScreen({super.key});
 
@@ -26,15 +31,12 @@ class SaleExchangeScreen extends ConsumerWidget {
 
     final invoice = state.originalInvoice!;
 
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Sale Exchange', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
-
-          // ── Header card ──────────────────────────────────────────────
+          // ── Exchange header card ─────────────────────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -44,70 +46,99 @@ class SaleExchangeScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Exchange Number :',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    state.numberLoading
-                        ? const SizedBox(width: 80, child: LinearProgressIndicator(minHeight: 2))
-                        : Text(
-                            state.exchangeNumber.isEmpty ? '...' : state.exchangeNumber,
-                            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: primary),
+                _headerField(
+                  'Exchange Number :',
+                  state.numberLoading
+                      ? const SizedBox(
+                          width: 80,
+                          child: LinearProgressIndicator(minHeight: 2),
+                        )
+                      : Text(
+                          state.exchangeNumber.isEmpty
+                              ? '...'
+                              : state.exchangeNumber,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: primary,
                           ),
-                  ],
+                        ),
                 ),
                 const SizedBox(width: 24),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Original Invoice :',
-                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    Text(invoice.invoiceNumber,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
-                  ],
+                _headerField(
+                  'Original Invoice :',
+                  Text(
+                    invoice.invoiceNumber,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 24),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Customer :', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    Text(invoice.customerName ?? '—', style: const TextStyle(fontSize: 15)),
-                  ],
+                _headerField(
+                  'Customer :',
+                  Text(
+                    invoice.customerName ?? '—',
+                    style: const TextStyle(fontSize: 15),
+                  ),
                 ),
+                const SizedBox(width: 24),
+
+                // Payment type toggle — sirf tab jab paisa lena/dena ho
+                if (state.differenceAmount != 0)
+                  _PaymentTypeToggle(
+                    value: state.paymentType,
+                    onChanged: ref
+                        .read(saleExchangeProvider.notifier)
+                        .selectPaymentType,
+                  ),
                 const Spacer(),
+
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Date', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    Text(
+                      'Date',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text(_formatDate(DateTime.now()),
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                    Text(
+                      _formatDate(DateTime.now()),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ],
             ),
           ),
+
           const SizedBox(height: 12),
 
-          // ── Salesman / Printer ──────────────────────────────────────
+          // ── Salesman / Printer / Bank / Cash ─────────────────────────
           const _ExchangeMetaRow(),
-          const SizedBox(height: 12),
 
-          const SaleExchangeReturnItemsPicker(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
+          // ── Wapas aane wale items (lambi list ho to scroll) ──────────
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 190),
+            child: const SingleChildScrollView(
+              child: SaleExchangeReturnItemsPicker(),
+            ),
+          ),
+
+          const SizedBox(height: 8),
           const SaleExchangeNewItemSelector(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
-          SizedBox(
-            height: 380,
+          Expanded(
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -117,9 +148,7 @@ class SaleExchangeScreen extends ConsumerWidget {
               child: const SaleExchangeNewCartTable(),
             ),
           ),
-          const SizedBox(height: 12),
 
-          const SaleExchangeDifferenceSummary(),
           const SizedBox(height: 12),
           const _ExchangeFooter(),
         ],
@@ -127,21 +156,97 @@ class SaleExchangeScreen extends ConsumerWidget {
     );
   }
 
+  Widget _headerField(String label, Widget value) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+          const SizedBox(height: 4),
+          value,
+        ],
+      );
+
   String _formatDate(DateTime dt) =>
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
 
-// ── Salesman / Printer row ──────────────────────────────────────────────
+// ── Payment type toggle (cash / card / cash + card) ─────────────────────
 
-class _ExchangeMetaRow extends ConsumerWidget {
+class _PaymentTypeToggle extends StatelessWidget {
+  final String value;
+  final void Function(String) onChanged;
+  const _PaymentTypeToggle({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        _seg('Cash', 'cash', AppIcons.paymentsOutlined, primary),
+        _seg('Card', 'card', AppIcons.creditCardOutlined, primary),
+        _seg('Cash + Card', 'cash_card', AppIcons.syncAlt, primary),
+      ]),
+    );
+  }
+
+  Widget _seg(String label, String type, String icon, Color primary) {
+    final selected = value == type;
+    return InkWell(
+      onTap: () => onChanged(type),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Row(children: [
+          AppIcon(icon, size: 16, color: selected ? Colors.white : Colors.grey.shade600),
+          const SizedBox(width: 6),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : Colors.grey.shade700)),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Salesman / Printer / Bank / Cash row ────────────────────────────────
+
+class _ExchangeMetaRow extends ConsumerStatefulWidget {
   const _ExchangeMetaRow();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_ExchangeMetaRow> createState() => _ExchangeMetaRowState();
+}
+
+class _ExchangeMetaRowState extends ConsumerState<_ExchangeMetaRow> {
+  final _cashAmountCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _cashAmountCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(saleExchangeProvider);
     final notifier = ref.read(saleExchangeProvider.notifier);
     final salesmenAsync = ref.watch(salesmenProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
+    final bankAsync = ref.watch(bankEntriesForSaleProvider);
+
+    final hasPayment = state.differenceAmount != 0;
+    final showBank = hasPayment &&
+        (state.paymentType == 'card' || state.paymentType == 'cash_card');
+    final showCash = hasPayment && state.paymentType == 'cash_card';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -151,11 +256,11 @@ class _ExchangeMetaRow extends ConsumerWidget {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 3,
             child: salesmenAsync.when(
-              loading: () => const SizedBox(height: 48, child: Center(child: LinearProgressIndicator())),
+              loading: () => const _FieldLoading(),
               error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
               data: (list) => DropdownSearch<EmployeeLookupItem>(
                 items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
@@ -170,9 +275,8 @@ class _ExchangeMetaRow extends ConsumerWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            flex: 3,
             child: printersAsync.when(
-              loading: () => const SizedBox(height: 48, child: Center(child: LinearProgressIndicator())),
+              loading: () => const _FieldLoading(),
               error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
               data: (list) => DropdownSearch<PrinterLookupItem>(
                 items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
@@ -185,7 +289,44 @@ class _ExchangeMetaRow extends ConsumerWidget {
               ),
             ),
           ),
-          const Spacer(flex: 4),
+          const SizedBox(width: 16),
+          Expanded(
+            child: showBank
+                ? bankAsync.when(
+                    loading: () => const _FieldLoading(),
+                    error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                    data: (list) => DropdownSearch<BankEntryLookupItem>(
+                      items: (f, _) =>
+                          list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
+                      selectedItem: state.bankEntry,
+                      itemAsString: (e) => e.label,
+                      compareFn: (a, b) => a.id == b.id,
+                      onSelected: notifier.selectBankEntry,
+                      decoratorProps:
+                          DropDownDecoratorProps(decoration: _decor('Bank Account', required: true)),
+                      popupProps: const PopupProps.menu(
+                          showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+                    ),
+                  )
+                : const SizedBox(),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: showCash
+                ? TextField(
+                    controller: _cashAmountCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                    ],
+                    onChanged: (v) => notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
+                    decoration: _decor('Cash Amount', required: true).copyWith(
+                      helperText: 'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
+                      helperStyle: const TextStyle(fontSize: 11),
+                    ),
+                  )
+                : const SizedBox(),
+          ),
         ],
       ),
     );
@@ -203,6 +344,16 @@ class _ExchangeMetaRow extends ConsumerWidget {
       );
 }
 
+class _FieldLoading extends StatelessWidget {
+  const _FieldLoading();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+        height: 48,
+        child: Center(child: LinearProgressIndicator()),
+      );
+}
+
 // ── Footer ─────────────────────────────────────────────────────────────
 
 class _ExchangeFooter extends ConsumerWidget {
@@ -217,6 +368,19 @@ class _ExchangeFooter extends ConsumerWidget {
         state.newCartItems.isNotEmpty;
     final canClear = state.returnCartItems.any((i) => i.quantity > 0) || state.newCartItems.isNotEmpty;
 
+    final Color diffColor;
+    final String diffLabel;
+    if (state.isCollect) {
+      diffColor = Colors.green.shade700;
+      diffLabel = 'Collect';
+    } else if (state.isRefund) {
+      diffColor = Colors.red.shade700;
+      diffLabel = 'Refund';
+    } else {
+      diffColor = Colors.grey.shade600;
+      diffLabel = 'Even Exchange';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -226,6 +390,10 @@ class _ExchangeFooter extends ConsumerWidget {
       ),
       child: Row(
         children: [
+          _stat('Return Total', '- ${state.returnTotal.toStringAsFixed(0)}', color: Colors.red.shade700),
+          const SizedBox(width: 28),
+          _stat('New Total', state.newTotal.toStringAsFixed(0), color: Colors.green.shade700),
+          const SizedBox(width: 28),
           Expanded(
             child: TextField(
               onChanged: (v) => ref.read(saleExchangeProvider.notifier).setNote(v),
@@ -236,6 +404,17 @@ class _ExchangeFooter extends ConsumerWidget {
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
             ),
+          ),
+          const SizedBox(width: 20),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(diffLabel, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              Text(
+                state.absDifference.toStringAsFixed(0),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: diffColor),
+              ),
+            ],
           ),
           const SizedBox(width: 20),
           OutlinedButton.icon(
@@ -274,6 +453,17 @@ class _ExchangeFooter extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _stat(String label, String value, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87)),
+      ],
     );
   }
 
