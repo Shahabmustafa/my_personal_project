@@ -44,18 +44,48 @@ class BranchOverviewDatasource {
   Future<({double todaySale, double todayExpense})> fetchTodayCounter(
       String branchId) async {
     if (branchId.isEmpty) return (todaySale: 0.0, todayExpense: 0.0);
-    final res = await _client
-        .from('branch_cash_counter')
-        .select('total_sale, expense')
-        .eq('branch_id', branchId)
-        .order('created_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
+    final todayUtc = _startOfTodayUtc();
+    final results = await Future.wait<dynamic>([
+      _client
+          .from('branch_cash_counter')
+          .select('total_sale, expense')
+          .eq('branch_id', branchId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle(),
+      _client
+          .from('sale_returns')
+          .select('total_amount')
+          .eq('branch_id', branchId)
+          .gte('created_at', todayUtc),
+      _client
+          .from('sale_exchanges')
+          .select('difference_amount')
+          .eq('branch_id', branchId)
+          .gte('created_at', todayUtc),
+    ]);
+
+    final res = results[0] as Map<String, dynamic>?;
     if (res == null) return (todaySale: 0.0, todayExpense: 0.0);
+
+    // Net sale = sale − returns + exchange ka farq (admin dashboard jaisa).
+    final returns = (results[1] as List<dynamic>)
+        .fold<double>(0, (s, r) => s + _toDouble((r as Map)['total_amount']));
+    final exchangeDiff = (results[2] as List<dynamic>).fold<double>(
+        0, (s, r) => s + _toDouble((r as Map)['difference_amount']));
+
     return (
-      todaySale: _toDouble(res['total_sale']),
+      todaySale: _toDouble(res['total_sale']) - returns + exchangeDiff,
       todayExpense: _toDouble(res['expense']),
     );
+  }
+
+  /// Aaj ka din (Pakistan time, UTC+5) shuru hone ka waqt, UTC mein.
+  static String _startOfTodayUtc() {
+    final now = DateTime.now();
+    return DateTime.utc(now.year, now.month, now.day)
+        .subtract(const Duration(hours: 5))
+        .toIso8601String();
   }
 
   /// Aaj ka sale target (Rs.) — admin "Branch Target" screen se din-wise set
