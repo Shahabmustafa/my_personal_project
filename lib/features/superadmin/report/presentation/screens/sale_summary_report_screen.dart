@@ -43,8 +43,12 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
   void initState() {
     super.initState();
     if (widget.restrictToOwnBranch) {
-      final branchId = ref.read(currentBranchIdProvider);
-      ref.read(saleSummaryProvider.notifier).setBranch(branchId);
+      // Build ke dauran provider modify nahi ho sakta — frame ke baad set karo.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final branchId = ref.read(currentBranchIdProvider);
+        ref.read(saleSummaryProvider.notifier).setBranch(branchId);
+      });
     }
   }
 
