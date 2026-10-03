@@ -72,4 +72,7 @@ class SaleInvoiceRepository {
 
   Future<SaleInvoiceModel> getInvoiceDetail(String invoiceId) =>
       _datasource.fetchInvoiceDetail(invoiceId);
+
+  Future<Map<String, int>> getReturnedQuantities(SaleInvoiceModel invoice) =>
+      _datasource.fetchReturnedQuantities(invoice);
 }

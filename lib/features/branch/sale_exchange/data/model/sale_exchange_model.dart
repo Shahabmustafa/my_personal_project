@@ -361,7 +361,8 @@ class SaleExchangeNewItemModel {
 
 /// Local cart row for the "returning" side of the exchange UI — built from
 /// the original invoice's items, quantity starts at 0 until the cashier
-/// opts a line in (capped at maxQuantity = what was actually sold on that line).
+/// opts a line in (capped at maxQuantity = sold on that line minus what was
+/// already returned/exchanged earlier).
 class ReturnCartItem {
   final String originalItemId;
   final String branchStockId;
@@ -379,6 +380,9 @@ class ReturnCartItem {
   final String typeId;
   final String typeName;
   final int maxQuantity;
+  /// Invoice par asal mein kitne bike the (maxQuantity se zyada ho sakta hai
+  /// agar kuch pehle return ho chuke hon).
+  final int soldQuantity;
   final int quantity;
   final double salePrice;
   final double purchasePrice;
@@ -401,11 +405,14 @@ class ReturnCartItem {
     required this.typeId,
     required this.typeName,
     required this.maxQuantity,
+    int? soldQuantity,
     required this.quantity,
     required this.salePrice,
     required this.purchasePrice,
     required this.discountPct,
-  });
+  }) : soldQuantity = soldQuantity ?? maxQuantity;
+
+  int get alreadyReturned => soldQuantity - maxQuantity;
 
   double get discountAmount => salePrice * discountPct / 100;
   double get netPrice => salePrice - discountAmount;
@@ -429,6 +436,7 @@ class ReturnCartItem {
       typeId: typeId,
       typeName: typeName,
       maxQuantity: maxQuantity,
+      soldQuantity: soldQuantity,
       quantity: quantity ?? this.quantity,
       salePrice: salePrice,
       purchasePrice: purchasePrice,

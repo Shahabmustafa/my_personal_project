@@ -239,4 +239,54 @@ class SaleInvoiceDatasource {
       items: items,
     );
   }
+
+  /// Invoice ki har line (sale_invoice_items.id) ka kitna stock pehle hi
+  /// return ya exchange ho chuka hai. Return items mein original line ka
+  /// link nahi hota, is liye wo branch_stock_id se match hote hain; exchange
+  /// ke return items seedha original_sale_invoice_item_id rakhte hain.
+  Future<Map<String, int>> fetchReturnedQuantities(
+      SaleInvoiceModel invoice) async {
+    final results = await Future.wait([
+      _client
+          .from('sale_returns')
+          .select('sale_return_items(branch_stock_id, quantity)')
+          .eq('original_invoice_id', invoice.id),
+      _client
+          .from('sale_exchanges')
+          .select('sale_exchange_return_items(original_sale_invoice_item_id, quantity)')
+          .eq('original_invoice_id', invoice.id),
+    ]);
+
+    final returned = <String, int>{};
+
+    // Exchange — seedha line id se.
+    for (final ex in results[1] as List) {
+      for (final r in ((ex as Map)['sale_exchange_return_items'] as List? ?? const [])) {
+        final id = (r as Map)['original_sale_invoice_item_id']?.toString();
+        if (id == null) continue;
+        returned[id] = (returned[id] ?? 0) + ((r['quantity'] as num?)?.toInt() ?? 0);
+      }
+    }
+
+    // Return — branch_stock_id se, us stock wali lines par baari baari
+    // (jitni jagah bachi ho) baant do.
+    final byStock = <String, int>{};
+    for (final ret in results[0] as List) {
+      for (final r in ((ret as Map)['sale_return_items'] as List? ?? const [])) {
+        final sid = (r as Map)['branch_stock_id']?.toString();
+        if (sid == null) continue;
+        byStock[sid] = (byStock[sid] ?? 0) + ((r['quantity'] as num?)?.toInt() ?? 0);
+      }
+    }
+    for (final item in invoice.items) {
+      final left = byStock[item.branchStockId] ?? 0;
+      if (left <= 0) continue;
+      final room = item.quantity - (returned[item.id] ?? 0);
+      final take = left < room ? left : room;
+      if (take <= 0) continue;
+      returned[item.id] = (returned[item.id] ?? 0) + take;
+      byStock[item.branchStockId] = left - take;
+    }
+    return returned;
+  }
 }

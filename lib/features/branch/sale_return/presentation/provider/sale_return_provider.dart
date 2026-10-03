@@ -238,6 +238,10 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
     try {
       final detail =
           await _ref.read(saleInvoiceRepositoryProvider).getInvoiceDetail(summary.id);
+      // Pehle se return/exchange hua stock dobara return na ho sake.
+      final returned = await _ref
+          .read(saleInvoiceRepositoryProvider)
+          .getReturnedQuantities(detail);
 
       final returnItems = detail.items
           .map((i) => ReturnCartItem(
@@ -256,7 +260,9 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
                 categoryName: i.categoryName ?? '',
                 typeId: i.typeId ?? '',
                 typeName: i.typeName ?? '',
-                maxQuantity: i.quantity,
+                maxQuantity: (i.quantity - (returned[i.id] ?? 0))
+                    .clamp(0, i.quantity),
+                soldQuantity: i.quantity,
                 quantity: 0,
                 salePrice: i.salePrice,
                 purchasePrice: i.purchasePrice,

@@ -85,8 +85,15 @@ class _ReturnItemRow extends ConsumerWidget {
           ),
           Expanded(
             flex: 2,
-            child: Text('Sold: ${item.maxQuantity}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            child: Text(
+                item.alreadyReturned > 0
+                    ? 'Sold: ${item.soldQuantity} · Left: ${item.maxQuantity}'
+                    : 'Sold: ${item.soldQuantity}',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: item.maxQuantity == 0
+                        ? Colors.red.shade400
+                        : Colors.grey.shade600)),
           ),
           Expanded(
             flex: 2,
