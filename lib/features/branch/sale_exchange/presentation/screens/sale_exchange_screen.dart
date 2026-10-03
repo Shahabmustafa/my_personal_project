@@ -121,10 +121,8 @@ class SaleExchangeScreen extends ConsumerWidget {
 
           const SizedBox(height: 12),
 
-          // ── Salesman / Printer / Bank / Cash ─────────────────────────
-          const _ExchangeMetaRow(),
-
-          const SizedBox(height: 8),
+          // ── Bank / Cash (sirf card payment par) ──────────────────────
+          const _ExchangePaymentRow(),
 
           // ── Wapas aane wale items (lambi list ho to scroll) ──────────
           ConstrainedBox(
@@ -135,7 +133,9 @@ class SaleExchangeScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: 8),
+          // ── Salesman / Printer / Bar Code / Article / In Stock — ek row ──
           SaleProductSelector(
+            leading: const [_SalesmanField(), _PrinterField()],
             buttonLabel: 'Add New Item',
             onAdd: (ref, stock, qty) => ref
                 .read(saleExchangeProvider.notifier)
@@ -222,16 +222,72 @@ class _PaymentTypeToggle extends StatelessWidget {
   }
 }
 
-// ── Salesman / Printer / Bank / Cash row ────────────────────────────────
+// ── Salesman / Printer (product selector ki row mein) ───────────────────
 
-class _ExchangeMetaRow extends ConsumerStatefulWidget {
-  const _ExchangeMetaRow();
+InputDecoration _decor(String label, {bool required = false}) => InputDecoration(
+      labelText: required ? '$label *' : label,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    );
+
+class _SalesmanField extends ConsumerWidget {
+  const _SalesmanField();
 
   @override
-  ConsumerState<_ExchangeMetaRow> createState() => _ExchangeMetaRowState();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(saleExchangeProvider);
+    return ref.watch(salesmenProvider).when(
+          loading: () => const _FieldLoading(),
+          error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+          data: (list) => DropdownSearch<EmployeeLookupItem>(
+            items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
+            selectedItem: state.salesman,
+            itemAsString: (e) => e.name,
+            compareFn: (a, b) => a.id == b.id,
+            onSelected: ref.read(saleExchangeProvider.notifier).selectSalesman,
+            decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman', required: true)),
+            popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+          ),
+        );
+  }
 }
 
-class _ExchangeMetaRowState extends ConsumerState<_ExchangeMetaRow> {
+class _PrinterField extends ConsumerWidget {
+  const _PrinterField();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(saleExchangeProvider);
+    return ref.watch(printersForSaleProvider).when(
+          loading: () => const _FieldLoading(),
+          error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+          data: (list) => DropdownSearch<PrinterLookupItem>(
+            items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
+            selectedItem: state.printer,
+            itemAsString: (e) => e.label,
+            compareFn: (a, b) => a.id == b.id,
+            onSelected: ref.read(saleExchangeProvider.notifier).selectPrinter,
+            decoratorProps: DropDownDecoratorProps(decoration: _decor('Printer', required: true)),
+            popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+          ),
+        );
+  }
+}
+
+// ── Bank / Cash row — sirf jab card ya cash + card se paisa lena/dena ho ──
+
+class _ExchangePaymentRow extends ConsumerStatefulWidget {
+  const _ExchangePaymentRow();
+
+  @override
+  ConsumerState<_ExchangePaymentRow> createState() => _ExchangePaymentRowState();
+}
+
+class _ExchangePaymentRowState extends ConsumerState<_ExchangePaymentRow> {
   final _cashAmountCtrl = TextEditingController();
 
   @override
@@ -244,16 +300,15 @@ class _ExchangeMetaRowState extends ConsumerState<_ExchangeMetaRow> {
   Widget build(BuildContext context) {
     final state = ref.watch(saleExchangeProvider);
     final notifier = ref.read(saleExchangeProvider.notifier);
-    final salesmenAsync = ref.watch(salesmenProvider);
-    final printersAsync = ref.watch(printersForSaleProvider);
-    final bankAsync = ref.watch(bankEntriesForSaleProvider);
 
     final hasPayment = state.differenceAmount != 0;
     final showBank = hasPayment &&
         (state.paymentType == 'card' || state.paymentType == 'cash_card');
     final showCash = hasPayment && state.paymentType == 'cash_card';
+    if (!showBank) return const SizedBox.shrink();
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -264,56 +319,22 @@ class _ExchangeMetaRowState extends ConsumerState<_ExchangeMetaRow> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: salesmenAsync.when(
-              loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-              data: (list) => DropdownSearch<EmployeeLookupItem>(
-                items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
-                selectedItem: state.salesman,
-                itemAsString: (e) => e.name,
-                compareFn: (a, b) => a.id == b.id,
-                onSelected: notifier.selectSalesman,
-                decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman', required: true)),
-                popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: printersAsync.when(
-              loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-              data: (list) => DropdownSearch<PrinterLookupItem>(
-                items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
-                selectedItem: state.printer,
-                itemAsString: (e) => e.label,
-                compareFn: (a, b) => a.id == b.id,
-                onSelected: notifier.selectPrinter,
-                decoratorProps: DropDownDecoratorProps(decoration: _decor('Printer', required: true)),
-                popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: showBank
-                ? bankAsync.when(
-                    loading: () => const _FieldLoading(),
-                    error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
-                    data: (list) => DropdownSearch<BankEntryLookupItem>(
-                      items: (f, _) =>
-                          list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
-                      selectedItem: state.bankEntry,
-                      itemAsString: (e) => e.label,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: notifier.selectBankEntry,
-                      decoratorProps:
-                          DropDownDecoratorProps(decoration: _decor('Bank Account', required: true)),
-                      popupProps: const PopupProps.menu(
-                          showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
-                    ),
-                  )
-                : const SizedBox(),
+            child: ref.watch(bankEntriesForSaleProvider).when(
+                  loading: () => const _FieldLoading(),
+                  error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                  data: (list) => DropdownSearch<BankEntryLookupItem>(
+                    items: (f, _) =>
+                        list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
+                    selectedItem: state.bankEntry,
+                    itemAsString: (e) => e.label,
+                    compareFn: (a, b) => a.id == b.id,
+                    onSelected: notifier.selectBankEntry,
+                    decoratorProps:
+                        DropDownDecoratorProps(decoration: _decor('Bank Account', required: true)),
+                    popupProps: const PopupProps.menu(
+                        showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+                  ),
+                ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -332,21 +353,11 @@ class _ExchangeMetaRowState extends ConsumerState<_ExchangeMetaRow> {
                   )
                 : const SizedBox(),
           ),
+          const Spacer(flex: 2),
         ],
       ),
     );
   }
-
-  InputDecoration _decor(String label, {bool required = false}) => InputDecoration(
-        labelText: required ? '$label *' : label,
-        isDense: true,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
-      );
 }
 
 class _FieldLoading extends StatelessWidget {

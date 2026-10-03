@@ -21,11 +21,15 @@ class SaleProductSelector extends ConsumerStatefulWidget {
   /// Cart mein add karo — kitna asal mein add hua wo return karo.
   final int Function(WidgetRef ref, BranchStockModel stock, int quantity)? onAdd;
   final String buttonLabel;
+  /// Bar Code se pehle isi row mein dikhne wale fields (jaise exchange ka
+  /// Salesman / Printer) — har ek ko Expanded(flex: 3) milta hai.
+  final List<Widget> leading;
 
   const SaleProductSelector({
     super.key,
     this.onAdd,
     this.buttonLabel = 'Add Product',
+    this.leading = const [],
   });
 
   @override
@@ -156,6 +160,10 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              for (final w in widget.leading) ...[
+                Expanded(flex: 3, child: w),
+                const SizedBox(width: 10),
+              ],
               Expanded(
                 flex: 3,
                 child: TextField(
