@@ -14,8 +14,19 @@ import 'package:safishoe_app/core/widget/text_field_icon.dart';
 /// Category/Type dropdowns ki zaroorat nahi. Search karte hi neeche list
 /// mein har variant apne color/size/category/type ke sath dikhta hai,
 /// jo chahiye wahi select kar lo.
+///
+/// Default mein sale invoice ke cart mein add karta hai; Sale Exchange
+/// apna [onAdd] (new items cart) aur [buttonLabel] deta hai.
 class SaleProductSelector extends ConsumerStatefulWidget {
-  const SaleProductSelector({super.key});
+  /// Cart mein add karo — kitna asal mein add hua wo return karo.
+  final int Function(WidgetRef ref, BranchStockModel stock, int quantity)? onAdd;
+  final String buttonLabel;
+
+  const SaleProductSelector({
+    super.key,
+    this.onAdd,
+    this.buttonLabel = 'Add Product',
+  });
 
   @override
   ConsumerState<SaleProductSelector> createState() =>
@@ -99,9 +110,10 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
       return;
     }
 
-    final added = ref
-        .read(saleInvoiceProvider.notifier)
-        .addCartItem(stock, quantity: requested > 0 ? requested : 1);
+    final qty = requested > 0 ? requested : 1;
+    final added = widget.onAdd != null
+        ? widget.onAdd!(ref, stock, qty)
+        : ref.read(saleInvoiceProvider.notifier).addCartItem(stock, quantity: qty);
 
     if (added < requested) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -241,7 +253,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                 height: 48,
                 child: FilledButton.icon(
                   icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
-                  label: const Text('Add Product'),
+                  label: Text(widget.buttonLabel),
                   style: FilledButton.styleFrom(
                     backgroundColor: const Color(0xFF43A047),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

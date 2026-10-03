@@ -7,7 +7,7 @@ import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
     show salesmenProvider, printersForSaleProvider, bankEntriesForSaleProvider;
 import '../provider/sale_exchange_provider.dart';
 import '../widgets/sale_exchange_new_cart_table.dart';
-import '../widgets/sale_exchange_new_item_selector.dart';
+import '../../../sale_invoice/presentation/widgets/sale_product_selector.dart';
 import '../widgets/sale_exchange_return_items_picker.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
@@ -135,7 +135,12 @@ class SaleExchangeScreen extends ConsumerWidget {
           ),
 
           const SizedBox(height: 8),
-          const SaleExchangeNewItemSelector(),
+          SaleProductSelector(
+            buttonLabel: 'Add New Item',
+            onAdd: (ref, stock, qty) => ref
+                .read(saleExchangeProvider.notifier)
+                .addNewCartItem(stock, quantity: qty),
+          ),
           const SizedBox(height: 8),
 
           Expanded(
