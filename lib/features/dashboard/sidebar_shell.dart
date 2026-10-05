@@ -225,25 +225,20 @@ class _SidebarShellState extends State<SidebarShell> {
                 ? MainAxisAlignment.center
                 : MainAxisAlignment.start,
             children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [_accent, Color(0xFF5B7FEF)],
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: const Text(
-                  'A',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+              // Login screen jaisa filter — logo ka off-white background
+              // white ho jata hai (black/red waise hi rehte hain).
+              ColorFiltered(
+                colorFilter: const ColorFilter.matrix(<double>[
+                  1.0494, 0, 0, 0, 0, //
+                  0, 1.0494, 0, 0, 0, //
+                  0, 0, 1.0494, 0, 0, //
+                  0, 0, 0, 1, 0,
+                ]),
+                child: Image.asset(
+                  'assets/images/safi.png',
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.contain,
                 ),
               ),
               if (!collapsed) ...[
@@ -253,7 +248,7 @@ class _SidebarShellState extends State<SidebarShell> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Admin Panel',
+                        'Safi Shoes',
                         style: TextStyle(
                           color: _textDark,
                           fontSize: 15,
