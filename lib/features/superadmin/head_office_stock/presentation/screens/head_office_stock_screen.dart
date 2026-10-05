@@ -163,7 +163,7 @@ class _StatsCards extends StatelessWidget {
     final cards = [
       ReportSummaryCard(
         label: 'Total Articles',
-        value: groupThousands(stats.totalArticles),
+        value: groupThousands(stats.totalSkus),
         icon: AppIcons.categoryOutlined,
         color: const Color(0xFF6C4DE0),
       ),
