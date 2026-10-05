@@ -113,9 +113,13 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(
       icon: AppIcons.moveToInboxOutlined,
       label: 'Incoming Branch Returns',
-      group: 'Assign Stock',
+      group: 'Returns & Claims',
     ),
-    SidebarItem(icon: AppIcons.warningAmberOutlined, label: 'Branch Sale Claims'),
+    SidebarItem(
+      icon: AppIcons.warningAmberOutlined,
+      label: 'Branch Sale Claims',
+      group: 'Returns & Claims',
+    ),
     SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
     SidebarItem(
         icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
