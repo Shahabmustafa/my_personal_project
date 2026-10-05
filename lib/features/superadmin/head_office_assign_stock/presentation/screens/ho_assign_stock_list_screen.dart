@@ -299,7 +299,7 @@ class _HoAssignStockListScreenState
                                           DataCell(Text(
                                               a.totalValue.toStringAsFixed(0))),
                                           DataCell(
-                                              Text(_fmtDate(a.assignedAt))),
+                                              Text(_fmtDateTime(a.assignedAt))),
                                           DataCell(_StatusChip(a.status)),
                                           DataCell(_rowActions(a)),
                                         ],
@@ -311,7 +311,7 @@ class _HoAssignStockListScreenState
                   ReportDetailOverlay(
                     title: _selected!.assignmentNumber,
                     subtitle:
-                        '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.assignedAt)}',
+                        '${_selected!.branchName ?? '—'} · ${_fmtDateTime(_selected!.assignedAt)}',
                     accent: _accent,
                     onClose: () => setState(() => _selected = null),
                     child: _AssignmentDetailBody(assignmentId: _selected!.id),
@@ -579,14 +579,14 @@ class _AssignmentDetailBody extends ConsumerWidget {
           children: [
             DetailKV('Assigned By', a.assignedByName ?? '—'),
             DetailKV('Assigned To', a.branchName ?? '—'),
-            DetailKV('Assigned', _fmtDate(a.assignedAt)),
+            DetailKV('Assigned', _fmtDateTime(a.assignedAt)),
             DetailKV(
               'Status',
               a.status[0].toUpperCase() + a.status.substring(1),
               valueColor: _statusColor(a.status),
             ),
             if (a.acceptedAt != null)
-              DetailKV('Accepted', _fmtDate(a.acceptedAt!)),
+              DetailKV('Accepted', _fmtDateTime(a.acceptedAt!)),
             if ((a.notes ?? '').isNotEmpty) DetailKV('Notes', a.notes!),
             const DetailDivider(),
             DetailSectionLabel('ITEMS (${items.length})'),
@@ -706,6 +706,15 @@ String _fmtDate(DateTime dt) =>
     '${dt.day.toString().padLeft(2, '0')}/'
     '${dt.month.toString().padLeft(2, '0')}/'
     '${dt.year}';
+
+/// Date plus 12-hour local time, e.g. "05/10/2026 03:42 PM".
+String _fmtDateTime(DateTime dt) {
+  final l = dt.toLocal();
+  final h = l.hour % 12 == 0 ? 12 : l.hour % 12;
+  final ampm = l.hour < 12 ? 'AM' : 'PM';
+  return '${_fmtDate(l)} ${h.toString().padLeft(2, '0')}:'
+      '${l.minute.toString().padLeft(2, '0')} $ampm';
+}
 
 /// Whole-rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
 String _money(double v) {
