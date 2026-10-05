@@ -353,12 +353,20 @@ class _RoleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: const Color(0xFFEAEFFD), borderRadius: BorderRadius.circular(20)),
-      child: Text(role,
-          style: const TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.w600),
-          overflow: TextOverflow.ellipsis),
+    // Align se badge text jitna hi chaura rehta hai (table cell ki poori
+    // width nahi leta), aur text pill ke beech mein aata hai.
+    return Align(
+      alignment: Alignment.centerLeft,
+      widthFactor: 1,
+      heightFactor: 1,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(color: const Color(0xFFEAEFFD), borderRadius: BorderRadius.circular(20)),
+        child: Text(role,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: _primary, fontSize: 11, fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis),
+      ),
     );
   }
 }
