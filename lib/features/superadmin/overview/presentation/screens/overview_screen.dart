@@ -153,9 +153,8 @@ class _Content extends StatelessWidget {
         LayoutBuilder(
           builder: (ctx, c) {
             final w = c.maxWidth;
-            final cols = w > 1100
-                ? 4
-                : w > 820
+            // Wide screen par ek row mein 3 cards (6 cards = 3 + 3).
+            final cols = w > 820
                 ? 3
                 : w > 520
                 ? 2
