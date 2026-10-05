@@ -6,6 +6,7 @@ import '../../data/model/purchase_transaction_row.dart';
 import '../providers/purchase_summary_provider.dart';
 import '../widgets/report_date_filter_dialog.dart';
 import '../widgets/report_detail_panel.dart';
+import '../widgets/report_pagination_bar.dart';
 import '../widgets/report_summary_card.dart';
 import '../widgets/report_table_shell.dart';
 
@@ -24,7 +25,8 @@ class PurchaseSummaryReportScreen extends ConsumerStatefulWidget {
       _PurchaseSummaryReportScreenState();
 }
 
-class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryReportScreen> {
+class _PurchaseSummaryReportScreenState
+    extends ConsumerState<PurchaseSummaryReportScreen> {
   static const _purchaseColor = Color(0xFF22A06B);
   static const _returnColor = Colors.red;
   static const _netColor = Color(0xFF3E63DD);
@@ -35,32 +37,38 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
   String? _loadingId;
 
   Color _rowColor(PurchaseTransactionType type) => switch (type) {
-        PurchaseTransactionType.purchase => _purchaseColor,
-        PurchaseTransactionType.purchaseReturn => _returnColor,
-      };
+    PurchaseTransactionType.purchase => _purchaseColor,
+    PurchaseTransactionType.purchaseReturn => _returnColor,
+  };
 
   Future<void> _viewDetail(PurchaseTransactionRow t) async {
     setState(() => _loadingId = t.id);
     final ds = ref.read(purchaseReportDatasourceProvider);
     try {
       final Widget body = switch (t.type) {
-        PurchaseTransactionType.purchase =>
-          _PurchaseInvoiceDetailBody(invoice: await ds.fetchInvoiceById(t.id), source: t.source),
-        PurchaseTransactionType.purchaseReturn =>
-          _PurchaseReturnDetailBody(purchaseReturn: await ds.fetchReturnById(t.id), source: t.source),
+        PurchaseTransactionType.purchase => _PurchaseInvoiceDetailBody(
+          invoice: await ds.fetchInvoiceById(t.id),
+          source: t.source,
+        ),
+        PurchaseTransactionType.purchaseReturn => _PurchaseReturnDetailBody(
+          purchaseReturn: await ds.fetchReturnById(t.id),
+          source: t.source,
+        ),
       };
       if (!mounted) return;
       setState(() => _loadingId = null);
       final subtitle = '${t.companyName ?? '—'} · ${_fmtDateTime(t.createdAt)}';
       if (Responsive(context).isMobile) {
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => _MobileDetailScreen(
-            title: t.number,
-            subtitle: subtitle,
-            accent: _rowColor(t.type),
-            child: body,
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => _MobileDetailScreen(
+              title: t.number,
+              subtitle: subtitle,
+              accent: _rowColor(t.type),
+              child: body,
+            ),
           ),
-        ));
+        );
       } else {
         setState(() {
           _selectedRow = t;
@@ -70,9 +78,9 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
     } catch (e) {
       if (!mounted) return;
       setState(() => _loadingId = null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load detail: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load detail: $e')));
     }
   }
 
@@ -87,7 +95,9 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
       final result = await showDialog<(DateTime?, DateTime?)?>(
         context: context,
         builder: (_) => ReportDateFilterDialog(
-            initialStart: state.startDate, initialEnd: state.endDate),
+          initialStart: state.startDate,
+          initialEnd: state.endDate,
+        ),
       );
       if (result != null) {
         notifier.applyDateRange(result.$1, result.$2);
@@ -101,7 +111,10 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
           icon: const AppIcon(AppIcons.clear, size: 16),
           label: Text(_rangeLabel(state.startDate, state.endDate)),
         ),
-      _CompanyFilterDropdown(value: state.companyId, onChanged: notifier.setCompany),
+      _CompanyFilterDropdown(
+        value: state.companyId,
+        onChanged: notifier.setCompany,
+      ),
       OutlinedButton.icon(
         icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
         label: const Text('Filter'),
@@ -116,8 +129,13 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
               Row(
                 children: [
                   const Expanded(
-                    child: Text('Purchase Summary',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    child: Text(
+                      'Purchase Summary',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                   IconButton(
                     icon: const AppIcon(AppIcons.refresh, size: 18),
@@ -132,8 +150,10 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
         : Row(
             children: [
               const Expanded(
-                child: Text('Purchase Summary',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Purchase Summary',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
               ),
               for (final f in filters) ...[f, const SizedBox(width: 8)],
               IconButton(
@@ -178,86 +198,127 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
               return Wrap(
                 spacing: gap,
                 runSpacing: gap,
-                children: [for (final card in cards) SizedBox(width: cardW, child: card)],
+                children: [
+                  for (final card in cards) SizedBox(width: cardW, child: card),
+                ],
               );
             },
           )
-        : Row(children: [
-            for (var i = 0; i < cards.length; i++) ...[
-              if (i > 0) const SizedBox(width: 14),
-              Expanded(child: cards[i]),
+        : Row(
+            children: [
+              for (var i = 0; i < cards.length; i++) ...[
+                if (i > 0) const SizedBox(width: 14),
+                Expanded(child: cards[i]),
+              ],
             ],
-          ]);
+          );
 
     final content = isMobile
         ? (state.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : state.transactions.isEmpty
-                ? const Center(child: Text('No transactions found'))
-                : _MobileTransactionList(
-                    transactions: state.transactions,
-                    loadingId: _loadingId,
-                    rowColor: _rowColor,
-                    fmtDateTime: _fmtDateTime,
-                    onView: _viewDetail,
-                  ))
+              ? const Center(child: CircularProgressIndicator())
+              : state.transactions.isEmpty
+              ? const Center(child: Text('No transactions found'))
+              : _MobileTransactionList(
+                  transactions: state.pageRows,
+                  loadingId: _loadingId,
+                  rowColor: _rowColor,
+                  fmtDateTime: _fmtDateTime,
+                  onView: _viewDetail,
+                ))
         : Stack(
             children: [
               Positioned.fill(
                 child: state.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : state.transactions.isEmpty
-                        ? const Center(child: Text('No transactions found'))
-                        : SingleChildScrollView(
-                            child: ReportTableShell(
-                              columns: const [
-                                DataColumn(label: Text('Type')),
-                                DataColumn(label: Text('Number')),
-                                DataColumn(label: Text('Company')),
-                                DataColumn(label: Text('Source')),
-                                DataColumn(label: Text('Date')),
-                                DataColumn(label: Text('Amount'), numeric: true),
-                                DataColumn(label: Text('Actions')),
-                              ],
-                              rows: state.transactions
-                                  .map((t) => DataRow(
-                                        selected: _selectedRow?.id == t.id,
-                                        cells: [
-                                          DataCell(
-                                              _TypeBadge(type: t.type, color: _rowColor(t.type))),
-                                          DataCell(Text(t.number,
-                                              style:
-                                                  const TextStyle(fontWeight: FontWeight.w600))),
-                                          DataCell(Text(t.companyName ?? '—')),
-                                          DataCell(Text(t.source)),
-                                          DataCell(Text(_fmtDateTime(t.createdAt))),
-                                          DataCell(Text(
-                                            '${t.amount < 0 ? '- ' : ''}Rs. ${t.amount.abs().toStringAsFixed(0)}',
-                                            style: TextStyle(
-                                                fontWeight: FontWeight.w700,
-                                                color: _rowColor(t.type)),
-                                          )),
-                                          DataCell(
-                                            _loadingId == t.id
-                                                ? const SizedBox(
-                                                    width: 19,
-                                                    height: 19,
-                                                    child:
-                                                        CircularProgressIndicator(strokeWidth: 2),
-                                                  )
-                                                : IconButton(
-                                                    icon: const AppIcon(
-                                                        AppIcons.visibilityOutlined,
-                                                        size: 19),
-                                                    tooltip: 'View',
-                                                    onPressed: () => _viewDetail(t),
-                                                  ),
-                                          ),
-                                        ],
-                                      ))
-                                  .toList(),
-                            ),
-                          ),
+                    ? const Center(child: Text('No transactions found'))
+                    : SingleChildScrollView(
+                        child: ReportTableShell(
+                          columns: const [
+                            DataColumn(label: Text('#'), numeric: true),
+                            DataColumn(label: Text('Type')),
+                            DataColumn(label: Text('Number')),
+                            DataColumn(label: Text('Company')),
+                            DataColumn(label: Text('Source')),
+                            DataColumn(label: Text('Date')),
+                            DataColumn(label: Text('Amount'), numeric: true),
+                            DataColumn(label: Text('Actions')),
+                          ],
+                          rows: state.pageRows
+                              .asMap()
+                              .entries
+                              .map(
+                                (e) => (
+                                  e.value,
+                                  (state.page - 1) *
+                                          PurchaseSummaryState.pageSize +
+                                      e.key +
+                                      1,
+                                ),
+                              )
+                              .map((entry) {
+                                final (t, serial) = entry;
+                                return DataRow(
+                                  selected: _selectedRow?.id == t.id,
+                                  cells: [
+                                    DataCell(
+                                      Text(
+                                        '$serial',
+                                        style: const TextStyle(
+                                          color: Color(0xFF8A8FA3),
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _TypeBadge(
+                                        type: t.type,
+                                        color: _rowColor(t.type),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        t.number,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(Text(t.companyName ?? '—')),
+                                    DataCell(Text(t.source)),
+                                    DataCell(Text(_fmtDateTime(t.createdAt))),
+                                    DataCell(
+                                      Text(
+                                        '${t.amount < 0 ? '- ' : ''}Rs. ${t.amount.abs().toStringAsFixed(0)}',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: _rowColor(t.type),
+                                        ),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _loadingId == t.id
+                                          ? const SizedBox(
+                                              width: 19,
+                                              height: 19,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : IconButton(
+                                              icon: const AppIcon(
+                                                AppIcons.visibilityOutlined,
+                                                size: 19,
+                                              ),
+                                              tooltip: 'View',
+                                              onPressed: () => _viewDetail(t),
+                                            ),
+                                    ),
+                                  ],
+                                );
+                              })
+                              .toList(),
+                        ),
+                      ),
               ),
               if (_selectedRow != null && _selectedBody != null)
                 ReportDetailOverlay(
@@ -285,10 +346,23 @@ class _PurchaseSummaryReportScreenState extends ConsumerState<PurchaseSummaryRep
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Error: ${state.error}', style: const TextStyle(color: Colors.red)),
+              child: Text(
+                'Error: ${state.error}',
+                style: const TextStyle(color: Colors.red),
+              ),
             ),
           const SizedBox(height: 16),
           Expanded(child: content),
+          if (!state.isLoading && state.transactions.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ReportPaginationBar(
+              page: state.page,
+              totalPages: state.totalPages,
+              totalCount: state.transactions.length,
+              pageSize: PurchaseSummaryState.pageSize,
+              onPageChange: notifier.goToPage,
+            ),
+          ],
         ],
       ),
     );
@@ -323,7 +397,8 @@ class _CompanyFilterDropdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final companies = ref.watch(purchaseReportCompaniesProvider).value ?? const [];
+    final companies =
+        ref.watch(purchaseReportCompaniesProvider).value ?? const [];
     return Container(
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -337,7 +412,10 @@ class _CompanyFilterDropdown extends ConsumerWidget {
           hint: const Text('All Companies', style: TextStyle(fontSize: 13)),
           icon: const AppIcon(AppIcons.arrowDropDown, size: 18),
           items: [
-            const DropdownMenuItem<String?>(value: null, child: Text('All Companies')),
+            const DropdownMenuItem<String?>(
+              value: null,
+              child: Text('All Companies'),
+            ),
             for (final (id, name) in companies)
               DropdownMenuItem<String?>(value: id, child: Text(name)),
           ],
@@ -365,8 +443,14 @@ class _TypeBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(label,
-          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
@@ -374,7 +458,10 @@ class _TypeBadge extends StatelessWidget {
 class _PurchaseInvoiceDetailBody extends StatelessWidget {
   final PurchaseInvoiceModel invoice;
   final String source;
-  const _PurchaseInvoiceDetailBody({required this.invoice, required this.source});
+  const _PurchaseInvoiceDetailBody({
+    required this.invoice,
+    required this.source,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -398,14 +485,24 @@ class _PurchaseInvoiceDetailBody extends StatelessWidget {
         const DetailDivider(),
         DetailKV('Total', 'Rs. ${invoice.totalAmount.toStringAsFixed(0)}'),
         if (invoice.totalDiscount > 0)
-          DetailKV('Discount', '- Rs. ${invoice.totalDiscount.toStringAsFixed(0)}',
-              valueColor: Colors.orange),
-        DetailKV('Net Amount', 'Rs. ${invoice.netAmount.toStringAsFixed(0)}',
-            bold: true, valueColor: Colors.green.shade700),
+          DetailKV(
+            'Discount',
+            '- Rs. ${invoice.totalDiscount.toStringAsFixed(0)}',
+            valueColor: Colors.orange,
+          ),
+        DetailKV(
+          'Net Amount',
+          'Rs. ${invoice.netAmount.toStringAsFixed(0)}',
+          bold: true,
+          valueColor: Colors.green.shade700,
+        ),
         DetailKV('Paid', 'Rs. ${invoice.paidAmount.toStringAsFixed(0)}'),
         if (invoice.creditAmount > 0)
-          DetailKV('Credit', 'Rs. ${invoice.creditAmount.toStringAsFixed(0)}',
-              valueColor: Colors.orange.shade800),
+          DetailKV(
+            'Credit',
+            'Rs. ${invoice.creditAmount.toStringAsFixed(0)}',
+            valueColor: Colors.orange.shade800,
+          ),
       ],
     );
   }
@@ -414,7 +511,10 @@ class _PurchaseInvoiceDetailBody extends StatelessWidget {
 class _PurchaseReturnDetailBody extends StatelessWidget {
   final PurchaseReturnModel purchaseReturn;
   final String source;
-  const _PurchaseReturnDetailBody({required this.purchaseReturn, required this.source});
+  const _PurchaseReturnDetailBody({
+    required this.purchaseReturn,
+    required this.source,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -438,10 +538,17 @@ class _PurchaseReturnDetailBody extends StatelessWidget {
         const DetailDivider(),
         DetailKV('Total', 'Rs. ${r.totalAmount.toStringAsFixed(0)}'),
         if (r.totalDiscount > 0)
-          DetailKV('Discount', '- Rs. ${r.totalDiscount.toStringAsFixed(0)}',
-              valueColor: Colors.orange),
-        DetailKV('Net Return', 'Rs. ${r.netAmount.toStringAsFixed(0)}',
-            bold: true, valueColor: Colors.red),
+          DetailKV(
+            'Discount',
+            '- Rs. ${r.totalDiscount.toStringAsFixed(0)}',
+            valueColor: Colors.orange,
+          ),
+        DetailKV(
+          'Net Return',
+          'Rs. ${r.netAmount.toStringAsFixed(0)}',
+          bold: true,
+          valueColor: Colors.red,
+        ),
       ],
     );
   }
@@ -491,9 +598,14 @@ class _MobileTransactionList extends StatelessWidget {
                     _TypeBadge(type: t.type, color: color),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(t.number,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        t.number,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (isLoading)
                       const SizedBox(
@@ -502,24 +614,40 @@ class _MobileTransactionList extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     else
-                      const AppIcon(AppIcons.chevronRight, size: 18, color: Color(0xFF8A8FA3)),
+                      const AppIcon(
+                        AppIcons.chevronRight,
+                        size: 18,
+                        color: Color(0xFF8A8FA3),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   '${t.companyName ?? '—'} · ${t.source}',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF8A8FA3),
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(fmtDateTime(t.createdAt),
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3))),
+                    Text(
+                      fmtDateTime(t.createdAt),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF8A8FA3),
+                      ),
+                    ),
                     Text(
                       '${t.amount < 0 ? '- ' : ''}Rs. ${t.amount.abs().toStringAsFixed(0)}',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 13),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                 ),
@@ -559,10 +687,19 @@ class _MobileDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: accent)),
-            Text(subtitle,
-                style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
-                overflow: TextOverflow.ellipsis),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: accent,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),

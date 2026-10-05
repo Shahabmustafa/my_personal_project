@@ -18,6 +18,9 @@ class PurchaseSummaryState {
   final DateTime? startDate;
   final DateTime? endDate;
   final String? companyId;
+
+  /// 1-based current page — list client-side [pageSize] rows per page.
+  final int page;
   final bool isLoading;
   final String? error;
 
@@ -27,11 +30,20 @@ class PurchaseSummaryState {
     this.startDate,
     this.endDate,
     this.companyId,
+    this.page = 1,
     this.isLoading = false,
     this.error,
   });
 
+  static const pageSize = 10;
+
   bool get hasFilter => startDate != null || endDate != null;
+
+  int get totalPages =>
+      transactions.isEmpty ? 1 : ((transactions.length - 1) ~/ pageSize) + 1;
+
+  List<PurchaseTransactionRow> get pageRows =>
+      transactions.skip((page - 1) * pageSize).take(pageSize).toList();
 
   PurchaseSummaryState copyWith({
     PurchaseSummaryTotals? totals,
@@ -42,26 +54,28 @@ class PurchaseSummaryState {
     bool clearEndDate = false,
     String? companyId,
     bool clearCompanyId = false,
+    int? page,
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      PurchaseSummaryState(
-        totals: totals ?? this.totals,
-        transactions: transactions ?? this.transactions,
-        startDate: clearStartDate ? null : startDate ?? this.startDate,
-        endDate: clearEndDate ? null : endDate ?? this.endDate,
-        companyId: clearCompanyId ? null : companyId ?? this.companyId,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => PurchaseSummaryState(
+    totals: totals ?? this.totals,
+    transactions: transactions ?? this.transactions,
+    startDate: clearStartDate ? null : startDate ?? this.startDate,
+    endDate: clearEndDate ? null : endDate ?? this.endDate,
+    companyId: clearCompanyId ? null : companyId ?? this.companyId,
+    page: page ?? this.page,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
 /// Purchase Summary screen — Total Purchase / Total Return / Net Purchase /
 /// Credit cards aur combined history, date-range + company filter ke sath.
 class PurchaseSummaryNotifier extends StateNotifier<PurchaseSummaryState> {
   final PurchaseReportDatasource _datasource;
-  PurchaseSummaryNotifier(this._datasource) : super(const PurchaseSummaryState()) {
+  PurchaseSummaryNotifier(this._datasource)
+    : super(const PurchaseSummaryState()) {
     load();
   }
 
@@ -73,9 +87,17 @@ class PurchaseSummaryNotifier extends StateNotifier<PurchaseSummaryState> {
         endDate: state.endDate,
         companyId: state.companyId,
       );
-      state = state.copyWith(totals: totals, transactions: rows, isLoading: false);
+      state = state.copyWith(
+        totals: totals,
+        transactions: rows,
+        page: 1,
+        isLoading: false,
+      );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceAll('Exception: ', ''),
+      );
     }
   }
 
@@ -87,6 +109,10 @@ class PurchaseSummaryNotifier extends StateNotifier<PurchaseSummaryState> {
       clearEndDate: end == null,
     );
     load();
+  }
+
+  void goToPage(int page) {
+    state = state.copyWith(page: page.clamp(1, state.totalPages));
   }
 
   void clearDateRange() {
@@ -105,5 +131,6 @@ class PurchaseSummaryNotifier extends StateNotifier<PurchaseSummaryState> {
 
 final purchaseSummaryProvider =
     StateNotifierProvider<PurchaseSummaryNotifier, PurchaseSummaryState>(
-  (ref) => PurchaseSummaryNotifier(ref.read(purchaseReportDatasourceProvider)),
-);
+      (ref) =>
+          PurchaseSummaryNotifier(ref.read(purchaseReportDatasourceProvider)),
+    );
