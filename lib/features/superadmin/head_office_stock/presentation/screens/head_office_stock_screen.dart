@@ -49,24 +49,9 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
             padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
             child: Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Stock Inventory',
-                        style: TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
-                    Text(
-                      stats.maybeWhen(
-                        data: (s) =>
-                            'Total SKUs: ${groupThousands(state.totalCount)}  •  ${groupThousands(s.totalQty)} units  •  ${groupThousands(s.lowStockCount)} low',
-                        orElse: () =>
-                            'Total SKUs: ${groupThousands(state.totalCount)}',
-                      ),
-                      style: const TextStyle(
-                          fontSize: 13, color: Color(0xFF8A8FA3)),
-                    ),
-                  ],
-                ),
+                const Text('Stock Inventory',
+                    style: TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.bold)),
                 const Spacer(),
                 IconButton(
                   onPressed: () {
@@ -134,7 +119,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
           ),
           if (state.totalCount > 0 && state.error == null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: ReportPaginationBar(
                 page: state.page,
                 totalPages: notifier.totalPages,
@@ -491,7 +476,7 @@ class _DesktopTableState extends State<_DesktopTable> {
         letterSpacing: 0.3);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

@@ -27,7 +27,7 @@ class ReportPaginationBar extends StatelessWidget {
     final to = (page * pageSize).clamp(0, totalCount);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -40,12 +40,14 @@ class ReportPaginationBar extends StatelessWidget {
           const Spacer(),
           IconButton(
             icon: const AppIcon(AppIcons.chevronLeft, size: 20),
+            visualDensity: VisualDensity.compact,
             onPressed: page > 1 ? () => onPageChange(page - 1) : null,
           ),
           Text('Page $page of $totalPages',
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           IconButton(
             icon: const AppIcon(AppIcons.chevronRight, size: 20),
+            visualDensity: VisualDensity.compact,
             onPressed: page < totalPages ? () => onPageChange(page + 1) : null,
           ),
         ],
