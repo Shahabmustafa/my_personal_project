@@ -256,7 +256,7 @@ class _SidebarShellState extends State<SidebarShell> {
                         ),
                       ),
                       Text(
-                        'Management Console',
+                        'Admin Panel',
                         style: TextStyle(
                           color: _textDim,
                           fontSize: 11,
