@@ -6,6 +6,8 @@ import 'package:safishoe_app/features/warehouse/stock_inventory/data/barcode_pri
 import '../../data/model/stock_inventory_model.dart';
 import '../providers/stock_inventory_provider.dart';
 import '../widgets/add_stock_inventory_dialog.dart';
+import '../../../report/presentation/widgets/report_pagination_bar.dart';
+import '../../../report/presentation/widgets/report_summary_card.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -95,6 +97,13 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            child: _StatsCards(
+              stats: stats.value ?? const HeadOfficeStockStats(),
+              isMobile: isMobile,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: TextField(
               onChanged: notifier.setSearch,
               decoration: InputDecoration(
@@ -123,9 +132,77 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                 ? _MobileList(state: state, notifier: notifier)
                 : _DesktopTable(state: state, notifier: notifier),
           ),
+          if (state.totalCount > 0 && state.error == null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: ReportPaginationBar(
+                page: state.page,
+                totalPages: notifier.totalPages,
+                totalCount: state.totalCount,
+                pageSize: state.pageSize,
+                onPageChange: notifier.goToPage,
+              ),
+            ),
         ],
       ),
     );
+  }
+}
+
+// ── Summary cards ────────────────────────────────────────────────────────
+
+/// Total Articles / Total Stock / Total Purchase Price / Total Sale Price —
+/// desktop par ek hi row mein, mobile par 2 per row.
+class _StatsCards extends StatelessWidget {
+  final HeadOfficeStockStats stats;
+  final bool isMobile;
+  const _StatsCards({required this.stats, required this.isMobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final cards = [
+      ReportSummaryCard(
+        label: 'Total Articles',
+        value: groupThousands(stats.totalArticles),
+        icon: AppIcons.categoryOutlined,
+        color: const Color(0xFF6C4DE0),
+      ),
+      ReportSummaryCard(
+        label: 'Total Stock',
+        value: '${groupThousands(stats.totalQty)} pairs',
+        icon: AppIcons.warehouseOutlined,
+        color: const Color(0xFF3E63DD),
+      ),
+      ReportSummaryCard(
+        label: 'Total Purchase Price',
+        value: 'Rs. ${groupThousands(stats.totalPurchaseValue.round())}',
+        icon: AppIcons.shoppingCartCheckoutOutlined,
+        color: const Color(0xFFE08A00),
+      ),
+      ReportSummaryCard(
+        label: 'Total Sale Price',
+        value: 'Rs. ${groupThousands(stats.totalValue.round())}',
+        icon: AppIcons.pointOfSaleOutlined,
+        color: const Color(0xFF22A06B),
+      ),
+    ];
+    if (isMobile) {
+      return LayoutBuilder(builder: (context, c) {
+        const gap = 12.0;
+        final w = (c.maxWidth - gap) / 2;
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: [for (final card in cards) SizedBox(width: w, child: card)],
+        );
+      });
+    }
+    return Row(children: [
+      for (var i = 0; i < cards.length; i++) ...[
+        if (i > 0) const SizedBox(width: 14),
+        Expanded(child: cards[i]),
+      ],
+    ]);
   }
 }
 
@@ -373,6 +450,7 @@ class _RowActions extends ConsumerWidget {
 /// Fixed column widths — table horizontally scrolls jab screen choti ho,
 /// aur bachi hui jagah trailing filler kha jaata hai (no overflow).
 const _kColWidths = <double>[
+  60, // #
   210, // Barcode
   180, // Article
   90, // Size
@@ -384,7 +462,7 @@ const _kColWidths = <double>[
   80, // Discount
   190, // Actions
 ];
-const _kTableMinWidth = 1410; // sum(_kColWidths) 1370 + row padding 32 + slack
+const _kTableMinWidth = 1470; // sum(_kColWidths) 1430 + row padding 32 + slack
 
 class _DesktopTable extends StatefulWidget {
   final PaginatedListState<StockInventoryModel> state;
@@ -448,16 +526,17 @@ class _DesktopTableState extends State<_DesktopTable> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
                           child: const Row(children: [
-                            _TH('Barcode', w: 0, style: headerStyle),
-                            _TH('Article', w: 1, style: headerStyle),
-                            _TH('Size', w: 2, style: headerStyle),
-                            _TH('Color', w: 3, style: headerStyle),
-                            _TH('Brand', w: 4, style: headerStyle),
-                            _TH('Category', w: 5, style: headerStyle),
-                            _TH('Type', w: 6, style: headerStyle),
-                            _TH('Qty', w: 7, style: headerStyle),
-                            _TH('Discount', w: 8, style: headerStyle),
-                            _TH('Actions', w: 9, style: headerStyle),
+                            _TH('#', w: 0, style: headerStyle),
+                            _TH('Barcode', w: 1, style: headerStyle),
+                            _TH('Article', w: 2, style: headerStyle),
+                            _TH('Size', w: 3, style: headerStyle),
+                            _TH('Color', w: 4, style: headerStyle),
+                            _TH('Brand', w: 5, style: headerStyle),
+                            _TH('Category', w: 6, style: headerStyle),
+                            _TH('Type', w: 7, style: headerStyle),
+                            _TH('Qty', w: 8, style: headerStyle),
+                            _TH('Discount', w: 9, style: headerStyle),
+                            _TH('Actions', w: 10, style: headerStyle),
                             Expanded(child: SizedBox()),
                           ]),
                         ),
@@ -465,29 +544,35 @@ class _DesktopTableState extends State<_DesktopTable> {
                           child: PaginatedListView<StockInventoryModel>(
                             state: widget.state,
                             padding: EdgeInsets.zero,
-                            onLoadMore: widget.notifier.loadMore,
+                            // Page-by-page — scroll par aur rows load nahi hoti.
+                            onLoadMore: () async {},
                             onRefresh: widget.notifier.refresh,
                             emptyText: 'No stock entries found',
                             separatorBuilder: (_, __) => const Divider(
                                 height: 1, color: Color(0xFFE7E9F0)),
-                            itemBuilder: (_, s, __) {
+                            itemBuilder: (_, s, index) {
+                              final serial = (widget.state.page - 1) *
+                                      widget.state.pageSize +
+                                  index +
+                                  1;
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 10),
                                 child: Row(children: [
-                                  _cell(s.barcode, i: 0, mono: true),
+                                  _cell('$serial', i: 0),
+                                  _cell(s.barcode, i: 1, mono: true),
                                   _cell(s.productName ?? '—',
-                                      i: 1, bold: true),
-                                  _cell(s.sizeName ?? '—', i: 2),
-                                  _cell(s.colorName ?? '—', i: 3),
-                                  _cell(s.brandName ?? '—', i: 4),
-                                  _cell(s.categoryName ?? '—', i: 5),
-                                  _cell(s.typeName ?? '—', i: 6),
-                                  _cell('${s.quantity}', i: 7),
+                                      i: 2, bold: true),
+                                  _cell(s.sizeName ?? '—', i: 3),
+                                  _cell(s.colorName ?? '—', i: 4),
+                                  _cell(s.brandName ?? '—', i: 5),
+                                  _cell(s.categoryName ?? '—', i: 6),
+                                  _cell(s.typeName ?? '—', i: 7),
+                                  _cell('${s.quantity}', i: 8),
                                   _cell('${s.discount.toStringAsFixed(0)}%',
-                                      i: 8),
+                                      i: 9),
                                   SizedBox(
-                                      width: _kColWidths[9],
+                                      width: _kColWidths[10],
                                       child: _RowActions(stock: s)),
                                   const Expanded(child: SizedBox()),
                                 ]),
@@ -552,10 +637,11 @@ class _MobileList extends StatelessWidget {
     return PaginatedListView<StockInventoryModel>(
       state: state,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      onLoadMore: notifier.loadMore,
+      onLoadMore: () async {},
       onRefresh: notifier.refresh,
       emptyText: 'No stock entries found',
-      itemBuilder: (_, s, __) {
+      itemBuilder: (_, s, index) {
+        final serial = (state.page - 1) * state.pageSize + index + 1;
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(14),
@@ -570,7 +656,7 @@ class _MobileList extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(s.productName ?? s.barcode,
+                    child: Text('$serial. ${s.productName ?? s.barcode}',
                         style: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14)),
                   ),

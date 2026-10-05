@@ -19,11 +19,35 @@ final stockInventoryRepositoryProvider = Provider<StockInventoryRepository>(
 class HeadOfficeStockNotifier
     extends PaginatedListNotifier<StockInventoryModel> {
   final StockInventoryRepository _repo;
-  HeadOfficeStockNotifier(this._repo);
+  HeadOfficeStockNotifier(this._repo) : super(pageSize: pageSize);
+
+  /// Screen page-by-page dikhata hai (infinite scroll nahi) — 100 per page.
+  static const pageSize = 100;
+
+  int get totalPages => state.totalCount <= 0
+      ? 1
+      : ((state.totalCount - 1) ~/ state.pageSize) + 1;
 
   @override
   Future<PageResult<StockInventoryModel>> fetchPage(PageRequest request) =>
       _repo.fetchStockPage(request);
+
+  /// [page] ki rows load kar ke purani rows replace karta hai.
+  Future<void> goToPage(int page) async {
+    final target = page.clamp(1, totalPages);
+    if (target == state.page && !state.isFirstLoad) return;
+    state = state.copyWith(isFirstLoad: true, clearError: true);
+    try {
+      final result =
+          await fetchPage(state.requestFor(target, withCount: false));
+      state = state.copyWith(
+          rows: result.rows, page: target, isFirstLoad: false);
+    } catch (e) {
+      state = state.copyWith(
+          isFirstLoad: false,
+          error: e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 }
 
 final headOfficeStockProvider = StateNotifierProvider<HeadOfficeStockNotifier,
@@ -33,13 +57,23 @@ final headOfficeStockProvider = StateNotifierProvider<HeadOfficeStockNotifier,
 
 class HeadOfficeStockStats {
   final int totalSkus;
+
+  /// Alag products (articles) ki ginti.
+  final int totalArticles;
   final int totalQty;
+
+  /// Sale price × quantity.
   final double totalValue;
+
+  /// Purchase price × quantity.
+  final double totalPurchaseValue;
   final int lowStockCount;
   const HeadOfficeStockStats(
       {this.totalSkus = 0,
+      this.totalArticles = 0,
       this.totalQty = 0,
       this.totalValue = 0,
+      this.totalPurchaseValue = 0,
       this.lowStockCount = 0});
 }
 
@@ -50,8 +84,11 @@ final headOfficeStockStatsProvider =
   final j = (res as Map).cast<String, dynamic>();
   return HeadOfficeStockStats(
     totalSkus: (j['total_skus'] as num?)?.toInt() ?? 0,
+    totalArticles: (j['total_articles'] as num?)?.toInt() ?? 0,
     totalQty: (j['total_qty'] as num?)?.toInt() ?? 0,
     totalValue: (j['total_value'] as num?)?.toDouble() ?? 0,
+    totalPurchaseValue:
+        (j['total_purchase_value'] as num?)?.toDouble() ?? 0,
     lowStockCount: (j['low_stock_count'] as num?)?.toInt() ?? 0,
   );
 });
