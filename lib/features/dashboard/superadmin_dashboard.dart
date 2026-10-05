@@ -37,6 +37,7 @@ import '../superadmin/overview/presentation/screens/overview_screen.dart';
 import '../superadmin/head_office_purchase/presentation/screens/purchase_invoice_screen.dart';
 import '../superadmin/head_office_purchase/presentation/screens/purchase_return_screen.dart';
 
+import '../superadmin/report/presentation/screens/purchase_summary_report_screen.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 // Roles: superadmin, admin
 
@@ -157,6 +158,11 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Reports',
     ),
     SidebarItem(
+      icon: AppIcons.shoppingCartCheckoutOutlined,
+      label: 'Purchase Summary',
+      group: 'Reports',
+    ),
+    SidebarItem(
       icon: AppIcons.trendingUpOutlined,
       label: 'Branch Target',
       group: 'Reports',
@@ -208,6 +214,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     AssignPrinterScreen(),
     EmployeeSalaryScreen(),
     SaleSummaryReportScreen(),
+    PurchaseSummaryReportScreen(),
     BranchTargetReportScreen(),
   ];
 
