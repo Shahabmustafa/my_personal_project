@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../../core/pagination/pagination.dart';
@@ -32,6 +35,23 @@ class HeadOfficeStockNotifier
   Future<PageResult<StockInventoryModel>> fetchPage(PageRequest request) =>
       _repo.fetchStockPage(request);
 
+  /// Usi page ko chupchaap dobara laata hai (spinner/page reset ke baghair) —
+  /// realtime change aane par.
+  Future<void> reloadCurrentPage() async {
+    if (state.isFirstLoad) return;
+    try {
+      final result =
+          await fetchPage(state.requestFor(state.page, withCount: true));
+      state = state.copyWith(
+        rows: result.rows,
+        totalCount:
+            result.totalCount < 0 ? state.totalCount : result.totalCount,
+      );
+    } catch (_) {
+      // Agli change ya manual Refresh par phir try hoga.
+    }
+  }
+
   /// [page] ki rows load kar ke purani rows replace karta hai.
   Future<void> goToPage(int page) async {
     final target = page.clamp(1, totalPages);
@@ -52,7 +72,21 @@ class HeadOfficeStockNotifier
 
 final headOfficeStockProvider = StateNotifierProvider<HeadOfficeStockNotifier,
     PaginatedListState<StockInventoryModel>>(
-  (ref) => HeadOfficeStockNotifier(ref.read(stockInventoryRepositoryProvider)),
+  (ref) {
+    final notifier =
+        HeadOfficeStockNotifier(ref.read(stockInventoryRepositoryProvider));
+    // Realtime — assign stock / purchase / return se quantity badalte hi
+    // list update. Ek assignment kai rows badalta hai, is liye thoda ruk kar
+    // ek hi baar reload.
+    Timer? debounce;
+    ref.listen(tableChangesProvider('stock_inventory'), (_, _) {
+      debounce?.cancel();
+      debounce = Timer(
+          const Duration(milliseconds: 400), notifier.reloadCurrentPage);
+    });
+    ref.onDispose(() => debounce?.cancel());
+    return notifier;
+  },
 );
 
 class HeadOfficeStockStats {
@@ -79,6 +113,8 @@ class HeadOfficeStockStats {
 
 final headOfficeStockStatsProvider =
     FutureProvider.autoDispose<HeadOfficeStockStats>((ref) async {
+  // Realtime — stock badalte hi cards ke totals bhi dobara.
+  ref.watch(tableChangesProvider('stock_inventory'));
   final res =
       await Supabase.instance.client.rpc('head_office_stock_stats');
   final j = (res as Map).cast<String, dynamic>();

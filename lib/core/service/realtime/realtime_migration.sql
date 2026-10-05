@@ -7,3 +7,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE
   public.branch_stock_returns,
   public.branch_return_to_warehouse,
   public.branch_payments;
+
+-- Head office Stock Inventory screen — assign/purchase/return se quantity
+-- badalte hi list live update (2026-10-05, applied to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.stock_inventory;
