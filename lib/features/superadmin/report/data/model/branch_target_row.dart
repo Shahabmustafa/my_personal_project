@@ -4,8 +4,11 @@ class BranchTargetRow {
   final String branchId;
   final String branchName;
 
-  /// Aaj ka target — 0 = aaj ke liye target set nahi.
+  /// Chune hue period (aaj / mahina / saal) ka total target — 0 = us period
+  /// mein target set nahi. Naam purana hai, ab sirf "aaj" ke liye nahi.
   final double todayTarget;
+
+  /// Usi period ki net sale.
   final double netSaleToday;
 
   const BranchTargetRow({

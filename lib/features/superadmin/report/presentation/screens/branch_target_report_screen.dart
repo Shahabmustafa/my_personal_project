@@ -58,9 +58,13 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
   Widget build(BuildContext context) {
     final selected = _selected;
     if (selected != null) {
+      final period = ref.read(branchTargetReportProvider);
       return BranchTargetDetailScreen(
         key: ValueKey(selected.branchId),
         row: selected,
+        from: period.period == TargetPeriod.today ? null : period.from,
+        to: period.period == TargetPeriod.today ? null : period.to,
+        periodLabel: period.period == TargetPeriod.today ? null : period.periodLabel,
         onBack: () => setState(() => _selected = null),
       );
     }
@@ -75,6 +79,7 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
     final withTarget = rows.where((r) => r.hasTarget).toList();
     final achievedCount = withTarget.where((r) => r.isAchieved).length;
     final myTarget = restrictToOwnBranch && rows.isNotEmpty ? rows.first : null;
+    final label = state.periodLabel;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -93,12 +98,52 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SegmentedButton<TargetPeriod>(
+                showSelectedIcon: false,
+                segments: const [
+                  ButtonSegment(value: TargetPeriod.today, label: Text('Today')),
+                  ButtonSegment(value: TargetPeriod.monthly, label: Text('Monthly')),
+                  ButtonSegment(value: TargetPeriod.yearly, label: Text('Yearly')),
+                ],
+                selected: {state.period},
+                onSelectionChanged: (s) => notifier.setPeriod(s.first),
+              ),
+              if (state.period != TargetPeriod.today)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const AppIcon(AppIcons.chevronLeft, size: 20),
+                      tooltip: 'Previous',
+                      onPressed: () => notifier.shift(-1),
+                    ),
+                    SizedBox(
+                      width: 90,
+                      child: Text(label,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                    IconButton(
+                      icon: const AppIcon(AppIcons.chevronRight, size: 20),
+                      tooltip: 'Next',
+                      onPressed: state.canGoNext ? () => notifier.shift(1) : null,
+                    ),
+                  ],
+                ),
+            ],
+          ),
           const SizedBox(height: 16),
           if (myTarget != null)
             Row(children: [
               Expanded(
                 child: ReportSummaryCard(
-                  label: 'Sale Target (Today)',
+                  label: 'Sale Target ($label)',
                   value: myTarget.hasTarget
                       ? 'Rs. ${myTarget.todayTarget.toStringAsFixed(0)}'
                       : 'Not set',
@@ -109,7 +154,7 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
               const SizedBox(width: 14),
               Expanded(
                 child: ReportSummaryCard(
-                  label: 'Total Sale (Today)',
+                  label: 'Total Sale ($label)',
                   value: 'Rs. ${myTarget.netSaleToday.toStringAsFixed(0)}',
                   icon: AppIcons.trendingUpOutlined,
                   color: myTarget.isAchieved ? _achievedColor : _pendingColor,
@@ -129,7 +174,7 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
               const SizedBox(width: 14),
               Expanded(
                 child: ReportSummaryCard(
-                  label: 'Achieved Today',
+                  label: 'Achieved ($label)',
                   value: '$achievedCount / ${withTarget.length}',
                   icon: AppIcons.trendingUpOutlined,
                   color: _achievedColor,
@@ -153,6 +198,8 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
                             onOpen: _open,
                             restrictToOwnBranch: restrictToOwnBranch,
                             asOf: state.asOf,
+                            periodLabel:
+                                state.period == TargetPeriod.today ? null : label,
                           )
                         : SingleChildScrollView(
                             child: ReportTableShell(
@@ -161,9 +208,15 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
                                 const DataColumn(label: Text('Sale Target'), numeric: true),
                                 const DataColumn(label: Text('Total Sale'), numeric: true),
                                 const DataColumn(label: Text('Status')),
-                                const DataColumn(label: Text('Date & Time')),
+                                DataColumn(
+                                    label: Text(state.period == TargetPeriod.today
+                                        ? 'Date & Time'
+                                        : 'Period')),
                               ],
-                              rows: rows.map((r) => _row(context, r, state.asOf)).toList(),
+                              rows: rows
+                                  .map((r) => _row(context, r, state.asOf,
+                                      state.period == TargetPeriod.today ? null : label))
+                                  .toList(),
                             ),
                           ),
           ),
@@ -172,7 +225,8 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
     );
   }
 
-  DataRow _row(BuildContext context, BranchTargetRow r, DateTime? asOf) {
+  /// [periodLabel] null = "Today" view (aakhri load ka date/time dikhao).
+  DataRow _row(BuildContext context, BranchTargetRow r, DateTime? asOf, String? periodLabel) {
     final hasTarget = r.hasTarget;
     return DataRow(onSelectChanged: (_) => _open(r), cells: [
       if (!restrictToOwnBranch)
@@ -189,7 +243,9 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
       )),
       DataCell(hasTarget ? _StatusBadge(row: r) : const Text('No target set',
           style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
-      DataCell(Text(asOf != null ? BranchTargetReportScreen._fmtDateTime(asOf) : '—',
+      DataCell(Text(
+          periodLabel ??
+              (asOf != null ? BranchTargetReportScreen._fmtDateTime(asOf) : '—'),
           style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)))),
     ]);
   }
@@ -243,6 +299,7 @@ class _MobileBranchTargetList extends StatelessWidget {
   final List<BranchTargetRow> rows;
   final bool restrictToOwnBranch;
   final DateTime? asOf;
+  final String? periodLabel;
   final void Function(BranchTargetRow) onOpen;
 
   const _MobileBranchTargetList({
@@ -250,6 +307,7 @@ class _MobileBranchTargetList extends StatelessWidget {
     required this.onOpen,
     required this.restrictToOwnBranch,
     required this.asOf,
+    required this.periodLabel,
   });
 
   @override
@@ -277,11 +335,13 @@ class _MobileBranchTargetList extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(restrictToOwnBranch ? 'Today' : r.branchName,
+                    child: Text(restrictToOwnBranch ? (periodLabel ?? 'Today') : r.branchName,
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                         overflow: TextOverflow.ellipsis),
                   ),
-                  Text(asOf != null ? BranchTargetReportScreen._fmtDateTime(asOf!) : '—',
+                  Text(
+                      periodLabel ??
+                          (asOf != null ? BranchTargetReportScreen._fmtDateTime(asOf!) : '—'),
                       style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3))),
                 ],
               ),

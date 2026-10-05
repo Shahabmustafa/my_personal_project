@@ -10,10 +10,22 @@ import '../providers/sale_report_providers.dart'
 class BranchTargetDetailScreen extends ConsumerStatefulWidget {
   final BranchTargetRow row;
   final VoidCallback onBack;
+
+  /// Monthly/yearly report se khule to sirf [from]..[to] ke din dikhte hain;
+  /// null = poori history.
+  final DateTime? from;
+  final DateTime? to;
+
+  /// Title mein dikhane ke liye, e.g. "Oct 2026" ya "2026".
+  final String? periodLabel;
+
   const BranchTargetDetailScreen({
     super.key,
     required this.row,
     required this.onBack,
+    this.from,
+    this.to,
+    this.periodLabel,
   });
 
   @override
@@ -57,9 +69,16 @@ class _BranchTargetDetailScreenState
   Future<void> _load() async {
     try {
       final id = widget.row.branchId;
-      final targets = await ref
+      final all = await ref
           .read(branchTargetDatasourceProvider)
-          .fetchFrom(id, DateTime(2000));
+          .fetchFrom(id, widget.from ?? DateTime(2000));
+      final to = widget.to;
+      final targets = to == null
+          ? all
+          : {
+              for (final e in all.entries)
+                if (!e.key.isAfter(to)) e.key: e.value,
+            };
       final today = BranchTargetDatasource.dateOnly(DateTime.now());
       final days = targets.keys.toList()..sort();
       Map<DateTime, double> sales = {};
@@ -117,7 +136,8 @@ class _BranchTargetDetailScreenState
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  '${widget.row.branchName} — Target Report',
+                  '${widget.row.branchName} — Target Report'
+                  '${widget.periodLabel != null ? ' (${widget.periodLabel})' : ''}',
                   style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,

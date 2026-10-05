@@ -76,8 +76,8 @@ class SaleReportRepository {
       _datasource.fetchCombinedTransactions(
           startDate: startDate, endDate: endDate, branchId: branchId);
 
-  Future<Map<String, double>> getNetSaleByBranch({DateTime? date}) =>
-      _datasource.fetchNetSaleByBranch(date: date);
+  Future<Map<String, double>> getNetSaleByBranch({DateTime? date, DateTime? to}) =>
+      _datasource.fetchNetSaleByBranch(date: date, to: to);
 
   Future<Map<DateTime, double>> getNetSaleByDay(
           String branchId, DateTime from, DateTime to) =>
