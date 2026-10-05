@@ -9,7 +9,6 @@ import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
-import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../providers/incoming_branch_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
@@ -18,8 +17,8 @@ import 'package:safishoe_app/core/utils/responsive.dart';
 
 /// Admin's screen for accepting/rejecting stock returns sent by branches —
 /// same accept/reject pattern as the head-office->branch assignment history,
-/// laid out the same way: summary cards, a scrollable [ReportTableShell]
-/// table, a right slide-in detail panel on "View", and a pagination bar.
+/// laid out the same way: summary cards, a list of expandable rows (tap to
+/// see the return's items), and a pagination bar.
 /// Backed by branch_return_to_warehouse (head_office_id destination).
 class IncomingBranchReturnsScreen extends ConsumerStatefulWidget {
   const IncomingBranchReturnsScreen({super.key});
@@ -38,7 +37,6 @@ class _IncomingBranchReturnsScreenState
   DateTime? _startDate;
   DateTime? _endDate;
   int _page = 1;
-  BranchWarehouseReturnModel? _selected;
 
   bool get _hasDateFilter => _startDate != null || _endDate != null;
 
@@ -235,51 +233,14 @@ class _IncomingBranchReturnsScreenState
                                         fontSize: 15),
                                   ),
                                 )
-                              : ReportTableShell(
-                                  columns: const [
-                                    DataColumn(label: Text('Return No')),
-                                    DataColumn(label: Text('From Branch')),
-                                    DataColumn(
-                                        label: Text('Pairs'), numeric: true),
-                                    DataColumn(
-                                        label: Text('Purchase Value'),
-                                        numeric: true),
-                                    DataColumn(label: Text('Date')),
-                                    DataColumn(label: Text('Status')),
-                                    DataColumn(label: Text('Actions')),
-                                  ],
-                                  rows: [
-                                    for (final r in pageRows)
-                                      DataRow(
-                                        selected: _selected?.id == r.id,
-                                        cells: [
-                                          DataCell(Text(r.returnNumber,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.w700,
-                                                  fontFamily: 'monospace',
-                                                  color: _accent))),
-                                          DataCell(
-                                              Text(r.branchName ?? r.branchId)),
-                                          DataCell(Text('${_pairs(r)}')),
-                                          DataCell(Text(
-                                              _value(r).toStringAsFixed(0))),
-                                          DataCell(Text(_fmtDate(r.returnedAt))),
-                                          DataCell(StatusChip(r.status)),
-                                          DataCell(_rowActions(r)),
-                                        ],
-                                      ),
-                                  ],
+                              : ListView.separated(
+                                  itemCount: pageRows.length,
+                                  separatorBuilder: (_, __) =>
+                                      const SizedBox(height: 10),
+                                  itemBuilder: (_, i) =>
+                                      _returnTile(pageRows[i]),
                                 ),
                 ),
-                if (_selected != null)
-                  ReportDetailOverlay(
-                    title: _selected!.returnNumber,
-                    subtitle:
-                        '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.returnedAt)}',
-                    accent: _accent,
-                    onClose: () => setState(() => _selected = null),
-                    child: _ReturnDetailBody(returnId: _selected!.id),
-                  ),
               ],
             ),
           ),
@@ -296,15 +257,64 @@ class _IncomingBranchReturnsScreenState
     );
   }
 
+  /// Ek return — band halat mein number, branch, pairs, value, date aur
+  /// status; kholne par items ki poori detail (tabhi load hoti hai).
+  Widget _returnTile(BranchWarehouseReturnModel r) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: PageStorageKey(r.id),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Wrap(
+          spacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(r.returnNumber,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                    color: _accent)),
+            Text(r.branchName ?? r.branchId,
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            StatusChip(r.status),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            '${_pairs(r)} pairs · Rs. ${_money(_value(r))} · ${_fmtDate(r.returnedAt)}',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _rowActions(r),
+            const AppIcon(AppIcons.arrowDropDown,
+                size: 20, color: Color(0xFF8A8FA3)),
+          ],
+        ),
+        children: [
+          const DetailDivider(),
+          _ReturnDetailBody(returnId: r.id),
+        ],
+      ),
+    );
+  }
+
   Widget _rowActions(BranchWarehouseReturnModel r) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: const AppIcon(AppIcons.visibilityOutlined, size: 19),
-          tooltip: 'View',
-          onPressed: () => setState(() => _selected = r),
-        ),
         if (r.status == 'pending') ...[
           IconButton(
             icon: AppIcon(AppIcons.checkCircleOutline,
@@ -397,7 +407,6 @@ class _IncomingBranchReturnsScreenState
       if (!mounted) return;
       ref.invalidate(incomingBranchReturnsProvider);
       ref.invalidate(incomingBranchReturnDetailProvider(returnId));
-      setState(() => _selected = null);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

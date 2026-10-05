@@ -7,7 +7,7 @@ import '../../../../branch/sale_claim/data/model/sale_claim_model.dart';
 import '../../../../branch/sale_claim/presentation/providers/sale_claim_provider.dart';
 import '../../../../branch/sale_claim/presentation/widgets/sale_claim_common.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
-import '../../../report/presentation/widgets/report_table_shell.dart';
+import '../../../report/presentation/widgets/report_detail_panel.dart';
 
 /// Head Office ki screen: branches ke sale claims approve/reject karna.
 /// Approve par branch stock se claim ki quantity minus ho jati hai
@@ -139,52 +139,97 @@ class _IncomingSaleClaimsScreenState
                                   color: Colors.grey.shade500, fontSize: 15),
                             ),
                           )
-                        : ReportTableShell(
-                            columns: const [
-                              DataColumn(label: Text('Claim No')),
-                              DataColumn(label: Text('Branch')),
-                              DataColumn(label: Text('Invoice')),
-                              DataColumn(label: Text('Customer')),
-                              DataColumn(label: Text('Product')),
-                              DataColumn(label: Text('Size')),
-                              DataColumn(label: Text('Color')),
-                              DataColumn(label: Text('Qty'), numeric: true),
-                              DataColumn(label: Text('Sale Date')),
-                              DataColumn(label: Text('Claim Date')),
-                              DataColumn(label: Text('Reason')),
-                              DataColumn(label: Text('Status')),
-                              DataColumn(label: Text('Remarks')),
-                              DataColumn(label: Text('Actions')),
-                            ],
-                            rows: [
-                              for (final c in filtered)
-                                DataRow(cells: [
-                                  DataCell(Text(c.claimNumber,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontFamily: 'monospace',
-                                          color: _accent))),
-                                  DataCell(Text(c.branchName ?? '—')),
-                                  DataCell(Text(c.invoiceNumber ?? '—')),
-                                  DataCell(Text(c.customerName ?? '—')),
-                                  DataCell(Text(claimProductLabel(c))),
-                                  DataCell(Text(c.sizeName ?? '—')),
-                                  DataCell(Text(c.colorName ?? '—')),
-                                  DataCell(Text('${c.quantity}')),
-                                  DataCell(Text(claimFmtDate(c.saleDate))),
-                                  DataCell(Text(claimFmtDate(c.claimDate))),
-                                  DataCell(SaleClaimTextCell(c.reason)),
-                                  DataCell(SaleClaimStatusChip(c.status)),
-                                  DataCell(SaleClaimTextCell(c.reviewRemarks)),
-                                  DataCell(_actions(c)),
-                                ]),
-                            ],
+                        : ListView.separated(
+                            itemCount: filtered.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemBuilder: (_, i) => _claimTile(filtered[i]),
                           ),
           ),
         ],
       ),
     );
   }
+
+  /// Ek claim — band halat mein number, branch, product aur status; kholne
+  /// par invoice, customer, dates, reason aur remarks.
+  Widget _claimTile(SaleClaimModel c) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7E9F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        key: PageStorageKey(c.id),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: Wrap(
+          spacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(c.claimNumber,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                    color: _accent)),
+            Text(c.branchName ?? '—',
+                style: const TextStyle(fontWeight: FontWeight.w600)),
+            SaleClaimStatusChip(c.status),
+          ],
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            '${claimProductLabel(c)} · Qty ${c.quantity} · ${claimFmtDate(c.claimDate)}',
+            style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _actions(c),
+            const AppIcon(AppIcons.arrowDropDown, size: 20, color: Color(0xFF8A8FA3)),
+          ],
+        ),
+        children: [
+          const DetailDivider(),
+          DetailKV('Invoice', c.invoiceNumber ?? '—'),
+          DetailKV('Customer', c.customerName ?? '—'),
+          DetailKV('Product', claimProductLabel(c)),
+          DetailKV('Size', c.sizeName ?? '—'),
+          DetailKV('Color', c.colorName ?? '—'),
+          DetailKV('Quantity', '${c.quantity}'),
+          DetailKV('Sale Date', claimFmtDate(c.saleDate)),
+          DetailKV('Claim Date', claimFmtDate(c.claimDate)),
+          _longKV('Reason', c.reason),
+          _longKV('Remarks', c.reviewRemarks),
+        ],
+      ),
+    );
+  }
+
+  /// Lamba text (reason/remarks) — label upar, value neeche wrap ho kar.
+  Widget _longKV(String label, String? value) => Padding(
+        padding: const EdgeInsets.only(top: 4, bottom: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3))),
+            const SizedBox(height: 2),
+            Text((value ?? '').isEmpty ? '—' : value!,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF2D2D3A))),
+          ],
+        ),
+      );
 
   Widget _actions(SaleClaimModel c) {
     if (!c.isPending) return const SizedBox.shrink();
