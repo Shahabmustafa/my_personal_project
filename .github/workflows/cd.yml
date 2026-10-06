@@ -69,6 +69,17 @@ jobs:
       - name: Build windows
         run: flutter build windows --release
 
+      # Bundle the Visual C++ runtime next to the exe so it runs on PCs that
+      # don't have the VC++ Redistributable installed (otherwise:
+      # "VCRUNTIME140_1.dll was not found").
+      - name: Bundle VC++ runtime DLLs
+        shell: pwsh
+        run: |
+          $dest = "build/windows/x64/runner/Release"
+          foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+            Copy-Item "$env:SystemRoot\System32\$dll" -Destination $dest
+          }
+
       - name: Zip windows build
         run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath safishoe_windows.zip
 
