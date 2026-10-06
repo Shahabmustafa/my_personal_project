@@ -16,3 +16,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.stock_inventory;
 -- ko items ka event bhi chahiye warna list khaali items ke saath load hoti
 -- (2026-10-06, applied to LIVE database).
 ALTER PUBLICATION supabase_realtime ADD TABLE public.assign_stock_to_branch_items;
+
+-- Branch sale/return/assign screens ka stock list — sale ke baad bina
+-- refresh sahi quantity (2026-10-07, applied to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.branch_stock_inventory;

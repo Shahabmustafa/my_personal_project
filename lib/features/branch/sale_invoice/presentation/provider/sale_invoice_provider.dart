@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
@@ -32,9 +33,14 @@ final _branchStockRepoForSaleProvider = Provider<BranchStockRepository>(
 
 // ── Branch stock cache (product selector ke liye) ─────────────────────────
 final branchStockCacheProvider = FutureProvider<List<BranchStockModel>>(
-  (ref) => ref
-      .read(_branchStockRepoForSaleProvider)
-      .getBranchStock(ref.watch(currentBranchIdProvider)),
+  (ref) {
+    // Realtime — sale, return, exchange, accept ya doosre counter ki sale se
+    // stock badalte hi list reload (page refresh ki zaroorat nahi).
+    ref.watch(tableChangesProvider('branch_stock_inventory'));
+    return ref
+        .read(_branchStockRepoForSaleProvider)
+        .getBranchStock(ref.watch(currentBranchIdProvider));
+  },
 );
 
 // ── Lookups ───────────────────────────────────────────────────────────────
@@ -558,6 +564,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
 
     try {
       final saved = await attemptSave(state.invoiceNumber);
+      _ref.invalidate(branchStockCacheProvider);
       if (mounted) {
         state = state.copyWith(
           isSaving: false,
@@ -571,6 +578,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
         try {
           final retryNumber = await _repo.generateInvoiceNumber();
           final saved = await attemptSave(retryNumber);
+          _ref.invalidate(branchStockCacheProvider);
           if (mounted) {
             state = state.copyWith(
               isSaving: false,
