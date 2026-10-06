@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_exchange_model.dart';
 import '../provider/sale_exchange_provider.dart';
@@ -168,7 +168,7 @@ class _CartRow extends ConsumerWidget {
 
 // ── Qty stepper inside row ────────────────────────────────────────────────
 
-class _QtyRowStepper extends StatefulWidget {
+class _QtyRowStepper extends StatelessWidget {
   final int value;
   final int maxValue;
   final Color primaryColor;
@@ -182,113 +182,11 @@ class _QtyRowStepper extends StatefulWidget {
   });
 
   @override
-  State<_QtyRowStepper> createState() => _QtyRowStepperState();
-}
-
-class _QtyRowStepperState extends State<_QtyRowStepper> {
-  late TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.value.toString());
-  }
-
-  @override
-  void didUpdateWidget(_QtyRowStepper old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value) _ctrl.text = widget.value.toString();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    final v = int.tryParse(_ctrl.text) ?? widget.value;
-    final capped = widget.maxValue > 0 ? v.clamp(1, widget.maxValue) : v;
-    widget.onChanged(capped > 0 ? capped : 1);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.primaryColor;
-
-    return Container(
-      height: 34,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withOpacity(0.4)),
-      ),
-      child: Row(
-        children: [
-          _btn(
-            icon: AppIcons.remove,
-            color: color.withOpacity(0.08),
-            iconColor: color,
-            radius: const BorderRadius.horizontal(left: Radius.circular(6)),
-            onTap: () {
-              final v = int.tryParse(_ctrl.text) ?? 1;
-              if (v > 1) {
-                _ctrl.text = '${v - 1}';
-                widget.onChanged(v - 1);
-              }
-            },
-          ),
-          Expanded(
-            child: TextField(
-              controller: _ctrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onSubmitted: (_) => _commit(),
-              onTapOutside: (_) => _commit(),
-            ),
-          ),
-          _btn(
-            icon: AppIcons.add,
-            color: color,
-            iconColor: Colors.white,
-            radius: const BorderRadius.horizontal(right: Radius.circular(6)),
-            onTap: () {
-              final v = int.tryParse(_ctrl.text) ?? 0;
-              final next = v + 1;
-              if (widget.maxValue <= 0 || next <= widget.maxValue) {
-                _ctrl.text = '$next';
-                widget.onChanged(next);
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _btn({
-    required String icon,
-    required Color color,
-    required Color iconColor,
-    required BorderRadius radius,
-    required VoidCallback onTap,
-  }) =>
-      InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: Container(
-          width: 30,
-          height: double.infinity,
-          decoration: BoxDecoration(color: color, borderRadius: radius),
-          alignment: Alignment.center,
-          child: AppIcon(icon, size: 15, color: iconColor),
-        ),
+  Widget build(BuildContext context) => QtyStepper(
+        value: value,
+        max: maxValue,
+        color: primaryColor,
+        onChanged: onChanged,
       );
 }
 

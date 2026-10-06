@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
@@ -212,11 +212,11 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
 
 // ── Qty Stepper ───────────────────────────────────────────────────────────
 
-class _QtyStepper extends StatefulWidget {
+class _QtyStepper extends StatelessWidget {
   final int value;
   final int max;
   final Color primaryColor;
-  final ValueChanged<int> onChanged;
+  final void Function(int) onChanged;
 
   const _QtyStepper({
     required this.value,
@@ -226,102 +226,11 @@ class _QtyStepper extends StatefulWidget {
   });
 
   @override
-  State<_QtyStepper> createState() => _QtyStepperState();
-}
-
-class _QtyStepperState extends State<_QtyStepper> {
-  late TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.value.toString());
-  }
-
-  @override
-  void didUpdateWidget(_QtyStepper old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value) _ctrl.text = widget.value.toString();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    final v = int.tryParse(_ctrl.text) ?? 1;
-    final safe = v.clamp(1, widget.max);
-    _ctrl.text = safe.toString();
-    widget.onChanged(safe);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.primaryColor;
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        width: 116,
-        height: 32,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            _miniBtn(AppIcons.remove, color,
-                widget.value > 1 ? () => widget.onChanged(widget.value - 1) : null),
-            Expanded(
-              child: TextField(
-                controller: _ctrl,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87),
-                // Saare borders none — warna theme ka focused border andar dikhta hai.
-                decoration:
-                    const InputDecoration(
-                  isDense: true,
-                  filled: false,
-                  contentPadding: EdgeInsets.zero,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                ),
-                onSubmitted: (_) => _commit(),
-                onTapOutside: (_) => _commit(),
-              ),
-            ),
-            _miniBtn(AppIcons.add, color,
-                widget.value < widget.max
-                    ? () => widget.onChanged(widget.value + 1)
-                    : null),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _miniBtn(String icon, Color color, VoidCallback? onTap) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: 28,
-          height: double.infinity,
-          child: Center(
-            child: AppIcon(icon,
-                size: 14,
-                color: onTap == null ? Colors.grey.shade300 : color),
-          ),
-        ),
+  Widget build(BuildContext context) => QtyStepper(
+        value: value,
+        max: max,
+        color: primaryColor,
+        onChanged: onChanged,
       );
 }
 

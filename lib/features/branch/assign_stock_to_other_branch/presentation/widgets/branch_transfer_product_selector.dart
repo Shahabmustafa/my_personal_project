@@ -1,6 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
@@ -357,34 +357,12 @@ class _QtyStepperInput extends StatelessWidget {
         Text('Quantity', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         const SizedBox(height: 4),
         SizedBox(
-          width: 64,
-          height: 48,
-          child: TextField(
+          width: 132,
+          child: QtyStepperField(
             controller: controller,
             enabled: enabled,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: enabled ? primaryColor : Colors.grey.shade400,
-            ),
-            decoration: InputDecoration(
-              isDense: true,
-              filled: !enabled,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primaryColor.withOpacity(0.5)),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 13),
-            ),
+            color: primaryColor,
+            height: 48,
             onSubmitted: onSubmit,
           ),
         ),

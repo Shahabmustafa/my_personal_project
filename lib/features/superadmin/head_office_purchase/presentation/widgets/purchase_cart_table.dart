@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../providers/purchase_invoice_provider.dart';
@@ -198,7 +198,7 @@ class _CartRowState extends ConsumerState<_CartRow> {
 
 // ── Qty stepper inside row ────────────────────────────────────────────────
 
-class _QtyRowStepper extends StatefulWidget {
+class _QtyRowStepper extends StatelessWidget {
   final int value;
   final Color primaryColor;
   final void Function(int) onChanged;
@@ -210,88 +210,11 @@ class _QtyRowStepper extends StatefulWidget {
   });
 
   @override
-  State<_QtyRowStepper> createState() => _QtyRowStepperState();
-}
-
-class _QtyRowStepperState extends State<_QtyRowStepper> {
-  late TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.value.toString());
-  }
-
-  @override
-  void didUpdateWidget(_QtyRowStepper old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value) {
-      _ctrl.text = widget.value.toString();
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _commit([int? value]) {
-    final v = value ?? int.tryParse(_ctrl.text) ?? widget.value;
-    widget.onChanged(v > 0 ? v : 1);
-  }
-
-  Widget _stepBtn(IconData icon, VoidCallback onTap, Color color) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: SizedBox(
-        width: 26,
-        height: 26,
-        child: Icon(icon, size: 15, color: color),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.primaryColor;
-
-    return Container(
-      height: 34,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.35)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(width: 2),
-          _stepBtn(Icons.remove, () => _commit(widget.value - 1), color),
-          Expanded(
-            child: TextField(
-              controller: _ctrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w700, color: color),
-              decoration: const InputDecoration(
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              onSubmitted: (_) => _commit(),
-              onTapOutside: (_) => _commit(),
-            ),
-          ),
-          _stepBtn(Icons.add, () => _commit(widget.value + 1), color),
-          const SizedBox(width: 2),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => QtyStepper(
+        value: value,
+        color: primaryColor,
+        onChanged: onChanged,
+      );
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────

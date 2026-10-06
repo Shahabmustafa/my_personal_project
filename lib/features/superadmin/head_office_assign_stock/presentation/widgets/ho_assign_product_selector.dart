@@ -1,6 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../head_office_purchase/data/models/warehouse_stock_model.dart';
 import '../../data/models/ho_assign_stock_model.dart';
@@ -533,96 +533,19 @@ class _QtyStepperInputState extends State<_QtyStepperInput> {
           ),
         ),
         const SizedBox(height: 4),
-        Container(
-          height: 40,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: !enabled
-                  ? Colors.grey.shade200
-                  : over
-                      ? Colors.red
-                      : Colors.grey.shade300,
-            ),
-            color: enabled ? Colors.white : Colors.grey.shade50,
-          ),
-          child: Row(
-            children: [
-              _StepButton(
-                icon: AppIcons.remove,
-                color: color,
-                onTap: enabled && _value > 1 ? () => _setValue(_value - 1) : null,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: widget.controller,
-                  enabled: enabled,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: !enabled
-                        ? Colors.grey.shade400
-                        : over
-                            ? Colors.red
-                            : Colors.black87,
-                  ),
-                  // Saare borders none — warna theme ka focused border andar dikhta hai.
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    filled: false,
-                    contentPadding: EdgeInsets.zero,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                  ),
-                  onSubmitted: widget.onSubmit,
-                  onTapOutside: (_) {
-                    if (!enabled) return;
-                    if (_value < 1 || _value > widget.max) {
-                      _setValue(_value);
-                    }
-                  },
-                ),
-              ),
-              _StepButton(
-                icon: AppIcons.add,
-                color: color,
-                onTap: enabled && _value < widget.max
-                    ? () => _setValue(_value + 1)
-                    : null,
-              ),
-            ],
-          ),
+        QtyStepperField(
+          controller: widget.controller,
+          enabled: enabled,
+          color: color,
+          max: widget.max,
+          error: over,
+          onSubmitted: widget.onSubmit,
+          onTapOutside: () {
+            if (!enabled) return;
+            if (_value < 1 || _value > widget.max) _setValue(_value);
+          },
         ),
       ],
-    );
-  }
-}
-
-class _StepButton extends StatelessWidget {
-  final String icon;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _StepButton({required this.icon, required this.color, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        width: 34,
-        height: double.infinity,
-        child: Center(
-          child: AppIcon(icon,
-              size: 16, color: onTap == null ? Colors.grey.shade300 : color),
-        ),
-      ),
     );
   }
 }

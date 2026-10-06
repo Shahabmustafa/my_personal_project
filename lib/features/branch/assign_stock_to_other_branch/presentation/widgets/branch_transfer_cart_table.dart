@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasource/branch_transfer_cart_item.dart';
 import '../providers/branch_transfer_provider.dart';
@@ -160,7 +160,7 @@ class _CartRow extends ConsumerWidget {
 
 // ── Qty stepper inside row ────────────────────────────────────────────────
 
-class _QtyRowStepper extends StatefulWidget {
+class _QtyRowStepper extends StatelessWidget {
   final int value;
   final int maxValue;
   final Color primaryColor;
@@ -174,62 +174,12 @@ class _QtyRowStepper extends StatefulWidget {
   });
 
   @override
-  State<_QtyRowStepper> createState() => _QtyRowStepperState();
-}
-
-class _QtyRowStepperState extends State<_QtyRowStepper> {
-  late TextEditingController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = TextEditingController(text: widget.value.toString());
-  }
-
-  @override
-  void didUpdateWidget(_QtyRowStepper old) {
-    super.didUpdateWidget(old);
-    if (old.value != widget.value) _ctrl.text = widget.value.toString();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _commit() {
-    final v = int.tryParse(_ctrl.text) ?? widget.value;
-    final capped = widget.maxValue > 0 ? v.clamp(1, widget.maxValue) : v;
-    widget.onChanged(capped > 0 ? capped : 1);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.primaryColor;
-
-    return Container(
-      height: 34,
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withOpacity(0.4)),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: TextField(
-        controller: _ctrl,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
-        decoration: const InputDecoration(
-          isDense: true,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-        ),
-        onSubmitted: (_) => _commit(),
-        onTapOutside: (_) => _commit(),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => QtyStepper(
+        value: value,
+        max: maxValue,
+        color: primaryColor,
+        onChanged: onChanged,
+      );
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────
