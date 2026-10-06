@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart' as http;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -127,11 +128,21 @@ class ThermalPrintService {
     required List<StockSlipLine> lines,
     PrinterLookupItem? printer,
     String? shopName,
+    String? address,
+    String? phone,
     String footerNote =
         'Stock stays pending until the receiving branch accepts it.',
   }) async {
     final doc = pw.Document();
-    final logo = await _fetchLogo(printer?.imageUrl);
+    // Printer na ho to default header: app ka Safi Shoes logo + diya gaya
+    // address/phone.
+    final logo =
+        await _fetchLogo(printer?.imageUrl) ?? await _defaultLogo();
+    final headerAddress =
+        printer != null && printer.address.isNotEmpty ? printer.address : address;
+    final headerPhone = printer != null && printer.phoneNumber.isNotEmpty
+        ? printer.phoneNumber
+        : phone;
     final totalPairs = lines.fold<int>(0, (s, l) => s + l.quantity);
 
     pw.Widget th(String t, int flex, {pw.TextAlign align = pw.TextAlign.left}) =>
@@ -167,14 +178,14 @@ class ThermalPrintService {
                 style: pw.TextStyle(font: _boldFont, fontSize: 14, letterSpacing: 1.5),
               ),
             ),
-            if (printer != null && printer.address.isNotEmpty)
+            if (headerAddress != null && headerAddress.isNotEmpty)
               pw.Center(
-                child: pw.Text(printer.address,
+                child: pw.Text(headerAddress,
                     style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
               ),
-            if (printer != null && printer.phoneNumber.isNotEmpty)
+            if (headerPhone != null && headerPhone.isNotEmpty)
               pw.Center(
-                child: pw.Text(printer.phoneNumber,
+                child: pw.Text(headerPhone,
                     style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
               ),
             pw.SizedBox(height: 10),
@@ -741,6 +752,16 @@ class ThermalPrintService {
   /// Printer head ka logo (Supabase Storage public URL) download karke
   /// receipt mein embed karne ke liye — fail ho to (koi URL nahi, network
   /// error, invalid image) chup chaap null return karta hai, print rukta nahi.
+  static Future<pw.ImageProvider?> _defaultLogo() async {
+    try {
+      final data = await rootBundle.load('assets/images/safi.png');
+      return pw.MemoryImage(data.buffer.asUint8List());
+    } catch (e) {
+      debugPrint('Default logo load failed: $e');
+      return null;
+    }
+  }
+
   static Future<pw.ImageProvider?> _fetchLogo(String? url) async {
     if (url == null || url.isEmpty) return null;
     try {

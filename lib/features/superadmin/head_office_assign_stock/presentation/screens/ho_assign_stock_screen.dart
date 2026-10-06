@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../branch/sale_invoice/data/model/sale_invoice_model.dart'
-    show PrinterLookupItem;
+import '../../../shared/current_head_office_provider.dart';
 import '../providers/ho_assign_stock_provider.dart';
 import '../widgets/ho_assign_cart_table.dart';
 import '../widgets/ho_assign_product_selector.dart';
@@ -10,7 +9,6 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
-import 'package:safishoe_app/core/widget/printer_picker_field.dart';
 /// SuperAdmin — Head Office se Branch ko stock assign karna (form only).
 /// History ab alag sidebar item hai ([HoAssignStockListScreen]).
 /// Warehouse ke "Assign Stock to Branch" jaisa hi, bas source head office
@@ -303,16 +301,11 @@ class _AssignFooter extends ConsumerWidget {
       return;
     }
 
-    final choice = await showDialog<_SendChoice>(
-      context: context,
-      builder: (_) => _ConfirmSendDialog(
-        branchName: state.selectedBranch!.branchName,
-        totalQty: state.totalQuantity,
-        totalItems: state.cartItems.length,
-        totalValue: state.totalPurchaseValue,
-      ),
-    );
-    if (choice == null) return;
+    // Slip header: Safi Shoes logo + head office address/phone (no printer
+    // picker, no confirm dialog).
+    final contact = await ref
+        .read(headOfficeContactProvider.future)
+        .catchError((_) => (address: '', phone: ''));
 
     final branchName = state.selectedBranch?.branchName ?? 'branch';
     // Cart is cleared right after saving — keep what the slip needs.
@@ -358,7 +351,8 @@ class _AssignFooter extends ConsumerWidget {
           fromName: 'Head Office',
           toName: branchName,
           lines: slipLines,
-          printer: choice.printer,
+          address: contact.address,
+          phone: contact.phone,
         );
       } catch (e) {
         if (context.mounted) {
@@ -381,134 +375,3 @@ class _AssignFooter extends ConsumerWidget {
   }
 }
 
-/// What the confirm dialog hands back (null = cancelled).
-class _SendChoice {
-  final PrinterLookupItem? printer;
-  const _SendChoice(this.printer);
-}
-
-class _ConfirmSendDialog extends StatefulWidget {
-  final String branchName;
-  final int totalQty;
-  final int totalItems;
-  final double totalValue;
-
-  const _ConfirmSendDialog({
-    required this.branchName,
-    required this.totalQty,
-    required this.totalItems,
-    required this.totalValue,
-  });
-
-  @override
-  State<_ConfirmSendDialog> createState() => _ConfirmSendDialogState();
-}
-
-class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
-  PrinterLookupItem? _printer;
-
-  String get branchName => widget.branchName;
-  int get totalQty => widget.totalQty;
-  int get totalItems => widget.totalItems;
-  double get totalValue => widget.totalValue;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Row(
-        children: [
-          AppIcon(AppIcons.localShippingOutlined,
-              color: Color(0xFF1565C0), size: 22),
-          SizedBox(width: 8),
-          Text('Confirm Assignment'),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('You are about to send stock to:'),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE3F2FD),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF90CAF9)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const AppIcon(AppIcons.storeOutlined,
-                        size: 16, color: Color(0xFF1565C0)),
-                    const SizedBox(width: 6),
-                    Text(branchName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1565C0))),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _chip('$totalItems Products',
-                        AppIcons.inventory2Outlined),
-                    const SizedBox(width: 12),
-                    _chip('$totalQty Pairs', AppIcons.straightenOutlined),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _chip('Stock worth Rs. ${_money(totalValue)}',
-                    AppIcons.accountBalanceWalletOutlined),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Status "Pending" rahega jab tak branch accept na kare.',
-            style:
-                TextStyle(fontSize: 12, color: Colors.grey.shade600),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: 360,
-            child: PrinterPickerField(
-              provider: hoPrintersProvider,
-              onChanged: (p) => _printer = p,
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _SendChoice(_printer)),
-          style: FilledButton.styleFrom(
-            backgroundColor: const Color(0xFF1565C0),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
-          ),
-          child: const Text('Confirm & Send'),
-        ),
-      ],
-    );
-  }
-
-  Widget _chip(String text, String icon) => Row(
-        children: [
-          AppIcon(icon, size: 14, color: const Color(0xFF1565C0)),
-          const SizedBox(width: 4),
-          Text(text,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600)),
-        ],
-      );
-}

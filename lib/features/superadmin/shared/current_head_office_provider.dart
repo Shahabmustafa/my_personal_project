@@ -31,3 +31,22 @@ final headOfficeIdProvider = FutureProvider<String>((ref) async {
 final currentHeadOfficeIdProvider = Provider<String>((ref) {
   return ref.watch(headOfficeIdProvider).value ?? '';
 });
+
+/// Slips ke default header ke liye head office ka address + phone.
+final headOfficeContactProvider =
+    FutureProvider<({String address, String phone})>((ref) async {
+  final id = await ref.watch(headOfficeIdProvider.future);
+  if (id.isEmpty) return (address: '', phone: '');
+  final res = await Supabase.instance.client
+      .from('head_offices')
+      .select('address, city, phone_number')
+      .eq('id', id)
+      .maybeSingle();
+  final parts = [res?['address'], res?['city']]
+      .whereType<String>()
+      .where((e) => e.trim().isNotEmpty);
+  return (
+    address: parts.join(', '),
+    phone: (res?['phone_number'] as String?) ?? '',
+  );
+});
