@@ -82,6 +82,8 @@ class AppSearchDropdown<T> extends StatelessWidget {
       ),
       popupProps: PopupProps.menu(
         showSearchBox: showSearchBox,
+        // Shrink the popup to its items; maxHeight below still caps long lists.
+        fit: FlexFit.loose,
         searchFieldProps: TextFieldProps(
           decoration: InputDecoration(
             hintText: 'Search $label...',
