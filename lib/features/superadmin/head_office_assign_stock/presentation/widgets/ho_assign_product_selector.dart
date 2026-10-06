@@ -569,9 +569,16 @@ class _QtyStepperInputState extends State<_QtyStepperInput> {
                             ? Colors.red
                             : Colors.black87,
                   ),
-                  // collapsed: theme ka border/fill andar na aaye.
-                  decoration: const InputDecoration.collapsed(
-                      hintText: '', filled: false),
+                  // Saare borders none — warna theme ka focused border andar dikhta hai.
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    filled: false,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                  ),
                   onSubmitted: widget.onSubmit,
                   onTapOutside: (_) {
                     if (!enabled) return;

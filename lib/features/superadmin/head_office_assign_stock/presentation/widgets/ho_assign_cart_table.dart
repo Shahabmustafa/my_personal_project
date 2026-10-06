@@ -285,9 +285,17 @@ class _QtyStepperState extends State<_QtyStepper> {
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Colors.black87),
-                // collapsed: theme ka border/fill andar na aaye.
+                // Saare borders none — warna theme ka focused border andar dikhta hai.
                 decoration:
-                    const InputDecoration.collapsed(hintText: '', filled: false),
+                    const InputDecoration(
+                  isDense: true,
+                  filled: false,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                ),
                 onSubmitted: (_) => _commit(),
                 onTapOutside: (_) => _commit(),
               ),
