@@ -219,7 +219,10 @@ class _SidebarShellState extends State<SidebarShell> {
       children: [
         // Brand
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+          // Collapsed rail sirf 76px hai — 20+20 padding + 40 logo overflow
+          // karta tha, is liye wahan horizontal padding nahi.
+          padding: EdgeInsets.fromLTRB(collapsed ? 0 : 20, 24,
+              collapsed ? 0 : 20, 20),
           child: Row(
             mainAxisAlignment: collapsed
                 ? MainAxisAlignment.center
