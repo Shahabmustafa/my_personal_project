@@ -89,6 +89,8 @@ class _QtyStepperFieldState extends State<QtyStepperField> {
     final color = widget.color;
     final canDec = enabled && _value > 1;
     final canInc = enabled && (!_hasMax || _value < widget.max!);
+    // Stock se zyada likha ho to bhi laal.
+    final error = widget.error || (enabled && _hasMax && _value > widget.max!);
 
     return Container(
       height: widget.height,
@@ -97,7 +99,7 @@ class _QtyStepperFieldState extends State<QtyStepperField> {
         border: Border.all(
           color: !enabled
               ? Colors.grey.shade200
-              : widget.error
+              : error
                   ? Colors.red
                   : Colors.grey.shade300,
         ),
@@ -122,7 +124,7 @@ class _QtyStepperFieldState extends State<QtyStepperField> {
                 fontWeight: FontWeight.w700,
                 color: !enabled
                     ? Colors.grey.shade400
-                    : widget.error
+                    : error
                         ? Colors.red
                         : Colors.black87,
               ),

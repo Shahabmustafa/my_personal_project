@@ -1,6 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_return_provider.dart';
@@ -25,6 +25,23 @@ class _PurchaseReturnProductSelectorState
   final _barcodeCtrl = TextEditingController();
   final _barcodeFocus = FocusNode();
   final _qtyCtrl = TextEditingController(text: '1');
+
+  @override
+  void initState() {
+    super.initState();
+    // Qty badalte hi Add button enable/disable ho.
+    _qtyCtrl.addListener(_onQtyChanged);
+  }
+
+  void _onQtyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Add tabhi jab 1..stock ke beech ho — stock se zyada par button off.
+  bool _qtyFits(int max) {
+    final q = int.tryParse(_qtyCtrl.text) ?? 0;
+    return q >= 1 && q <= max;
+  }
 
   WarehouseStockModel? _selectedStock;
   bool _barcodeNotFound = false;
@@ -259,9 +276,12 @@ class _PurchaseReturnProductSelectorState
                   const SizedBox(width: 10),
                   _QtyStepperInput(
                     controller: _qtyCtrl,
+                    max: totalQty,
                     enabled: stock != null,
                     primaryColor: Colors.orange.shade700,
-                    onSubmit: (_) => _addToCart(),
+                    onSubmit: (_) {
+            if (_qtyFits(totalQty)) _addToCart();
+          },
                   ),
                   const SizedBox(width: 10),
                   SizedBox(
@@ -274,7 +294,9 @@ class _PurchaseReturnProductSelectorState
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                       ),
-                      onPressed: stock != null ? _addToCart : null,
+                      onPressed: (stock != null && totalQty > 0 && _qtyFits(totalQty))
+                        ? _addToCart
+                        : null,
                     ),
                   ),
                 ],
@@ -349,12 +371,14 @@ class _QtyStepperInput extends StatelessWidget {
   final bool enabled;
   final Color primaryColor;
   final void Function(String) onSubmit;
+  final int? max;
 
   const _QtyStepperInput({
     required this.controller,
     required this.enabled,
     required this.primaryColor,
     required this.onSubmit,
+    this.max,
   });
 
   @override
@@ -366,34 +390,13 @@ class _QtyStepperInput extends StatelessWidget {
         Text('Quantity', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
         const SizedBox(height: 4),
         SizedBox(
-          width: 64,
-          height: 48,
-          child: TextField(
+          width: 132,
+          child: QtyStepperField(
             controller: controller,
             enabled: enabled,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: enabled ? primaryColor : Colors.grey.shade400,
-            ),
-            decoration: InputDecoration(
-              isDense: true,
-              filled: !enabled,
-              fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primaryColor.withOpacity(0.5)),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey.shade200),
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 13),
-            ),
+            color: primaryColor,
+            height: 48,
+            max: max,
             onSubmitted: onSubmit,
           ),
         ),

@@ -28,6 +28,23 @@ class _HoAssignProductSelectorState
   final _barcodeFocus = FocusNode();
   final _qtyCtrl = TextEditingController(text: '1');
 
+  @override
+  void initState() {
+    super.initState();
+    // Qty badalte hi Add button enable/disable ho.
+    _qtyCtrl.addListener(_onQtyChanged);
+  }
+
+  void _onQtyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Add tabhi jab 1..stock ke beech ho — stock se zyada par button off.
+  bool _qtyFits(int max) {
+    final q = int.tryParse(_qtyCtrl.text) ?? 0;
+    return q >= 1 && q <= max;
+  }
+
   WarehouseStockModel? _selectedStock;
   bool _barcodeNotFound = false;
 
@@ -315,7 +332,9 @@ class _HoAssignProductSelectorState
           enabled: stock != null && totalQty > 0,
           max: totalQty,
           primaryColor: primary,
-          onSubmit: (_) => _addToCart(),
+          onSubmit: (_) {
+            if (_qtyFits(totalQty)) _addToCart();
+          },
         );
 
         final addButton = SizedBox(
@@ -330,7 +349,9 @@ class _HoAssignProductSelectorState
               padding:
                   const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
             ),
-            onPressed: (stock != null && totalQty > 0) ? _addToCart : null,
+            onPressed: (stock != null && totalQty > 0 && _qtyFits(totalQty))
+                        ? _addToCart
+                        : null,
           ),
         );
 

@@ -26,6 +26,23 @@ class _AssignProductSelectorState
   final _barcodeFocus = FocusNode();
   final _qtyCtrl = TextEditingController(text: '1');
 
+  @override
+  void initState() {
+    super.initState();
+    // Qty badalte hi Add button enable/disable ho.
+    _qtyCtrl.addListener(_onQtyChanged);
+  }
+
+  void _onQtyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  /// Add tabhi jab 1..stock ke beech ho — stock se zyada par button off.
+  bool _qtyFits(int max) {
+    final q = int.tryParse(_qtyCtrl.text) ?? 0;
+    return q >= 1 && q <= max;
+  }
+
   WarehouseStockModel? _selectedStock;
   bool _barcodeNotFound = false;
 
@@ -263,9 +280,12 @@ class _AssignProductSelectorState
                     width: 132,
                     child: _QtyStepperInput(
                       controller: _qtyCtrl,
+                      max: totalQty,
                       enabled: stock != null && totalQty > 0,
                       primaryColor: primary,
-                      onSubmit: (_) => _addToCart(),
+                      onSubmit: (_) {
+            if (_qtyFits(totalQty)) _addToCart();
+          },
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -279,7 +299,9 @@ class _AssignProductSelectorState
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
                       ),
-                      onPressed: (stock != null && totalQty > 0) ? _addToCart : null,
+                      onPressed: (stock != null && totalQty > 0 && _qtyFits(totalQty))
+                        ? _addToCart
+                        : null,
                     ),
                   ),
                 ],
@@ -354,12 +376,14 @@ class _QtyStepperInput extends StatelessWidget {
   final bool enabled;
   final Color primaryColor;
   final void Function(String) onSubmit;
+  final int? max;
 
   const _QtyStepperInput({
     required this.controller,
     required this.enabled,
     required this.primaryColor,
     required this.onSubmit,
+    this.max,
   });
 
   @override
@@ -377,6 +401,7 @@ class _QtyStepperInput extends StatelessWidget {
             enabled: enabled,
             color: primaryColor,
             height: 48,
+            max: max,
             onSubmitted: onSubmit,
           ),
         ),
