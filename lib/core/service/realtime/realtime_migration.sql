@@ -11,3 +11,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE
 -- Head office Stock Inventory screen — assign/purchase/return se quantity
 -- badalte hi list live update (2026-10-05, applied to LIVE database).
 ALTER PUBLICATION supabase_realtime ADD TABLE public.stock_inventory;
+
+-- Assignment items alag insert hote hain (header ke baad), is liye branch
+-- ko items ka event bhi chahiye warna list khaali items ke saath load hoti
+-- (2026-10-06, applied to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.assign_stock_to_branch_items;

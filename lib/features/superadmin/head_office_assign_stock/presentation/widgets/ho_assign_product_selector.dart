@@ -317,7 +317,7 @@ class _HoAssignProductSelectorState
         );
 
         final addButton = SizedBox(
-          height: 46,
+          height: 40,
           child: FilledButton.icon(
             icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
             label: const Text('Add Product'),
@@ -381,7 +381,7 @@ class _HoAssignProductSelectorState
                       children: [
                         Expanded(child: ministatsWrap),
                         const SizedBox(width: 12),
-                        SizedBox(width: 208, child: qtyInput),
+                        SizedBox(width: 150, child: qtyInput),
                         const SizedBox(width: 10),
                         addButton,
                       ],
@@ -534,49 +534,88 @@ class _QtyStepperInputState extends State<_QtyStepperInput> {
         ),
         const SizedBox(height: 4),
         Container(
-          height: 44,
+          height: 40,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: !enabled
                   ? Colors.grey.shade200
                   : over
                       ? Colors.red
-                      : color.withValues(alpha: 0.5),
-              width: 1.4,
+                      : Colors.grey.shade300,
             ),
             color: enabled ? Colors.white : Colors.grey.shade50,
           ),
-          child: TextField(
-            controller: widget.controller,
-            enabled: enabled,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: !enabled
-                  ? Colors.grey.shade400
-                  : over
-                      ? Colors.red
-                      : color,
-            ),
-            decoration: const InputDecoration(
-              isDense: true,
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 13),
-            ),
-            onSubmitted: widget.onSubmit,
-            onTapOutside: (_) {
-              if (!enabled) return;
-              if (_value < 1 || _value > widget.max) {
-                _setValue(_value);
-              }
-            },
+          child: Row(
+            children: [
+              _StepButton(
+                icon: AppIcons.remove,
+                color: color,
+                onTap: enabled && _value > 1 ? () => _setValue(_value - 1) : null,
+              ),
+              Expanded(
+                child: TextField(
+                  controller: widget.controller,
+                  enabled: enabled,
+                  keyboardType: TextInputType.number,
+                  textAlign: TextAlign.center,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: !enabled
+                        ? Colors.grey.shade400
+                        : over
+                            ? Colors.red
+                            : Colors.black87,
+                  ),
+                  // collapsed: theme ka border/fill andar na aaye.
+                  decoration: const InputDecoration.collapsed(
+                      hintText: '', filled: false),
+                  onSubmitted: widget.onSubmit,
+                  onTapOutside: (_) {
+                    if (!enabled) return;
+                    if (_value < 1 || _value > widget.max) {
+                      _setValue(_value);
+                    }
+                  },
+                ),
+              ),
+              _StepButton(
+                icon: AppIcons.add,
+                color: color,
+                onTap: enabled && _value < widget.max
+                    ? () => _setValue(_value + 1)
+                    : null,
+              ),
+            ],
           ),
         ),
       ],
+    );
+  }
+}
+
+class _StepButton extends StatelessWidget {
+  final String icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _StepButton({required this.icon, required this.color, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 34,
+        height: double.infinity,
+        child: Center(
+          child: AppIcon(icon,
+              size: 16, color: onTap == null ? Colors.grey.shade300 : color),
+        ),
+      ),
     );
   }
 }

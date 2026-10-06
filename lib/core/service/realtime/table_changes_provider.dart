@@ -18,6 +18,9 @@ final tableChangesProvider = StreamProvider.family<int, String>((ref, table) {
   final client = Supabase.instance.client;
   final controller = StreamController<int>();
   var tick = 0;
+  // Ek save mein kai rows (header + items) aati hain — burst ko ek signal
+  // mein samet do taake list baar baar reload na ho.
+  Timer? debounce;
 
   final channel = client
       .channel('table-changes:$table')
@@ -26,12 +29,16 @@ final tableChangesProvider = StreamProvider.family<int, String>((ref, table) {
         schema: 'public',
         table: table,
         callback: (_) {
-          if (!controller.isClosed) controller.add(++tick);
+          debounce?.cancel();
+          debounce = Timer(const Duration(milliseconds: 400), () {
+            if (!controller.isClosed) controller.add(++tick);
+          });
         },
       )
       .subscribe();
 
   ref.onDispose(() {
+    debounce?.cancel();
     client.removeChannel(channel);
     controller.close();
   });

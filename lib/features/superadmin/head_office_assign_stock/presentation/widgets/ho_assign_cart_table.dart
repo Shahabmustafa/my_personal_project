@@ -261,28 +261,60 @@ class _QtyStepperState extends State<_QtyStepper> {
   Widget build(BuildContext context) {
     final color = widget.primaryColor;
 
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withOpacity(0.4)),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: TextField(
-        controller: _ctrl,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        textAlign: TextAlign.center,
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
-        decoration: const InputDecoration(
-          isDense: true,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        width: 116,
+        height: 32,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
         ),
-        onSubmitted: (_) => _commit(),
-        onTapOutside: (_) => _commit(),
+        child: Row(
+          children: [
+            _miniBtn(AppIcons.remove, color,
+                widget.value > 1 ? () => widget.onChanged(widget.value - 1) : null),
+            Expanded(
+              child: TextField(
+                controller: _ctrl,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87),
+                // collapsed: theme ka border/fill andar na aaye.
+                decoration:
+                    const InputDecoration.collapsed(hintText: '', filled: false),
+                onSubmitted: (_) => _commit(),
+                onTapOutside: (_) => _commit(),
+              ),
+            ),
+            _miniBtn(AppIcons.add, color,
+                widget.value < widget.max
+                    ? () => widget.onChanged(widget.value + 1)
+                    : null),
+          ],
+        ),
       ),
     );
   }
+
+  Widget _miniBtn(String icon, Color color, VoidCallback? onTap) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          width: 28,
+          height: double.infinity,
+          child: Center(
+            child: AppIcon(icon,
+                size: 14,
+                color: onTap == null ? Colors.grey.shade300 : color),
+          ),
+        ),
+      );
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────

@@ -105,6 +105,9 @@ final branchAssignProvider = StateNotifierProvider<BranchAssignNotifier, BranchA
     // Realtime — naya assignment aate hi list reload.
     ref.listen(tableChangesProvider('assign_stock_to_branch'),
         (_, _) => notifier.loadAssignments());
+    // Items header ke baad insert hote hain — un ka event bhi suno.
+    ref.listen(tableChangesProvider('assign_stock_to_branch_items'),
+        (_, _) => notifier.loadAssignments());
     return notifier;
   },
 );
