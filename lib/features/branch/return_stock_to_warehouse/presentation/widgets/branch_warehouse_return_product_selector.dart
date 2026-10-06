@@ -192,6 +192,7 @@ class _BranchWarehouseReturnProductSelectorState
                       }),
                       decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Article')),
                       popupProps: PopupProps.menu(
+                        fit: FlexFit.loose,
                         showSearchBox: true,
                         constraints: const BoxConstraints(maxHeight: 320),
                         searchFieldProps: const TextFieldProps(

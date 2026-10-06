@@ -250,7 +250,7 @@ class _SalesmanField extends ConsumerWidget {
             compareFn: (a, b) => a.id == b.id,
             onSelected: ref.read(saleExchangeProvider.notifier).selectSalesman,
             decoratorProps: DropDownDecoratorProps(decoration: _decor('Salesman', required: true)),
-            popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+            popupProps: const PopupProps.menu(fit: FlexFit.loose, showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
           ),
         );
   }
@@ -272,7 +272,7 @@ class _PrinterField extends ConsumerWidget {
             compareFn: (a, b) => a.id == b.id,
             onSelected: ref.read(saleExchangeProvider.notifier).selectPrinter,
             decoratorProps: DropDownDecoratorProps(decoration: _decor('Printer', required: true)),
-            popupProps: const PopupProps.menu(showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
+            popupProps: const PopupProps.menu(fit: FlexFit.loose, showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
           ),
         );
   }
@@ -332,6 +332,7 @@ class _ExchangePaymentRowState extends ConsumerState<_ExchangePaymentRow> {
                     decoratorProps:
                         DropDownDecoratorProps(decoration: _decor('Bank Account', required: true)),
                     popupProps: const PopupProps.menu(
+                        fit: FlexFit.loose,
                         showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
                   ),
                 ),

@@ -130,6 +130,7 @@ class _PurchaseProductSelectorState
             decoratorProps:
                 DropDownDecoratorProps(decoration: _dropDecor('Company')),
             popupProps: PopupProps.menu(
+              fit: FlexFit.loose,
               showSearchBox: true,
               constraints: const BoxConstraints(maxHeight: 260),
               searchFieldProps: const TextFieldProps(
@@ -184,6 +185,7 @@ class _PurchaseProductSelectorState
           }),
           decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Article')),
           popupProps: PopupProps.menu(
+            fit: FlexFit.loose,
             showSearchBox: true,
             constraints: const BoxConstraints(maxHeight: 320),
             searchFieldProps: const TextFieldProps(

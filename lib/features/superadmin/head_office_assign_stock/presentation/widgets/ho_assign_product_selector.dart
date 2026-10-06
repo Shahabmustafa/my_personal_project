@@ -161,6 +161,7 @@ class _HoAssignProductSelectorState
               decoration: _dropDecor('Select Branch *'),
             ),
             popupProps: PopupProps.menu(
+              fit: FlexFit.loose,
               showSearchBox: true,
               constraints: const BoxConstraints(maxHeight: 260),
               searchFieldProps: const TextFieldProps(
@@ -242,6 +243,7 @@ class _HoAssignProductSelectorState
           decoratorProps:
               DropDownDecoratorProps(decoration: _dropDecor('Article')),
           popupProps: PopupProps.menu(
+            fit: FlexFit.loose,
             showSearchBox: true,
             constraints: const BoxConstraints(maxHeight: 320),
             searchFieldProps: const TextFieldProps(

@@ -66,6 +66,7 @@ class _PrinterPickerFieldState extends ConsumerState<PrinterPickerField> {
             ),
           ),
           popupProps: const PopupProps.menu(
+            fit: FlexFit.loose,
             showSearchBox: true,
             constraints: BoxConstraints(maxHeight: 220),
           ),

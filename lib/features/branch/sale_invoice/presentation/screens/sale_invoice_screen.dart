@@ -275,6 +275,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                         decoration: _decor('Customer', required: true),
                       ),
                       popupProps: const PopupProps.menu(
+                        fit: FlexFit.loose,
                         showSearchBox: true,
                         constraints: BoxConstraints(maxHeight: 260),
                       ),
@@ -315,6 +316,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                       decoration: _decor('Printer', required: true),
                     ),
                     popupProps: const PopupProps.menu(
+                      fit: FlexFit.loose,
                       showSearchBox: true,
                       constraints: BoxConstraints(maxHeight: 260),
                     ),
@@ -353,6 +355,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                         decoration: _decor('Bank Account', required: true),
                       ),
                       popupProps: const PopupProps.menu(
+                        fit: FlexFit.loose,
                         showSearchBox: true,
                         constraints: BoxConstraints(maxHeight: 260),
                       ),
@@ -426,6 +429,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
             decoration: _decor(label, required: required),
           ),
           popupProps: const PopupProps.menu(
+            fit: FlexFit.loose,
             showSearchBox: true,
             constraints: BoxConstraints(maxHeight: 260),
           ),

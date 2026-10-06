@@ -547,6 +547,7 @@ class _NewTransferForm extends ConsumerWidget {
                         ),
                       ),
                       popupProps: PopupProps.menu(
+                        fit: FlexFit.loose,
                         showSearchBox: true,
                         constraints: const BoxConstraints(maxHeight: 260),
                         searchFieldProps: const TextFieldProps(
