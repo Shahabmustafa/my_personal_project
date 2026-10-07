@@ -119,22 +119,24 @@ class StockDatasource {
         .from(_table)
         .select('id')
         .eq('barcode', barcode)
-        .maybeSingle();
-    return res != null;
+        .limit(1);
+    return (res as List).isNotEmpty;
   }
 
   // ── Check duplicate SKU (same combination in same warehouse) ──────────────
+  /// Mirrors `warehouse_stock_unique_sku`, which does NOT include company —
+  /// filtering on company here would let a row through that the insert then
+  /// rejects, failing the whole batch.
   Future<bool> skuExists({
     required String warehouseId,
     required String productId,
     required String sizeId,
     required String brandId,
-    String? companyId,
     required String colorId,
     required String categoryId,
     required String typeId,
   }) async {
-    var query = _client
+    final res = await _client
         .from(_table)
         .select('id')
         .eq('warehouse_id', warehouseId)
@@ -143,14 +145,9 @@ class StockDatasource {
         .eq('brand_id', brandId)
         .eq('color_id', colorId)
         .eq('category_id', categoryId)
-        .eq('type_id', typeId);
-
-    if (companyId != null) {
-      query = query.eq('company_id', companyId);
-    }
-
-    final res = await query.maybeSingle();
-    return res != null;
+        .eq('type_id', typeId)
+        .limit(1);
+    return (res as List).isNotEmpty;
   }
 
   // ── Insert multiple stock entries (batch) ─────────────────────────────────

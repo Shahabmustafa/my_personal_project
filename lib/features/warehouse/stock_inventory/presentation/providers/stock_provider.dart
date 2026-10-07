@@ -82,9 +82,27 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
     try {
       final toInsert = <WarehouseStockModel>[];
       final skipped = <String>[];
+      // Same key as `warehouse_stock_unique_sku` — catches a combination
+      // repeated inside this batch, which the per-row DB check can't see.
+      final seenSkus = <String>{};
+      final seenBarcodes = <String>{};
       for (final s in stocks) {
-        if (await _repository.barcodeExists(s.barcode)) {
+        final sku = [
+          s.warehouseId,
+          s.productId,
+          s.sizeId,
+          s.colorId,
+          s.typeId,
+          s.categoryId,
+          s.brandId,
+        ].join('|');
+        if (!seenBarcodes.add(s.barcode) ||
+            await _repository.barcodeExists(s.barcode)) {
           skipped.add('Barcode ${s.barcode} already exists');
+          continue;
+        }
+        if (!seenSkus.add(sku)) {
+          skipped.add('Same size added twice in this entry');
           continue;
         }
         final skuEx = await _repository.skuExists(
@@ -92,7 +110,6 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
           productId: s.productId,
           sizeId: s.sizeId,
           brandId: s.brandId,
-          companyId: s.companyId,
           colorId: s.colorId,
           categoryId: s.categoryId,
           typeId: s.typeId,
@@ -108,6 +125,16 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
         await refresh();
       }
       return (error: null, skipped: skipped);
+    } on PostgrestException catch (e) {
+      // Unique constraint hit by a concurrent insert between check and write.
+      if (e.code == '23505') {
+        return (
+          error: 'This stock already exists in the warehouse. Refresh and '
+              'update its quantity instead.',
+          skipped: <String>[]
+        );
+      }
+      return (error: e.message, skipped: <String>[]);
     } catch (e) {
       return (error: e.toString(), skipped: <String>[]);
     }
