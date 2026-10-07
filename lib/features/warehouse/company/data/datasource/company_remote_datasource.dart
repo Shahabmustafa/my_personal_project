@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:safishoe_app/features/warehouse/shared/catalog_delete_guard.dart';
 import '../model/company_model.dart';
 
 class CompanyRemoteDatasource {
@@ -77,6 +78,14 @@ class CompanyRemoteDatasource {
 
   /// Delete company
   Future<void> deleteCompany(String id) async {
-    await _client.from('companies').delete().eq('id', id);
+    await deleteCatalogRow(_client,
+        table: 'companies',
+        column: 'company_id',
+        id: id,
+        label: 'company',
+        alsoCheck: const {
+          'purchase_invoices': 'purchase invoices',
+          'purchase_returns': 'purchase returns',
+        });
   }
 }

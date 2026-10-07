@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:safishoe_app/features/warehouse/shared/catalog_delete_guard.dart';
 import '../model/category_model.dart';
 
 class CategoryRemoteDatasource {
@@ -32,10 +33,6 @@ class CategoryRemoteDatasource {
   Exception _friendly(PostgrestException e) {
     if (e.code == '23505') {
       return Exception('A category with this name already exists');
-    }
-    if (e.code == '23503') {
-      return Exception(
-          'This category is used in stock or invoices and cannot be deleted');
     }
     return Exception(e.message);
   }
@@ -76,10 +73,7 @@ class CategoryRemoteDatasource {
   }
 
   Future<void> delete(String id) async {
-    try {
-      await _client.from('categories').delete().eq('id', id);
-    } on PostgrestException catch (e) {
-      throw _friendly(e);
-    }
+    await deleteCatalogRow(_client,
+        table: 'categories', column: 'category_id', id: id, label: 'category');
   }
 }

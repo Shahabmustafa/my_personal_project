@@ -184,13 +184,13 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     BranchesScreen(),
     WarehouseScreen(),
     UsersScreen(),
-    // Admin sirf add kar sakta hai — edit/delete options hidden.
-    ProductsScreen(readOnly: true),
-    SizesScreen(readOnly: true),
-    ColorsScreen(readOnly: true),
-    BrandsScreen(readOnly: true),
-    CategorysScreen(readOnly: true),
-    TypesScreen(readOnly: true),
+    // Edit/delete allowed; delete is refused while stock still uses the row.
+    ProductsScreen(),
+    SizesScreen(),
+    ColorsScreen(),
+    BrandsScreen(),
+    CategorysScreen(),
+    TypesScreen(),
     // Sab warehouses ka stock — add ho sakta hai, edit/delete nahi.
     HeadOfficeStockScreen(),
     // Admin ko pehle warehouse choose karni hoti hai (khud koi warehouse

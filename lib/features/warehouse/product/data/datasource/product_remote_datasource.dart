@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:safishoe_app/features/warehouse/shared/catalog_delete_guard.dart';
 
 import '../../../../../core/pagination/pagination.dart';
 import '../model/product_model.dart';
@@ -96,7 +97,12 @@ class ProductRemoteDatasource {
   }
 
   Future<void> delete(String id, String imageUrl) async {
-    await deleteImage(imageUrl);
-    await _client.from('products').delete().eq('id', id);
+    // Check stock before touching the image, so a refused delete keeps it.
+    await deleteCatalogRow(_client,
+        table: 'products',
+        column: 'product_id',
+        id: id,
+        label: 'product',
+        beforeDelete: () => deleteImage(imageUrl));
   }
 }

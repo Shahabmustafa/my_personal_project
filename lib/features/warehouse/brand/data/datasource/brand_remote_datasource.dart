@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:safishoe_app/features/warehouse/shared/catalog_delete_guard.dart';
 import '../model/brand_model.dart';
 
 class BrandRemoteDatasource {
@@ -49,6 +50,7 @@ class BrandRemoteDatasource {
   }
 
   Future<void> delete(String id) async {
-    await _client.from('brands').delete().eq('id', id);
+    await deleteCatalogRow(_client,
+        table: 'brands', column: 'brand_id', id: id, label: 'brand');
   }
 }
