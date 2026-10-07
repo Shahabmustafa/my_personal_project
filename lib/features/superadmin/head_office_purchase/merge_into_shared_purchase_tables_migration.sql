@@ -93,3 +93,10 @@ DROP TABLE IF EXISTS public.ho_purchase_invoices CASCADE;
 DROP TABLE IF EXISTS public.ho_purchase_returns CASCADE;
 
 NOTIFY pgrst, 'reload schema';
+
+-- Purchase return bina company ke save nahi hona chahiye (return company ko
+-- wapas jata hai). NOT VALID — purane 8 returns (sab bina company ke) waise
+-- hi rehte hain, sirf naye returns par lagta hai. Applied 2026-10-07.
+ALTER TABLE public.purchase_returns
+  ADD CONSTRAINT purchase_returns_company_required
+  CHECK (company_id IS NOT NULL) NOT VALID;

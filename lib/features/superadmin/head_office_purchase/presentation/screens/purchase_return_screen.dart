@@ -337,6 +337,14 @@ class _ReturnFooter extends ConsumerWidget {
 
   Future<void> _onSaveReturn(BuildContext context, WidgetRef ref) async {
     final state = ref.read(purchaseReturnProvider);
+    if (state.selectedCompany == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Pehle company select karein — bina company ke return nahi hoga'),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
 
     final confirmed = await showDialog<bool>(
       context: context,

@@ -150,7 +150,7 @@ class _PurchaseReturnProductSelectorState
             onSelected: (c) =>
                 ref.read(purchaseReturnProvider.notifier).selectCompany(c),
             decoratorProps: DropDownDecoratorProps(
-              decoration: _dropDecor('Company (optional)'),
+              decoration: _dropDecor('Company *'),
             ),
             popupProps: PopupProps.menu(
               fit: FlexFit.loose,

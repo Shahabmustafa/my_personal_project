@@ -297,6 +297,8 @@ class PurchaseReturnNotifier extends StateNotifier<PurchaseReturnState> {
 
   Future<String?> saveReturn() async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
+    // Return company ko wapas jata hai — bina company ke save nahi.
+    if (state.selectedCompany == null) return 'Please select a company';
     state = state.copyWith(isSaving: true, clearError: true);
 
     try {
