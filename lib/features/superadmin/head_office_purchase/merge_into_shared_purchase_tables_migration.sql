@@ -41,6 +41,15 @@ ALTER TABLE public.purchase_returns
   ADD CONSTRAINT purchase_returns_source_check
     CHECK ((warehouse_id IS NOT NULL) <> (head_office_id IS NOT NULL));
 
+-- Superadmin lists head_office_id par filter + created_at par sort karti hain
+-- (warehouse wale (warehouse_id, created_at) index ka jora). Applied 2026-10-07.
+CREATE INDEX IF NOT EXISTS idx_purchase_invoices_ho_created
+  ON public.purchase_invoices (head_office_id, created_at DESC)
+  WHERE head_office_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_purchase_returns_ho_created
+  ON public.purchase_returns (head_office_id, created_at DESC)
+  WHERE head_office_id IS NOT NULL;
+
 ALTER TABLE public.purchase_invoice_items
   DROP CONSTRAINT IF EXISTS purchase_invoice_items_stock_id_fkey;
 
