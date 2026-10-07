@@ -7,14 +7,12 @@ class HeadOfficeCard extends StatelessWidget {
   final HeadOfficeModel headOffice;
   final bool canEdit;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const HeadOfficeCard({
     super.key,
     required this.headOffice,
     required this.canEdit,
     required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -74,11 +72,6 @@ class HeadOfficeCard extends StatelessWidget {
                     icon: AppIcons.editOutlined,
                     color: const Color(0xFF3E63DD),
                     onTap: onEdit),
-                const SizedBox(height: 6),
-                _ActionBtn(
-                    icon: AppIcons.deleteOutline,
-                    color: Colors.redAccent,
-                    onTap: onDelete),
               ],
             ),
           ],

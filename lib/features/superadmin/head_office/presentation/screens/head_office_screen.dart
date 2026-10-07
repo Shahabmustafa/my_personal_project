@@ -112,14 +112,12 @@ class _HeadOfficeScreenState extends ConsumerState<HeadOfficeScreen> {
                                 canEdit: canEdit,
                                 onEdit: (h) =>
                                     _showForm(context, headOffice: h),
-                                onDelete: (h) => _confirmDelete(context, h),
                               )
                             : _DesktopTable(
                                 headOffices: filtered,
                                 canEdit: canEdit,
                                 onEdit: (h) =>
                                     _showForm(context, headOffice: h),
-                                onDelete: (h) => _confirmDelete(context, h),
                               ),
           ),
         ],
@@ -139,37 +137,6 @@ class _HeadOfficeScreenState extends ConsumerState<HeadOfficeScreen> {
     );
   }
 
-  void _confirmDelete(BuildContext context, HeadOfficeModel headOffice) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Head Office'),
-        content: Text('Delete "${headOffice.headOfficeName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              foregroundColor: Colors.white,
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              ref
-                  .read(headOfficeProvider.notifier)
-                  .deleteHeadOffice(headOffice.id);
-              Navigator.pop(context);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ── Desktop Table ─────────────────────────────────────────────────────────────
@@ -178,13 +145,11 @@ class _DesktopTable extends StatelessWidget {
   final List<HeadOfficeModel> headOffices;
   final bool canEdit;
   final Function(HeadOfficeModel) onEdit;
-  final Function(HeadOfficeModel) onDelete;
 
   const _DesktopTable({
     required this.headOffices,
     required this.canEdit,
     required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -307,13 +272,6 @@ class _DesktopTable extends StatelessWidget {
                                 tooltip: 'Edit',
                                 onTap: () => onEdit(h),
                               ),
-                              const SizedBox(width: 8),
-                              _IconBtn(
-                                icon: AppIcons.deleteOutline,
-                                color: Colors.redAccent,
-                                tooltip: 'Delete',
-                                onTap: () => onDelete(h),
-                              ),
                             ])),
                           ),
                       ]),
@@ -335,13 +293,11 @@ class _MobileList extends StatelessWidget {
   final List<HeadOfficeModel> headOffices;
   final bool canEdit;
   final Function(HeadOfficeModel) onEdit;
-  final Function(HeadOfficeModel) onDelete;
 
   const _MobileList({
     required this.headOffices,
     required this.canEdit,
     required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -353,7 +309,6 @@ class _MobileList extends StatelessWidget {
         headOffice: headOffices[i],
         canEdit: canEdit,
         onEdit: () => onEdit(headOffices[i]),
-        onDelete: () => onDelete(headOffices[i]),
       ),
     );
   }
