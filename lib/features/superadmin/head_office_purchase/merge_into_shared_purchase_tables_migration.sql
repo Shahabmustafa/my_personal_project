@@ -18,11 +18,9 @@
 -- STATUS (2026-09-17): Sab steps neeche apply ho chuke hain LIVE database par
 -- (columns added, constraints updated, purani 5 ho_purchase_invoices / 7
 -- ho_purchase_invoice_items ka data naye numbers Pur-000023..027 ke sath
--- merge ho chuka hai). Sirf DROP TABLE wala aakhri step baqi hai — Claude
--- Code ke auto-mode safety classifier ne ise "Cloud Storage Mass Delete"
--- flag kar diya (agent khud apply nahi kar saka), isliye ye purani (ab khali
--- pade) tables abhi bhi maujood hain aur inhe Supabase SQL Editor se manually
--- drop karna hoga.
+-- merge ho chuka hai). 2026-10-07: purani ho_purchase_* tables bhi LIVE
+-- database se drop ho chuki hain (merge verify karne ke baad) — ye migration
+-- ab poori apply hai.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 ALTER TABLE public.purchase_invoices
