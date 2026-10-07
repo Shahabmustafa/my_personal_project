@@ -197,7 +197,8 @@ class _BranchCashCounterScreenState
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : state.status == BranchCashCounterStatus.error
+                // A failed add/edit/delete only shows the snackbar; keep the list.
+                : state.status == BranchCashCounterStatus.error && state.records.isEmpty
                     ? _ErrorView(
                         message:
                             state.errorMessage ?? 'Error loading records',

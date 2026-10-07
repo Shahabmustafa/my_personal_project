@@ -164,7 +164,8 @@ class _HeadOfficeCashCounterScreenState
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : state.status == HeadOfficeCashCounterStatus.error
+                // A failed add/edit/delete only shows the snackbar; keep the list.
+                : state.status == HeadOfficeCashCounterStatus.error && state.records.isEmpty
                     ? _ErrorView(
                         message:
                             state.errorMessage ?? 'Error loading records',

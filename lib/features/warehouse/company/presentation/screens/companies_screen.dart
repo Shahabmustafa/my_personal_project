@@ -115,7 +115,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
           Expanded(
             child: companyState.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : companyState.status == CompanyStatus.error
+                // A failed add/edit/delete only shows the snackbar; keep the list.
+                : companyState.status == CompanyStatus.error && companyState.companies.isEmpty
                     ? _ErrorView(
                         message:
                             companyState.errorMessage ?? 'Error',

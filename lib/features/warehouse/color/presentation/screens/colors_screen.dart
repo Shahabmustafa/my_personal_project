@@ -152,7 +152,8 @@ class _ColorsScreenState extends ConsumerState<ColorsScreen> {
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : state.status == ColorStatus.error
+                // A failed add/edit/delete only shows the snackbar; keep the list.
+                : state.status == ColorStatus.error && state.items.isEmpty
                     ? Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
