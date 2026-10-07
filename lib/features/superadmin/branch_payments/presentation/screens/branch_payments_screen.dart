@@ -4,7 +4,7 @@ import '../../../../branch/branch_payment/data/model/branch_payment_model.dart';
 import '../../../../branch/branch_payment/presentation/providers/branch_payment_provider.dart';
 import '../../../../branch/return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart'
     show StatusChip;
-import '../../../report/presentation/widgets/report_branch_filter_dropdown.dart';
+import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
@@ -12,6 +12,7 @@ import '../../../report/presentation/widgets/report_summary_card.dart';
 import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../providers/branch_payments_provider.dart';
 
+import 'package:safishoe_app/core/widget/app_dropdown.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
@@ -38,6 +39,16 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   int _page = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (ref.read(branchProvider).branches.isEmpty) {
+        ref.read(branchProvider.notifier).loadAllBranches();
+      }
+    });
+  }
   BranchPaymentModel? _selected;
 
   bool get _hasDateFilter => _startDate != null || _endDate != null;
@@ -55,6 +66,25 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
       if (to != null && d.isAfter(to)) return false;
       return true;
     }).toList();
+  }
+
+  /// Branch filter — app ka custom search dropdown; null = sab branches.
+  Widget _branchFilter() {
+    final branches = ref.watch(branchProvider).branches;
+    final names = {for (final b in branches) b.id: b.branchName};
+    return SizedBox(
+      width: 220,
+      child: AppSearchDropdown<String?>(
+        label: 'Branch',
+        items: [null, ...names.keys],
+        selectedItem: _branchId,
+        itemLabel: (id) => id == null ? 'All Branches' : names[id] ?? '',
+        onChanged: (v) => setState(() {
+          _branchId = v;
+          _page = 1;
+        }),
+      ),
+    );
   }
 
   @override
@@ -96,13 +126,7 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        ReportBranchFilterDropdown(
-          value: _branchId,
-          onChanged: (v) => setState(() {
-            _branchId = v;
-            _page = 1;
-          }),
-        ),
+        _branchFilter(),
         if (_hasDateFilter)
           TextButton.icon(
             onPressed: () => setState(() {
