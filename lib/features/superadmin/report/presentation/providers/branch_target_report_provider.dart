@@ -100,31 +100,66 @@ class BranchTargetReportNotifier extends StateNotifier<BranchTargetReportState> 
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
+    final period = state.period;
+    final anchor = state.anchor;
+    // Jaldi jaldi period/mahina badla ho to purana jawab ignore.
+    bool stale() => state.period != period || state.anchor != anchor;
     try {
       final from = state.from;
       final to = state.to;
+      final yearly = state.period == TargetPeriod.yearly;
       final results = await Future.wait([
         _branchRepo.getAllBranches(),
-        _saleRepo.getNetSaleByBranch(date: from, to: to),
-        _targetDs.fetchTotalsForRange(from, to),
+        yearly
+            ? _saleRepo.getNetSaleByBranchMonth(from, to)
+            : _saleRepo.getNetSaleByBranch(date: from, to: to),
+        yearly
+            ? _targetDs.fetchMonthlyTotalsForRange(from, to)
+            : _targetDs.fetchTotalsForRange(from, to),
       ]);
       final branches = results[0] as List<dynamic>;
-      final netByBranch = results[1] as Map<String, double>;
-      final targetByBranch = results[2] as Map<String, double>;
+
+      BranchTargetRow build(dynamic b) {
+        final id = b.id as String;
+        final name = b.branchName as String;
+        if (!yearly) {
+          return BranchTargetRow(
+            branchId: id,
+            branchName: name,
+            todayTarget: (results[2] as Map<String, double>)[id] ?? 0,
+            netSaleToday: (results[1] as Map<String, double>)[id] ?? 0,
+          );
+        }
+        final sales = (results[1] as Map<String, Map<int, double>>)[id] ?? {};
+        final targets =
+            (results[2] as Map<String, Map<int, double>>)[id] ?? {};
+        final months = [
+          for (var m = 1; m <= 12; m++)
+            BranchMonthTarget(
+              month: DateTime(from.year, m, 1),
+              target: targets[m] ?? 0,
+              sale: sales[m] ?? 0,
+            ),
+        ];
+        return BranchTargetRow(
+          branchId: id,
+          branchName: name,
+          todayTarget: months.fold(0, (s, m) => s + m.target),
+          netSaleToday: months.fold(0, (s, m) => s + m.sale),
+          months: months,
+        );
+      }
 
       final rows = branches
           .where((b) => b.isActive as bool)
-          .map((b) => BranchTargetRow(
-                branchId: b.id as String,
-                branchName: b.branchName as String,
-                todayTarget: targetByBranch[b.id as String] ?? 0,
-                netSaleToday: netByBranch[b.id as String] ?? 0,
-              ))
+          .map(build)
           .toList()
         ..sort((a, b) => a.branchName.compareTo(b.branchName));
 
+      if (stale()) return;
       state = state.copyWith(rows: rows, isLoading: false, asOf: DateTime.now());
     } catch (e) {
+      if (stale()) return;
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
     }
   }

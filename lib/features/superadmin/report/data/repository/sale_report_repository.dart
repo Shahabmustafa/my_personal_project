@@ -82,4 +82,8 @@ class SaleReportRepository {
   Future<Map<DateTime, double>> getNetSaleByDay(
           String branchId, DateTime from, DateTime to) =>
       _datasource.fetchNetSaleByDay(branchId, from, to);
+
+  Future<Map<String, Map<int, double>>> getNetSaleByBranchMonth(
+          DateTime from, DateTime to) =>
+      _datasource.fetchNetSaleByBranchMonth(from, to);
 }
