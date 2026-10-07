@@ -1,0 +1,228 @@
+===============================================================================
+  SAFI SHOES — FINGERPRINT ATTENDANCE MACHINE (ZKTeco ADMS) SETUP GUIDE
+===============================================================================
+
+Is guide mein machine khareedne se le kar software se jodne aur test karne tak
+ka poora tareeqa hai. Software ki taraf ka kaam pehle se ho chuka hai — aap ko
+sirf machine ki setting aur app mein approve karna hai.
+
+
+-------------------------------------------------------------------------------
+ 1. ADMS KYA HAI?
+-------------------------------------------------------------------------------
+
+ADMS = Automatic Data Master Server. Ye ZKTeco machines ka feature hai jis se
+machine KHUD internet par har thumb (punch) server ko bhej deti hai.
+
+  Employee thumb lagata hai
+        |
+  Machine (branch ke router se judi)
+        |   internet
+  Aap ki web app ka domain  /iclock/...
+        |   (Vercel aage bhej deta hai)
+  Supabase server (iclock function)
+        |
+  Software -> Staff Attendance mein Check In / Check Out
+
+- Branch mein koi computer nahi chahiye — sirf internet.
+- Internet band ho jaye to punches machine ke andar save rehte hain; internet
+  wapas aate hi sab khud chale jaate hain. Data nahi khota.
+
+
+-------------------------------------------------------------------------------
+ 2. KAUN SI MACHINE LENI HAI
+-------------------------------------------------------------------------------
+
+Recommended:  ZKTeco K50 Pro (ADMS)
+Ye bhi chalengi:  ZKTeco K40 Pro (ADMS), MB20 (face + fingerprint, mehngi)
+
+ZAROORI: Specification mein "ADMS", "Cloud" ya "Push" likha hona chahiye.
+         Saada K50 (Communication: TCP/IP, USB-Host) mein ye NAHI hota — wo
+         hamare system ke saath khud nahi judegi.
+
+Dukaan par check karein:
+  [ ] Machine ka menu khulwa kar dekhein:  Comm. -> Cloud Server Setting
+      (ye option ho to machine theek hai)
+  [ ] HTTPS support hai? (hamara server HTTPS par hai)
+  [ ] Backup battery + adapter (DC 12V) saath hai
+
+Har branch mein ek machine kaafi hai. Pehle ek branch mein test karein.
+
+
+-------------------------------------------------------------------------------
+ 3. MACHINE KO INTERNET SE JODNA
+-------------------------------------------------------------------------------
+
+1. Machine ko branch ke router se LAN cable se jodein (WiFi model ho to WiFi).
+2. Machine par  M/OK  button dabayein -> admin menu.
+3. Comm. -> Ethernet:
+      DHCP  = ON      (router khud IP de dega)
+4. System -> Date/Time:
+      Time Zone = GMT +5 (Pakistan), date aur time sahi ho.
+
+
+-------------------------------------------------------------------------------
+ 4. CLOUD SERVER (ADMS) SETTING — MACHINE MEIN
+-------------------------------------------------------------------------------
+
+Menu:  Comm. -> Cloud Server Setting   (kuch firmware mein "ADMS")
+
+  Enable Domain Name : ON
+  Server Address     : aap ki web app ka domain
+                       (app mein Superadmin -> Attendance -> Attendance
+                        Machines screen ke upar likha hota hai, copy button
+                        ke saath)
+                       Sirf domain likhein — "https://" ya "/" NAHI.
+                       Misaal:  safishoe.vercel.app
+  Server Port        : 443
+  HTTPS              : ON  (agar option ho)
+  Proxy Server       : OFF
+
+Save karein. 1-2 minute mein screen par cloud / server ka nishaan aa jayega.
+
+NOTE: Supabase ka seedha address (….supabase.co) machine mein NA daalein —
+machine hamesha /iclock/ path par bhejti hai, jo sirf web app ke domain par
+set hai.
+
+
+-------------------------------------------------------------------------------
+ 5. APP MEIN MACHINE APPROVE KARNA
+-------------------------------------------------------------------------------
+
+1. Superadmin login -> Sidebar: Attendance -> Attendance Machines
+2. "Machines" list mein nayi machine "Pending" aa jayegi
+   (Serial No. machine ke peechhe sticker par bhi hota hai — milan kar lein).
+3. "Edit / Approve" dabayein:
+      Name     : jaise "Bank Road Gate" (optional)
+      Branch   : jis branch mein machine lagi hai
+      Approved : ON
+   Save.
+4. Status "Online" ho jayega (hara).
+
+Jab tak machine Approve na ho, us ke thumbs attendance mein NAHI lagte
+(anjaan machine se hifazat). Approve karte hi pehle ke punches bhi lag jaate
+hain.
+
+
+-------------------------------------------------------------------------------
+ 6. EMPLOYEES KA THUMB REGISTER KARNA — MACHINE MEIN
+-------------------------------------------------------------------------------
+
+Har employee ke liye:
+1. M/OK -> User Mgt -> New User
+2. User ID   : ek number, jaise 1, 2, 3 ...
+               POORE SYSTEM mein har banda ka ALAG number (sab branches mila
+               kar). Ek hi banda do branches mein ho to dono machines mein
+               usi ka wahi number.
+3. Name      : naam (sirf machine ki screen ke liye)
+4. Fingerprint: ek ungli 3 baar lagwayein. Behtar hai doosri ungli bhi
+               register kar dein.
+5. User Role : Normal User   (sirf owner Super Admin rahe)
+6. Save.
+
+Kaghaz par list bana lein:
+
+   Machine User ID | Naam      | Software user        | Branch
+   ----------------+-----------+----------------------+-----------
+   1               | Shahab    | Shahab Mustafa (Mgr) | BANK ROAD
+   2               | Jan       | jan (Cashier)        | BANK ROAD
+   3               | Kashif    | Kashif Mustafa       | BANK ROAD
+   4               | Salesman  | Salesman             | BANK ROAD
+
+
+-------------------------------------------------------------------------------
+ 7. APP MEIN MACHINE ID LIKHNA
+-------------------------------------------------------------------------------
+
+1. Attendance Machines screen -> neeche "Staff Machine ID"
+2. Har employee ke aage wahi number likhein jo machine mein User ID diya
+3. Hare ✓ button se save karein
+
+Agar number pehle kisi aur ko diya ho to message aayega — har number alag
+hona chahiye. Machine ID baad mein likhein to bhi pehle ke punches khud lag
+jaate hain.
+
+
+-------------------------------------------------------------------------------
+ 8. TEST
+-------------------------------------------------------------------------------
+
+1. Kisi employee se thumb lagwayein.
+2. App -> Staff Attendance (manager) ya Attendance -> Staff Attendance
+   (superadmin, branch chunein) -> us ka Check In nazar aana chahiye
+   (5-20 second lag sakte hain).
+3. Kuch der baad dobara thumb -> Check Out ban jayega.
+
+Qaida:
+- Din ka PEHLA thumb  = Check In
+- Din ka AAKHRI thumb = Check Out
+- 2 minute ke andar dobara thumb ignore
+- Din Pakistan time ke hisaab se (raat 12 baje naya din)
+- App wala Check In / Check Out button bhi chalta rehta hai (backup)
+
+
+-------------------------------------------------------------------------------
+ 9. MASLE AUR HAL (TROUBLESHOOTING)
+-------------------------------------------------------------------------------
+
+A) Machine "Machines" list mein nahi aa rahi
+   - Machine ko internet mil raha hai? (Comm. -> Ethernet mein IP aa raha?)
+   - Server Address mein sirf domain hai? (https:// aur / ke baghair)
+   - Port 443, Enable Domain Name ON, HTTPS ON?
+   - Kya Vercel ne naya deploy kiya hai? (vercel.json ka /iclock rule
+     deploy ke baad hi chalta hai)
+   - Machine mein HTTPS ka option hi nahi -> developer ko batayein (HTTP
+     wala alag address banana padega).
+   - Phir bhi na ho -> machine ka model + setting screen ki tasveer developer
+     ko bhejein (server logs se masla pata chal jayega).
+
+B) Machine "Offline" (laal)
+   - 5 minute se server se rabta nahi — internet / bijli check karein.
+   - Punches machine mein save hain, internet aate hi aa jayenge.
+
+C) Thumb laga lekin attendance nahi aayi
+   - Machine "Approved" hai aur sahi branch chuni hai?
+   - Us employee ka Machine ID app mein likha hai, aur machine wale User ID
+     se bilkul same hai?
+   - Employee app mein manager / cashier / salesman hai aur us branch mein
+     assigned hai?
+
+D) Time galat aa raha
+   - Machine ka Date/Time aur Time Zone (GMT+5) check karein.
+
+
+-------------------------------------------------------------------------------
+ 10. TECHNICAL DETAILS (developer ke liye)
+-------------------------------------------------------------------------------
+
+Protocol     : ZKTeco PUSH / ADMS ("iclock")
+Edge function: Supabase "iclock"  (verify_jwt = false — machine token nahi
+               bhej sakti; hifazat = serial number + superadmin approval)
+               Code: supabase/functions/iclock/index.ts
+Direct URL   : https://jjqhglmaxlcrusmmxwgi.supabase.co/functions/v1/iclock/iclock/cdata
+Vercel       : vercel.json  ->  /iclock/:path*  ->  upar wala function
+
+Requests:
+  GET  /iclock/cdata?SN=<serial>             -> settings (ATTLOGStamp=None,
+                                                TimeZone=5, Realtime=1)
+  POST /iclock/cdata?SN=<serial>&table=ATTLOG -> punches:
+       PIN <tab> YYYY-MM-DD HH:MM:SS <tab> status <tab> verify ...
+       jawab: "OK: <count>"
+  POST /iclock/cdata?...&table=OPERLOG       -> "OK" (save nahi hota)
+  GET  /iclock/getrequest?SN=<serial>        -> "OK" (koi command nahi)
+
+Database (SQL: lib/features/branch/attendance/attendance_machine_migration.sql):
+  users.machine_user_id          — machine ka User ID (unique)
+  attendance_devices             — machines (serial, branch, is_active,
+                                   last_seen_at)
+  attendance_punches             — har punch (duplicate ignore)
+  branch_attendance              — din ka check in / check out
+  attendance_ingest_punches()    — punches save + attendance (sirf server)
+  attendance_reapply_pending()   — approve / Machine ID ke baad purane punches
+
+Machine ki taraf se test (curl):
+  curl "https://<domain>/iclock/cdata?SN=TEST123&options=all"
+  -> "GET OPTION FROM: TEST123 ..." aaye to rasta theek hai.
+  (Test ke baad Attendance Machines screen se TEST123 Remove kar dein.)
+
+===============================================================================
