@@ -1,3 +1,5 @@
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/purchase_return_model.dart';
@@ -106,41 +108,55 @@ class PurchaseReturnScreen extends ConsumerWidget {
                     height: 48,
                     child: Center(child: LinearProgressIndicator())),
                 error: (e, _) => const SizedBox(),
-                data: (invoices) => DropdownButtonFormField<String>(
-                  value: state.selectedInvoiceId,
-                  hint: const Text('Ref Invoice (optional)',
-                      style: TextStyle(fontSize: 12)),
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 14),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide:
-                          BorderSide(color: Colors.orange.shade200),
+                data: (invoices) => DropdownSearch<Map<String, String>>(
+                  items: (f, _) => invoices
+                      .where((inv) => (inv['label'] ?? '')
+                          .toLowerCase()
+                          .contains(f.toLowerCase()))
+                      .toList(),
+                  selectedItem: invoices
+                      .where((inv) => inv['id'] == state.selectedInvoiceId)
+                      .firstOrNull,
+                  itemAsString: (inv) => inv['label'] ?? '',
+                  compareFn: (a, b) => a['id'] == b['id'],
+                  onSelected: (inv) => ref
+                      .read(purchaseReturnProvider.notifier)
+                      .selectInvoice(inv?['id'], inv?['label']),
+                  decoratorProps: DropDownDecoratorProps(
+                    decoration: InputDecoration(
+                      labelText: 'Ref Invoice (optional)',
+                      hintText: 'No Reference',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.orange.shade200),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 14),
+                      suffixIcon: state.selectedInvoiceId != null
+                          ? IconButton(
+                              icon: const AppIcon(AppIcons.clear, size: 18),
+                              tooltip: 'No Reference',
+                              onPressed: () => ref
+                                  .read(purchaseReturnProvider.notifier)
+                                  .selectInvoice(null, null),
+                            )
+                          : null,
                     ),
                   ),
-                  items: [
-                    const DropdownMenuItem<String>(
-                        value: null, child: Text('No Reference')),
-                    ...invoices.map((inv) => DropdownMenuItem<String>(
-                          value: inv['id'],
-                          child: Text(inv['label'] ?? '',
-                              style: const TextStyle(fontSize: 12)),
-                        )),
-                  ],
-                  onChanged: (id) {
-                    final label = id == null
-                        ? null
-                        : invoices.firstWhere((i) => i['id'] == id,
-                            orElse: () => {})['label'];
-                    ref
-                        .read(purchaseReturnProvider.notifier)
-                        .selectInvoice(id, label);
-                  },
+                  popupProps: const PopupProps.menu(
+                    fit: FlexFit.loose,
+                    showSearchBox: true,
+                    constraints: BoxConstraints(maxHeight: 260),
+                    searchFieldProps: TextFieldProps(
+                      decoration: InputDecoration(
+                        hintText: 'Search invoice...',
+                        prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
+                        isDense: true,
+                      ),
+                    ),
+                  ),
                 ),
               );
 
