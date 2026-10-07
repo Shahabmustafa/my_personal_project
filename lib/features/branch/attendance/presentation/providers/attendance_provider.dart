@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/datasource/attendance_datasource.dart';
+import '../../data/datasource/attendance_machine_datasource.dart';
+import '../../data/model/attendance_machine_model.dart';
 import '../../data/model/attendance_model.dart';
 
 final attendanceDatasourceProvider = Provider<AttendanceDatasource>(
@@ -26,3 +28,21 @@ final staffAttendanceProvider = FutureProvider.autoDispose
   if (key.$1.isEmpty) return Future.value(const []);
   return ref.read(attendanceDatasourceProvider).fetchBranchDay(key.$1, key.$2);
 });
+
+// ── Attendance machines (superadmin) ──────────────────────────────────────
+final attendanceMachineDatasourceProvider =
+    Provider<AttendanceMachineDatasource>(
+  (ref) => AttendanceMachineDatasource(Supabase.instance.client),
+);
+
+final attendanceDevicesProvider =
+    FutureProvider.autoDispose<List<AttendanceDevice>>((ref) {
+  // Nayi machine judte hi / last seen badalte hi list update.
+  ref.watch(tableChangesProvider('attendance_devices'));
+  return ref.read(attendanceMachineDatasourceProvider).fetchDevices();
+});
+
+final staffMachineIdsProvider =
+    FutureProvider.autoDispose<List<StaffMachineId>>(
+  (ref) => ref.read(attendanceMachineDatasourceProvider).fetchStaff(),
+);

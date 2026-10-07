@@ -48,6 +48,7 @@ class AppIcons {
   static const String emojiEventsOutlined = '$_base/trophy.svg';
   static const String errorOutline = '$_base/error.svg';
   static const String filterAltOutlined = '$_base/filter.svg';
+  static const String fingerprint = '$_base/fingerprint.svg';
   static const String flagOutlined = '$_base/flag.svg';
   static const String formatSizeOutlined = '$_base/text-size.svg';
   static const String history = '$_base/history.svg';

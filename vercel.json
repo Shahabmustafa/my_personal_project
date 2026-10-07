@@ -3,6 +3,10 @@
   "outputDirectory": "build/web",
   "installCommand": "echo skip",
   "rewrites": [
+    {
+      "source": "/iclock/:path*",
+      "destination": "https://jjqhglmaxlcrusmmxwgi.supabase.co/functions/v1/iclock/iclock/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

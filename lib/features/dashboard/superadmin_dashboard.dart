@@ -21,6 +21,7 @@ import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
 import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
 import '../superadmin/report/presentation/screens/branch_target_report_screen.dart';
 import '../superadmin/report/presentation/screens/employee_salary_report_screen.dart';
+import '../branch/attendance/presentation/screens/attendance_machines_screen.dart';
 import '../branch/attendance/presentation/screens/staff_attendance_screen.dart';
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
@@ -181,7 +182,12 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(
       icon: AppIcons.accessTimeOutlined,
       label: 'Staff Attendance',
-      group: 'Reports',
+      group: 'Attendance',
+    ),
+    SidebarItem(
+      icon: AppIcons.fingerprint,
+      label: 'Attendance Machines',
+      group: 'Attendance',
     ),
   ];
 
@@ -234,6 +240,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     BranchTargetReportScreen(),
     EmployeeSalaryReportScreen(),
     StaffAttendanceScreen(allBranches: true),
+    AttendanceMachinesScreen(),
   ];
 
   @override
