@@ -338,9 +338,14 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],
         textAlign: TextAlign.center,
         style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color),
+        // Center the text; the theme's focused/enabled borders would
+        // otherwise draw a second box inside the container's border.
+        textAlignVertical: TextAlignVertical.center,
         decoration: const InputDecoration(
           isDense: true,
           border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
           contentPadding: EdgeInsets.zero,
         ),
         onSubmitted: (_) => _commit(),
