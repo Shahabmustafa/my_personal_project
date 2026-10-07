@@ -27,6 +27,9 @@ CREATE INDEX IF NOT EXISTS idx_branch_attendance_user_date
 ALTER TABLE public.branch_attendance ENABLE ROW LEVEL SECURITY;
 CREATE POLICY authenticated_full_access ON public.branch_attendance
     FOR ALL TO authenticated USING (true) WITH CHECK (true);
+-- Naye tables ko yahan khud grant nahi milta — iske baghair app par
+-- "permission denied for table branch_attendance" (403) aata hai.
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.branch_attendance TO authenticated;
 
 -- Check in: sirf apni assigned branch mein, din mein ek baar.
 CREATE OR REPLACE FUNCTION public.attendance_check_in(p_branch_id UUID)
