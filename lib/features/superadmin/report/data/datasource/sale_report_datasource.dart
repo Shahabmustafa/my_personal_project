@@ -373,50 +373,6 @@ class SaleReportDatasource {
     return net;
   }
 
-  /// [from]..[to] mein har branch ki mahine-wise net sale —
-  /// {branchId: {month(1-12): amount}}. Din/mahine ki hadd Pakistan time
-  /// (UTC+5) ke hisaab se, [fetchNetSaleByDay] jaisi. Yearly report ke liye.
-  Future<Map<String, Map<int, double>>> fetchNetSaleByBranchMonth(
-      DateTime from, DateTime to) async {
-    final start = _startOfDayUtc(from).toIso8601String();
-    final end = _startOfNextDayUtc(to).toIso8601String();
-
-    Future<List<Map<String, dynamic>>> load(String table, String col) => _fetchAll(
-        () => _client
-            .from(table)
-            .select('id, branch_id, created_at, $col')
-            .gte('created_at', start)
-            .lt('created_at', end)
-            .order('id'));
-
-    final results = await Future.wait([
-      load('sale_invoices', 'total_amount'),
-      load('sale_returns', 'total_amount'),
-      load('sale_exchanges', 'difference_amount'),
-    ]);
-
-    final net = <String, Map<int, double>>{};
-    void add(Map<String, dynamic> row, String col, double sign) {
-      final t = DateTime.parse(row['created_at'].toString())
-          .toUtc()
-          .add(const Duration(hours: 5));
-      final byMonth = net.putIfAbsent(row['branch_id'].toString(), () => {});
-      byMonth[t.month] =
-          (byMonth[t.month] ?? 0) + sign * (row[col] as num? ?? 0).toDouble();
-    }
-
-    for (final r in results[0]) {
-      add(r, 'total_amount', 1);
-    }
-    for (final r in results[1]) {
-      add(r, 'total_amount', -1);
-    }
-    for (final r in results[2]) {
-      add(r, 'difference_amount', 1);
-    }
-    return net;
-  }
-
   /// PostgREST ek request mein max ~1000 rows deta hai — saal bhar ka data
   /// is se zyada ho sakta hai, is liye 1000-1000 ke pages mein sab le aata hai.
   /// [build] har page ke liye nayi (ordered) query banata hai.

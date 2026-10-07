@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/branch_target_row.dart';
 import '../providers/branch_target_report_provider.dart';
 import '../widgets/report_summary_card.dart';
-import '../widgets/branch_target_detail_screen.dart';
-import '../widgets/branch_target_year_detail_screen.dart';
+import '../widgets/branch_target_years_screen.dart';
 import '../widgets/report_table_shell.dart';
 import '../../../../branch/shared/current_branch_provider.dart';
 
@@ -59,21 +58,9 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
   Widget build(BuildContext context) {
     final selected = _selected;
     if (selected != null) {
-      final period = ref.read(branchTargetReportProvider);
-      if (period.period == TargetPeriod.yearly) {
-        return BranchTargetYearDetailScreen(
-          key: ValueKey('${selected.branchId}-year'),
-          row: selected,
-          year: period.anchor.year,
-          onBack: () => setState(() => _selected = null),
-        );
-      }
-      return BranchTargetDetailScreen(
+      return BranchTargetYearsScreen(
         key: ValueKey(selected.branchId),
         row: selected,
-        from: period.period == TargetPeriod.today ? null : period.from,
-        to: period.period == TargetPeriod.today ? null : period.to,
-        periodLabel: period.period == TargetPeriod.today ? null : period.periodLabel,
         onBack: () => setState(() => _selected = null),
       );
     }
@@ -107,46 +94,9 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SegmentedButton<TargetPeriod>(
-                showSelectedIcon: false,
-                segments: const [
-                  ButtonSegment(value: TargetPeriod.today, label: Text('Today')),
-                  ButtonSegment(value: TargetPeriod.monthly, label: Text('Monthly')),
-                  ButtonSegment(value: TargetPeriod.yearly, label: Text('Yearly')),
-                ],
-                selected: {state.period},
-                onSelectionChanged: (s) => notifier.setPeriod(s.first),
-              ),
-              if (state.period != TargetPeriod.today)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const AppIcon(AppIcons.chevronLeft, size: 20),
-                      tooltip: 'Previous',
-                      onPressed: () => notifier.shift(-1),
-                    ),
-                    SizedBox(
-                      width: 90,
-                      child: Text(label,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                    ),
-                    IconButton(
-                      icon: const AppIcon(AppIcons.chevronRight, size: 20),
-                      tooltip: 'Next',
-                      onPressed: state.canGoNext ? () => notifier.shift(1) : null,
-                    ),
-                  ],
-                ),
-            ],
-          ),
+          const SizedBox(height: 4),
+          Text('$label (current month) — branch par click karein: saal → mahine → din',
+              style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3))),
           const SizedBox(height: 16),
           if (myTarget != null)
             Row(children: [
@@ -210,13 +160,6 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
                             periodLabel:
                                 state.period == TargetPeriod.today ? null : label,
                           )
-                        : state.period == TargetPeriod.yearly
-                            ? _YearMatrix(
-                                rows: rows,
-                                year: state.anchor.year,
-                                showBranch: !restrictToOwnBranch,
-                                onOpen: _open,
-                              )
                         : SingleChildScrollView(
                             child: ReportTableShell(
                               columns: [
@@ -441,133 +384,3 @@ class _MobileBranchTargetList extends StatelessWidget {
       );
 }
 
-/// Yearly view — har branch ki ek row, Jan..Dec har mahine ka achieved % aur
-/// sale / target, aakhir mein poore saal ka total. Row par click → us branch
-/// ki month-wise detail.
-class _YearMatrix extends StatelessWidget {
-  final List<BranchTargetRow> rows;
-  final int year;
-  final bool showBranch;
-  final void Function(BranchTargetRow) onOpen;
-
-  const _YearMatrix({
-    required this.rows,
-    required this.year,
-    required this.showBranch,
-    required this.onOpen,
-  });
-
-  static const _monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  static const _grey = Color(0xFF8A8FA3);
-
-  static String _k(double v) {
-    final a = v.abs();
-    final s = a >= 1000000
-        ? '${(a / 1000000).toStringAsFixed(a >= 10000000 ? 0 : 1)}M'
-        : a >= 1000
-            ? '${(a / 1000).toStringAsFixed(a >= 100000 ? 0 : 1)}K'
-            : a.toStringAsFixed(0);
-    return v < 0 ? '-$s' : s;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: LayoutBuilder(
-        builder: (context, c) => SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: c.maxWidth),
-            child: SingleChildScrollView(
-              child: DataTable(
-                showCheckboxColumn: false,
-                headingRowColor:
-                    WidgetStateProperty.all(const Color(0xFFF7F8FC)),
-                headingRowHeight: 48,
-                dataRowMinHeight: 64,
-                dataRowMaxHeight: 72,
-                columnSpacing: 18,
-                horizontalMargin: 16,
-                columns: [
-                  if (showBranch) const DataColumn(label: Text('Branch')),
-                  for (final m in _monthNames)
-                    DataColumn(label: Text('$m $year')),
-                  const DataColumn(
-                      label: Text('Year Total',
-                          style: TextStyle(fontWeight: FontWeight.w700))),
-                ],
-                rows: [
-                  for (final r in rows)
-                    DataRow(onSelectChanged: (_) => onOpen(r), cells: [
-                      if (showBranch)
-                        DataCell(Text(r.branchName,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600))),
-                      for (final m in r.months)
-                        DataCell(_cell(
-                          target: m.target,
-                          sale: m.sale,
-                          percent: m.achievedPercent,
-                          achieved: m.isAchieved,
-                          future: m.isFuture,
-                        )),
-                      DataCell(_cell(
-                        target: r.todayTarget,
-                        sale: r.netSaleToday,
-                        percent: r.achievedPercent,
-                        achieved: r.isAchieved,
-                        future: false,
-                        bold: true,
-                      )),
-                    ]),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Upar achieved % (bara), neeche "sale / target" (chhota).
-  Widget _cell({
-    required double target,
-    required double sale,
-    required double percent,
-    required bool achieved,
-    required bool future,
-    bool bold = false,
-  }) {
-    if (target <= 0) {
-      return const Text('—', style: TextStyle(color: _grey));
-    }
-    final color = future
-        ? _grey
-        : achieved
-            ? BranchTargetReportScreen._achievedColor
-            : BranchTargetReportScreen._pendingColor;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(future ? 'Upcoming' : '${percent.toStringAsFixed(0)}%',
-            style: TextStyle(
-                fontSize: future ? 11 : (bold ? 15 : 14),
-                fontWeight: FontWeight.w700,
-                color: color)),
-        const SizedBox(height: 2),
-        Text(future ? 'T ${_k(target)}' : '${_k(sale)} / ${_k(target)}',
-            style: const TextStyle(fontSize: 10, color: _grey)),
-      ],
-    );
-  }
-}

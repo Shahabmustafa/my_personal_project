@@ -69,32 +69,6 @@ class BranchTargetDatasource {
     return totals;
   }
 
-  /// [from]..[to] mein har branch ka mahine-wise target jor —
-  /// {branchId: {month(1-12): total}}. Yearly Branch Target report ke liye.
-  Future<Map<String, Map<int, double>>> fetchMonthlyTotalsForRange(
-      DateTime from, DateTime to) async {
-    const chunk = 1000;
-    final totals = <String, Map<int, double>>{};
-    for (var start = 0;; start += chunk) {
-      final res = await _client
-          .from('branch_daily_targets')
-          .select('branch_id, target_date, amount')
-          .gte('target_date', dateKey(from))
-          .lte('target_date', dateKey(to))
-          .order('branch_id')
-          .order('target_date')
-          .range(start, start + chunk - 1);
-      for (final r in res) {
-        final id = r['branch_id'].toString();
-        final m = DateTime.parse(r['target_date'] as String).month;
-        final byMonth = totals.putIfAbsent(id, () => {});
-        byMonth[m] = (byMonth[m] ?? 0) + (r['amount'] as num).toDouble();
-      }
-      if (res.length < chunk) break;
-    }
-    return totals;
-  }
-
   /// Ek din ka har branch ka target — {branchId: amount}. Jis branch ka us
   /// din target set nahi, wo map mein nahi hoga.
   Future<Map<String, double>> fetchForDate(DateTime day) async {
