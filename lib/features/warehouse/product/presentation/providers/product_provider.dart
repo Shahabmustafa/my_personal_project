@@ -24,7 +24,14 @@ final productRepositoryProvider = Provider<ProductRepository>((ref) {
 class ProductNotifier extends PaginatedListNotifier<ProductModel> {
   final ProductRepository _repo;
   final Ref _ref;
-  ProductNotifier(this._repo, this._ref);
+  ProductNotifier(this._repo, this._ref) : super(pageSize: pageSize);
+
+  /// Screen page-by-page dikhata hai (infinite scroll nahi) — 100 per page.
+  static const pageSize = 100;
+
+  int get totalPages => state.totalCount <= 0
+      ? 1
+      : ((state.totalCount - 1) ~/ state.pageSize) + 1;
 
   /// Stock/purchase dialogs cache the product lookup list in a plain
   /// [FutureProvider]. Bust that cache after any write so newly added products
@@ -34,6 +41,23 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
   @override
   Future<PageResult<ProductModel>> fetchPage(PageRequest request) =>
       _repo.fetchPage(request);
+
+  /// [page] ki rows load kar ke purani rows replace karta hai.
+  Future<void> goToPage(int page) async {
+    final target = page.clamp(1, totalPages);
+    if (target == state.page && !state.isFirstLoad) return;
+    state = state.copyWith(isFirstLoad: true, clearError: true);
+    try {
+      final result =
+          await fetchPage(state.requestFor(target, withCount: false));
+      state = state.copyWith(
+          rows: result.rows, page: target, isFirstLoad: false);
+    } catch (e) {
+      state = state.copyWith(
+          isFirstLoad: false,
+          error: e.toString().replaceAll('Exception: ', ''));
+    }
+  }
 
   /// Returns the public URL, or null on failure.
   Future<String?> uploadImage({

@@ -4,6 +4,7 @@ import '../../../../../core/pagination/pagination.dart';
 import '../../data/model/product_model.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_form_dialog.dart';
+import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_pagination_bar.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -149,6 +150,17 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     onDelete: _confirmDelete,
                   ),
           ),
+          if (state.totalCount > 0 && state.error == null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: ReportPaginationBar(
+                page: state.page,
+                totalPages: notifier.totalPages,
+                totalCount: state.totalCount,
+                pageSize: state.pageSize,
+                onPageChange: notifier.goToPage,
+              ),
+            ),
         ],
       ),
     );
@@ -202,7 +214,8 @@ class _DesktopTable extends StatelessWidget {
                 child: PaginatedListView<ProductModel>(
                   state: state,
                   padding: EdgeInsets.zero,
-                  onLoadMore: notifier.loadMore,
+                  // Page-by-page — scroll par aur rows load nahi hoti.
+                  onLoadMore: () async {},
                   onRefresh: notifier.refresh,
                   emptyText: 'No products found',
                   separatorBuilder: (_, __) =>
@@ -313,7 +326,8 @@ class _MobileList extends StatelessWidget {
     return PaginatedListView<ProductModel>(
       state: state,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      onLoadMore: notifier.loadMore,
+      // Page-by-page — scroll par aur rows load nahi hoti.
+      onLoadMore: () async {},
       onRefresh: notifier.refresh,
       emptyText: 'No products found',
       itemBuilder: (_, p, __) => Container(
