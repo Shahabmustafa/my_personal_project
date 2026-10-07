@@ -183,6 +183,15 @@ class PurchaseReturnScreen extends ConsumerWidget {
                           onSelected: (inv) => ref
                               .read(purchaseReturnProvider.notifier)
                               .selectInvoice(inv?['id'], inv?['label']),
+                          // The decoration's suffixIcon is overridden by DropdownSearch;
+                          // its own clear button calls onSelected(null) -> No Reference.
+                          suffixProps: const DropdownSuffixProps(
+                            clearButtonProps: ClearButtonProps(
+                              isVisible: true,
+                              icon: AppIcon(AppIcons.clear, size: 18),
+                              tooltip: 'No Reference',
+                            ),
+                          ),
                           decoratorProps: DropDownDecoratorProps(
                             decoration: InputDecoration(
                               labelText: 'Ref Invoice (optional)',
@@ -195,15 +204,6 @@ class PurchaseReturnScreen extends ConsumerWidget {
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 14),
-                              suffixIcon: state.selectedInvoiceId != null
-                                  ? IconButton(
-                                      icon: const AppIcon(AppIcons.clear, size: 18),
-                                      tooltip: 'No Reference',
-                                      onPressed: () => ref
-                                          .read(purchaseReturnProvider.notifier)
-                                          .selectInvoice(null, null),
-                                    )
-                                  : null,
                             ),
                           ),
                           popupProps: const PopupProps.menu(

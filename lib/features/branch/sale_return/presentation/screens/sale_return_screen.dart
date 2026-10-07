@@ -247,19 +247,20 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
                     selectedItem: state.originalInvoice,
                     itemAsString: (inv) => inv.invoiceNumber,
                     compareFn: (a, b) => a.id == b.id,
-                    onSelected: (inv) {
-                      if (inv != null) notifier.selectOriginalInvoice(inv);
-                    },
-                    decoratorProps: DropDownDecoratorProps(
-                      decoration: _decor('Sale Invoice #').copyWith(
-                        suffixIcon: state.originalInvoice != null
-                            ? IconButton(
-                                icon: const AppIcon(AppIcons.clear, size: 18),
-                                tooltip: 'Return without invoice',
-                                onPressed: notifier.clearOriginalInvoice,
-                              )
-                            : null,
+                    onSelected: (inv) => inv != null
+                        ? notifier.selectOriginalInvoice(inv)
+                        : notifier.clearOriginalInvoice(),
+                    // The decoration's suffixIcon is overridden by DropdownSearch;
+                    // its own clear button calls onSelected(null).
+                    suffixProps: const DropdownSuffixProps(
+                      clearButtonProps: ClearButtonProps(
+                        isVisible: true,
+                        icon: AppIcon(AppIcons.clear, size: 18),
+                        tooltip: 'Return without invoice',
                       ),
+                    ),
+                    decoratorProps: DropDownDecoratorProps(
+                      decoration: _decor('Sale Invoice #'),
                     ),
                     popupProps: const PopupProps.menu(fit: FlexFit.loose, showSearchBox: true, constraints: BoxConstraints(maxHeight: 260)),
                   ),
