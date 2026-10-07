@@ -6,6 +6,7 @@ class AppIcons {
 
   static const String _base = 'assets/icons';
 
+  static const String accessTimeOutlined = '$_base/clock.svg';
   static const String accountBalanceOutlined = '$_base/bank.svg';
   static const String accountBalanceWalletOutlined = '$_base/wallet.svg';
   static const String add = '$_base/add.svg';

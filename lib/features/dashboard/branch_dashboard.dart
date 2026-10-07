@@ -4,6 +4,8 @@ import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
 import '../branch/assign_stock_to_my_branch/presentation/screen/branch_assign_list_screen.dart';
+import '../branch/attendance/presentation/screens/my_attendance_screen.dart';
+import '../branch/attendance/presentation/screens/staff_attendance_screen.dart';
 import '../branch/assign_stock_to_other_branch/presentation/screens/branch_transfer_screen.dart';
 import '../branch/branch_cash_counter/presentation/screens/branch_cash_counter_screen.dart';
 import '../branch/branch_payment/presentation/screens/branch_payments_history_screen.dart';
@@ -87,7 +89,18 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         icon: AppIcons.trendingUpOutlined,
         label: 'My Target',
         group: 'Reports'),
+    SidebarItem(
+        icon: AppIcons.accessTimeOutlined,
+        label: 'My Attendance',
+        group: 'Attendance'),
+    SidebarItem(
+        icon: AppIcons.peopleOutline,
+        label: 'Staff Attendance',
+        group: 'Attendance'),
   ];
+
+  /// Sirf manager (aur supervisor) poori branch ki attendance dekhta hai.
+  static const _managerOnly = {'Staff Attendance'};
 
   static const _pages = [
     BranchOverviewScreen(),
@@ -108,14 +121,22 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     SaleClaimsScreen(),
     SaleSummaryReportScreen(restrictToOwnBranch: true),
     BranchTargetReportScreen(restrictToOwnBranch: true),
+    MyAttendanceScreen(),
+    StaffAttendanceScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
+    final canSeeStaff =
+        user != null && (user.isManager || user.isSupervisor);
+    final visible = [
+      for (var i = 0; i < _navItems.length; i++)
+        if (canSeeStaff || !_managerOnly.contains(_navItems[i].label)) i,
+    ];
     return SidebarShell(
-      navItems: _navItems,
-      pages: _pages,
+      navItems: [for (final i in visible) _navItems[i]],
+      pages: [for (final i in visible) _pages[i]],
       selectedIndex: _index,
       userName: user?.username ?? '',
       userRole: user?.roleDisplayName ?? '',

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
+import '../branch/attendance/presentation/screens/my_attendance_screen.dart';
 import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
@@ -54,6 +55,8 @@ class _SalesmanDashboardState extends ConsumerState<SalesmanDashboard> {
         icon: AppIcons.swapHorizOutlined,
         label: 'My Exchanges',
         group: 'My Activity'),
+    SidebarItem(
+        icon: AppIcons.accessTimeOutlined, label: 'My Attendance'),
     SidebarItem(icon: AppIcons.personOutline, label: 'My Profile'),
   ];
 
@@ -65,6 +68,7 @@ class _SalesmanDashboardState extends ConsumerState<SalesmanDashboard> {
     MySalesScreen(),
     MyReturnsScreen(),
     MyExchangesScreen(),
+    MyAttendanceScreen(),
     SalesmanProfileScreen(),
   ];
 
