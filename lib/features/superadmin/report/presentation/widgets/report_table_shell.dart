@@ -24,6 +24,8 @@ class ReportTableShell extends StatelessWidget {
             constraints: BoxConstraints(minWidth: c.maxWidth),
             child: SingleChildScrollView(
               child: DataTable(
+                // Row click sirf detail kholta hai — select checkbox nahi.
+                showCheckboxColumn: false,
                 headingRowColor:
                     WidgetStateProperty.all(const Color(0xFFF7F8FC)),
                 headingRowHeight: 48,
