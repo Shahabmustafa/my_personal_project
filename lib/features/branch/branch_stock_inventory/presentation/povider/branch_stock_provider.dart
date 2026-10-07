@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../../core/pagination/pagination.dart';
@@ -30,10 +31,17 @@ class BranchStockNotifier extends PaginatedListNotifier<BranchStockModel> {
 
 final branchStockProvider = StateNotifierProvider<BranchStockNotifier,
     PaginatedListState<BranchStockModel>>(
-  (ref) => BranchStockNotifier(
-    ref.read(branchStockRepositoryProvider),
-    ref.watch(currentBranchIdProvider),
-  ),
+  (ref) {
+    final notifier = BranchStockNotifier(
+      ref.read(branchStockRepositoryProvider),
+      ref.watch(currentBranchIdProvider),
+    );
+    // Realtime — sale, return, exchange, claim, transfer ya assign accept se
+    // quantity badalte hi list update (bina Refresh).
+    ref.listen(tableChangesProvider('branch_stock_inventory'),
+        (_, _) => notifier.reloadLoaded());
+    return notifier;
+  },
 );
 
 // ── Aggregate stats (server-side RPC) ─────────────────────────────────────
@@ -51,6 +59,7 @@ class BranchStockStats {
 
 final branchStockStatsProvider =
     FutureProvider.autoDispose<BranchStockStats>((ref) async {
+  ref.watch(tableChangesProvider('branch_stock_inventory'));
   final bid = ref.watch(currentBranchIdProvider);
   if (bid.isEmpty) return const BranchStockStats();
   final res = await Supabase.instance.client

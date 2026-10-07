@@ -25,9 +25,12 @@ final branchesProvider = FutureProvider<List<BranchModel>>(
 // ── Warehouse stock cache ─────────────────────────────────────────────────
 final assignWarehouseStockProvider =
     FutureProvider<List<WarehouseStockModel>>(
-  (ref) => ref
-      .watch(assignStockRepositoryProvider)
-      .getWarehouseStock(ref.watch(currentWarehouseIdProvider)),
+  (ref) {
+    ref.watch(tableChangesProvider('warehouse_stock_inventory'));
+    return ref
+        .watch(assignStockRepositoryProvider)
+        .getWarehouseStock(ref.watch(currentWarehouseIdProvider));
+  },
 );
 
 // ── Assignment list ───────────────────────────────────────────────────────

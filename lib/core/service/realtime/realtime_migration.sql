@@ -20,3 +20,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.assign_stock_to_branch_item
 -- Branch sale/return/assign screens ka stock list — sale ke baad bina
 -- refresh sahi quantity (2026-10-07, applied to LIVE database).
 ALTER PUBLICATION supabase_realtime ADD TABLE public.branch_stock_inventory;
+
+-- Warehouse stock screens + purchase/return/assign dropdowns — quantity live
+-- update (2026-10-07, applied to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.warehouse_stock_inventory;

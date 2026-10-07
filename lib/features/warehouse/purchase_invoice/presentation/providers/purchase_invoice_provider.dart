@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/purchase_invoice_datasource.dart';
@@ -121,9 +122,13 @@ StateNotifierProvider<InvoiceListNotifier, InvoiceListState>((ref) {
 
 // ── Warehouse stock cache ─────────────────────────────────────────────────
 final warehouseStockCacheProvider = FutureProvider<List<WarehouseStockModel>>(
-      (ref) => ref
-      .read(purchaseInvoiceRepositoryProvider)
-      .getWarehouseStock(ref.watch(currentWarehouseIdProvider)),
+  (ref) {
+    // Realtime — kisi bhi purchase/return/assign se quantity badalte hi.
+    ref.watch(tableChangesProvider('warehouse_stock_inventory'));
+    return ref
+        .read(purchaseInvoiceRepositoryProvider)
+        .getWarehouseStock(ref.watch(currentWarehouseIdProvider));
+  },
 );
 
 // ── Cart / active invoice state ───────────────────────────────────────────

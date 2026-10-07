@@ -120,10 +120,16 @@ class _PurchaseReturnProductSelectorState
     final returnState = ref.watch(purchaseReturnProvider);
 
     return stockAsync.when(
+      // Realtime reload par purani list dikhti rahe — spinner/focus loss nahi.
+      skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
       data: (allStock) {
-        final stock = _selectedStock;
+        // Taza list se selected article — purchase/return/assign ke baad qty purani na rahe.
+        final sel = _selectedStock;
+        final stock = _selectedStock = sel == null
+            ? null
+            : allStock.firstWhere((s) => s.id == sel.id, orElse: () => sel);
         final totalQty = stock?.quantity ?? 0;
         final purchasePrice = stock?.purchasePrice ?? 0.0;
         final isMobile = Responsive(context).isMobile;

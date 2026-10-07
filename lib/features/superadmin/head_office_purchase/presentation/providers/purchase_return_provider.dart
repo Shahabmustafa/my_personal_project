@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/purchase_return_datasource.dart';
@@ -100,7 +101,10 @@ final returnInvoiceNumbersProvider =
 
 final returnWarehouseStockProvider =
     FutureProvider<List<WarehouseStockModel>>(
-  (ref) => ref.read(purchaseReturnRepositoryProvider).getWarehouseStock(),
+  (ref) {
+    ref.watch(tableChangesProvider('stock_inventory'));
+    return ref.read(purchaseReturnRepositoryProvider).getWarehouseStock();
+  },
 );
 
 // ── Active return / cart state ────────────────────────────────────────────

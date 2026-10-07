@@ -42,7 +42,10 @@ final hoPrintersProvider = FutureProvider<List<PrinterLookupItem>>((ref) async {
 
 // ── Head office stock cache ──────────────────────────────────────────────
 final hoAssignStockListProvider = FutureProvider<List<WarehouseStockModel>>(
-  (ref) => ref.watch(hoAssignStockRepositoryProvider).getHeadOfficeStock(),
+  (ref) {
+    ref.watch(tableChangesProvider('stock_inventory'));
+    return ref.watch(hoAssignStockRepositoryProvider).getHeadOfficeStock();
+  },
 );
 
 // ── Assignment list ───────────────────────────────────────────────────────

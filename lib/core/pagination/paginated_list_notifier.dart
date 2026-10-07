@@ -118,6 +118,38 @@ abstract class PaginatedListNotifier<T>
     }
   }
 
+  /// Realtime change par jitni rows abhi load hain (saare scrolled pages)
+  /// unhein chupchaap dobara laata hai — spinner, scroll ya page reset ke
+  /// baghair, taake quantity jaisi values live update hon.
+  Future<void> reloadLoaded() async {
+    if (state.isFirstLoad || state.isLoadingMore || state.isRefreshing) return;
+    final generation = _generation;
+    final pages = state.page;
+    try {
+      final result = await fetchPage(PageRequest(
+        page: 1,
+        pageSize: state.pageSize * pages,
+        search: state.search,
+        filters: state.filters,
+        sortColumn: state.sortColumn,
+        sortAscending: state.sortAscending,
+      ));
+      // Beech mein reset ya agla page load hua — ye jawab purana hai.
+      if (generation != _generation ||
+          state.page != pages ||
+          state.isLoadingMore) {
+        return;
+      }
+      state = state.copyWith(
+        rows: result.rows,
+        totalCount:
+            result.totalCount < 0 ? state.totalCount : result.totalCount,
+      );
+    } catch (_) {
+      // Agli change ya manual Refresh par phir try hoga.
+    }
+  }
+
   /// Optimistic helpers for the mutation methods subclasses already have
   /// (create/update/delete) — avoid a full round-trip where possible.
   void replaceRow(bool Function(T) match, T updated) {

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasources/purchase_invoice_datasource.dart';
@@ -117,7 +118,12 @@ final invoiceListProvider =
 
 // ── Head office stock cache ──────────────────────────────────────────────
 final warehouseStockCacheProvider = FutureProvider<List<WarehouseStockModel>>(
-  (ref) => ref.read(purchaseInvoiceRepositoryProvider).getWarehouseStock(),
+  (ref) {
+    // Realtime — purchase, return, assign ya branch return se head office
+    // stock badalte hi.
+    ref.watch(tableChangesProvider('stock_inventory'));
+    return ref.read(purchaseInvoiceRepositoryProvider).getWarehouseStock();
+  },
 );
 
 // ── Cart / active invoice state ───────────────────────────────────────────

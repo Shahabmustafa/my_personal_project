@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../../core/pagination/pagination.dart';
@@ -55,6 +56,7 @@ class StockStats {
 /// Own-warehouse stats. Invalidate after stock mutations to refresh.
 final warehouseStockStatsProvider =
     FutureProvider.autoDispose<StockStats>((ref) async {
+  ref.watch(tableChangesProvider('warehouse_stock_inventory'));
   final wid = ref.watch(currentWarehouseIdProvider);
   if (wid.isEmpty) return const StockStats();
   final res = await Supabase.instance.client
@@ -173,10 +175,15 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
 
 final stockProvider = StateNotifierProvider<StockNotifier,
     PaginatedListState<WarehouseStockModel>>((ref) {
-  return StockNotifier(
+  final notifier = StockNotifier(
     ref.read(stockRepositoryProvider),
     ref.watch(currentWarehouseIdProvider),
   );
+  // Realtime — purchase, purchase return, assign ya branch return se
+  // quantity badalte hi list update.
+  ref.listen(tableChangesProvider('warehouse_stock_inventory'),
+      (_, _) => notifier.reloadLoaded());
+  return notifier;
 });
 
 // ── Admin: paginated stock across ALL warehouses (read-only) ───────────────
@@ -191,5 +198,10 @@ class AdminStockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
 
 final adminStockProvider = StateNotifierProvider<AdminStockNotifier,
     PaginatedListState<WarehouseStockModel>>(
-  (ref) => AdminStockNotifier(ref.read(stockRepositoryProvider)),
+  (ref) {
+    final notifier = AdminStockNotifier(ref.read(stockRepositoryProvider));
+    ref.listen(tableChangesProvider('warehouse_stock_inventory'),
+        (_, _) => notifier.reloadLoaded());
+    return notifier;
+  },
 );
