@@ -4,6 +4,7 @@ import '../../../branch_target/data/branch_target_datasource.dart';
 import '../../data/model/branch_target_row.dart';
 import '../providers/sale_report_providers.dart'
     show saleReportRepositoryProvider;
+import 'report_table_shell.dart';
 
 /// Branch Target report mein branch par click karne par khulne wali screen —
 /// us branch ke har din ka sale target, total sale aur achieve hua ya nahi.
@@ -221,25 +222,14 @@ class _BranchTargetDetailScreenState
         child: Center(child: Text('Is branch ka koi target set nahi hai')),
       );
     }
-    return SingleChildScrollView(
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE7E9F0)),
-        ),
-        child: DataTable(
-          columnSpacing: 20,
-          columns: const [
-            DataColumn(label: Text('Date')),
-            DataColumn(label: Text('Sale Target'), numeric: true),
-            DataColumn(label: Text('Total Sale'), numeric: true),
-            DataColumn(label: Text('Status')),
-          ],
-          rows: [for (final l in _lines) _row(l)],
-        ),
-      ),
+    return ReportTableShell(
+      columns: const [
+        DataColumn(label: Text('Date')),
+        DataColumn(label: Text('Sale Target'), numeric: true),
+        DataColumn(label: Text('Total Sale'), numeric: true),
+        DataColumn(label: Text('Status')),
+      ],
+      rows: [for (final l in _lines) _row(l)],
     );
   }
 

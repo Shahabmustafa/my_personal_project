@@ -170,18 +170,16 @@ class _BranchTargetYearsScreenState
     if (_error != null) {
       return Text('Error: $_error', style: const TextStyle(color: Colors.red));
     }
-    return SingleChildScrollView(
-      child: ReportTableShell(
-        columns: const [
-          DataColumn(label: Text('Year')),
-          DataColumn(label: Text('Target'), numeric: true),
-          DataColumn(label: Text('Achieved'), numeric: true),
-          DataColumn(label: Text('Achieved %'), numeric: true),
-          DataColumn(label: Text('Remaining'), numeric: true),
-          DataColumn(label: Text('Remaining %'), numeric: true),
-        ],
-        rows: [for (final y in _years) _row(y)],
-      ),
+    return ReportTableShell(
+      columns: const [
+        DataColumn(label: Text('Year')),
+        DataColumn(label: Text('Target'), numeric: true),
+        DataColumn(label: Text('Achieved'), numeric: true),
+        DataColumn(label: Text('Achieved %'), numeric: true),
+        DataColumn(label: Text('Remaining'), numeric: true),
+        DataColumn(label: Text('Remaining %'), numeric: true),
+      ],
+      rows: [for (final y in _years) _row(y)],
     );
   }
 

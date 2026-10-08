@@ -160,26 +160,24 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
                             periodLabel:
                                 state.period == TargetPeriod.today ? null : label,
                           )
-                        : SingleChildScrollView(
-                            child: ReportTableShell(
-                              columns: [
-                                if (!restrictToOwnBranch) const DataColumn(label: Text('Branch')),
-                                const DataColumn(label: Text('Sale Target'), numeric: true),
-                                const DataColumn(label: Text('Total Sale'), numeric: true),
-                                const DataColumn(label: Text('Achieved %'), numeric: true),
-                                const DataColumn(label: Text('Remaining'), numeric: true),
-                                const DataColumn(label: Text('Remaining %'), numeric: true),
-                                const DataColumn(label: Text('Status')),
-                                DataColumn(
-                                    label: Text(state.period == TargetPeriod.today
-                                        ? 'Date & Time'
-                                        : 'Period')),
-                              ],
-                              rows: rows
-                                  .map((r) => _row(context, r, state.asOf,
-                                      state.period == TargetPeriod.today ? null : label))
-                                  .toList(),
-                            ),
+                        : ReportTableShell(
+                            columns: [
+                              if (!restrictToOwnBranch) const DataColumn(label: Text('Branch')),
+                              const DataColumn(label: Text('Sale Target'), numeric: true),
+                              const DataColumn(label: Text('Total Sale'), numeric: true),
+                              const DataColumn(label: Text('Achieved %'), numeric: true),
+                              const DataColumn(label: Text('Remaining'), numeric: true),
+                              const DataColumn(label: Text('Remaining %'), numeric: true),
+                              const DataColumn(label: Text('Status')),
+                              DataColumn(
+                                  label: Text(state.period == TargetPeriod.today
+                                      ? 'Date & Time'
+                                      : 'Period')),
+                            ],
+                            rows: rows
+                                .map((r) => _row(context, r, state.asOf,
+                                    state.period == TargetPeriod.today ? null : label))
+                                .toList(),
                           ),
           ),
         ],

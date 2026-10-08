@@ -124,19 +124,17 @@ class _BranchTargetYearDetailScreenState
               style: TextStyle(fontSize: 12, color: _grey)),
           const SizedBox(height: 8),
           Expanded(
-            child: SingleChildScrollView(
-              child: ReportTableShell(
-                columns: const [
-                  DataColumn(label: Text('Month')),
-                  DataColumn(label: Text('Target'), numeric: true),
-                  DataColumn(label: Text('Total Sale'), numeric: true),
-                  DataColumn(label: Text('Achieved %'), numeric: true),
-                  DataColumn(label: Text('Remaining'), numeric: true),
-                  DataColumn(label: Text('Remaining %'), numeric: true),
-                  DataColumn(label: Text('Status')),
-                ],
-                rows: [for (final m in row.months) _row(m)],
-              ),
+            child: ReportTableShell(
+              columns: const [
+                DataColumn(label: Text('Month')),
+                DataColumn(label: Text('Target'), numeric: true),
+                DataColumn(label: Text('Total Sale'), numeric: true),
+                DataColumn(label: Text('Achieved %'), numeric: true),
+                DataColumn(label: Text('Remaining'), numeric: true),
+                DataColumn(label: Text('Remaining %'), numeric: true),
+                DataColumn(label: Text('Status')),
+              ],
+              rows: [for (final m in row.months) _row(m)],
             ),
           ),
         ],
