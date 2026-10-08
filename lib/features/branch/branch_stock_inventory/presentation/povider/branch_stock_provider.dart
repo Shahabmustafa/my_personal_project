@@ -50,11 +50,17 @@ class BranchStockStats {
   final int totalQuantity;
   final double totalSalePrice;
   final int lowStockCount;
+
+  /// Poore branch stock mein 1–4 pairs / 0 pairs wale SKUs (filter se aazad).
+  final int lowCount;
+  final int outCount;
   const BranchStockStats(
       {this.totalProducts = 0,
       this.totalQuantity = 0,
       this.totalSalePrice = 0,
-      this.lowStockCount = 0});
+      this.lowStockCount = 0,
+      this.lowCount = 0,
+      this.outCount = 0});
 }
 
 final branchStockStatsProvider =
@@ -62,13 +68,18 @@ final branchStockStatsProvider =
   ref.watch(tableChangesProvider('branch_stock_inventory'));
   final bid = ref.watch(currentBranchIdProvider);
   if (bid.isEmpty) return const BranchStockStats();
-  final res = await Supabase.instance.client
-      .rpc('branch_stock_stats', params: {'p_branch_id': bid});
+  // Low / Out of Stock button lage to cards bhi usi filter ke totals.
+  final level =
+      ref.watch(branchStockProvider.select((s) => s.filters['stock_level']));
+  final res = await Supabase.instance.client.rpc('branch_stock_stats',
+      params: {'p_branch_id': bid, 'p_level': level});
   final j = (res as Map).cast<String, dynamic>();
   return BranchStockStats(
     totalProducts: (j['total_skus'] as num?)?.toInt() ?? 0,
     totalQuantity: (j['total_qty'] as num?)?.toInt() ?? 0,
     totalSalePrice: (j['total_value'] as num?)?.toDouble() ?? 0,
     lowStockCount: (j['low_stock_count'] as num?)?.toInt() ?? 0,
+    lowCount: (j['low_count'] as num?)?.toInt() ?? 0,
+    outCount: (j['out_count'] as num?)?.toInt() ?? 0,
   );
 });

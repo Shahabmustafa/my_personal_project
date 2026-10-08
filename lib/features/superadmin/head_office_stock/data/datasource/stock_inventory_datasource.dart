@@ -31,6 +31,12 @@ class StockInventoryDatasource {
     if (request.filters['low_stock'] == true) {
       query = query.lte('quantity', 5);
     }
+    switch (request.filters['stock_level']) {
+      case 'low':
+        query = query.gte('quantity', 1).lt('quantity', 5);
+      case 'out':
+        query = query.lte('quantity', 0);
+    }
     final result = await runSupabasePage(
       query
           .order('product_name', ascending: true)

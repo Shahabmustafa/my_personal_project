@@ -102,21 +102,30 @@ class HeadOfficeStockStats {
   /// Purchase price × quantity.
   final double totalPurchaseValue;
   final int lowStockCount;
+
+  /// Poore stock mein 1–4 pairs / 0 pairs wale SKUs (filter se aazad).
+  final int lowCount;
+  final int outCount;
   const HeadOfficeStockStats(
       {this.totalSkus = 0,
       this.totalArticles = 0,
       this.totalQty = 0,
       this.totalValue = 0,
       this.totalPurchaseValue = 0,
-      this.lowStockCount = 0});
+      this.lowStockCount = 0,
+      this.lowCount = 0,
+      this.outCount = 0});
 }
 
 final headOfficeStockStatsProvider =
     FutureProvider.autoDispose<HeadOfficeStockStats>((ref) async {
   // Realtime — stock badalte hi cards ke totals bhi dobara.
   ref.watch(tableChangesProvider('stock_inventory'));
-  final res =
-      await Supabase.instance.client.rpc('head_office_stock_stats');
+  // Low / Out of Stock button lage to cards bhi usi filter ke totals.
+  final level = ref.watch(
+      headOfficeStockProvider.select((s) => s.filters['stock_level']));
+  final res = await Supabase.instance.client
+      .rpc('head_office_stock_stats', params: {'p_level': level});
   final j = (res as Map).cast<String, dynamic>();
   return HeadOfficeStockStats(
     totalSkus: (j['total_skus'] as num?)?.toInt() ?? 0,
@@ -126,6 +135,8 @@ final headOfficeStockStatsProvider =
     totalPurchaseValue:
         (j['total_purchase_value'] as num?)?.toDouble() ?? 0,
     lowStockCount: (j['low_stock_count'] as num?)?.toInt() ?? 0,
+    lowCount: (j['low_count'] as num?)?.toInt() ?? 0,
+    outCount: (j['out_count'] as num?)?.toInt() ?? 0,
   );
 });
 

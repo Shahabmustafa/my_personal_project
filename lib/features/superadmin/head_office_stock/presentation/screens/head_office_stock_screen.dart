@@ -12,6 +12,7 @@ import '../../../report/presentation/widgets/report_summary_card.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/widget/stock_level_filter.dart';
 /// Superadmin stock view — head office ka stock (`stock_inventory` table).
 /// Warehouse se koi taalluq nahi. Add / Edit / Delete + barcode print/copy.
 class HeadOfficeStockScreen extends ConsumerStatefulWidget {
@@ -89,27 +90,43 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
-              onChanged: notifier.setSearch,
-              decoration: InputDecoration(
-                hintText: 'Search by barcode, article, brand...',
-                hintStyle:
-                    const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                prefixIcon: const TextFieldIcon(AppIcons.search, size: 24, color: Color(0xFF8A8FA3)),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
-                enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
-                focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(
-                        color: Color(0xFF3E63DD), width: 1.5)),
-              ),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  width: isMobile ? double.infinity : 360,
+                  child: TextField(
+                    onChanged: notifier.setSearch,
+                    decoration: InputDecoration(
+                      hintText: 'Search by barcode, article, brand...',
+                      hintStyle:
+                          const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
+                      prefixIcon: const TextFieldIcon(AppIcons.search, size: 24, color: Color(0xFF8A8FA3)),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
+                      enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
+                      focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF3E63DD), width: 1.5)),
+                    ),
+                  ),
+                ),
+                StockLevelFilter(
+                  level: state.filters['stock_level'] as String?,
+                  lowCount: stats.value?.lowCount ?? 0,
+                  outCount: stats.value?.outCount ?? 0,
+                  onChanged: (v) => notifier.setFilters({'stock_level': v}),
+                ),
+              ],
             ),
           ),
           Expanded(

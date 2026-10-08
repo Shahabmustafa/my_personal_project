@@ -39,7 +39,8 @@ class BranchStockDatasource {
       });
 
   /// Server-paginated + searched page of this branch's stock (via
-  /// `v_branch_stock`). `filters['low_stock'] == true` -> `quantity <= 5`.
+  /// `v_branch_stock`). `filters['low_stock'] == true` -> `quantity <= 5`;
+  /// `filters['stock_level']` 'low' -> 1..4, 'out' -> 0.
   Future<PageResult<BranchStockModel>> fetchPage(
     PageRequest request, {
     required String branchId,
@@ -54,6 +55,12 @@ class BranchStockDatasource {
     }
     if (request.filters['low_stock'] == true) {
       query = query.lte('quantity', 5);
+    }
+    switch (request.filters['stock_level']) {
+      case 'low':
+        query = query.gte('quantity', 1).lt('quantity', 5);
+      case 'out':
+        query = query.lte('quantity', 0);
     }
     final result = await runSupabasePage(
       query.order('created_at', ascending: false),

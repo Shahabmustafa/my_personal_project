@@ -8,6 +8,7 @@ import '../povider/branch_stock_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/widget/stock_level_filter.dart';
 class BranchStockScreen extends ConsumerStatefulWidget {
   const BranchStockScreen({super.key});
 
@@ -116,10 +117,10 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                 ),
                 const SizedBox(width: 12),
                 _SummaryCard(
-                  label: 'Low Stock (≤5)',
-                  value: groupThousands(stats.lowStockCount),
+                  label: 'Low Stock (<5)',
+                  value: groupThousands(stats.lowCount),
                   icon: AppIcons.warningAmberOutlined,
-                  color: stats.lowStockCount > 0
+                  color: stats.lowCount > 0
                       ? Colors.orange.shade700
                       : Colors.grey.shade400,
                 ),
@@ -136,46 +137,59 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
 
             // ── Search Bar ────────────────────────────────────────────────
             ...[
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 300),
-                child: TextField(
-                  controller: _searchCtrl,
-                  onChanged: notifier.setSearch,
-                  decoration: InputDecoration(
-                    hintText:
-                    'Search by article, barcode, size, color, brand...',
-                    hintStyle: const TextStyle(
-                        fontSize: 13, color: Color(0xFF8A8FA3)),
-                    prefixIcon: const TextFieldIcon(AppIcons.search,
-                        color: Color(0xFF8A8FA3), size: 18),
-                    suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? IconButton(
-                      icon: const AppIcon(AppIcons.clear,
-                          size: 18, color: Color(0xFF8A8FA3)),
-                      onPressed: () {
-                        _searchCtrl.clear();
-                        notifier.setSearch('');
-                      },
-                    )
-                        : null,
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                        const BorderSide(color: Color(0xFFE7E9F0))),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide:
-                        const BorderSide(color: Color(0xFFE7E9F0))),
-                    focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: _primary, width: 1.5)),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 300),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      onChanged: notifier.setSearch,
+                      decoration: InputDecoration(
+                        hintText:
+                        'Search by article, barcode, size, color, brand...',
+                        hintStyle: const TextStyle(
+                            fontSize: 13, color: Color(0xFF8A8FA3)),
+                        prefixIcon: const TextFieldIcon(AppIcons.search,
+                            color: Color(0xFF8A8FA3), size: 18),
+                        suffixIcon: _searchCtrl.text.isNotEmpty
+                            ? IconButton(
+                          icon: const AppIcon(AppIcons.clear,
+                              size: 18, color: Color(0xFF8A8FA3)),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            notifier.setSearch('');
+                          },
+                        )
+                            : null,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                            const BorderSide(color: Color(0xFFE7E9F0))),
+                        enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide:
+                            const BorderSide(color: Color(0xFFE7E9F0))),
+                        focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: const BorderSide(
+                                color: _primary, width: 1.5)),
+                      ),
+                    ),
                   ),
-                ),
+                  StockLevelFilter(
+                    level: state.filters['stock_level'] as String?,
+                    lowCount: stats.lowCount,
+                    outCount: stats.outCount,
+                    onChanged: (v) => notifier.setFilters({'stock_level': v}),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 14),
