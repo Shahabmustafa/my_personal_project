@@ -503,6 +503,20 @@ class _PurchaseInvoiceDetailBody extends StatelessWidget {
             'Rs. ${invoice.creditAmount.toStringAsFixed(0)}',
             valueColor: Colors.orange.shade800,
           ),
+        // Transport / Barcode — cash counter se, company ke khate se alag.
+        if (invoice.expenses.isNotEmpty) ...[
+          const DetailDivider(),
+          DetailSectionLabel('EXPENSES (${invoice.expenses.length})'),
+          for (final e in invoice.expenses)
+            DetailKV(e.headName ?? 'Expense',
+                'Rs. ${e.amount.toStringAsFixed(0)}',
+                valueColor: Colors.red),
+          DetailKV(
+            'Total Cost',
+            'Rs. ${(invoice.netAmount + invoice.expenseAmount).toStringAsFixed(0)}',
+            bold: true,
+          ),
+        ],
       ],
     );
   }

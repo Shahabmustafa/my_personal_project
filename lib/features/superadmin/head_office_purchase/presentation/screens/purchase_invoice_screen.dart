@@ -10,6 +10,8 @@ import '../widgets/purchase_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/features/branch/expense/data/model/expense_head_model.dart';
+import 'package:safishoe_app/features/branch/expense/presentation/provider/expense_provider.dart';
 class PurchaseInvoiceScreen extends ConsumerWidget {
   const PurchaseInvoiceScreen({super.key});
 
@@ -268,7 +270,7 @@ class _InvoiceFooter extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => _PaymentDialog(
         invoiceState: state,
-        onConfirm: (paid, credit, mode) async {
+        onConfirm: (paid, credit, mode, expenses) async {
           final repo = ref.read(purchaseInvoiceRepositoryProvider);
           final err = await ref
               .read(purchaseInvoiceProvider.notifier)
@@ -277,6 +279,7 @@ class _InvoiceFooter extends ConsumerWidget {
                 creditAmount: credit,
                 paymentMode: mode,
                 repo: repo,
+                expenses: expenses,
               );
 
           // Reload counter
@@ -323,8 +326,8 @@ class _InvoiceFooter extends ConsumerWidget {
 
 class _PaymentDialog extends ConsumerStatefulWidget {
   final PurchaseInvoiceState invoiceState;
-  final Future<void> Function(double paid, double credit, String mode)
-      onConfirm;
+  final Future<void> Function(double paid, double credit, String mode,
+      List<PurchaseExpense> expenses) onConfirm;
 
   const _PaymentDialog(
       {required this.invoiceState, required this.onConfirm});
@@ -333,21 +336,79 @@ class _PaymentDialog extends ConsumerStatefulWidget {
   ConsumerState<_PaymentDialog> createState() => _PaymentDialogState();
 }
 
+/// Dialog ki ek expense line — head + amount. Dono khaali ho to ignore.
+class _ExpenseLine {
+  String? headId;
+  final amountCtrl = TextEditingController();
+  double get amount => double.tryParse(amountCtrl.text.trim()) ?? 0;
+  bool get isEmpty => headId == null && amount <= 0;
+}
+
 class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   late TextEditingController _payCtrl;
   bool _isProcessing = false;
+  List<ExpenseHeadModel> _heads = [];
+  final List<_ExpenseLine> _expenses = [_ExpenseLine()];
 
   @override
   void initState() {
     super.initState();
     _payCtrl = TextEditingController(
         text: widget.invoiceState.netAmount.toStringAsFixed(0));
+    ref.read(expenseRepositoryProvider).getHeads().then((h) {
+      if (mounted) setState(() => _heads = h);
+    }).catchError((_) {});
   }
 
   @override
   void dispose() {
     _payCtrl.dispose();
+    for (final e in _expenses) {
+      e.amountCtrl.dispose();
+    }
     super.dispose();
+  }
+
+  /// Naya expense head (e.g. Transport) yahin se bana kar line par select.
+  Future<void> _addHead(_ExpenseLine line) async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('New Expense Head',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: _inputDeco(ctx, 'e.g. Transport'),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+              child: const Text('Add')),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name == null || name.isEmpty) return;
+    try {
+      final head = await ref.read(expenseRepositoryProvider).addHead(name: name);
+      if (!mounted) return;
+      setState(() {
+        _heads = [..._heads, head]
+          ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        line.headId = head.id;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: $e'), backgroundColor: Colors.red));
+    }
   }
 
   @override
@@ -380,6 +441,14 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       paymentMode = 'cash';
     }
 
+    // Kharche cash se jaate hain, company ke khate mein nahi.
+    final filledExpenses = _expenses.where((e) => !e.isEmpty).toList();
+    final expenseTotal =
+        filledExpenses.fold(0.0, (s, e) => s + e.amount);
+    final expenseInvalid =
+        filledExpenses.any((e) => e.headId == null || e.amount <= 0);
+    final cashShort = effectivePay + expenseTotal > cashAmount;
+
     final primary = Theme.of(context).colorScheme.primary;
 
     return AlertDialog(
@@ -398,6 +467,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       ),
       content: SizedBox(
         width: 400,
+        child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -483,6 +553,117 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               ),
             ),
 
+            const Divider(height: 24),
+
+            // ── Expense (Transport / Barcode ...) ──────────────────────
+            for (final line in _expenses) ...[
+              _fieldRow(
+                label: 'Expense Head',
+                icon: AppIcons.receiptOutlined,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        key: ValueKey('${identityHashCode(line)}-'
+                            '${line.headId}-${_heads.length}'),
+                        initialValue:
+                            _heads.any((h) => h.id == line.headId)
+                                ? line.headId
+                                : null,
+                        isExpanded: true,
+                        isDense: true,
+                        decoration: _inputDeco(context, 'Select head'),
+                        items: [
+                          for (final h in _heads)
+                            DropdownMenuItem(
+                              value: h.id,
+                              child: Text(h.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14)),
+                            ),
+                        ],
+                        onChanged: (v) => setState(() => line.headId = v),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'New expense head',
+                      icon: AppIcon(AppIcons.addCircleOutline,
+                          size: 20, color: primary),
+                      onPressed: () => _addHead(line),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              _fieldRow(
+                label: 'Expense Amount',
+                icon: AppIcons.paymentsOutlined,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: line.amountCtrl,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d*\.?\d*$')),
+                        ],
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w700),
+                        decoration: _inputDeco(context, '0'),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    _expenses.length > 1
+                        ? IconButton(
+                            tooltip: 'Remove',
+                            icon: const AppIcon(AppIcons.close,
+                                size: 18, color: Colors.red),
+                            onPressed: () => setState(() {
+                              _expenses.remove(line);
+                              line.amountCtrl.dispose();
+                            }),
+                          )
+                        : const SizedBox(width: 48),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => setState(() => _expenses.add(_ExpenseLine())),
+                icon: AppIcon(AppIcons.add, size: 16, color: primary),
+                label: const Text('Add another expense'),
+              ),
+            ),
+            if (expenseTotal > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Expense PKR ${expenseTotal.toStringAsFixed(0)} cash se jayega '
+                  '— company ke khate mein nahi.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+                ),
+              ),
+            if (expenseInvalid)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text('Har expense ka head aur amount dono likhein.',
+                    style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
+              ),
+            if (cashShort && expenseTotal > 0)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  'Cash in hand (PKR ${cashAmount.toStringAsFixed(0)}) pay + expense '
+                  'ke liye kam hai. Pay amount kam karein.',
+                  style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+                ),
+              ),
+
             const SizedBox(height: 14),
 
             if (!canPay)
@@ -545,6 +726,20 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                       width: 1,
                       height: 36,
                       color: Colors.grey.shade300),
+                  Container(
+                      width: 1,
+                      height: 36,
+                      color: Colors.grey.shade300),
+                  _chip(
+                    label: 'Expense',
+                    value: 'PKR ${expenseTotal.toStringAsFixed(0)}',
+                    color: Colors.red.shade700,
+                    icon: AppIcons.receiptOutlined,
+                  ),
+                  Container(
+                      width: 1,
+                      height: 36,
+                      color: Colors.grey.shade300),
                   _chip(
                     label: 'Mode',
                     value: paymentMode.toUpperCase(),
@@ -556,6 +751,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
             ),
           ],
         ),
+        ),
       ),
       actions: [
         TextButton(
@@ -564,13 +760,18 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isProcessing
+          onPressed: _isProcessing || expenseInvalid || cashShort
               ? null
               : () async {
                   setState(() => _isProcessing = true);
+                  final expenses = [
+                    for (final e in filledExpenses)
+                      PurchaseExpense(
+                          expenseHeadId: e.headId!, amount: e.amount),
+                  ];
                   Navigator.pop(context);
                   await widget.onConfirm(
-                      effectivePay, remaining, paymentMode);
+                      effectivePay, remaining, paymentMode, expenses);
                 },
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(

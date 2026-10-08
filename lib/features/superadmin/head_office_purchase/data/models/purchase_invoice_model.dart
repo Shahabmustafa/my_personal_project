@@ -15,6 +15,11 @@ class PurchaseInvoiceModel {
   final DateTime createdAt;
   final List<PurchaseInvoiceItemModel> items;
 
+  /// Is purchase ke kharche (Transport / Barcode ...) — `head_office_expenses`
+  /// se. Company ke khate mein nahi jaate.
+  final List<PurchaseExpense> expenses;
+  double get expenseAmount => expenses.fold(0.0, (s, e) => s + e.amount);
+
   const PurchaseInvoiceModel({
     required this.id,
     required this.invoiceNumber,
@@ -31,6 +36,7 @@ class PurchaseInvoiceModel {
     this.notes,
     required this.createdAt,
     this.items = const [],
+    this.expenses = const [],
   });
 
   factory PurchaseInvoiceModel.fromJson(Map<String, dynamic> json,
@@ -52,8 +58,33 @@ class PurchaseInvoiceModel {
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       items: items,
+      expenses: [
+        for (final e in (json['head_office_expenses'] as List? ?? const []))
+          PurchaseExpense.fromJson(e as Map<String, dynamic>),
+      ],
     );
   }
+}
+
+/// Purchase ke sath diya gaya ek kharcha — expense head + amount.
+class PurchaseExpense {
+  final String expenseHeadId;
+  final String? headName;
+  final double amount;
+
+  const PurchaseExpense({
+    required this.expenseHeadId,
+    this.headName,
+    required this.amount,
+  });
+
+  factory PurchaseExpense.fromJson(Map<String, dynamic> json) =>
+      PurchaseExpense(
+        expenseHeadId: json['expense_head_id'] as String? ?? '',
+        headName:
+            (json['expense_heads'] as Map<String, dynamic>?)?['name'] as String?,
+        amount: (json['amount'] as num? ?? 0).toDouble(),
+      );
 }
 
 class PurchaseInvoiceItemModel {

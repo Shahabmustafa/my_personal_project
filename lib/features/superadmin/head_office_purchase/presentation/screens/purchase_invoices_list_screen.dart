@@ -129,6 +129,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
             _hcell('Sub Total', flex: 2, style: headerStyle),
             _hcell('Discount', flex: 2, style: headerStyle),
             _hcell('Net Amount', flex: 2, style: headerStyle),
+            _hcell('Expense', flex: 2, style: headerStyle),
           ]),
         ),
         // Rows
@@ -159,6 +160,18 @@ class _DesktopInvoiceTable extends StatelessWidget {
                     style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         color: Colors.green),
+                  ),
+                  // Transport / Barcode — company ke khate se alag.
+                  _dcell(
+                    inv.expenseAmount > 0
+                        ? inv.expenseAmount.toStringAsFixed(0)
+                        : '—',
+                    flex: 2,
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: inv.expenseAmount > 0
+                            ? Colors.red
+                            : Colors.grey),
                   ),
                 ]),
               );
@@ -205,6 +218,16 @@ class _DesktopInvoiceTable extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
                       color: Colors.green),
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Text(
+                  invoices
+                      .fold(0.0, (s, i) => s + i.expenseAmount)
+                      .toStringAsFixed(0),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, color: Colors.red),
                 ),
               ),
             ],
@@ -299,6 +322,9 @@ class _MobileInvoiceList extends StatelessWidget {
                         'Net Amount',
                         inv.netAmount.toStringAsFixed(0),
                         color: Colors.green.shade700),
+                    if (inv.expenseAmount > 0)
+                      _stat('Expense', inv.expenseAmount.toStringAsFixed(0),
+                          color: Colors.red),
                   ],
                 ),
               ],

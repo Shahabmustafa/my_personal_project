@@ -292,6 +292,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     required double creditAmount,
     required String paymentMode,
     required PurchaseInvoiceRepository repo,
+    List<PurchaseExpense> expenses = const [],
   }) async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
     state = state.copyWith(isSaving: true, clearError: true);
@@ -310,6 +311,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
         creditAmount: creditAmount,
         paymentMode: paymentMode,
         cartItems: state.cartItems,
+        expenses: expenses,
       );
 
       if (mounted) {
@@ -335,6 +337,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
             creditAmount: creditAmount,
             paymentMode: paymentMode,
             cartItems: state.cartItems,
+            expenses: expenses,
           );
 
           if (mounted) {

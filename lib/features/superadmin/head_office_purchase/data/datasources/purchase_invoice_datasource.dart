@@ -39,6 +39,34 @@ class PurchaseInvoiceDatasource {
     }).eq('id', counter.id);
   }
 
+  /// Purchase ke kharche `head_office_expenses` mein (note mein invoice
+  /// number) aur aaj ke cash counter ke expense mein — cash utna kam.
+  Future<void> addPurchaseExpenses({
+    required String invoiceId,
+    required String invoiceNumber,
+    required String headOfficeId,
+    required List<PurchaseExpense> expenses,
+  }) async {
+    if (expenses.isEmpty) return;
+    final counter = await getOrCreateCounter();
+    await _client.from('head_office_expenses').insert([
+      for (final e in expenses)
+        {
+          'head_office_id': headOfficeId,
+          'head_office_cash_counter_id': counter.id,
+          'expense_head_id': e.expenseHeadId,
+          'purchase_invoice_id': invoiceId,
+          'amount': e.amount,
+          'note': 'Purchase Invoice $invoiceNumber ka expense',
+        },
+    ]);
+    final total = expenses.fold(0.0, (s, e) => s + e.amount);
+    await _client.from('head_office_cash_counter').update({
+      'net_amount': counter.netAmount - total,
+      'expense': counter.expense + total,
+    }).eq('id', counter.id);
+  }
+
   // ── Generate invoice number ───────────────────────────────────────────────
 
   Future<String> generateInvoiceNumber() async {
@@ -142,6 +170,7 @@ class PurchaseInvoiceDatasource {
     required double creditAmount,
     required String paymentMode,
     required List<PurchaseCartItem> cartItems,
+    List<PurchaseExpense> expenses = const [],
     String? notes,
   }) async {
     final invoiceRes = await _client
@@ -196,6 +225,14 @@ class PurchaseInvoiceDatasource {
       await deductFromCounter(paidAmount);
     }
 
+    // Kharche — cash counter se, company ke khate se bahar.
+    await addPurchaseExpenses(
+      invoiceId: invoice.id,
+      invoiceNumber: invoiceNumber,
+      headOfficeId: headOfficeId,
+      expenses: expenses,
+    );
+
     // Add credit amount to company opening_balance
     if (creditAmount > 0 && companyId != null) {
       final current = await fetchCompanyWithBalance(companyId);
@@ -211,7 +248,7 @@ class PurchaseInvoiceDatasource {
   Future<List<PurchaseInvoiceModel>> fetchInvoices(String headOfficeId) async {
     final res = await _client
         .from('purchase_invoices')
-        .select('*, companies(name)')
+        .select('*, companies(name), head_office_expenses(expense_head_id, amount)')
         .eq('head_office_id', headOfficeId)
         .order('created_at', ascending: false);
 
@@ -225,7 +262,8 @@ class PurchaseInvoiceDatasource {
   Future<PurchaseInvoiceModel> fetchInvoiceDetail(String invoiceId) async {
     final invoiceRes = await _client
         .from('purchase_invoices')
-        .select('*, companies(name)')
+        .select(
+            '*, companies(name), head_office_expenses(expense_head_id, amount, expense_heads(name))')
         .eq('id', invoiceId)
         .single();
 
