@@ -66,16 +66,16 @@ class BranchRemoteDatasource {
       // Still referenced by stock / sales rows (FK RESTRICT / NO ACTION).
       if (e.code == '23503') {
         throw Exception(
-            'This branch has ${_usedIn(e.message)} and cannot be deleted');
+            'This branch is used in ${_usedIn(e.message)} and cannot be deleted');
       }
       rethrow;
     }
   }
 
   String _usedIn(String message) {
-    if (message.contains('"sale_')) return 'sales records';
+    if (message.contains('"sale_')) return 'invoices or returns';
     if (message.contains('return')) return 'stock returns';
-    return 'stock assigned to it';
+    return 'stock inventory';
   }
 
   Future<void> assignUserToBranch({required String userId, required String branchId}) async {

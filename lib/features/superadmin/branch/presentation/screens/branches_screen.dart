@@ -40,6 +40,16 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
     final canEdit = ref.watch(authProvider).user?.canManageBranches ?? false;
     final isMobile = MediaQuery.of(context).size.width < 768;
 
+    ref.listen<BranchState>(branchProvider, (_, next) {
+      if (next.status == BranchStatus.error && next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(next.errorMessage!),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    });
+
     final filtered = branchState.branches.where((b) {
       final q = _searchQuery.toLowerCase();
       return b.branchName.toLowerCase().contains(q) ||
@@ -96,7 +106,8 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
           Expanded(
             child: branchState.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : branchState.status == BranchStatus.error
+                // A failed add/edit/delete only shows the snackbar; keep the list.
+                : branchState.status == BranchStatus.error && branchState.branches.isEmpty
                     ? _ErrorView(
                         message: branchState.errorMessage ?? 'Error',
                         onRetry: () => ref.read(branchProvider.notifier).loadAllBranches(),
@@ -149,14 +160,9 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () async {
+            onPressed: () {
+              ref.read(branchProvider.notifier).deleteBranch(branch.id);
               Navigator.pop(context);
-              final err = await ref.read(branchProvider.notifier).deleteBranch(branch.id);
-              if (err != null && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(err), backgroundColor: Colors.red),
-                );
-              }
             },
             child: const Text('Delete'),
           ),
