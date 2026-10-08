@@ -121,6 +121,8 @@ class _BranchTargetDetailScreenState
     final achieved = past.where((l) => l.achieved).length;
     final totalTarget = _lines.fold(0.0, (s, l) => s + l.target);
     final totalSale = past.fold(0.0, (s, l) => s + l.sale);
+    // Poore mahine ke target ka kitna hissa ab tak bik chuka hai.
+    final pct = totalTarget > 0 ? totalSale / totalTarget * 100 : 0.0;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -163,6 +165,11 @@ class _BranchTargetDetailScreenState
                   totalSale >= 0 ? _green : Colors.red,
                 ),
                 _card('Achieved Days', '$achieved / ${past.length}', _green),
+                _card(
+                  'Target Achieved',
+                  '${pct.toStringAsFixed(1)}%',
+                  pct >= 100 ? _green : Colors.orange.shade700,
+                ),
               ],
             ),
           ],
