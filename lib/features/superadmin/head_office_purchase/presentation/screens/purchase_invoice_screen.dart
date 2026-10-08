@@ -371,30 +371,10 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
   /// Naya expense head (e.g. Transport) yahin se bana kar line par select.
   Future<void> _addHead(_ExpenseLine line) async {
-    final ctrl = TextEditingController();
     final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('New Expense Head',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          decoration: _inputDeco(ctx, 'e.g. Transport'),
-          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-              child: const Text('Add')),
-        ],
-      ),
+      builder: (_) => const _NewExpenseHeadDialog(),
     );
-    ctrl.dispose();
     if (name == null || name.isEmpty) return;
     try {
       final head = await ref.read(expenseRepositoryProvider).addHead(name: name);
@@ -620,10 +600,12 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                             tooltip: 'Remove',
                             icon: const AppIcon(AppIcons.close,
                                 size: 18, color: Colors.red),
-                            onPressed: () => setState(() {
-                              _expenses.remove(line);
-                              line.amountCtrl.dispose();
-                            }),
+                            onPressed: () {
+                              setState(() => _expenses.remove(line));
+                              // TextField is frame mein abhi tree mein hai.
+                              WidgetsBinding.instance.addPostFrameCallback(
+                                  (_) => line.amountCtrl.dispose());
+                            },
                           )
                         : const SizedBox(width: 48),
                   ],
@@ -876,6 +858,54 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: color)),
+      ],
+    );
+  }
+}
+
+/// Naya expense head ka naam — controller is widget ki apni zindagi tak
+/// rehta hai (dialog band hone ke animation tak), is liye crash nahi.
+class _NewExpenseHeadDialog extends StatefulWidget {
+  const _NewExpenseHeadDialog();
+
+  @override
+  State<_NewExpenseHeadDialog> createState() => _NewExpenseHeadDialogState();
+}
+
+class _NewExpenseHeadDialogState extends State<_NewExpenseHeadDialog> {
+  final _ctrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _ctrl.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('New Expense Head',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+      content: TextField(
+        controller: _ctrl,
+        autofocus: true,
+        decoration: InputDecoration(
+          hintText: 'e.g. Transport',
+          isDense: true,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
+        FilledButton(onPressed: _submit, child: const Text('Add')),
       ],
     );
   }
