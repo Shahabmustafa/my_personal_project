@@ -149,9 +149,14 @@ class _BranchesScreenState extends ConsumerState<BranchesScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () {
-              ref.read(branchProvider.notifier).deleteBranch(branch.id);
+            onPressed: () async {
               Navigator.pop(context);
+              final err = await ref.read(branchProvider.notifier).deleteBranch(branch.id);
+              if (err != null && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(err), backgroundColor: Colors.red),
+                );
+              }
             },
             child: const Text('Delete'),
           ),

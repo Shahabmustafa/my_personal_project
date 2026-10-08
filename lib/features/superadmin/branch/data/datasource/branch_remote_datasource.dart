@@ -60,7 +60,22 @@ class BranchRemoteDatasource {
   }
 
   Future<void> deleteBranch(String id) async {
-    await _client.from('branches').delete().eq('id', id);
+    try {
+      await _client.from('branches').delete().eq('id', id);
+    } on PostgrestException catch (e) {
+      // Still referenced by stock / sales rows (FK RESTRICT / NO ACTION).
+      if (e.code == '23503') {
+        throw Exception(
+            'This branch has ${_usedIn(e.message)} and cannot be deleted');
+      }
+      rethrow;
+    }
+  }
+
+  String _usedIn(String message) {
+    if (message.contains('"sale_')) return 'sales records';
+    if (message.contains('return')) return 'stock returns';
+    return 'stock assigned to it';
   }
 
   Future<void> assignUserToBranch({required String userId, required String branchId}) async {

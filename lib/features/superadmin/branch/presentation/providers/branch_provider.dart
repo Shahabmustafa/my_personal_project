@@ -58,13 +58,15 @@ class BranchNotifier extends StateNotifier<BranchState> {
     }
   }
 
-  Future<void> deleteBranch(String id) async {
-    state = state.copyWith(status: BranchStatus.loading, errorMessage: null);
+  /// Returns an error message on failure. The list stays on screen so a
+  /// refused delete doesn't replace it with the error view.
+  Future<String?> deleteBranch(String id) async {
     try {
       await _repo.deleteBranch(id);
-      state = state.copyWith(status: BranchStatus.success, branches: state.branches.where((b) => b.id != id).toList());
+      state = state.copyWith(branches: state.branches.where((b) => b.id != id).toList());
+      return null;
     } catch (e) {
-      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      return e.toString().replaceAll('Exception: ', '');
     }
   }
 }
