@@ -57,6 +57,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
 
   static const _navItems = [
     SidebarItem(icon: AppIcons.dashboardOutlined, label: 'Dashboard'),
+    SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
     SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Branches'),
     SidebarItem(icon: AppIcons.warehouseOutlined, label: 'Warehouse'),
     SidebarItem(icon: AppIcons.peopleOutline, label: 'Users'),
@@ -99,6 +100,9 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     ),
     SidebarItem(icon: AppIcons.storefrontOutlined, label: 'Company'),
     SidebarItem(
+        icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
+    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
+    SidebarItem(
       icon: AppIcons.localShippingOutlined,
       label: 'Assign Stock To Branch',
       group: 'Assign Stock',
@@ -123,10 +127,6 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       label: 'Branch Sale Claims',
       group: 'Returns & Claims',
     ),
-    SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
-    SidebarItem(
-        icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
-    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
     SidebarItem(
       icon: AppIcons.percentOutlined,
       label: 'Branch Invoice Discount',
@@ -193,6 +193,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
 
   static const _pages = [
     OverviewScreen(),
+    HeadOfficeScreen(),
     BranchesScreen(),
     WarehouseScreen(),
     UsersScreen(),
@@ -213,6 +214,9 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // Companies head-office se juri hain (system mein ek hi head office) —
     // koi warehouse choose karne ki zaroorat nahi.
     CompaniesScreen(),
+    HeadOfficeCashCounterScreen(),
+    // Branches ne Head Office ko jo amount pay ki — accept/reject + report.
+    BranchPaymentsScreen(),
     // Head office se branch ko stock assign — assigned_by = head office id.
     HoAssignStockScreen(),
     // Assignment history — head office ne jo stock branches ko diya.
@@ -223,10 +227,6 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     IncomingBranchReturnsScreen(),
     // Branches ke sale claims (kharab product) — approve par branch stock se minus.
     IncomingSaleClaimsScreen(),
-    HeadOfficeScreen(),
-    HeadOfficeCashCounterScreen(),
-    // Branches ne Head Office ko jo amount pay ki — accept/reject + report.
-    BranchPaymentsScreen(),
     BranchInvoiceDiscountScreen(),
     SaleDiscountTiersScreen(),
     BranchTargetScreen(),
