@@ -178,6 +178,20 @@ class SaleInvoiceDatasource {
         .toList();
   }
 
+  /// Sab branches ki invoices — Sale Return ke invoice dropdown ke liye
+  /// (customer kisi bhi branch ka maal kisi bhi branch mein wapas kar sakta
+  /// hai). Sirf dropdown ke liye zaroori columns + branch ka naam.
+  Future<List<SaleInvoiceModel>> fetchAllBranchInvoices() async {
+    final res = await _client
+        .from('sale_invoices')
+        .select('id, invoice_number, branch_id, created_at, branches(branch_name)')
+        .order('created_at', ascending: false);
+
+    return (res as List)
+        .map((e) => SaleInvoiceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Sirf logged-in salesman ke apne invoices — salesman dashboard ki
   /// "My Sales" screen ke liye.
   Future<List<SaleInvoiceModel>> fetchInvoicesBySalesman(

@@ -8,7 +8,7 @@ import '../../../customer/data/model/customer_model.dart';
 import '../../../sale_invoice/data/model/sale_invoice_model.dart' show SaleInvoiceModel;
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
     show bankEntriesForSaleProvider, customersForSaleProvider, printersForSaleProvider,
-        salesmenProvider, saleInvoiceListProvider;
+        salesmenProvider;
 import '../../data/model/sale_return_model.dart';
 import '../provider/sale_return_provider.dart';
 import '../widgets/sale_return_cart_table.dart';
@@ -203,14 +203,6 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
   final _cashAmountCtrl = TextEditingController();
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(saleInvoiceListProvider.notifier).loadInvoices();
-    });
-  }
-
-  @override
   void dispose() {
     _cashAmountCtrl.dispose();
     super.dispose();
@@ -220,7 +212,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
   Widget build(BuildContext context) {
     final state = ref.watch(saleReturnProvider);
     final notifier = ref.read(saleReturnProvider.notifier);
-    final invoiceListState = ref.watch(saleInvoiceListProvider);
+    final invoicesAsync = ref.watch(returnInvoiceOptionsProvider);
     final customersAsync = ref.watch(customersForSaleProvider);
     final salesmenAsync = ref.watch(salesmenProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
@@ -238,14 +230,14 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
         children: [
           Expanded(
             flex: 3,
-            child: invoiceListState.isLoading
+            child: invoicesAsync.isLoading
                 ? const _FieldLoading()
                 : DropdownSearch<SaleInvoiceModel>(
-                    items: (f, _) => invoiceListState.invoices
-                        .where((inv) => inv.invoiceNumber.toLowerCase().contains(f.toLowerCase()))
+                    items: (f, _) => (invoicesAsync.value ?? const <SaleInvoiceModel>[])
+                        .where((inv) => _invoiceLabel(inv).toLowerCase().contains(f.toLowerCase()))
                         .toList(),
                     selectedItem: state.originalInvoice,
-                    itemAsString: (inv) => inv.invoiceNumber,
+                    itemAsString: _invoiceLabel,
                     compareFn: (a, b) => a.id == b.id,
                     onSelected: (inv) => inv != null
                         ? notifier.selectOriginalInvoice(inv)
@@ -574,4 +566,13 @@ class _ReturnFooter extends ConsumerWidget {
     );
     ref.read(saleReturnProvider.notifier).resetReturn();
   }
+}
+
+/// Dropdown mein invoice ke saath branch ka naam — sab branches ki invoices
+/// ek hi list mein hoti hain.
+String _invoiceLabel(SaleInvoiceModel inv) {
+  final branch = inv.branchName;
+  return branch == null || branch.isEmpty
+      ? inv.invoiceNumber
+      : '${inv.invoiceNumber} ($branch)';
 }

@@ -23,6 +23,12 @@ final saleReturnRepositoryProvider = Provider<SaleReturnRepository>(
   (ref) => SaleReturnRepository(ref.read(saleReturnDatasourceProvider)),
 );
 
+/// Return ke invoice dropdown ke liye sab branches ki invoices.
+final returnInvoiceOptionsProvider =
+    FutureProvider.autoDispose<List<SaleInvoiceModel>>(
+  (ref) => ref.read(saleInvoiceRepositoryProvider).getAllBranchInvoices(),
+);
+
 // ── Return list ───────────────────────────────────────────────────────────
 
 class SaleReturnListState {
@@ -284,7 +290,12 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       EmployeeLookupItem? resolvedSalesman;
       if (detail.salesmanId != null) {
         try {
-          final salesmen = await _ref.read(salesmenProvider.future);
+          // Doosri branch ki invoice ho to salesman bhi usi branch ka hai.
+          final salesmen = detail.branchId == _branchId
+              ? await _ref.read(salesmenProvider.future)
+              : await _ref
+                  .read(saleInvoiceRepositoryProvider)
+                  .getSalesmen(detail.branchId);
           final matches = salesmen.where((s) => s.id == detail.salesmanId);
           resolvedSalesman = matches.isEmpty ? null : matches.first;
         } catch (_) {
@@ -485,6 +496,14 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
     }).toList();
   }
 
+  /// Invoice-linked return usi branch ka hota hai jis ki invoice hai —
+  /// stock (branch_stock_id) aur refund (cash counter) dono wahin jate hain,
+  /// chahe return kisi bhi branch se kiya ja raha ho.
+  String get _returnBranchId {
+    final invBranch = state.originalInvoice?.branchId;
+    return invBranch != null && invBranch.isNotEmpty ? invBranch : _branchId;
+  }
+
   Future<String?> saveReturn() async {
     if (state.isInvoiceLinked) {
       if (!state.invoiceReturnItems.any((i) => i.quantity > 0)) {
@@ -513,7 +532,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
 
     Future<SaleReturnModel> attemptSave(String number) => _repo.saveSaleReturn(
           returnNumber: number,
-          branchId: _branchId,
+          branchId: _returnBranchId,
           originalInvoiceId: state.originalInvoice?.id,
           printerId: state.printer?.id,
           cashierId: cashierId,
@@ -589,7 +608,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
         .map((p) => SaleReturnPaymentModel(
               id: '',
               saleReturnId: saved.id,
-              branchId: _branchId,
+              branchId: _returnBranchId,
               bankEntryId: p.bankEntryId,
               paymentType: p.type,
               amount: p.amount,
