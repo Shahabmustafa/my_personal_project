@@ -71,6 +71,19 @@ class ExpenseDatasource {
     });
   }
 
+  Future<void> updateEntry({
+    required String id,
+    required String expenseHeadId,
+    required double amount,
+    String? note,
+  }) async {
+    await _client.from('expense_entries').update({
+      'expense_head_id': expenseHeadId,
+      'amount': amount,
+      'note': note,
+    }).eq('id', id);
+  }
+
   Future<void> deleteEntry(String id) async {
     await _client.from('expense_entries').delete().eq('id', id);
   }

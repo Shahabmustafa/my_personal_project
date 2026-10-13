@@ -63,32 +63,56 @@ FOR EACH ROW EXECUTE FUNCTION update_expense_entries_updated_at();
 
 
 -- =============================================
--- STEP 4: Expense add hone par branch_cash_counter
+-- STEP 4: Expense add/edit/delete hone par branch_cash_counter
 --         update karne ka trigger
 -- =============================================
 CREATE OR REPLACE FUNCTION sync_expense_to_cash_counter()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_branch_id UUID;
+    v_today_id  UUID;
 BEGIN
+    v_branch_id := COALESCE(NEW.branch_id, OLD.branch_id);
+
+    -- total_amount aage carry forward hota hai, is liye balance ka farq
+    -- hamesha branch ke latest (aaj ke) counter row pe lagta hai.
+    SELECT id INTO v_today_id
+    FROM public.branch_cash_counter
+    WHERE branch_id = v_branch_id
+    ORDER BY created_at DESC
+    LIMIT 1;
+
     IF TG_OP = 'INSERT' THEN
         UPDATE public.branch_cash_counter
-        SET
-            expense     = expense + NEW.amount,
-            total_amount = total_amount - NEW.amount
+        SET expense = expense + NEW.amount
         WHERE id = NEW.branch_cash_counter_id;
+
+        UPDATE public.branch_cash_counter
+        SET total_amount = total_amount - NEW.amount
+        WHERE id = v_today_id;
 
     ELSIF TG_OP = 'UPDATE' THEN
         UPDATE public.branch_cash_counter
-        SET
-            expense      = expense - OLD.amount + NEW.amount,
-            total_amount = total_amount + OLD.amount - NEW.amount
+        SET expense = expense - OLD.amount
+        WHERE id = OLD.branch_cash_counter_id;
+
+        UPDATE public.branch_cash_counter
+        SET expense = expense + NEW.amount
         WHERE id = NEW.branch_cash_counter_id;
+
+        UPDATE public.branch_cash_counter
+        SET total_amount = total_amount + OLD.amount - NEW.amount
+        WHERE id = v_today_id;
 
     ELSIF TG_OP = 'DELETE' THEN
         UPDATE public.branch_cash_counter
-        SET
-            expense      = expense - OLD.amount,
-            total_amount = total_amount + OLD.amount
+        SET expense = expense - OLD.amount
         WHERE id = OLD.branch_cash_counter_id;
+
+        UPDATE public.branch_cash_counter
+        SET total_amount = total_amount + OLD.amount
+        WHERE id = v_today_id;
+        RETURN OLD;
     END IF;
 
     RETURN NEW;

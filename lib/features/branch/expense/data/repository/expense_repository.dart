@@ -35,5 +35,18 @@ class ExpenseRepository {
         note: note,
       );
 
+  Future<void> updateEntry({
+    required String id,
+    required String expenseHeadId,
+    required double amount,
+    String? note,
+  }) =>
+      _datasource.updateEntry(
+        id: id,
+        expenseHeadId: expenseHeadId,
+        amount: amount,
+        note: note,
+      );
+
   Future<void> deleteEntry(String id) => _datasource.deleteEntry(id);
 }

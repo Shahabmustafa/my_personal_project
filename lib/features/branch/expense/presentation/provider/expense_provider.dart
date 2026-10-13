@@ -110,6 +110,30 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
     }
   }
 
+  Future<String?> updateExpense({
+    required String id,
+    required String expenseHeadId,
+    required double amount,
+    String? note,
+  }) async {
+    state = state.copyWith(isSaving: true, clearError: true);
+    try {
+      await _repo.updateEntry(
+        id: id,
+        expenseHeadId: expenseHeadId,
+        amount: amount,
+        note: note,
+      );
+      await load();
+      state = state.copyWith(isSaving: false);
+      return null;
+    } catch (e) {
+      final message = e.toString().replaceAll('Exception: ', '');
+      state = state.copyWith(isSaving: false, error: message);
+      return message;
+    }
+  }
+
   Future<String?> addHead({required String name, String? description}) async {
     try {
       final head = await _repo.addHead(name: name, description: description);

@@ -110,10 +110,12 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
   }
 }
 
-// ── Add Expense Dialog ──────────────────────────────────────────────────────
+// ── Add / Edit Expense Dialog ───────────────────────────────────────────────
 
 class _AddExpenseDialog extends ConsumerStatefulWidget {
-  const _AddExpenseDialog();
+  /// Null ho to naya expense, warna isi entry ko edit karta hai.
+  final ExpenseEntryModel? entry;
+  const _AddExpenseDialog({this.entry});
 
   @override
   ConsumerState<_AddExpenseDialog> createState() => _AddExpenseDialogState();
@@ -126,6 +128,19 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
   ExpenseHeadModel? _selectedHead;
   String? _headError;
   bool _submitting = false;
+
+  bool get _isEdit => widget.entry != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.entry;
+    if (e != null) {
+      _amountCtrl.text = _fmtAmt(e.amount);
+      _noteCtrl.text = e.note ?? '';
+      _selectedHead = ExpenseHeadModel(id: e.expenseHeadId, name: e.expenseHeadName);
+    }
+  }
 
   @override
   void dispose() {
@@ -140,11 +155,11 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Row(children: [
-        AppIcon(AppIcons.receiptLongOutlined, color: _primary, size: 22),
-        SizedBox(width: 8),
-        Text('Add Expense',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+      title: Row(children: [
+        const AppIcon(AppIcons.receiptLongOutlined, color: _primary, size: 22),
+        const SizedBox(width: 8),
+        Text(_isEdit ? 'Edit Expense' : 'Add Expense',
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
       ]),
       content: SizedBox(
         width: 380,
@@ -237,11 +252,21 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
     setState(() => _headError = _selectedHead == null ? 'Select an expense head' : null);
     if (!formValid || _selectedHead == null) return;
     setState(() => _submitting = true);
-    final error = await ref.read(expenseProvider.notifier).addExpense(
-          expenseHeadId: _selectedHead!.id,
-          amount: double.parse(_amountCtrl.text),
-          note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-        );
+    final notifier = ref.read(expenseProvider.notifier);
+    final amount = double.parse(_amountCtrl.text);
+    final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
+    final error = _isEdit
+        ? await notifier.updateExpense(
+            id: widget.entry!.id,
+            expenseHeadId: _selectedHead!.id,
+            amount: amount,
+            note: note,
+          )
+        : await notifier.addExpense(
+            expenseHeadId: _selectedHead!.id,
+            amount: amount,
+            note: note,
+          );
     if (!mounted) return;
     setState(() => _submitting = false);
     if (error == null) {
@@ -249,7 +274,9 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(error == null ? 'Expense added.' : 'Error: $error'),
+      content: Text(error == null
+          ? (_isEdit ? 'Expense updated.' : 'Expense added.')
+          : 'Error: $error'),
       backgroundColor: error == null ? Colors.green.shade700 : Colors.red.shade700,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -406,7 +433,7 @@ class _DesktopTable extends ConsumerWidget {
                   _TH('Expense Head', flex: 3),
                   _TH('Note', flex: 4),
                   _TH('Amount', flex: 2, alignEnd: true),
-                  _TH('', flex: 1),
+                  _TH('', flex: 2),
                 ]),
               ),
               // Rows
@@ -494,17 +521,26 @@ class _DesktopTable extends ConsumerWidget {
                             ),
                           ),
                           Expanded(
-                            flex: 1,
+                            flex: 2,
                             child: _TD(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: _IconBtn(
-                                  icon: AppIcons.deleteOutline,
-                                  color: Colors.red.shade400,
-                                  tooltip: 'Delete',
-                                  onTap: () =>
-                                      _confirmDelete(context, ref, e.id),
-                                ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  _IconBtn(
+                                    icon: AppIcons.editOutlined,
+                                    color: _primary,
+                                    tooltip: 'Edit',
+                                    onTap: () => _openEditDialog(context, e),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  _IconBtn(
+                                    icon: AppIcons.deleteOutline,
+                                    color: Colors.red.shade400,
+                                    tooltip: 'Delete',
+                                    onTap: () =>
+                                        _confirmDelete(context, ref, e.id),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -635,6 +671,11 @@ class _MobileList extends ConsumerWidget {
                       fontSize: 14,
                       color: _primary)),
               IconButton(
+                icon: const AppIcon(AppIcons.editOutlined,
+                    size: 18, color: _primary),
+                onPressed: () => _openEditDialog(context, e),
+              ),
+              IconButton(
                 icon: AppIcon(AppIcons.deleteOutline,
                     size: 18, color: Colors.red.shade400),
                 onPressed: () => _confirmDelete(context, ref, e.id),
@@ -648,6 +689,13 @@ class _MobileList extends ConsumerWidget {
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
+
+void _openEditDialog(BuildContext context, ExpenseEntryModel entry) {
+  showDialog(
+    context: context,
+    builder: (_) => _AddExpenseDialog(entry: entry),
+  );
+}
 
 Future<void> _confirmDelete(
     BuildContext context, WidgetRef ref, String id) async {
