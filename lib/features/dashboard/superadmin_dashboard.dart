@@ -14,6 +14,7 @@ import '../superadmin/discount/presentation/screens/branch_invoice_discount_scre
 import '../superadmin/discount/presentation/screens/sale_discount_tiers_screen.dart';
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/head_office_cash_counter/presentation/screens/head_office_cash_counter_screen.dart';
+import '../superadmin/expense/presentation/screens/superadmin_expense_screen.dart';
 import '../superadmin/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
 import '../superadmin/branch_payments/presentation/screens/branch_payments_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
@@ -101,6 +102,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: AppIcons.storefrontOutlined, label: 'Company'),
     SidebarItem(
         icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
+    SidebarItem(icon: AppIcons.receiptLongOutlined, label: 'Expense'),
     SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
     SidebarItem(
       icon: AppIcons.localShippingOutlined,
@@ -215,6 +217,8 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // koi warehouse choose karne ki zaroorat nahi.
     CompaniesScreen(),
     HeadOfficeCashCounterScreen(),
+    // Head office ka apna expense, ya kisi bhi branch ka expense.
+    SuperadminExpenseScreen(),
     // Branches ne Head Office ko jo amount pay ki — accept/reject + report.
     BranchPaymentsScreen(),
     // Head office se branch ko stock assign — assigned_by = head office id.

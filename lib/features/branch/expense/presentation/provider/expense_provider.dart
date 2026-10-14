@@ -53,19 +53,41 @@ class ExpenseState {
       );
 }
 
+/// Kis ka expense — ek branch ka (`expense_entries`) ya head office ka apna
+/// (`head_office_expenses`). Superadmin dono choose kar sakta hai.
+class ExpenseScope {
+  final String id;
+  final bool isHeadOffice;
+  const ExpenseScope.branch(this.id) : isHeadOffice = false;
+  const ExpenseScope.headOffice(this.id) : isHeadOffice = true;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ExpenseScope &&
+      other.id == id &&
+      other.isHeadOffice == isHeadOffice;
+
+  @override
+  int get hashCode => Object.hash(id, isHeadOffice);
+}
+
 class ExpenseNotifier extends StateNotifier<ExpenseState> {
   final ExpenseRepository _repo;
-  final String _branchId;
+  final ExpenseScope _scope;
 
-  ExpenseNotifier(this._repo, this._branchId) : super(const ExpenseState()) {
-    if (_branchId.isNotEmpty) load();
+  ExpenseNotifier(this._repo, this._scope) : super(const ExpenseState()) {
+    if (_scope.id.isNotEmpty) load();
   }
+
+  String get _branchId => _scope.id;
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final results = await Future.wait([
-        _repo.getEntriesByBranch(_branchId),
+        _scope.isHeadOffice
+            ? _repo.getEntriesByHeadOffice(_scope.id)
+            : _repo.getEntriesByBranch(_branchId),
         _repo.getHeads(),
       ]);
       state = state.copyWith(
@@ -88,6 +110,17 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
   }) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
+      if (_scope.isHeadOffice) {
+        await _repo.addHeadOfficeEntry(
+          headOfficeId: _scope.id,
+          expenseHeadId: expenseHeadId,
+          amount: amount,
+          note: note,
+        );
+        await load();
+        state = state.copyWith(isSaving: false);
+        return null;
+      }
       final counterId = await _repo.getTodaysCashCounterId(_branchId);
       if (counterId == null) {
         state = state.copyWith(isSaving: false);
@@ -111,19 +144,28 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
   }
 
   Future<String?> updateExpense({
-    required String id,
+    required ExpenseEntryModel entry,
     required String expenseHeadId,
     required double amount,
     String? note,
   }) async {
     state = state.copyWith(isSaving: true, clearError: true);
     try {
-      await _repo.updateEntry(
-        id: id,
-        expenseHeadId: expenseHeadId,
-        amount: amount,
-        note: note,
-      );
+      if (_scope.isHeadOffice) {
+        await _repo.updateHeadOfficeEntry(
+          entry: entry,
+          expenseHeadId: expenseHeadId,
+          amount: amount,
+          note: note,
+        );
+      } else {
+        await _repo.updateEntry(
+          id: entry.id,
+          expenseHeadId: expenseHeadId,
+          amount: amount,
+          note: note,
+        );
+      }
       await load();
       state = state.copyWith(isSaving: false);
       return null;
@@ -144,9 +186,13 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
     }
   }
 
-  Future<String?> deleteExpense(String id) async {
+  Future<String?> deleteExpense(ExpenseEntryModel entry) async {
     try {
-      await _repo.deleteEntry(id);
+      if (_scope.isHeadOffice) {
+        await _repo.deleteHeadOfficeEntry(entry);
+      } else {
+        await _repo.deleteEntry(entry.id);
+      }
       await load();
       return null;
     } catch (e) {
@@ -155,9 +201,12 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
   }
 }
 
-final expenseProvider = StateNotifierProvider<ExpenseNotifier, ExpenseState>(
-  (ref) => ExpenseNotifier(
-    ref.read(expenseRepositoryProvider),
-    ref.watch(currentBranchIdProvider),
-  ),
+final expenseProvider = StateNotifierProvider.family<ExpenseNotifier,
+    ExpenseState, ExpenseScope>(
+  (ref, scope) => ExpenseNotifier(ref.read(expenseRepositoryProvider), scope),
+);
+
+/// Branch user ka apna scope (logged-in branch).
+final currentBranchExpenseScopeProvider = Provider<ExpenseScope>(
+  (ref) => ExpenseScope.branch(ref.watch(currentBranchIdProvider)),
 );

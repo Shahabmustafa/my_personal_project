@@ -49,4 +49,36 @@ class ExpenseRepository {
       );
 
   Future<void> deleteEntry(String id) => _datasource.deleteEntry(id);
+
+  Future<List<ExpenseEntryModel>> getEntriesByHeadOffice(String headOfficeId) =>
+      _datasource.getEntriesByHeadOffice(headOfficeId);
+
+  Future<void> addHeadOfficeEntry({
+    required String headOfficeId,
+    required String expenseHeadId,
+    required double amount,
+    String? note,
+  }) =>
+      _datasource.addHeadOfficeEntry(
+        headOfficeId: headOfficeId,
+        expenseHeadId: expenseHeadId,
+        amount: amount,
+        note: note,
+      );
+
+  Future<void> updateHeadOfficeEntry({
+    required ExpenseEntryModel entry,
+    required String expenseHeadId,
+    required double amount,
+    String? note,
+  }) =>
+      _datasource.updateHeadOfficeEntry(
+        entry: entry,
+        expenseHeadId: expenseHeadId,
+        amount: amount,
+        note: note,
+      );
+
+  Future<void> deleteHeadOfficeEntry(ExpenseEntryModel entry) =>
+      _datasource.deleteHeadOfficeEntry(entry);
 }

@@ -11,7 +11,14 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 const _primary = Color(0xFFE56A00);
 
 class ExpenseScreen extends ConsumerStatefulWidget {
-  const ExpenseScreen({super.key});
+  /// Null ho to logged-in branch ka expense. Superadmin yahan head office
+  /// ya koi bhi branch deta hai.
+  final ExpenseScope? scope;
+
+  /// Header ke neeche dikhne wala widget (superadmin ka branch picker).
+  final Widget? scopePicker;
+
+  const ExpenseScreen({super.key, this.scope, this.scopePicker});
 
   @override
   ConsumerState<ExpenseScreen> createState() => _ExpenseScreenState();
@@ -20,7 +27,10 @@ class ExpenseScreen extends ConsumerStatefulWidget {
 class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(expenseProvider);
+    final ExpenseScope scope =
+        widget.scope ?? ref.watch(currentBranchExpenseScopeProvider);
+    final provider = expenseProvider(scope);
+    final state = ref.watch(provider);
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
@@ -50,7 +60,7 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                 Tooltip(
                   message: 'Refresh',
                   child: InkWell(
-                    onTap: () => ref.read(expenseProvider.notifier).load(),
+                    onTap: () => ref.read(provider.notifier).load(),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -66,7 +76,9 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                   ),
                 ),
                 FilledButton.icon(
-                  onPressed: () => _openAddExpenseDialog(context),
+                  onPressed: scope.id.isEmpty
+                      ? null
+                      : () => _openAddExpenseDialog(context, scope),
                   icon: const AppIcon(AppIcons.addRounded, size: 18, color: Colors.white),
                   label: const Text('Add Expense'),
                   style: FilledButton.styleFrom(
@@ -81,6 +93,12 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
             ),
           ),
 
+          if (widget.scopePicker != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: widget.scopePicker,
+            ),
+
           // ── Content ───────────────────────────────────────────────────
           Expanded(
             child: state.isLoading
@@ -89,23 +107,24 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                     ? _ErrorView(
                         message: state.error!,
                         onRetry: () =>
-                            ref.read(expenseProvider.notifier).load(),
+                            ref.read(provider.notifier).load(),
                       )
                     : state.entries.isEmpty
                         ? const _EmptyView()
                         : isMobile
-                            ? _MobileList(entries: state.entries)
-                            : _DesktopTable(entries: state.entries),
+                            ? _MobileList(scope: scope, entries: state.entries)
+                            : _DesktopTable(
+                                scope: scope, entries: state.entries),
           ),
         ],
       ),
     );
   }
 
-  void _openAddExpenseDialog(BuildContext context) {
+  void _openAddExpenseDialog(BuildContext context, ExpenseScope scope) {
     showDialog(
       context: context,
-      builder: (_) => const _AddExpenseDialog(),
+      builder: (_) => _AddExpenseDialog(scope: scope),
     );
   }
 }
@@ -114,8 +133,9 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
 
 class _AddExpenseDialog extends ConsumerStatefulWidget {
   /// Null ho to naya expense, warna isi entry ko edit karta hai.
+  final ExpenseScope scope;
   final ExpenseEntryModel? entry;
-  const _AddExpenseDialog({this.entry});
+  const _AddExpenseDialog({required this.scope, this.entry});
 
   @override
   ConsumerState<_AddExpenseDialog> createState() => _AddExpenseDialogState();
@@ -151,7 +171,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final heads = ref.watch(expenseProvider).heads;
+    final heads = ref.watch(expenseProvider(widget.scope)).heads;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -252,12 +272,12 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
     setState(() => _headError = _selectedHead == null ? 'Select an expense head' : null);
     if (!formValid || _selectedHead == null) return;
     setState(() => _submitting = true);
-    final notifier = ref.read(expenseProvider.notifier);
+    final notifier = ref.read(expenseProvider(widget.scope).notifier);
     final amount = double.parse(_amountCtrl.text);
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
     final error = _isEdit
         ? await notifier.updateExpense(
-            id: widget.entry!.id,
+            entry: widget.entry!,
             expenseHeadId: _selectedHead!.id,
             amount: amount,
             note: note,
@@ -286,7 +306,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
   void _openAddHeadDialog(BuildContext context) {
     showDialog<ExpenseHeadModel?>(
       context: context,
-      builder: (_) => const _AddHeadDialog(),
+      builder: (_) => _AddHeadDialog(scope: widget.scope),
     ).then((head) {
       if (head != null && mounted) {
         setState(() {
@@ -317,7 +337,8 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
 // ── Add Expense Head Dialog ─────────────────────────────────────────────────
 
 class _AddHeadDialog extends ConsumerStatefulWidget {
-  const _AddHeadDialog();
+  final ExpenseScope scope;
+  const _AddHeadDialog({required this.scope});
 
   @override
   ConsumerState<_AddHeadDialog> createState() => _AddHeadDialogState();
@@ -384,7 +405,7 @@ class _AddHeadDialogState extends ConsumerState<_AddHeadDialog> {
       _error = null;
     });
     final error =
-        await ref.read(expenseProvider.notifier).addHead(name: name);
+        await ref.read(expenseProvider(widget.scope).notifier).addHead(name: name);
     if (!mounted) return;
     if (error != null) {
       setState(() {
@@ -394,7 +415,7 @@ class _AddHeadDialogState extends ConsumerState<_AddHeadDialog> {
       return;
     }
     final head = ref
-        .read(expenseProvider)
+        .read(expenseProvider(widget.scope))
         .heads
         .firstWhere((h) => h.name == name, orElse: () => ExpenseHeadModel(id: '', name: name));
     Navigator.pop(context, head);
@@ -404,8 +425,9 @@ class _AddHeadDialogState extends ConsumerState<_AddHeadDialog> {
 // ── Desktop Table ────────────────────────────────────────────────────────────
 
 class _DesktopTable extends ConsumerWidget {
+  final ExpenseScope scope;
   final List<ExpenseEntryModel> entries;
-  const _DesktopTable({required this.entries});
+  const _DesktopTable({required this.scope, required this.entries});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -530,7 +552,7 @@ class _DesktopTable extends ConsumerWidget {
                                     icon: AppIcons.editOutlined,
                                     color: _primary,
                                     tooltip: 'Edit',
-                                    onTap: () => _openEditDialog(context, e),
+                                    onTap: () => _openEditDialog(context, scope, e),
                                   ),
                                   const SizedBox(width: 6),
                                   _IconBtn(
@@ -538,7 +560,7 @@ class _DesktopTable extends ConsumerWidget {
                                     color: Colors.red.shade400,
                                     tooltip: 'Delete',
                                     onTap: () =>
-                                        _confirmDelete(context, ref, e.id),
+                                        _confirmDelete(context, ref, scope, e),
                                   ),
                                 ],
                               ),
@@ -625,8 +647,9 @@ class _IconBtn extends StatelessWidget {
 // ── Mobile List ───────────────────────────────────────────────────────────────
 
 class _MobileList extends ConsumerWidget {
+  final ExpenseScope scope;
   final List<ExpenseEntryModel> entries;
-  const _MobileList({required this.entries});
+  const _MobileList({required this.scope, required this.entries});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -673,12 +696,12 @@ class _MobileList extends ConsumerWidget {
               IconButton(
                 icon: const AppIcon(AppIcons.editOutlined,
                     size: 18, color: _primary),
-                onPressed: () => _openEditDialog(context, e),
+                onPressed: () => _openEditDialog(context, scope, e),
               ),
               IconButton(
                 icon: AppIcon(AppIcons.deleteOutline,
                     size: 18, color: Colors.red.shade400),
-                onPressed: () => _confirmDelete(context, ref, e.id),
+                onPressed: () => _confirmDelete(context, ref, scope, e),
               ),
             ],
           ),
@@ -690,15 +713,16 @@ class _MobileList extends ConsumerWidget {
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-void _openEditDialog(BuildContext context, ExpenseEntryModel entry) {
+void _openEditDialog(
+    BuildContext context, ExpenseScope scope, ExpenseEntryModel entry) {
   showDialog(
     context: context,
-    builder: (_) => _AddExpenseDialog(entry: entry),
+    builder: (_) => _AddExpenseDialog(scope: scope, entry: entry),
   );
 }
 
-Future<void> _confirmDelete(
-    BuildContext context, WidgetRef ref, String id) async {
+Future<void> _confirmDelete(BuildContext context, WidgetRef ref,
+    ExpenseScope scope, ExpenseEntryModel entry) async {
   final confirm = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
@@ -719,7 +743,8 @@ Future<void> _confirmDelete(
     ),
   );
   if (confirm != true || !context.mounted) return;
-  final error = await ref.read(expenseProvider.notifier).deleteExpense(id);
+  final error =
+      await ref.read(expenseProvider(scope).notifier).deleteExpense(entry);
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
     content: Text(error == null ? 'Expense deleted.' : 'Error: $error'),

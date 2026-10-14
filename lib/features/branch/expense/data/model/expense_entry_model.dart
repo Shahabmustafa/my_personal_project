@@ -29,8 +29,12 @@ class ExpenseEntryModel {
     final head = json['expense_heads'] as Map<String, dynamic>?;
     return ExpenseEntryModel(
       id: json['id']?.toString() ?? '',
-      branchId: json['branch_id']?.toString() ?? '',
-      branchCashCounterId: json['branch_cash_counter_id']?.toString() ?? '',
+      // Head office expense mein branch ki jagah head office ke columns.
+      branchId: (json['branch_id'] ?? json['head_office_id'])?.toString() ?? '',
+      branchCashCounterId: (json['branch_cash_counter_id'] ??
+                  json['head_office_cash_counter_id'])
+              ?.toString() ??
+          '',
       expenseHeadId: json['expense_head_id']?.toString() ?? '',
       expenseHeadName: head?['name']?.toString() ?? '—',
       amount: _toDouble(json['amount']),
