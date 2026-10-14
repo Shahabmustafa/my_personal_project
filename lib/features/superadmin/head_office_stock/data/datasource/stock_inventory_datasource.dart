@@ -39,8 +39,10 @@ class StockInventoryDatasource {
     }
     final result = await runSupabasePage(
       query
+          // Sab se zyada quantity wala stock pehle; barabar ho to naam se.
+          .order('quantity', ascending: false)
           .order('product_name', ascending: true)
-          .order('quantity', ascending: false),
+          .order('id', ascending: true),
       request: request,
     );
     return result.map(_fromViewRow);
