@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
+import '../branch/assign_stock_to_my_branch/presentation/provider/branch_assign_provider.dart';
+import '../branch/assign_stock_to_my_branch/presentation/provider/incoming_assignment_provider.dart';
 import '../branch/assign_stock_to_my_branch/presentation/screen/branch_assign_list_screen.dart';
 import '../branch/attendance/presentation/screens/my_attendance_screen.dart';
 import '../branch/attendance/presentation/screens/staff_attendance_screen.dart';
@@ -99,6 +101,50 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         group: 'Attendance'),
   ];
 
+  static const _assignLabel = 'Assign Stock My Branch';
+
+  void _showAssignmentNotification(
+      BuildContext context, String number, int assignIndex) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(SnackBar(
+      behavior: SnackBarBehavior.floating,
+      width: 420,
+      duration: const Duration(seconds: 8),
+      backgroundColor: const Color(0xFF1F2333),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      content: Row(
+        children: [
+          const Icon(Icons.local_shipping_outlined,
+              color: Color(0xFF8ED4AA), size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Naya stock assign hua',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700, color: Colors.white)),
+                if (number.isNotEmpty)
+                  Text('Assignment $number — accept ya reject karein',
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFFB8BDD0))),
+              ],
+            ),
+          ),
+        ],
+      ),
+      action: assignIndex < 0
+          ? null
+          : SnackBarAction(
+              label: 'View',
+              textColor: const Color(0xFF8ED4AA),
+              onPressed: () => setState(() => _index = assignIndex),
+            ),
+    ));
+  }
+
   /// Sirf manager (aur supervisor) poori branch ki attendance dekhta hai.
   static const _managerOnly = {'Staff Attendance'};
 
@@ -134,8 +180,30 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
       for (var i = 0; i < _navItems.length; i++)
         if (canSeeStaff || !_managerOnly.contains(_navItems[i].label)) i,
     ];
+    final assignIndex =
+        visible.indexWhere((i) => _navItems[i].label == _assignLabel);
+
+    // Realtime — naya stock assign hote hi notification.
+    ref.listen(incomingAssignmentProvider, (_, next) {
+      final number = next.value;
+      if (number == null) return;
+      _showAssignmentNotification(context, number, assignIndex);
+    });
+
+    // Accept/reject ka intezar karne wale assignments — sidebar badge.
+    final pendingAssignments = ref
+        .watch(branchAssignProvider)
+        .assignments
+        .where((a) => a.status == 'pending')
+        .length;
+
     return SidebarShell(
-      navItems: [for (final i in visible) _navItems[i]],
+      navItems: [
+        for (final i in visible)
+          _navItems[i].label == _assignLabel
+              ? _navItems[i].withBadge(pendingAssignments)
+              : _navItems[i],
+      ],
       pages: [for (final i in visible) _pages[i]],
       selectedIndex: _index,
       userName: user?.username ?? '',
