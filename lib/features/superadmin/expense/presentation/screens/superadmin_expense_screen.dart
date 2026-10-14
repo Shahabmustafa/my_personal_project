@@ -50,6 +50,11 @@ class _BranchExpenseScreenState extends ConsumerState<BranchExpenseScreen> {
       key: ValueKey('branch-$branchId'),
       title: 'Branch Expense',
       scope: ExpenseScope.branch(branchId),
+      branchOptions: [
+        for (final b in branches) ExpenseBranchOption(b.id, b.branchName),
+      ],
+      // Jis branch mein expense add hua, list wahi dikhaye.
+      onBranchSaved: (id) => setState(() => _branchId = id),
       scopePicker: SizedBox(
         width: 320,
         child: AppSearchDropdown<HoBranchModel>(

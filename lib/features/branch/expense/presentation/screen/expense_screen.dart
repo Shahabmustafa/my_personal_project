@@ -10,6 +10,13 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 const _primary = Color(0xFFE56A00);
 
+/// Superadmin ke Add Expense dialog mein branch choose karne ke liye.
+class ExpenseBranchOption {
+  final String id;
+  final String name;
+  const ExpenseBranchOption(this.id, this.name);
+}
+
 class ExpenseScreen extends ConsumerStatefulWidget {
   /// Null ho to logged-in branch ka expense. Superadmin yahan head office
   /// ya koi bhi branch deta hai.
@@ -20,11 +27,19 @@ class ExpenseScreen extends ConsumerStatefulWidget {
 
   final String title;
 
+  /// Di jaye to Add Expense dialog mein Branch dropdown dikhta hai.
+  final List<ExpenseBranchOption>? branchOptions;
+
+  /// Dialog se kisi branch mein expense save ho to us branch ka id.
+  final ValueChanged<String>? onBranchSaved;
+
   const ExpenseScreen({
     super.key,
     this.scope,
     this.scopePicker,
     this.title = 'Expense',
+    this.branchOptions,
+    this.onBranchSaved,
   });
 
   @override
@@ -131,8 +146,13 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
   void _openAddExpenseDialog(BuildContext context, ExpenseScope scope) {
     showDialog(
       context: context,
-      builder: (_) => _AddExpenseDialog(scope: scope),
-    );
+      builder: (_) => _AddExpenseDialog(
+        scope: scope,
+        branchOptions: widget.branchOptions,
+      ),
+    ).then((savedBranchId) {
+      if (savedBranchId is String) widget.onBranchSaved?.call(savedBranchId);
+    });
   }
 }
 
@@ -142,7 +162,12 @@ class _AddExpenseDialog extends ConsumerStatefulWidget {
   /// Null ho to naya expense, warna isi entry ko edit karta hai.
   final ExpenseScope scope;
   final ExpenseEntryModel? entry;
-  const _AddExpenseDialog({required this.scope, this.entry});
+  final List<ExpenseBranchOption>? branchOptions;
+  const _AddExpenseDialog({
+    required this.scope,
+    this.entry,
+    this.branchOptions,
+  });
 
   @override
   ConsumerState<_AddExpenseDialog> createState() => _AddExpenseDialogState();
@@ -153,14 +178,22 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
   final _amountCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
   ExpenseHeadModel? _selectedHead;
+  ExpenseBranchOption? _selectedBranch;
+  String? _branchError;
   String? _headError;
   bool _submitting = false;
 
   bool get _isEdit => widget.entry != null;
 
+  /// Branch dropdown sirf naye expense pe; edit wali entry ki branch fixed.
+  bool get _showBranch => !_isEdit && widget.branchOptions != null;
+
   @override
   void initState() {
     super.initState();
+    for (final b in widget.branchOptions ?? const <ExpenseBranchOption>[]) {
+      if (b.id == widget.scope.id) _selectedBranch = b;
+    }
     final e = widget.entry;
     if (e != null) {
       _amountCtrl.text = _fmtAmt(e.amount);
@@ -196,6 +229,21 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (_showBranch) ...[
+                AppSearchDropdown<ExpenseBranchOption>(
+                  label: 'Branch',
+                  items: widget.branchOptions!,
+                  selectedItem: _selectedBranch,
+                  itemLabel: (b) => b.name,
+                  errorText: _branchError,
+                  isRequired: true,
+                  onChanged: (b) => setState(() {
+                    _selectedBranch = b;
+                    _branchError = null;
+                  }),
+                ),
+                const SizedBox(height: 12),
+              ],
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -276,10 +324,17 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
 
   Future<void> _submit() async {
     final formValid = _formKey.currentState!.validate();
-    setState(() => _headError = _selectedHead == null ? 'Select an expense head' : null);
-    if (!formValid || _selectedHead == null) return;
+    setState(() {
+      _headError = _selectedHead == null ? 'Select an expense head' : null;
+      _branchError =
+          _showBranch && _selectedBranch == null ? 'Select a branch' : null;
+    });
+    if (!formValid || _selectedHead == null || _branchError != null) return;
     setState(() => _submitting = true);
-    final notifier = ref.read(expenseProvider(widget.scope).notifier);
+    final target = _showBranch
+        ? ExpenseScope.branch(_selectedBranch!.id)
+        : widget.scope;
+    final notifier = ref.read(expenseProvider(target).notifier);
     final amount = double.parse(_amountCtrl.text);
     final note = _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim();
     final error = _isEdit
@@ -297,7 +352,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
     if (!mounted) return;
     setState(() => _submitting = false);
     if (error == null) {
-      Navigator.pop(context);
+      Navigator.pop(context, _showBranch ? target.id : null);
     }
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
