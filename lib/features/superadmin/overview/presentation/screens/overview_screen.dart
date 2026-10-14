@@ -185,12 +185,28 @@ class _Content extends StatelessWidget {
   }
 }
 
-/// Aaj ki sale har branch ki — fl_chart package se bar graph.
+final _chartCardDecoration = BoxDecoration(
+  color: Colors.white,
+  borderRadius: BorderRadius.circular(14),
+  boxShadow: [
+    BoxShadow(
+      color: Colors.black.withValues(alpha: 0.05),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+    ),
+  ],
+);
+
+/// Aaj ki sale har branch ki — Jan Ghani branch dashboard jaise green
+/// gradient bars.
 class _TodayBranchSaleChart extends StatelessWidget {
   final List<BranchSaleToday> rows;
   const _TodayBranchSaleChart({required this.rows});
 
-  static const _accent = Color(0xFF3E63DD);
+  static const _barTop = Color(0xFF3B9A5E);
+  static const _barBottom = Color(0xFF8ED4AA);
+  static const _axis = Color(0xFFD1D5DB);
+  static const _axisLabel = Color(0xFF9CA3AF);
 
   static String _pkrShort(double v) {
     if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
@@ -204,16 +220,13 @@ class _TodayBranchSaleChart extends StatelessWidget {
     final maxVal = rows.fold<double>(0, (a, r) => r.amount > a ? r.amount : a);
     // Return zyada ho to net sale minus mein ja sakti hai.
     final minVal = rows.fold<double>(0, (a, r) => r.amount < a ? r.amount : a);
-    final maxY = maxVal <= 0 ? 1.0 : maxVal * 1.2;
-    final minY = minVal < 0 ? minVal * 1.2 : 0.0;
+    final maxY = maxVal <= 0 ? 1.0 : maxVal;
+    final minY = minVal < 0 ? minVal : 0.0;
+    final interval = (maxY - minY) / 4;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: _chartCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -222,7 +235,11 @@ class _TodayBranchSaleChart extends StatelessWidget {
               const Expanded(
                 child: Text(
                   "Today's Sale — All Branches",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1A1D23),
+                  ),
                 ),
               ),
               Text(
@@ -242,13 +259,13 @@ class _TodayBranchSaleChart extends StatelessWidget {
               child: Center(
                 child: Text(
                   'No branches',
-                  style: TextStyle(color: Color(0xFF8A8FA3)),
+                  style: TextStyle(color: _axisLabel),
                 ),
               ),
             )
           else
             SizedBox(
-              height: 220,
+              height: 200,
               child: BarChart(
                 BarChartData(
                   minY: minY,
@@ -257,11 +274,17 @@ class _TodayBranchSaleChart extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    horizontalInterval: (maxY - minY) / 3,
+                    horizontalInterval: interval,
                     getDrawingHorizontalLine: (_) =>
-                        const FlLine(color: Color(0xFFEDEFF5), strokeWidth: 1),
+                        const FlLine(color: Color(0xFFEEEEEE), strokeWidth: 0.8),
                   ),
-                  borderData: FlBorderData(show: false),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: const Border(
+                      left: BorderSide(color: _axis),
+                      bottom: BorderSide(color: _axis),
+                    ),
+                  ),
                   titlesData: FlTitlesData(
                     topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
@@ -272,13 +295,13 @@ class _TodayBranchSaleChart extends StatelessWidget {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 44,
-                        interval: (maxY - minY) / 3,
+                        reservedSize: 40,
+                        interval: interval,
                         getTitlesWidget: (value, meta) => Text(
                           _pkrShort(value),
                           style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF8A8FA3),
+                            fontSize: 9,
+                            color: _axisLabel,
                           ),
                         ),
                       ),
@@ -286,21 +309,21 @@ class _TodayBranchSaleChart extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 30,
+                        reservedSize: 28,
                         getTitlesWidget: (value, meta) {
                           final i = value.round();
                           if (i < 0 || i >= rows.length) {
                             return const SizedBox.shrink();
                           }
                           return Padding(
-                            padding: const EdgeInsets.only(top: 6),
+                            padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               rows[i].branchName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 10,
-                                color: Color(0xFF8A8FA3),
+                                color: Color(0xFF6B7280),
                               ),
                             ),
                           );
@@ -310,6 +333,10 @@ class _TodayBranchSaleChart extends StatelessWidget {
                   ),
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => const Color(0xFF1F2333),
+                      tooltipRoundedRadius: 8,
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final r = rows[group.x];
                         return BarTooltipItem(
@@ -333,11 +360,16 @@ class _TodayBranchSaleChart extends StatelessWidget {
                             toY: rows[i].amount,
                             color: rows[i].amount < 0
                                 ? const Color(0xFFC62828)
-                                : _accent,
+                                : null,
+                            gradient: rows[i].amount < 0
+                                ? null
+                                : const LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [_barTop, _barBottom],
+                                  ),
                             width: 22,
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(6),
-                            ),
+                            borderRadius: BorderRadius.circular(4),
                           ),
                         ],
                       ),
@@ -359,18 +391,19 @@ class _TopArticleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = article;
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-      ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: _chartCardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'Top Selling Article',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1A1D23),
+            ),
           ),
           const SizedBox(height: 14),
           if (a == null)
