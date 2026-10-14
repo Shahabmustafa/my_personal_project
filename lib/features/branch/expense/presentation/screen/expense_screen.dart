@@ -18,7 +18,14 @@ class ExpenseScreen extends ConsumerStatefulWidget {
   /// Header ke neeche dikhne wala widget (superadmin ka branch picker).
   final Widget? scopePicker;
 
-  const ExpenseScreen({super.key, this.scope, this.scopePicker});
+  final String title;
+
+  const ExpenseScreen({
+    super.key,
+    this.scope,
+    this.scopePicker,
+    this.title = 'Expense',
+  });
 
   @override
   ConsumerState<ExpenseScreen> createState() => _ExpenseScreenState();
@@ -47,8 +54,8 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Expense',
-                          style: TextStyle(
+                      Text(widget.title,
+                          style: const TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold)),
                       Text(
                           '${state.entries.length} entr${state.entries.length == 1 ? 'y' : 'ies'} · Total Rs. ${_fmtAmt(state.totalExpense)}',

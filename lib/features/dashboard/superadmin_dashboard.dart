@@ -102,7 +102,16 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SidebarItem(icon: AppIcons.storefrontOutlined, label: 'Company'),
     SidebarItem(
         icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
-    SidebarItem(icon: AppIcons.receiptLongOutlined, label: 'Expense'),
+    SidebarItem(
+      icon: AppIcons.businessOutlined,
+      label: 'Head Office Expense',
+      group: 'Expense',
+    ),
+    SidebarItem(
+      icon: AppIcons.apartmentOutlined,
+      label: 'Branch Expense',
+      group: 'Expense',
+    ),
     SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
     SidebarItem(
       icon: AppIcons.localShippingOutlined,
@@ -217,8 +226,10 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     // koi warehouse choose karne ki zaroorat nahi.
     CompaniesScreen(),
     HeadOfficeCashCounterScreen(),
-    // Head office ka apna expense, ya kisi bhi branch ka expense.
-    SuperadminExpenseScreen(),
+    // Head office ka apna expense.
+    HeadOfficeExpenseScreen(),
+    // Admin kisi bhi branch ka expense add/edit kar sakta hai.
+    BranchExpenseScreen(),
     // Branches ne Head Office ko jo amount pay ki — accept/reject + report.
     BranchPaymentsScreen(),
     // Head office se branch ko stock assign — assigned_by = head office id.
