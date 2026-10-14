@@ -76,9 +76,7 @@ class BranchOverviewScreen extends ConsumerWidget {
                   children: [
                     _CardGrid(data: data),
                     const SizedBox(height: 20),
-                    _WeeklySaleChart(rows: data.weeklySale),
-                    const SizedBox(height: 20),
-                    _TopArticlesCard(rows: data.topArticles),
+                    _ChartsRow(data: data),
                   ],
                 ),
               ),
@@ -248,31 +246,6 @@ String _fmtAmt(double v) {
 
 // ── Shared card shell ─────────────────────────────────────────────────────
 
-class _PanelCard extends StatelessWidget {
-  final Widget child;
-  const _PanelCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
 String _pkrShort(double v) {
   if (v < 0) return '-${_pkrShort(-v)}';
   if (v >= 1000000) return '${(v / 1000000).toStringAsFixed(1)}M';
@@ -280,367 +253,235 @@ String _pkrShort(double v) {
   return v.toStringAsFixed(0);
 }
 
-// ── Weekly sale line graph — last 7 days ───────────────────────────────────
+// ── Charts row — Jan Ghani branch dashboard jaisa style ────────────────────
+// Desktop pe dono charts side-by-side, mobile pe ek ke neeche ek.
 
-class _WeeklySaleChart extends StatelessWidget {
-  final List<DaySale> rows;
-  const _WeeklySaleChart({required this.rows});
+const _kTitle = Color(0xFF1A1D23);
+const _kAxisLabel = Color(0xFF9CA3AF);
+const _kXLabel = Color(0xFF6B7280);
+const _kGrid = Color(0xFFEEEEEE);
+const _kAxis = Color(0xFFD1D5DB);
+const _kBarTop = Color(0xFF3B9A5E);
+const _kBarBottom = Color(0xFF8ED4AA);
+const _kLine = Color(0xFF38BDF8);
+const _kNegative = Color(0xFFC62828);
+const _kWeekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const _kMonth = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
-  static const _accent = Color(0xFF3E63DD);
-  static const _muted = Color(0xFF8A8FA3);
-  static const _negative = Color(0xFFC62828);
-  static const _weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  static const _month = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+String _dayMonth(DateTime d) => '${d.day} ${_kMonth[d.month - 1]}';
 
-  static String _dayMonth(DateTime d) => '${d.day} ${_month[d.month - 1]}';
+class _ChartsRow extends StatelessWidget {
+  final BranchOverviewData data;
+  const _ChartsRow({required this.data});
 
   @override
   Widget build(BuildContext context) {
-    final total = rows.fold<double>(0, (s, r) => s + r.amount);
-    final avg = rows.isEmpty ? 0.0 : total / rows.length;
-    DaySale? best;
-    for (final r in rows) {
-      if (best == null || r.amount > best.amount) best = r;
-    }
+    final weekly = _WeeklySaleChart(rows: data.weeklySale);
+    final top = _TopArticlesChart(rows: data.topArticles);
+    return LayoutBuilder(builder: (context, constraints) {
+      if (constraints.maxWidth < 700) {
+        return Column(children: [weekly, const SizedBox(height: 16), top]);
+      }
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(child: weekly),
+          const SizedBox(width: 12),
+          Expanded(child: top),
+        ],
+      );
+    });
+  }
+}
 
-    final maxVal = rows.fold<double>(0, (a, r) => r.amount > a ? r.amount : a);
-    // Return zyada ho to kisi din ki net sale minus mein ja sakti hai.
-    final minVal = rows.fold<double>(0, (a, r) => r.amount < a ? r.amount : a);
-    final maxY = maxVal <= 0 ? 1.0 : maxVal * 1.2;
-    final minY = minVal < 0 ? minVal * 1.2 : 0.0;
-    final interval = (maxY - minY) / 4;
-    final lastIndex = rows.length - 1;
+class _ChartCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+  const _ChartCard({required this.title, required this.child});
 
-    return _PanelCard(
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: _accent.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.show_chart_rounded,
-                  size: 18,
-                  color: _accent,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Weekly Sale',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      rows.isEmpty
-                          ? 'Last 7 days'
-                          : '${_dayMonth(rows.first.day)} – ${_dayMonth(rows.last.day)} · net of returns',
-                      style: const TextStyle(fontSize: 11, color: _muted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _StatChip(
-                label: 'Total',
-                value: 'Rs. ${_pkrShort(total)}',
-                color: total < 0 ? _negative : const Color(0xFF2E7D32),
-              ),
-              _StatChip(
-                label: 'Avg / day',
-                value: 'Rs. ${_pkrShort(avg)}',
-                color: _accent,
-              ),
-              if (best != null && best.amount > 0)
-                _StatChip(
-                  label: 'Best',
-                  value:
-                      '${_weekday[best.day.weekday - 1]} · Rs. ${_pkrShort(best.amount)}',
-                  color: const Color(0xFFE08A00),
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          if (rows.isEmpty)
-            const SizedBox(
-              height: 160,
-              child: Center(
-                child: Text('Data nahi', style: TextStyle(color: _muted)),
-              ),
-            )
-          else
-            SizedBox(
-              height: 220,
-              child: LineChart(
-                LineChartData(
-                  minY: minY,
-                  maxY: maxY,
-                  minX: -0.2,
-                  maxX: lastIndex + 0.2,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: interval,
-                    getDrawingHorizontalLine: (_) => const FlLine(
-                      color: Color(0xFFEDEFF5),
-                      strokeWidth: 1,
-                      dashArray: [4, 4],
-                    ),
-                  ),
-                  // Net sale minus ho to zero ki line wazeh dikhe.
-                  extraLinesData: ExtraLinesData(
-                    horizontalLines: [
-                      if (minY < 0)
-                        HorizontalLine(
-                          y: 0,
-                          color: const Color(0xFFB0B5C5),
-                          strokeWidth: 1,
-                        ),
-                    ],
-                  ),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        interval: interval,
-                        getTitlesWidget: (value, meta) {
-                          if (value == meta.max) {
-                            return const SizedBox.shrink();
-                          }
-                          return Text(
-                            _pkrShort(value),
-                            style: const TextStyle(fontSize: 10, color: _muted),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 34,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final i = value.round();
-                          if (i < 0 || i > lastIndex || value != i) {
-                            return const SizedBox.shrink();
-                          }
-                          final isToday = i == lastIndex;
-                          final color = isToday ? _accent : _muted;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  isToday
-                                      ? 'Today'
-                                      : _weekday[rows[i].day.weekday - 1],
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: color,
-                                    fontWeight: isToday
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  '${rows[i].day.day}',
-                                  style: TextStyle(fontSize: 9, color: color),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  lineTouchData: LineTouchData(
-                    handleBuiltInTouches: true,
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => const Color(0xFF1F2333),
-                      tooltipRoundedRadius: 8,
-                      tooltipPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      fitInsideHorizontally: true,
-                      fitInsideVertically: true,
-                      getTooltipItems: (spots) => spots.map((spot) {
-                        final i = spot.x.round();
-                        final d = rows[i].day;
-                        return LineTooltipItem(
-                          '${_weekday[d.weekday - 1]}, ${_dayMonth(d)}\n',
-                          const TextStyle(
-                            color: Color(0xFFB8BDD0),
-                            fontSize: 10,
-                          ),
-                          children: [
-                            TextSpan(
-                              text: 'Rs. ${_fmtAmt(spot.y)}',
-                              style: TextStyle(
-                                color: spot.y < 0
-                                    ? const Color(0xFFFF8A80)
-                                    : Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                    ),
-                    getTouchedSpotIndicator: (barData, indexes) => indexes
-                        .map(
-                          (_) => TouchedSpotIndicatorData(
-                            FlLine(
-                              color: _accent.withValues(alpha: 0.35),
-                              strokeWidth: 1.5,
-                              dashArray: [4, 3],
-                            ),
-                            FlDotData(
-                              getDotPainter: (spot, percent, bar, index) =>
-                                  FlDotCirclePainter(
-                                    radius: 6,
-                                    color: _accent,
-                                    strokeWidth: 3,
-                                    strokeColor: Colors.white,
-                                  ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: [
-                        for (var i = 0; i < rows.length; i++)
-                          FlSpot(i.toDouble(), rows[i].amount),
-                      ],
-                      isCurved: true,
-                      curveSmoothness: 0.35,
-                      preventCurveOverShooting: true,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7C9BFF), _accent],
-                      ),
-                      barWidth: 3.5,
-                      isStrokeCapRound: true,
-                      shadow: Shadow(
-                        color: _accent.withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, bar, index) {
-                          final isToday = index == lastIndex;
-                          final dotColor = spot.y < 0 ? _negative : _accent;
-                          return FlDotCirclePainter(
-                            radius: isToday ? 5.5 : 3.5,
-                            color: isToday ? dotColor : Colors.white,
-                            strokeWidth: isToday ? 3 : 2,
-                            strokeColor: isToday ? Colors.white : dotColor,
-                          );
-                        },
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        cutOffY: 0,
-                        applyCutOffY: true,
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            _accent.withValues(alpha: 0.25),
-                            _accent.withValues(alpha: 0.02),
-                          ],
-                        ),
-                      ),
-                      aboveBarData: BarAreaData(
-                        show: minY < 0,
-                        cutOffY: 0,
-                        applyCutOffY: true,
-                        color: _negative.withValues(alpha: 0.12),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: _kTitle,
             ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(height: 200, child: child),
         ],
       ),
     );
   }
 }
 
-class _StatChip extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _StatChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+const _kEmpty = Center(
+  child: Text('Data nahi', style: TextStyle(color: _kAxisLabel)),
+);
+
+FlBorderData _axisBorder() => FlBorderData(
+      show: true,
+      border: const Border(
+        left: BorderSide(color: _kAxis),
+        bottom: BorderSide(color: _kAxis),
+      ),
+    );
+
+FlGridData _grid(double interval) => FlGridData(
+      show: true,
+      drawVerticalLine: false,
+      horizontalInterval: interval,
+      getDrawingHorizontalLine: (_) =>
+          const FlLine(color: _kGrid, strokeWidth: 0.8),
+    );
+
+SideTitles _leftTitles(double interval, String Function(double) fmt) =>
+    SideTitles(
+      showTitles: true,
+      reservedSize: 36,
+      interval: interval,
+      getTitlesWidget: (value, meta) => Text(
+        fmt(value),
+        style: const TextStyle(fontSize: 9, color: _kAxisLabel),
+      ),
+    );
+
+const _noTitles = AxisTitles(sideTitles: SideTitles(showTitles: false));
+
+// ── Last week sale — green gradient bars ───────────────────────────────────
+
+class _WeeklySaleChart extends StatelessWidget {
+  final List<DaySale> rows;
+  const _WeeklySaleChart({required this.rows});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: RichText(
-        text: TextSpan(
-          style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3)),
-          children: [
-            TextSpan(text: '$label  '),
-            TextSpan(
-              text: value,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
+    if (rows.isEmpty) {
+      return const _ChartCard(title: 'Last Week Sales', child: _kEmpty);
+    }
+
+    final maxVal = rows.fold<double>(0, (a, r) => r.amount > a ? r.amount : a);
+    // Return zyada ho to kisi din ki net sale minus mein ja sakti hai.
+    final minVal = rows.fold<double>(0, (a, r) => r.amount < a ? r.amount : a);
+    final maxY = maxVal <= 0 ? 1.0 : maxVal;
+    final minY = minVal < 0 ? minVal : 0.0;
+    final interval = (maxY - minY) / 4;
+    final lastIndex = rows.length - 1;
+
+    return _ChartCard(
+      title: 'Last Week Sales',
+      child: BarChart(
+        BarChartData(
+          minY: minY,
+          maxY: maxY,
+          alignment: BarChartAlignment.spaceAround,
+          gridData: _grid(interval),
+          borderData: _axisBorder(),
+          titlesData: FlTitlesData(
+            topTitles: _noTitles,
+            rightTitles: _noTitles,
+            leftTitles: AxisTitles(
+              sideTitles: _leftTitles(interval, _pkrShort),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                getTitlesWidget: (value, meta) {
+                  final i = value.round();
+                  if (i < 0 || i > lastIndex) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      i == lastIndex
+                          ? 'Today'
+                          : _kWeekday[rows[i].day.weekday - 1],
+                      style: const TextStyle(fontSize: 10, color: _kXLabel),
+                    ),
+                  );
+                },
               ),
             ),
+          ),
+          barTouchData: BarTouchData(
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (_) => const Color(0xFF1F2333),
+              tooltipRoundedRadius: 8,
+              fitInsideHorizontally: true,
+              fitInsideVertically: true,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                final d = rows[group.x].day;
+                return BarTooltipItem(
+                  '${_kWeekday[d.weekday - 1]}, ${_dayMonth(d)}\n',
+                  const TextStyle(color: Color(0xFFB8BDD0), fontSize: 10),
+                  children: [
+                    TextSpan(
+                      text: 'Rs. ${_fmtAmt(rod.toY)}',
+                      style: TextStyle(
+                        color: rod.toY < 0
+                            ? const Color(0xFFFF8A80)
+                            : Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          barGroups: [
+            for (var i = 0; i < rows.length; i++)
+              BarChartGroupData(
+                x: i,
+                barRods: [
+                  BarChartRodData(
+                    toY: rows[i].amount,
+                    width: 22,
+                    borderRadius: BorderRadius.circular(4),
+                    color: rows[i].amount < 0 ? _kNegative : null,
+                    gradient: rows[i].amount < 0
+                        ? null
+                        : const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [_kBarTop, _kBarBottom],
+                          ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
@@ -648,143 +489,115 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ── Top 10 articles sold (branch) — vertical bar chart ──────────────────────
+// ── Top articles — smooth line with soft fill ──────────────────────────────
 
-class _TopArticlesCard extends StatelessWidget {
+class _TopArticlesChart extends StatelessWidget {
   final List<TopArticle> rows;
-  const _TopArticlesCard({required this.rows});
-
-  static const _accent = Color(0xFF3E63DD);
+  const _TopArticlesChart({required this.rows});
 
   @override
   Widget build(BuildContext context) {
-    final maxQty = rows.fold<int>(0, (a, r) => r.quantity > a ? r.quantity : a);
-    final maxY = maxQty <= 0 ? 1.0 : maxQty * 1.2;
+    const title = 'Top Articles — Sales Trend';
+    if (rows.length < 2) {
+      return const _ChartCard(title: title, child: _kEmpty);
+    }
 
-    return _PanelCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Top 10 Articles Sold',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Sab se zyada bikne wale articles',
-            style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
-          ),
-          const SizedBox(height: 16),
-          if (rows.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(
-                child: Text('Data nahi',
-                    style: TextStyle(color: Color(0xFF8A8FA3))),
-              ),
-            )
-          else
-            SizedBox(
-              height: 280,
-              child: BarChart(
-                BarChartData(
-                  minY: 0,
-                  maxY: maxY,
-                  alignment: BarChartAlignment.spaceAround,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: maxY / 4,
-                    getDrawingHorizontalLine: (_) =>
-                        const FlLine(color: Color(0xFFEDEFF5), strokeWidth: 1),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
+    final maxQty = rows.fold<int>(0, (a, r) => r.quantity > a ? r.quantity : a);
+    final maxY = maxQty <= 0 ? 1.0 : maxQty.toDouble();
+    final interval = maxY / 4;
+    final lastIndex = rows.length - 1;
+
+    return _ChartCard(
+      title: title,
+      child: LineChart(
+        LineChartData(
+          minY: 0,
+          maxY: maxY,
+          minX: 0,
+          maxX: lastIndex.toDouble(),
+          gridData: _grid(interval),
+          borderData: _axisBorder(),
+          titlesData: FlTitlesData(
+            topTitles: _noTitles,
+            rightTitles: _noTitles,
+            leftTitles: AxisTitles(
+              sideTitles: _leftTitles(interval, (v) => v.round().toString()),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 28,
+                interval: 1,
+                getTitlesWidget: (value, meta) {
+                  final i = value.round();
+                  if (i < 0 || i > lastIndex || value != i) {
+                    return const SizedBox.shrink();
+                  }
+                  final name = rows[i].articleName.split(' ').first;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      name.length > 8 ? '${name.substring(0, 8)}…' : name,
+                      style: const TextStyle(fontSize: 9, color: _kXLabel),
                     ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        interval: maxY / 4,
-                        getTitlesWidget: (value, meta) => Text(
-                          value.round().toString(),
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: Color(0xFF8A8FA3),
-                          ),
-                        ),
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 64,
-                        getTitlesWidget: (value, meta) {
-                          final i = value.round();
-                          if (i < 0 || i >= rows.length) {
-                            return const SizedBox.shrink();
-                          }
-                          final name = rows[i].articleName;
-                          final label = name.length > 10
-                              ? '${name.substring(0, 10)}…'
-                              : name;
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Transform.rotate(
-                              angle: -0.6,
-                              alignment: Alignment.topRight,
-                              child: Text(
-                                label,
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  color: Color(0xFF8A8FA3),
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        final article = rows[group.x.toInt()];
-                        return BarTooltipItem(
-                          '${article.articleName}\n${article.quantity} pcs\nRs. ${_pkrShort(article.amount)}',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  barGroups: [
-                    for (var i = 0; i < rows.length; i++)
-                      BarChartGroupData(
-                        x: i,
-                        barRods: [
-                          BarChartRodData(
-                            toY: rows[i].quantity.toDouble(),
-                            color: _accent,
-                            width: 16,
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(4)),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
-        ],
+          ),
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (_) => const Color(0xFF1F2333),
+              tooltipRoundedRadius: 8,
+              fitInsideHorizontally: true,
+              fitInsideVertically: true,
+              getTooltipItems: (spots) => spots.map((spot) {
+                final a = rows[spot.x.round()];
+                return LineTooltipItem(
+                  '${a.articleName}\n',
+                  const TextStyle(color: Color(0xFFB8BDD0), fontSize: 10),
+                  children: [
+                    TextSpan(
+                      text: '${a.quantity} pcs · Rs. ${_pkrShort(a.amount)}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: [
+                for (var i = 0; i < rows.length; i++)
+                  FlSpot(i.toDouble(), rows[i].quantity.toDouble()),
+              ],
+              isCurved: true,
+              preventCurveOverShooting: true,
+              color: _kLine,
+              barWidth: 2.2,
+              isStrokeCapRound: true,
+              dotData: FlDotData(
+                show: true,
+                getDotPainter: (spot, percent, bar, index) =>
+                    FlDotCirclePainter(
+                  radius: 3.5,
+                  color: _kLine,
+                  strokeWidth: 1.5,
+                  strokeColor: Colors.white,
+                ),
+              ),
+              belowBarData: BarAreaData(
+                show: true,
+                color: _kLine.withValues(alpha: 0.12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
