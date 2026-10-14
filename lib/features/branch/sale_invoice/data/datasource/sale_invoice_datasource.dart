@@ -122,6 +122,7 @@ class SaleInvoiceDatasource {
 
     final invoice = SaleInvoiceModel.fromJson(invoiceRes as Map<String, dynamic>);
 
+    final hasB1g1 = cartItems.any((i) => i.isB1g1);
     final itemsPayload = cartItems
         .map((item) => {
               'sale_invoice_id': invoice.id,
@@ -138,8 +139,15 @@ class SaleInvoiceDatasource {
               'sale_price': item.salePrice,
               'purchase_price': item.purchasePrice,
               'discount_pct': item.discountPct,
-              'discount': item.discountAmount * item.quantity,
+              'discount': item.discountAmount * item.quantity + item.b1g1Discount,
               'total_price': item.lineTotal,
+              // B1G1 columns sirf tab bhejte hain jab invoice mein offer laga
+              // ho (bulk insert mein sab rows ke keys ek jaise hone chahiye).
+              if (hasB1g1) ...{
+                'is_b1g1': item.isB1g1,
+                'b1g1_free_qty': item.b1g1FreeQty,
+                'b1g1_offer_id': item.b1g1OfferId,
+              },
             })
         .toList();
 

@@ -388,6 +388,10 @@ class ReturnCartItem {
   final double purchasePrice;
   final double discountPct;
 
+  /// Buy 1 Get 1 offer mein bika — return/exchange nahi ho sakta
+  /// (maxQuantity 0 rehta hai).
+  final bool isB1g1;
+
   const ReturnCartItem({
     required this.originalItemId,
     required this.branchStockId,
@@ -410,9 +414,10 @@ class ReturnCartItem {
     required this.salePrice,
     required this.purchasePrice,
     required this.discountPct,
+    this.isB1g1 = false,
   }) : soldQuantity = soldQuantity ?? maxQuantity;
 
-  int get alreadyReturned => soldQuantity - maxQuantity;
+  int get alreadyReturned => isB1g1 ? 0 : soldQuantity - maxQuantity;
 
   double get discountAmount => salePrice * discountPct / 100;
   double get netPrice => salePrice - discountAmount;
@@ -441,6 +446,7 @@ class ReturnCartItem {
       salePrice: salePrice,
       purchasePrice: purchasePrice,
       discountPct: discountPct,
+      isB1g1: isB1g1,
     );
   }
 }

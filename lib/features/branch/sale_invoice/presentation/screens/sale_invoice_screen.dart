@@ -487,7 +487,8 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
     final theme = Theme.of(context);
     final maxDiscountPct =
         ref.watch(currentBranchMaxInvoiceDiscountPctProvider).value ?? 0;
-    final allowDiscount = maxDiscountPct > 0;
+    // B1G1 lagi invoice par koi aur discount nahi.
+    final allowDiscount = maxDiscountPct > 0 && !state.b1g1Applied;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -502,9 +503,17 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
           const SizedBox(width: 28),
           _stat(
             'Discount',
-            '- ${state.totalDiscount.toStringAsFixed(0)}',
+            '- ${state.itemDiscount.toStringAsFixed(0)}',
             color: Colors.orange.shade700,
           ),
+          if (state.b1g1Applied) ...[
+            const SizedBox(width: 28),
+            _stat(
+              'Buy 1 Get 1 Free',
+              '- ${state.b1g1Discount.toStringAsFixed(0)}',
+              color: Colors.green.shade700,
+            ),
+          ],
           if (state.autoDiscount > 0) ...[
             const SizedBox(width: 28),
             _stat(

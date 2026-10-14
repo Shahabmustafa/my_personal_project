@@ -12,6 +12,7 @@ import '../superadmin/branch/presentation/screens/branches_screen.dart';
 import '../superadmin/branch_target/presentation/screens/branch_target_screen.dart';
 import '../superadmin/discount/presentation/screens/branch_invoice_discount_screen.dart';
 import '../superadmin/discount/presentation/screens/sale_discount_tiers_screen.dart';
+import '../superadmin/discount/presentation/screens/b1g1_offers_screen.dart';
 import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/head_office_cash_counter/presentation/screens/head_office_cash_counter_screen.dart';
 import '../superadmin/expense/presentation/screens/superadmin_expense_screen.dart';
@@ -149,6 +150,11 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Discount',
     ),
     SidebarItem(
+      icon: AppIcons.sellOutlined,
+      label: 'Buy 1 Get 1',
+      group: 'Discount',
+    ),
+    SidebarItem(
       icon: AppIcons.flagOutlined,
       label: 'Branch Target',
       group: 'Target',
@@ -244,6 +250,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     IncomingSaleClaimsScreen(),
     BranchInvoiceDiscountScreen(),
     SaleDiscountTiersScreen(),
+    B1g1OffersScreen(),
     BranchTargetScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),

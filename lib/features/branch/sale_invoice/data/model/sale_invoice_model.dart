@@ -207,6 +207,12 @@ class SaleInvoiceItemModel {
   final double discount;
   final double totalPrice;
 
+  /// Buy 1 Get 1 offer wali line — return/exchange nahi ho sakti.
+  final bool isB1g1;
+
+  /// Is line ke kitne units B1G1 mein free gaye.
+  final int b1g1FreeQty;
+
   final String? productName;
   final String? sizeName;
   final String? colorName;
@@ -231,6 +237,8 @@ class SaleInvoiceItemModel {
     required this.discountPct,
     required this.discount,
     required this.totalPrice,
+    this.isB1g1 = false,
+    this.b1g1FreeQty = 0,
     this.productName,
     this.sizeName,
     this.colorName,
@@ -263,6 +271,8 @@ class SaleInvoiceItemModel {
       discountPct: _toDouble(json['discount_pct']),
       discount: _toDouble(json['discount']),
       totalPrice: _toDouble(json['total_price']),
+      isB1g1: json['is_b1g1'] as bool? ?? false,
+      b1g1FreeQty: (json['b1g1_free_qty'] as num? ?? 0).toInt(),
       productName: (json['products'] as Map<String, dynamic>?)?['article_name'] as String?,
       sizeName: (json['sizes'] as Map<String, dynamic>?)?['number'] as String?,
       colorName: (json['colors'] as Map<String, dynamic>?)?['name'] as String?,
@@ -295,6 +305,11 @@ class SaleCartItem {
   final double purchasePrice;
   double discountPct;
 
+  /// Buy 1 Get 1 — kis offer mein hai (null = offer nahi laga) aur is line
+  /// ke kitne units free hain. Provider cart badalte hi dobara nikalta hai.
+  final String? b1g1OfferId;
+  final int b1g1FreeQty;
+
   SaleCartItem({
     required this.branchStockId,
     required this.barcode,
@@ -315,16 +330,25 @@ class SaleCartItem {
     required this.salePrice,
     required this.purchasePrice,
     required this.discountPct,
+    this.b1g1OfferId,
+    this.b1g1FreeQty = 0,
   });
 
+  bool get isB1g1 => b1g1OfferId != null;
   double get discountAmount => salePrice * discountPct / 100;
   double get netPrice => salePrice - discountAmount;
-  double get lineTotal => netPrice * quantity;
+
+  /// Free units ki qeemat (poori sale price).
+  double get b1g1Discount => b1g1FreeQty * salePrice;
+  double get lineTotal => netPrice * quantity - b1g1Discount;
 
   SaleCartItem copyWith({
     int? quantity,
     double? salePrice,
     double? discountPct,
+    String? b1g1OfferId,
+    bool clearB1g1 = false,
+    int? b1g1FreeQty,
   }) {
     return SaleCartItem(
       branchStockId: branchStockId,
@@ -346,6 +370,8 @@ class SaleCartItem {
       salePrice: salePrice ?? this.salePrice,
       purchasePrice: purchasePrice,
       discountPct: discountPct ?? this.discountPct,
+      b1g1OfferId: clearB1g1 ? null : b1g1OfferId ?? this.b1g1OfferId,
+      b1g1FreeQty: clearB1g1 ? 0 : b1g1FreeQty ?? this.b1g1FreeQty,
     );
   }
 }

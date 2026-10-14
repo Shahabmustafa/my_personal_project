@@ -46,7 +46,9 @@ class ThermalPrintService {
       salesmanName: invoice.salesmanName,
       lines: invoice.items
           .map((i) => _ReceiptLine(
-                name: i.productName ?? '-',
+                name: i.b1g1FreeQty > 0
+                    ? '${i.productName ?? '-'} (Buy 1 Get 1: ${i.b1g1FreeQty} free)'
+                    : i.productName ?? '-',
                 sizeName: i.sizeName,
                 colorName: i.colorName,
                 quantity: i.quantity,

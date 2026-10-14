@@ -266,13 +266,16 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
                 categoryName: i.categoryName ?? '',
                 typeId: i.typeId ?? '',
                 typeName: i.typeName ?? '',
-                maxQuantity: (i.quantity - (returned[i.id] ?? 0))
+                maxQuantity: i.isB1g1
+                    ? 0
+                    : (i.quantity - (returned[i.id] ?? 0))
                     .clamp(0, i.quantity),
                 soldQuantity: i.quantity,
                 quantity: 0,
                 salePrice: i.salePrice,
                 purchasePrice: i.purchasePrice,
                 discountPct: i.discountPct,
+                isB1g1: i.isB1g1,
               ))
           .toList();
 

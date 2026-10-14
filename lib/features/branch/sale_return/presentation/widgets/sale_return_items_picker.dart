@@ -86,9 +86,11 @@ class _ReturnItemRow extends ConsumerWidget {
           Expanded(
             flex: 2,
             child: Text(
-                item.alreadyReturned > 0
-                    ? 'Sold: ${item.soldQuantity} · Left: ${item.maxQuantity}'
-                    : 'Sold: ${item.soldQuantity}',
+                item.isB1g1
+                    ? 'Buy 1 Get 1 — return nahi'
+                    : item.alreadyReturned > 0
+                        ? 'Sold: ${item.soldQuantity} · Left: ${item.maxQuantity}'
+                        : 'Sold: ${item.soldQuantity}',
                 style: TextStyle(
                     fontSize: 12,
                     color: item.maxQuantity == 0

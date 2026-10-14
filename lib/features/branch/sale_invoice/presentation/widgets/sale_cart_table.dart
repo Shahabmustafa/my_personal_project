@@ -110,7 +110,21 @@ class _CartRow extends ConsumerWidget {
         children: [
           _c('${index + 1}', flex: 1, style: const TextStyle(fontSize: 11, color: Colors.grey)),
           _c(item.barcode, flex: 3, style: const TextStyle(fontSize: 11, fontFamily: 'monospace')),
-          _c(item.productName, flex: 3),
+          Expanded(
+            flex: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.productName,
+                      style: const TextStyle(fontSize: 12),
+                      overflow: TextOverflow.ellipsis),
+                  if (item.b1g1FreeQty > 0) _B1g1Badge(freeQty: item.b1g1FreeQty),
+                ],
+              ),
+            ),
+          ),
           _c(item.sizeName, flex: 1),
           _c(item.colorName, flex: 2),
           _c(item.categoryName, flex: 2),
@@ -274,6 +288,7 @@ class _MobileList extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text('${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
+                if (item.b1g1FreeQty > 0) _B1g1Badge(freeQty: item.b1g1FreeQty),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -312,4 +327,27 @@ class _MobileList extends ConsumerWidget {
           ],
         ),
       );
+}
+
+/// Cart line par "Buy 1 Get 1 · N free" ka chhota label.
+class _B1g1Badge extends StatelessWidget {
+  final int freeQty;
+  const _B1g1Badge({required this.freeQty});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE6F4EC),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text('Buy 1 Get 1 · $freeQty free',
+          style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF2E7D32))),
+    );
+  }
 }
