@@ -10,6 +10,7 @@
 --   * B1G1 lagi invoice par koi aur discount (tier / extra %) nahi lagta.
 --   * Offer wale items (paid + free dono) return/exchange nahi ho sakte —
 --     sale_invoice_items.is_b1g1 se pehchane jate hain.
+-- STATUS (2026-10-14): applied to LIVE database.
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.b1g1_offers (
