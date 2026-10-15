@@ -552,7 +552,11 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           : quantity;
       return i.copyWith(quantity: capped);
     }).toList();
+    final before = state.cartItems
+        .where((c) => c.branchStockId == branchStockId)
+        .fold(0, (sum, c) => sum + c.quantity);
     _setCart(updated);
+    if (quantity > before) _addB1g1FreeUnit(branchStockId);
   }
 
   void removeItem(String branchStockId) {

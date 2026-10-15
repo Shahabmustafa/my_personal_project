@@ -50,6 +50,7 @@ class _DesktopTable extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final primary = Theme.of(context).colorScheme.primary;
+    final rows = _cartRows(items);
 
     return Column(
       children: [
@@ -74,8 +75,9 @@ class _DesktopTable extends ConsumerWidget {
         ),
         Expanded(
           child: ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (_, i) => _CartRow(item: items[i], index: i),
+            itemCount: rows.length,
+            itemBuilder: (_, i) =>
+                _CartRow(item: rows[i].item, free: rows[i].free, index: i),
           ),
         ),
         _Footer(items: items),
@@ -96,8 +98,9 @@ class _DesktopTable extends ConsumerWidget {
 
 class _CartRow extends ConsumerWidget {
   final SaleCartItem item;
+  final bool free;
   final int index;
-  const _CartRow({required this.item, required this.index});
+  const _CartRow({required this.item, required this.free, required this.index});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -105,7 +108,11 @@ class _CartRow extends ConsumerWidget {
     final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
-      color: index.isEven ? Colors.grey.shade50 : Colors.white,
+      color: free
+          ? const Color(0xFFF1F8F4)
+          : index.isEven
+              ? Colors.grey.shade50
+              : Colors.white,
       child: Row(
         children: [
           _c('${index + 1}', flex: 1, style: const TextStyle(fontSize: 11, color: Colors.grey)),
@@ -120,7 +127,7 @@ class _CartRow extends ConsumerWidget {
                   Text(item.productName,
                       style: const TextStyle(fontSize: 12),
                       overflow: TextOverflow.ellipsis),
-                  if (item.b1g1FreeQty > 0) _B1g1Badge(freeQty: item.b1g1FreeQty),
+                  if (free) const _B1g1Badge(),
                 ],
               ),
             ),
@@ -128,7 +135,14 @@ class _CartRow extends ConsumerWidget {
           _c(item.sizeName, flex: 1),
           _c(item.colorName, flex: 2),
           _c(item.categoryName, flex: 2),
-          _c(item.salePrice.toStringAsFixed(0), flex: 2),
+          _c(item.salePrice.toStringAsFixed(0),
+              flex: 2,
+              style: free
+                  ? const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                      decoration: TextDecoration.lineThrough)
+                  : null),
           _c('${item.availableStock}',
               flex: 2,
               style: TextStyle(
@@ -138,21 +152,37 @@ class _CartRow extends ConsumerWidget {
             flex: 3,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-              child: _QtyRowStepper(
-                value: item.quantity,
-                maxValue: item.availableStock,
-                primaryColor: primary,
-                onChanged: (v) => notifier.updateItemQuantity(item.branchStockId, v),
-              ),
+              child: free
+                  ? Center(
+                      child: Text('${item.b1g1FreeQty}',
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w700)),
+                    )
+                  : _QtyRowStepper(
+                      value: _paidQty(item),
+                      maxValue: item.availableStock - item.b1g1FreeQty,
+                      primaryColor: primary,
+                      onChanged: (v) => _setPaidQty(notifier, item, v),
+                    ),
             ),
           ),
-          _c(item.lineTotal.toStringAsFixed(0), flex: 2, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+          free
+              ? _c('FREE',
+                  flex: 2,
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2E7D32)))
+              : _c(item.lineTotal.toStringAsFixed(0), flex: 2, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
           Expanded(
             flex: 1,
             child: Center(
               child: IconButton(
                 icon: const AppIcon(AppIcons.deleteOutline, size: 17, color: Colors.red),
-                onPressed: () => notifier.removeItem(item.branchStockId),
+                onPressed: () => free
+                    ? notifier.updateItemQuantity(
+                        item.branchStockId, item.quantity - item.b1g1FreeQty)
+                    : notifier.removeItem(item.branchStockId),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -172,6 +202,28 @@ class _CartRow extends ConsumerWidget {
       );
 }
 
+/// Cart ki ek display row — B1G1 free units apni alag row mein.
+typedef _RowEntry = ({SaleCartItem item, bool free});
+
+List<_RowEntry> _cartRows(List<SaleCartItem> items) => [
+      for (final i in items) ...[
+        if (_paidQty(i) > 0) (item: i, free: false),
+        if (i.b1g1FreeQty > 0) (item: i, free: true),
+      ],
+    ];
+
+int _paidQty(SaleCartItem i) => i.quantity - i.b1g1FreeQty;
+
+/// Paid row ka stepper — barhane par provider khud free unit jor deta hai;
+/// ghatane par is line ka free unit bhi sath jata hai (jodi hi nikalti hai).
+void _setPaidQty(SaleInvoiceNotifier notifier, SaleCartItem item, int paid) {
+  final current = _paidQty(item);
+  if (paid == current) return;
+  final qty = paid > current
+      ? item.quantity + (paid - current)
+      : item.quantity - (current - paid) - (item.b1g1FreeQty > 0 ? 1 : 0);
+  notifier.updateItemQuantity(item.branchStockId, qty);
+}
 
 // ── Qty stepper inside row ────────────────────────────────────────────────
 
@@ -257,13 +309,17 @@ class _MobileList extends ConsumerWidget {
     final notifier = ref.read(saleInvoiceProvider.notifier);
     final primary = Theme.of(context).colorScheme.primary;
 
+    final rows = _cartRows(items);
+
     return ListView.separated(
       padding: const EdgeInsets.all(10),
-      itemCount: items.length,
+      itemCount: rows.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
-        final item = items[i];
+        final item = rows[i].item;
+        final free = rows[i].free;
         return Card(
+          color: free ? const Color(0xFFF1F8F4) : null,
           elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           child: Padding(
@@ -279,7 +335,10 @@ class _MobileList extends ConsumerWidget {
                                 fontWeight: FontWeight.w600, fontSize: 12, fontFamily: 'monospace'))),
                     IconButton(
                       icon: const AppIcon(AppIcons.deleteOutline, color: Colors.red, size: 18),
-                      onPressed: () => notifier.removeItem(item.branchStockId),
+                      onPressed: () => free
+                          ? notifier.updateItemQuantity(item.branchStockId,
+                              item.quantity - item.b1g1FreeQty)
+                          : notifier.removeItem(item.branchStockId),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                     ),
@@ -288,7 +347,7 @@ class _MobileList extends ConsumerWidget {
                 const SizedBox(height: 2),
                 Text('${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
-                if (item.b1g1FreeQty > 0) _B1g1Badge(freeQty: item.b1g1FreeQty),
+                if (free) const _B1g1Badge(),
                 const SizedBox(height: 8),
                 Row(
                   children: [
@@ -297,15 +356,23 @@ class _MobileList extends ConsumerWidget {
                     _lbl('Stock', '${item.availableStock}',
                         color: item.availableStock <= 0 ? Colors.red : Colors.grey.shade700),
                     const Spacer(),
-                    _QtyRowStepper(
-                      value: item.quantity,
-                      maxValue: item.availableStock,
-                      primaryColor: primary,
-                      onChanged: (v) => notifier.updateItemQuantity(item.branchStockId, v),
-                    ),
+                    if (free)
+                      Text('Qty ${item.b1g1FreeQty}',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.w700))
+                    else
+                      _QtyRowStepper(
+                        value: _paidQty(item),
+                        maxValue: item.availableStock - item.b1g1FreeQty,
+                        primaryColor: primary,
+                        onChanged: (v) => _setPaidQty(notifier, item, v),
+                      ),
                     const SizedBox(width: 10),
-                    Text(item.lineTotal.toStringAsFixed(0),
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: primary)),
+                    Text(free ? 'FREE' : item.lineTotal.toStringAsFixed(0),
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: free ? const Color(0xFF2E7D32) : primary)),
                   ],
                 ),
               ],
@@ -329,10 +396,9 @@ class _MobileList extends ConsumerWidget {
       );
 }
 
-/// Cart line par "Buy 1 Get 1 · N free" ka chhota label.
+/// Free row par "Buy 1 Get 1 · Free" ka chhota label.
 class _B1g1Badge extends StatelessWidget {
-  final int freeQty;
-  const _B1g1Badge({required this.freeQty});
+  const _B1g1Badge();
 
   @override
   Widget build(BuildContext context) {
@@ -343,7 +409,7 @@ class _B1g1Badge extends StatelessWidget {
         color: const Color(0xFFE6F4EC),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text('Buy 1 Get 1 · $freeQty free',
+      child: Text('Buy 1 Get 1 · Free',
           style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w700,
