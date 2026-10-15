@@ -454,17 +454,14 @@ class _RowActions extends ConsumerWidget {
 const _kColWidths = <double>[
   60, // #
   210, // Barcode
-  180, // Article
-  90, // Size
-  120, // Color
-  150, // Brand
-  150, // Category
-  130, // Type
+  340, // Article (neeche color / size / brand / category / type)
+  130, // Purchase Price
+  130, // Sale Price
   70, // Qty
   80, // Discount
   190, // Actions
 ];
-const _kTableMinWidth = 1470; // sum(_kColWidths) 1430 + row padding 32 + slack
+const _kTableMinWidth = 1450; // sum(_kColWidths) 1410 + row padding 32 + slack
 
 class _DesktopTable extends StatefulWidget {
   final PaginatedListState<StockInventoryModel> state;
@@ -531,14 +528,11 @@ class _DesktopTableState extends State<_DesktopTable> {
                             _TH('#', w: 0, style: headerStyle),
                             _TH('Barcode', w: 1, style: headerStyle),
                             _TH('Article', w: 2, style: headerStyle),
-                            _TH('Size', w: 3, style: headerStyle),
-                            _TH('Color', w: 4, style: headerStyle),
-                            _TH('Brand', w: 5, style: headerStyle),
-                            _TH('Category', w: 6, style: headerStyle),
-                            _TH('Type', w: 7, style: headerStyle),
-                            _TH('Qty', w: 8, style: headerStyle),
-                            _TH('Discount', w: 9, style: headerStyle),
-                            _TH('Actions', w: 10, style: headerStyle),
+                            _TH('Purchase Price', w: 3, style: headerStyle),
+                            _TH('Sale Price', w: 4, style: headerStyle),
+                            _TH('Qty', w: 5, style: headerStyle),
+                            _TH('Discount', w: 6, style: headerStyle),
+                            _TH('Actions', w: 7, style: headerStyle),
                             Expanded(child: SizedBox()),
                           ]),
                         ),
@@ -563,18 +557,16 @@ class _DesktopTableState extends State<_DesktopTable> {
                                 child: Row(children: [
                                   _cell('$serial', i: 0),
                                   _cell(s.barcode, i: 1, mono: true),
-                                  _cell(s.productName ?? '—',
-                                      i: 2, bold: true),
-                                  _cell(s.sizeName ?? '—', i: 3),
-                                  _cell(s.colorName ?? '—', i: 4),
-                                  _cell(s.brandName ?? '—', i: 5),
-                                  _cell(s.categoryName ?? '—', i: 6),
-                                  _cell(s.typeName ?? '—', i: 7),
-                                  _cell('${s.quantity}', i: 8),
+                                  _articleCell(s, i: 2),
+                                  _cell('Rs ${s.purchasePrice.toStringAsFixed(0)}',
+                                      i: 3),
+                                  _cell('Rs ${s.salePrice.toStringAsFixed(0)}',
+                                      i: 4, bold: true),
+                                  _cell('${s.quantity}', i: 5),
                                   _cell('${s.discount.toStringAsFixed(0)}%',
-                                      i: 9),
+                                      i: 6),
                                   SizedBox(
-                                      width: _kColWidths[10],
+                                      width: _kColWidths[7],
                                       child: _RowActions(stock: s)),
                                   const Expanded(child: SizedBox()),
                                 ]),
@@ -593,6 +585,31 @@ class _DesktopTableState extends State<_DesktopTable> {
       ),
     );
   }
+
+  /// Sale Invoice ke Article dropdown jaisa — naam, neeche variant ki detail.
+  Widget _articleCell(StockInventoryModel s, {required int i}) => SizedBox(
+        width: _kColWidths[i],
+        child: Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(s.productName ?? '—',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF1A1D2E),
+                      fontWeight: FontWeight.w600)),
+              if (s.variantLine.isNotEmpty)
+                Text(s.variantLine,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 11, color: Color(0xFF8A8FA3))),
+            ],
+          ),
+        ),
+      );
 
   Widget _cell(String text,
           {required int i, bool bold = false, bool mono = false}) =>
@@ -665,6 +682,10 @@ class _MobileList extends StatelessWidget {
                   _RowActions(stock: s),
                 ],
               ),
+              if (s.variantLine.isNotEmpty)
+                Text(s.variantLine,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF5A5F73))),
               Text(s.barcode,
                   style: const TextStyle(
                       fontSize: 12,
@@ -675,11 +696,10 @@ class _MobileList extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 4,
                 children: [
-                  _chip('Size', s.sizeName ?? '—'),
-                  _chip('Color', s.colorName ?? '—'),
-                  _chip('Brand', s.brandName ?? '—'),
-                  _chip('Category', s.categoryName ?? '—'),
-                  _chip('Type', s.typeName ?? '—'),
+                  _chip('Purchase',
+                      'Rs ${s.purchasePrice.toStringAsFixed(0)}'),
+                  _chip('Sale', 'Rs ${s.salePrice.toStringAsFixed(0)}',
+                      color: const Color(0xFF3E63DD)),
                   _chip('Qty', '${s.quantity}',
                       color: const Color(0xFF2E7D32)),
                   _chip('Discount', '${s.discount.toStringAsFixed(0)}%',

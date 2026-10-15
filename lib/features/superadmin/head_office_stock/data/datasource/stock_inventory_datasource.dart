@@ -49,7 +49,7 @@ class StockInventoryDatasource {
   }
   static const _joins = '''
     *,
-    products(article_name),
+    products(article_name, sale_price, purchase_price),
     sizes(number),
     brands(name),
     companies(name),

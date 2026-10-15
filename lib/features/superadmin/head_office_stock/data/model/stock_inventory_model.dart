@@ -21,6 +21,8 @@ class StockInventoryModel {
   final String? colorName;
   final String? categoryName;
   final String? typeName;
+  final double salePrice;
+  final double purchasePrice;
 
   const StockInventoryModel({
     required this.id,
@@ -43,7 +45,18 @@ class StockInventoryModel {
     this.colorName,
     this.categoryName,
     this.typeName,
+    this.salePrice = 0,
+    this.purchasePrice = 0,
   });
+
+  /// "White • Size 47 • Bata • Male • Sports" — article ke neeche dikhane ko.
+  String get variantLine => [
+        if ((colorName ?? '').isNotEmpty) colorName!,
+        if ((sizeName ?? '').isNotEmpty) 'Size ${sizeName!}',
+        if ((brandName ?? '').isNotEmpty) brandName!,
+        if ((categoryName ?? '').isNotEmpty) categoryName!,
+        if ((typeName ?? '').isNotEmpty) typeName!,
+      ].join(' • ');
 
   static double _toDouble(dynamic v) {
     if (v == null) return 0.0;
@@ -77,6 +90,10 @@ class StockInventoryModel {
       categoryName:
           (json['categories'] as Map<String, dynamic>?)?['name'] as String?,
       typeName: (json['types'] as Map<String, dynamic>?)?['name'] as String?,
+      salePrice: _toDouble(json['sale_price'] ??
+          (json['products'] as Map<String, dynamic>?)?['sale_price']),
+      purchasePrice: _toDouble(json['purchase_price'] ??
+          (json['products'] as Map<String, dynamic>?)?['purchase_price']),
     );
   }
 
