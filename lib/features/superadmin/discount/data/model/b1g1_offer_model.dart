@@ -1,10 +1,24 @@
-/// Buy 1 Get 1 Free offer — admin chunta hai kin Articles / Brands /
-/// Categories par lagega. Item in mein se kisi ek se bhi match ho to offer
-/// mein hai.
+/// Ek stock variant ki pehchan — article + size + color + brand + category +
+/// type. Head office aur branch stock dono mein yahi IDs hoti hain.
+String b1g1VariantKey({
+  required String productId,
+  required String sizeId,
+  required String colorId,
+  required String brandId,
+  required String categoryId,
+  required String typeId,
+}) =>
+    [productId, sizeId, colorId, brandId, categoryId, typeId].join('|');
+
+/// Buy 1 Get 1 Free offer — admin chunta hai kin Article variants (size /
+/// color ke sath) / Brands / Categories par lagega. Item in mein se kisi ek
+/// se bhi match ho to offer mein hai. [productIds] purane offers ke liye
+/// (poora article, har variant).
 class B1g1OfferModel {
   final String id;
   final String name;
   final List<String> productIds;
+  final List<String> variantKeys;
   final List<String> brandIds;
   final List<String> categoryIds;
   final DateTime? startDate;
@@ -15,6 +29,7 @@ class B1g1OfferModel {
     required this.id,
     required this.name,
     this.productIds = const [],
+    this.variantKeys = const [],
     this.brandIds = const [],
     this.categoryIds = const [],
     this.startDate,
@@ -24,10 +39,12 @@ class B1g1OfferModel {
 
   bool matches({
     required String productId,
+    required String variantKey,
     required String brandId,
     required String categoryId,
   }) =>
       productIds.contains(productId) ||
+      variantKeys.contains(variantKey) ||
       brandIds.contains(brandId) ||
       categoryIds.contains(categoryId);
 
@@ -50,6 +67,7 @@ class B1g1OfferModel {
         id: json['id']?.toString() ?? '',
         name: json['name']?.toString() ?? '',
         productIds: _ids(json['product_ids']),
+        variantKeys: _ids(json['variant_keys']),
         brandIds: _ids(json['brand_ids']),
         categoryIds: _ids(json['category_ids']),
         startDate: _date(json['start_date']),
@@ -64,6 +82,7 @@ class B1g1OfferModel {
   Map<String, dynamic> toJson() => {
         'name': name,
         'product_ids': productIds,
+        'variant_keys': variantKeys,
         'brand_ids': brandIds,
         'category_ids': categoryIds,
         'start_date': _dateStr(startDate),
@@ -84,9 +103,18 @@ class B1g1LineResult {
 /// nikalta hai. Har offer ke units qeemat ke hisaab se (mehnge pehle) line
 /// mein lagte hain; har jodi ka doosra (sasta ya barabar) unit free.
 ///
-/// [lines] mein har entry: (price, quantity, productId, brandId, categoryId).
+/// [lines] mein har entry: (price, quantity, productId, variantKey, brandId,
+/// categoryId).
 List<B1g1LineResult> computeB1g1(
-  List<({double price, int quantity, String productId, String brandId, String categoryId})>
+  List<
+          ({
+            double price,
+            int quantity,
+            String productId,
+            String variantKey,
+            String brandId,
+            String categoryId
+          })>
       lines,
   List<B1g1OfferModel> offers,
 ) {
@@ -96,6 +124,7 @@ List<B1g1LineResult> computeB1g1(
     for (final o in offers) {
       if (o.matches(
           productId: l.productId,
+          variantKey: l.variantKey,
           brandId: l.brandId,
           categoryId: l.categoryId)) {
         offerOf[i] = o;

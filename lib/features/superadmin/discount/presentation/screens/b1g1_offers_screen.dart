@@ -7,6 +7,7 @@ import '../providers/b1g1_offer_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/text_field_icon.dart';
 
 /// Admin yahan "Buy 1 Get 1 Free" offers banata hai — kin Articles / Brands /
 /// Categories par lagega. Sab branches ki Sale Invoice mein har 2 pairs mein
@@ -21,8 +22,10 @@ class B1g1OffersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final offersAsync = ref.watch(b1g1OffersProvider);
     final products = ref.watch(b1g1ProductsProvider).value ?? const [];
+    final variants = ref.watch(b1g1VariantsProvider).value ?? const [];
     final brands = ref.watch(b1g1BrandsProvider).value ?? const [];
     final categories = ref.watch(b1g1CategoriesProvider).value ?? const [];
+    final variantByKey = {for (final v in variants) v.key: v};
 
     String names(List<String> ids, List<B1g1Lookup> all) {
       final byId = {for (final l in all) l.id: l.name};
@@ -91,8 +94,10 @@ class B1g1OffersScreen extends ConsumerWidget {
                         return _OfferCard(
                           offer: o,
                           targets: [
+                            if (o.variantKeys.isNotEmpty)
+                              'Articles: ${o.variantKeys.map((k) => variantByKey[k]?.label ?? '…').join(', ')}',
                             if (o.productIds.isNotEmpty)
-                              'Articles: ${names(o.productIds, products)}',
+                              'Articles (sab sizes/colors): ${names(o.productIds, products)}',
                             if (o.brandIds.isNotEmpty)
                               'Brands: ${names(o.brandIds, brands)}',
                             if (o.categoryIds.isNotEmpty)
@@ -274,6 +279,7 @@ class _OfferFormDialog extends ConsumerStatefulWidget {
 class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
   late final TextEditingController _nameCtrl;
   late Set<String> _productIds;
+  late Set<String> _variantKeys;
   late Set<String> _brandIds;
   late Set<String> _categoryIds;
   DateTime? _start;
@@ -287,6 +293,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
     final o = widget.offer;
     _nameCtrl = TextEditingController(text: o?.name ?? '');
     _productIds = {...?o?.productIds};
+    _variantKeys = {...?o?.variantKeys};
     _brandIds = {...?o?.brandIds};
     _categoryIds = {...?o?.categoryIds};
     _start = o?.startDate;
@@ -317,6 +324,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
     if (name.isEmpty) {
       error = 'Offer ka naam likhein';
     } else if (_productIds.isEmpty &&
+        _variantKeys.isEmpty &&
         _brandIds.isEmpty &&
         _categoryIds.isEmpty) {
       error = 'Kam az kam ek Article, Brand ya Category chunein';
@@ -336,6 +344,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
             id: widget.offer?.id ?? '',
             name: name,
             productIds: _productIds.toList(),
+            variantKeys: _variantKeys.toList(),
             brandIds: _brandIds.toList(),
             categoryIds: _categoryIds.toList(),
             startDate: _start,
@@ -378,6 +387,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
   @override
   Widget build(BuildContext context) {
     final products = ref.watch(b1g1ProductsProvider).value ?? const [];
+    final variants = ref.watch(b1g1VariantsProvider).value ?? const [];
     final brands = ref.watch(b1g1BrandsProvider).value ?? const [];
     final categories = ref.watch(b1g1CategoriesProvider).value ?? const [];
 
@@ -385,7 +395,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Text(widget.offer == null ? 'Add B1G1 Offer' : 'Edit B1G1 Offer'),
       content: SizedBox(
-        width: 460,
+        width: 520,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -399,8 +409,22 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
                 ),
               ),
               const SizedBox(height: 14),
-              _multi('Articles', products, _productIds,
-                  (v) => _productIds = v),
+              _VariantField(
+                all: variants,
+                selected: _variantKeys,
+                onChanged: (v) => setState(() => _variantKeys = v),
+              ),
+              // Purane offers jin mein poora article (har size/color) chuna tha.
+              if (_productIds.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _multi('Articles (sab sizes/colors)', products, _productIds,
+                    (v) => _productIds = v),
+              ],
+              const SizedBox(height: 4),
+              const Text(
+                'Do items mein se jis ki qeemat kam hai wo free hoga.',
+                style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32)),
+              ),
               const SizedBox(height: 12),
               _multi('Brands', brands, _brandIds, (v) => _brandIds = v),
               const SizedBox(height: 12),
@@ -437,6 +461,198 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2))
               : const Text('Save'),
+        ),
+      ],
+    );
+  }
+}
+
+/// "Articles" field — Sale Invoice ke Article dropdown jaisa: har stock
+/// variant apne color / size / brand / category / type aur qeemat ke sath.
+class _VariantField extends StatelessWidget {
+  final List<B1g1Variant> all;
+  final Set<String> selected;
+  final ValueChanged<Set<String>> onChanged;
+
+  const _VariantField({
+    required this.all,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final byKey = {for (final v in all) v.key: v};
+    return GestureDetector(
+      onTap: () async {
+        final res = await showDialog<Set<String>>(
+          context: context,
+          builder: (_) => _VariantPickerDialog(all: all, selected: selected),
+        );
+        if (res != null) onChanged(res);
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Articles',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          suffixIcon: const AppIcon(AppIcons.arrowDropDown, size: 24),
+        ),
+        child: selected.isEmpty
+            ? Text('Select Articles',
+                style: TextStyle(color: Theme.of(context).hintColor))
+            : Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final k in selected)
+                    Chip(
+                      label: Text(byKey[k]?.label ?? '…',
+                          style: const TextStyle(fontSize: 12)),
+                      deleteIcon: const AppIcon(AppIcons.close, size: 14),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      onDeleted: () => onChanged({...selected}..remove(k)),
+                    ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _VariantPickerDialog extends StatefulWidget {
+  final List<B1g1Variant> all;
+  final Set<String> selected;
+  const _VariantPickerDialog({required this.all, required this.selected});
+
+  @override
+  State<_VariantPickerDialog> createState() => _VariantPickerDialogState();
+}
+
+class _VariantPickerDialogState extends State<_VariantPickerDialog> {
+  late final Set<String> _selected = {...widget.selected};
+  String _search = '';
+
+  /// Article, color, size, brand, category, type ya barcode — kisi se bhi.
+  List<B1g1Variant> get _filtered {
+    final q = _search.trim().toLowerCase();
+    if (q.isEmpty) return widget.all;
+    return widget.all
+        .where((v) => '${v.label} ${v.barcode}'.toLowerCase().contains(q))
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final filtered = _filtered;
+    final allShownSelected =
+        filtered.isNotEmpty && filtered.every((v) => _selected.contains(v.key));
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      title: Row(children: [
+        const Expanded(child: Text('Select Articles')),
+        if (_selected.isNotEmpty)
+          TextButton(
+            onPressed: () => setState(_selected.clear),
+            child: const Text('Clear'),
+          ),
+      ]),
+      contentPadding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+      content: SizedBox(
+        width: 520,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => setState(() => _search = v),
+                decoration: InputDecoration(
+                  hintText: 'Search article, color, size, brand, category...',
+                  prefixIcon: const TextFieldIcon(AppIcons.search, size: 18),
+                  isDense: true,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ),
+            CheckboxListTile(
+              dense: true,
+              value: allShownSelected,
+              activeColor: primary,
+              title: Text('Sab select karein (${filtered.length})',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600)),
+              onChanged: filtered.isEmpty
+                  ? null
+                  : (v) => setState(() {
+                        for (final f in filtered) {
+                          v == true
+                              ? _selected.add(f.key)
+                              : _selected.remove(f.key);
+                        }
+                      }),
+            ),
+            const Divider(height: 1),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: filtered.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text('No results',
+                          style: TextStyle(color: Colors.grey)),
+                    )
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filtered.length,
+                      itemBuilder: (_, i) {
+                        final v = filtered[i];
+                        return CheckboxListTile(
+                          dense: true,
+                          value: _selected.contains(v.key),
+                          activeColor: primary,
+                          title: Text(v.productName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13)),
+                          subtitle: Text(
+                            [
+                              if (v.details.isNotEmpty) v.details,
+                              if (v.barcode.isNotEmpty) 'Barcode: ${v.barcode}',
+                            ].join('  •  '),
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey.shade600),
+                          ),
+                          secondary: Text(
+                            'Rs ${v.salePrice.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                                fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                          onChanged: (c) => setState(() => c == true
+                              ? _selected.add(v.key)
+                              : _selected.remove(v.key)),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _selected),
+          child: Text('Done (${_selected.length})'),
         ),
       ],
     );

@@ -42,4 +42,10 @@ ALTER TABLE public.sale_invoice_items
   ADD COLUMN IF NOT EXISTS b1g1_free_qty INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS b1g1_offer_id uuid REFERENCES public.b1g1_offers(id) ON DELETE SET NULL;
 
+-- Article ka khaas variant (size / color / brand / category / type) —
+-- "productId|sizeId|colorId|brandId|categoryId|typeId".
+-- STATUS (2026-10-15): applied to LIVE database.
+ALTER TABLE public.b1g1_offers
+  ADD COLUMN IF NOT EXISTS variant_keys TEXT[] NOT NULL DEFAULT '{}';
+
 NOTIFY pgrst, 'reload schema';

@@ -33,3 +33,7 @@ final b1g1BrandsProvider = FutureProvider<List<B1g1Lookup>>(
     (ref) => ref.read(b1g1OfferDatasourceProvider).getBrands());
 final b1g1CategoriesProvider = FutureProvider<List<B1g1Lookup>>(
     (ref) => ref.read(b1g1OfferDatasourceProvider).getCategories());
+
+/// Article dropdown — har stock variant size/color/brand ke sath.
+final b1g1VariantsProvider = FutureProvider<List<B1g1Variant>>(
+    (ref) => ref.read(b1g1OfferDatasourceProvider).getVariants());
