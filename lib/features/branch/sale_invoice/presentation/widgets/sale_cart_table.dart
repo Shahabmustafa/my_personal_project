@@ -180,8 +180,7 @@ class _CartRow extends ConsumerWidget {
               child: IconButton(
                 icon: const AppIcon(AppIcons.deleteOutline, size: 17, color: Colors.red),
                 onPressed: () => free
-                    ? notifier.updateItemQuantity(
-                        item.branchStockId, item.quantity - item.b1g1FreeQty)
+                    ? notifier.removeB1g1FreeUnits(item.branchStockId)
                     : notifier.removeItem(item.branchStockId),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -214,15 +213,12 @@ List<_RowEntry> _cartRows(List<SaleCartItem> items) => [
 
 int _paidQty(SaleCartItem i) => i.quantity - i.b1g1FreeQty;
 
-/// Paid row ka stepper — barhane par provider khud free unit jor deta hai;
-/// ghatane par is line ka free unit bhi sath jata hai (jodi hi nikalti hai).
+/// Paid row ka stepper — barhane par provider khud free partner jor deta
+/// hai; ghatane par jodi ka free unit bhi provider nikal deta hai.
 void _setPaidQty(SaleInvoiceNotifier notifier, SaleCartItem item, int paid) {
   final current = _paidQty(item);
   if (paid == current) return;
-  final qty = paid > current
-      ? item.quantity + (paid - current)
-      : item.quantity - (current - paid) - (item.b1g1FreeQty > 0 ? 1 : 0);
-  notifier.updateItemQuantity(item.branchStockId, qty);
+  notifier.updateItemQuantity(item.branchStockId, item.quantity + paid - current);
 }
 
 // ── Qty stepper inside row ────────────────────────────────────────────────
@@ -336,8 +332,7 @@ class _MobileList extends ConsumerWidget {
                     IconButton(
                       icon: const AppIcon(AppIcons.deleteOutline, color: Colors.red, size: 18),
                       onPressed: () => free
-                          ? notifier.updateItemQuantity(item.branchStockId,
-                              item.quantity - item.b1g1FreeQty)
+                          ? notifier.removeB1g1FreeUnits(item.branchStockId)
                           : notifier.removeItem(item.branchStockId),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
