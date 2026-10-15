@@ -132,6 +132,10 @@ class PurchaseInvoiceState {
   final bool invoiceLoading;
   final StockLookupItem? selectedCompany;
   final List<PurchaseCartItem> cartItems;
+
+  /// Transport / barcode waghera — cash se jate hain, company ke khate se
+  /// bahar. Har article ki purchase aur sale price mein bat jate hain.
+  final List<PurchaseExpense> expenses;
   final bool isSaving;
   final String? error;
 
@@ -140,9 +144,16 @@ class PurchaseInvoiceState {
     this.invoiceLoading = false,
     this.selectedCompany,
     this.cartItems = const [],
+    this.expenses = const [],
     this.isSaving = false,
     this.error,
   });
+
+  double get expenseTotal => expenses.fold(0, (s, e) => s + e.amount);
+
+  /// [cartItems] ki har line ki per-unit cost — net price + expense ka hissa.
+  List<double> get landedCosts =>
+      PurchaseInvoiceDatasource.landedCosts(cartItems, expenseTotal);
 
   double get totalAmount =>
       cartItems.fold(0, (sum, i) => sum + (i.purchasePrice * i.quantity));
@@ -157,6 +168,7 @@ class PurchaseInvoiceState {
     StockLookupItem? selectedCompany,
     bool clearCompany = false,
     List<PurchaseCartItem>? cartItems,
+    List<PurchaseExpense>? expenses,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -167,6 +179,7 @@ class PurchaseInvoiceState {
         selectedCompany:
             clearCompany ? null : selectedCompany ?? this.selectedCompany,
         cartItems: cartItems ?? this.cartItems,
+        expenses: expenses ?? this.expenses,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
       );
@@ -277,6 +290,12 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
   }
 
 
+  void addExpense(PurchaseExpense expense) =>
+      state = state.copyWith(expenses: [...state.expenses, expense]);
+
+  void removeExpense(int index) => state = state.copyWith(
+      expenses: [...state.expenses]..removeAt(index));
+
   void removeItem(String stockId) {
     state = state.copyWith(
       cartItems: state.cartItems.where((c) => c.stockId != stockId).toList(),
@@ -292,8 +311,8 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     required double creditAmount,
     required String paymentMode,
     required PurchaseInvoiceRepository repo,
-    List<PurchaseExpense> expenses = const [],
   }) async {
+    final expenses = state.expenses;
     if (state.cartItems.isEmpty) return 'Cart is empty';
     state = state.copyWith(isSaving: true, clearError: true);
 

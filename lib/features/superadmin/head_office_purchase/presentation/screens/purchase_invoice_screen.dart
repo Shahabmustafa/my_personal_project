@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/datasources/purchase_invoice_datasource.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../../data/models/purchase_return_model.dart';
 import '../providers/purchase_invoice_provider.dart';
@@ -94,6 +93,8 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
             ),
           ),
 
+          const SizedBox(height: 12),
+          const _ExpenseBar(),
           const SizedBox(height: 12),
           const PurchaseProductSelector(),
           const SizedBox(height: 12),
@@ -271,7 +272,7 @@ class _InvoiceFooter extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => _PaymentDialog(
         invoiceState: state,
-        onConfirm: (paid, credit, mode, expenses) async {
+        onConfirm: (paid, credit, mode) async {
           final repo = ref.read(purchaseInvoiceRepositoryProvider);
           final err = await ref
               .read(purchaseInvoiceProvider.notifier)
@@ -280,7 +281,6 @@ class _InvoiceFooter extends ConsumerWidget {
                 creditAmount: credit,
                 paymentMode: mode,
                 repo: repo,
-                expenses: expenses,
               );
 
           // Reload counter
@@ -323,76 +323,95 @@ class _InvoiceFooter extends ConsumerWidget {
   }
 }
 
-// ── Payment dialog ────────────────────────────────────────────────────────
+// ── Expense bar ───────────────────────────────────────────────────────────
 
-class _PaymentDialog extends ConsumerStatefulWidget {
-  final PurchaseInvoiceState invoiceState;
-  final Future<void> Function(double paid, double credit, String mode,
-      List<PurchaseExpense> expenses) onConfirm;
-
-  const _PaymentDialog(
-      {required this.invoiceState, required this.onConfirm});
+/// Invoice ke kharche (Transport, Barcode ...) — cart se pehle ya baad mein
+/// add karo; har article ki P.Price / S.Price cart mein foran update hoti hai.
+class _ExpenseBar extends ConsumerWidget {
+  const _ExpenseBar();
 
   @override
-  ConsumerState<_PaymentDialog> createState() => _PaymentDialogState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(purchaseInvoiceProvider);
+    final notifier = ref.read(purchaseInvoiceProvider.notifier);
+    final primary = Theme.of(context).colorScheme.primary;
 
-/// Expense ke baad har article ki nayi per-unit purchase price —
-/// e.g. "ss-1345 · 42 · White — 1000 → 1060".
-class _LandedCostList extends StatelessWidget {
-  final List<PurchaseCartItem> items;
-  final double expenseTotal;
-  const _LandedCostList({required this.items, required this.expenseTotal});
-
-  @override
-  Widget build(BuildContext context) {
-    final landed = PurchaseInvoiceDatasource.landedCosts(items, expenseTotal);
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 120),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              for (var i = 0; i < items.length; i++)
-                Text(
-                  '${items[i].productName} · ${items[i].sizeName} · '
-                  '${items[i].colorName} — '
-                  '${items[i].purchaseNetPrice.toStringAsFixed(0)} → '
-                  '${landed[i].toStringAsFixed(landed[i] % 1 == 0 ? 0 : 2)}',
+              AppIcon(AppIcons.receiptOutlined,
+                  size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Text('Expense',
                   style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: Colors.green.shade800),
-                ),
+                      color: Colors.grey.shade700)),
             ],
           ),
-        ),
+          for (var i = 0; i < state.expenses.length; i++)
+            InputChip(
+              label: Text(
+                  '${state.expenses[i].headName ?? 'Expense'} · '
+                  'PKR ${state.expenses[i].amount.toStringAsFixed(0)}',
+                  style: const TextStyle(fontSize: 12)),
+              onDeleted: () => notifier.removeExpense(i),
+              deleteIcon:
+                  const AppIcon(AppIcons.close, size: 14, color: Colors.red),
+            ),
+          TextButton.icon(
+            onPressed: () async {
+              final e = await showDialog<PurchaseExpense>(
+                context: context,
+                builder: (_) => const _AddExpenseDialog(),
+              );
+              if (e != null) notifier.addExpense(e);
+            },
+            icon: AppIcon(AppIcons.add, size: 16, color: primary),
+            label: const Text('Add Expense'),
+          ),
+          if (state.expenseTotal > 0)
+            Text(
+              'Total PKR ${state.expenseTotal.toStringAsFixed(0)} — cash se, '
+              'company ke khate mein nahi. Har article ki P.Price aur S.Price '
+              'mein add.',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+        ],
       ),
     );
   }
 }
 
-/// Dialog ki ek expense line — head + amount. Dono khaali ho to ignore.
-class _ExpenseLine {
-  String? headId;
-  final amountCtrl = TextEditingController();
-  double get amount => double.tryParse(amountCtrl.text.trim()) ?? 0;
-  bool get isEmpty => headId == null && amount <= 0;
+/// Expense head + amount — head yahin se naya bhi ban sakta hai.
+class _AddExpenseDialog extends ConsumerStatefulWidget {
+  const _AddExpenseDialog();
+
+  @override
+  ConsumerState<_AddExpenseDialog> createState() => _AddExpenseDialogState();
 }
 
-class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
-  late TextEditingController _payCtrl;
-  bool _isProcessing = false;
+class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
+  final _amountCtrl = TextEditingController();
   List<ExpenseHeadModel> _heads = [];
-  final List<_ExpenseLine> _expenses = [_ExpenseLine()];
+  String? _headId;
 
   @override
   void initState() {
     super.initState();
-    _payCtrl = TextEditingController(
-        text: widget.invoiceState.netAmount.toStringAsFixed(0));
     ref.read(expenseRepositoryProvider).getHeads().then((h) {
       if (mounted) setState(() => _heads = h);
     }).catchError((_) {});
@@ -400,15 +419,13 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
   @override
   void dispose() {
-    _payCtrl.dispose();
-    for (final e in _expenses) {
-      e.amountCtrl.dispose();
-    }
+    _amountCtrl.dispose();
     super.dispose();
   }
 
-  /// Naya expense head (e.g. Transport) yahin se bana kar line par select.
-  Future<void> _addHead(_ExpenseLine line) async {
+  double get _amount => double.tryParse(_amountCtrl.text.trim()) ?? 0;
+
+  Future<void> _addHead() async {
     final name = await showDialog<String>(
       context: context,
       builder: (_) => const _NewExpenseHeadDialog(),
@@ -420,13 +437,135 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       setState(() {
         _heads = [..._heads, head]
           ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-        line.headId = head.id;
+        _headId = head.id;
       });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Error: $e'), backgroundColor: Colors.red));
     }
+  }
+
+  void _submit() {
+    if (_headId == null || _amount <= 0) return;
+    final head = _heads.where((h) => h.id == _headId);
+    Navigator.pop(
+      context,
+      PurchaseExpense(
+        expenseHeadId: _headId!,
+        headName: head.isEmpty ? null : head.first.name,
+        amount: _amount,
+      ),
+    );
+  }
+
+  InputDecoration _deco(String hint) => InputDecoration(
+        hintText: hint,
+        isDense: true,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Add Expense',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+      content: SizedBox(
+        width: 340,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey('$_headId-${_heads.length}'),
+                    initialValue:
+                        _heads.any((h) => h.id == _headId) ? _headId : null,
+                    isExpanded: true,
+                    isDense: true,
+                    decoration: _deco('Expense head'),
+                    items: [
+                      for (final h in _heads)
+                        DropdownMenuItem(
+                          value: h.id,
+                          child: Text(h.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14)),
+                        ),
+                    ],
+                    onChanged: (v) => setState(() => _headId = v),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'New expense head',
+                  icon: AppIcon(AppIcons.addCircleOutline,
+                      size: 20, color: primary),
+                  onPressed: _addHead,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _amountCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+              ],
+              decoration: _deco('Amount'),
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) => _submit(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel')),
+        FilledButton(
+          onPressed: _headId == null || _amount <= 0 ? null : _submit,
+          child: const Text('Add'),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Payment dialog ────────────────────────────────────────────────────────
+
+class _PaymentDialog extends ConsumerStatefulWidget {
+  final PurchaseInvoiceState invoiceState;
+  final Future<void> Function(double paid, double credit, String mode)
+      onConfirm;
+
+  const _PaymentDialog(
+      {required this.invoiceState, required this.onConfirm});
+
+  @override
+  ConsumerState<_PaymentDialog> createState() => _PaymentDialogState();
+}
+
+class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
+  late TextEditingController _payCtrl;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _payCtrl = TextEditingController(
+        text: widget.invoiceState.netAmount.toStringAsFixed(0));
+  }
+
+  @override
+  void dispose() {
+    _payCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -459,12 +598,8 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       paymentMode = 'cash';
     }
 
-    // Kharche cash se jaate hain, company ke khate mein nahi.
-    final filledExpenses = _expenses.where((e) => !e.isEmpty).toList();
-    final expenseTotal =
-        filledExpenses.fold(0.0, (s, e) => s + e.amount);
-    final expenseInvalid =
-        filledExpenses.any((e) => e.headId == null || e.amount <= 0);
+    // Kharche (upar Expense bar se) cash se jaate hain, company ke khate mein nahi.
+    final expenseTotal = invoiceState.expenseTotal;
     final cashShort = effectivePay + expenseTotal > cashAmount;
 
     final primary = Theme.of(context).colorScheme.primary;
@@ -573,112 +708,14 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             const Divider(height: 24),
 
-            // ── Expense (Transport / Barcode ...) ──────────────────────
-            for (final line in _expenses) ...[
-              _fieldRow(
-                label: 'Expense Head',
-                icon: AppIcons.receiptOutlined,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        key: ValueKey('${identityHashCode(line)}-'
-                            '${line.headId}-${_heads.length}'),
-                        initialValue:
-                            _heads.any((h) => h.id == line.headId)
-                                ? line.headId
-                                : null,
-                        isExpanded: true,
-                        isDense: true,
-                        decoration: _inputDeco(context, 'Select head'),
-                        items: [
-                          for (final h in _heads)
-                            DropdownMenuItem(
-                              value: h.id,
-                              child: Text(h.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontSize: 14)),
-                            ),
-                        ],
-                        onChanged: (v) => setState(() => line.headId = v),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'New expense head',
-                      icon: AppIcon(AppIcons.addCircleOutline,
-                          size: 20, color: primary),
-                      onPressed: () => _addHead(line),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              _fieldRow(
-                label: 'Expense Amount',
-                icon: AppIcons.paymentsOutlined,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: line.amountCtrl,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                              RegExp(r'^\d*\.?\d*$')),
-                        ],
-                        style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w700),
-                        decoration: _inputDeco(context, '0'),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    _expenses.length > 1
-                        ? IconButton(
-                            tooltip: 'Remove',
-                            icon: const AppIcon(AppIcons.close,
-                                size: 18, color: Colors.red),
-                            onPressed: () {
-                              setState(() => _expenses.remove(line));
-                              // TextField is frame mein abhi tree mein hai.
-                              WidgetsBinding.instance.addPostFrameCallback(
-                                  (_) => line.amountCtrl.dispose());
-                            },
-                          )
-                        : const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => setState(() => _expenses.add(_ExpenseLine())),
-                icon: AppIcon(AppIcons.add, size: 16, color: primary),
-                label: const Text('Add another expense'),
-              ),
-            ),
             if (expenseTotal > 0)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   'Expense PKR ${expenseTotal.toStringAsFixed(0)} cash se jayega '
-                  '— company ke khate mein nahi. Ye har article ki purchase '
-                  'price mein add hoga (stock inventory mein):',
+                  '— company ke khate mein nahi.',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 ),
-              ),
-            if (expenseTotal > 0)
-              _LandedCostList(
-                items: widget.invoiceState.cartItems,
-                expenseTotal: expenseTotal,
-              ),
-            if (expenseInvalid)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text('Har expense ka head aur amount dono likhein.',
-                    style: TextStyle(fontSize: 12, color: Colors.red.shade700)),
               ),
             if (cashShort && expenseTotal > 0)
               Padding(
@@ -786,18 +823,12 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: _isProcessing || expenseInvalid || cashShort
+          onPressed: _isProcessing || cashShort
               ? null
               : () async {
                   setState(() => _isProcessing = true);
-                  final expenses = [
-                    for (final e in filledExpenses)
-                      PurchaseExpense(
-                          expenseHeadId: e.headId!, amount: e.amount),
-                  ];
                   Navigator.pop(context);
-                  await widget.onConfirm(
-                      effectivePay, remaining, paymentMode, expenses);
+                  await widget.onConfirm(effectivePay, remaining, paymentMode);
                 },
           style: FilledButton.styleFrom(
             padding: const EdgeInsets.symmetric(

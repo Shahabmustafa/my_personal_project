@@ -11,7 +11,9 @@ class PurchaseCartTable extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(purchaseInvoiceProvider).cartItems;
+    final state = ref.watch(purchaseInvoiceProvider);
+    final items = state.cartItems;
+    final landed = state.landedCosts;
 
     if (items.isEmpty) {
       return Center(
@@ -36,8 +38,8 @@ class PurchaseCartTable extends ConsumerWidget {
 
     return LayoutBuilder(builder: (ctx, constraints) {
       return constraints.maxWidth > 700
-          ? _DesktopTable(items: items)
-          : _MobileList(items: items);
+          ? _DesktopTable(items: items, landed: landed)
+          : _MobileList(items: items, landed: landed);
     });
   }
 }
@@ -46,7 +48,8 @@ class PurchaseCartTable extends ConsumerWidget {
 
 class _DesktopTable extends ConsumerWidget {
   final List<PurchaseCartItem> items;
-  const _DesktopTable({required this.items});
+  final List<double> landed;
+  const _DesktopTable({required this.items, required this.landed});
 
   static const _hs = TextStyle(
       fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white);
@@ -72,6 +75,7 @@ class _DesktopTable extends ConsumerWidget {
             _h('Type', flex: 2),
             _h('Category', flex: 2),
             _h('P.Price', flex: 2),
+            _h('S.Price', flex: 2),
             _h('Qty', flex: 3),
             _h('Total', flex: 2),
             _h('', flex: 1),
@@ -81,7 +85,8 @@ class _DesktopTable extends ConsumerWidget {
         Expanded(
           child: ListView.builder(
             itemCount: items.length,
-            itemBuilder: (_, i) => _CartRow(item: items[i], index: i),
+            itemBuilder: (_, i) =>
+                _CartRow(item: items[i], landed: landed[i], index: i),
           ),
         ),
         // ── Footer ──────────────────────────────────────────────────────
@@ -103,8 +108,12 @@ class _DesktopTable extends ConsumerWidget {
 
 class _CartRow extends ConsumerStatefulWidget {
   final PurchaseCartItem item;
+
+  /// Per-unit cost, expense ke hisse ke sath.
+  final double landed;
   final int index;
-  const _CartRow({required this.item, required this.index});
+  const _CartRow(
+      {required this.item, required this.landed, required this.index});
 
   @override
   ConsumerState<_CartRow> createState() => _CartRowState();
@@ -140,13 +149,11 @@ class _CartRowState extends ConsumerState<_CartRow> {
           // Category
           _c(item.categoryName, flex: 2),
 
-          // P.Price (read-only)
-          _c(item.purchasePrice.toStringAsFixed(0),
-              flex: 2,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.purple.shade600)),
+          // P.Price / S.Price — expense ho to nayi price neeche
+          _priceCell(item.purchasePrice, _share(item, widget.landed),
+              Colors.purple.shade600),
+          _priceCell(item.salePrice, _share(item, widget.landed),
+              Colors.black87),
 
           // Qty stepper
           Expanded(
@@ -194,7 +201,41 @@ class _CartRowState extends ConsumerState<_CartRow> {
           style: style ?? const TextStyle(fontSize: 12)),
     ),
   );
+
+  Widget _priceCell(double price, double share, Color color) => Expanded(
+    flex: 2,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_money(price),
+              overflow: TextOverflow.ellipsis,
+              style: share > 0
+                  ? const TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey,
+                      decoration: TextDecoration.lineThrough)
+                  : TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          if (share > 0)
+            Text(_money(price + share),
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.green.shade700)),
+        ],
+      ),
+    ),
+  );
 }
+
+/// Line par per-unit expense ka hissa.
+double _share(PurchaseCartItem item, double landed) =>
+    landed - item.purchaseNetPrice;
+
+String _money(double v) => v.toStringAsFixed(v % 1 == 0 ? 0 : 2);
 
 // ── Qty stepper inside row ────────────────────────────────────────────────
 
@@ -253,6 +294,8 @@ class _Footer extends StatelessWidget {
                 style: const TextStyle(
                     fontWeight: FontWeight.w600, fontSize: 12)),
           ),
+          // S.Price
+          const Expanded(flex: 2, child: SizedBox()),
           // Qty total
           Expanded(
             flex: 3,
@@ -283,7 +326,8 @@ class _Footer extends StatelessWidget {
 
 class _MobileList extends ConsumerWidget {
   final List<PurchaseCartItem> items;
-  const _MobileList({required this.items});
+  final List<double> landed;
+  const _MobileList({required this.items, required this.landed});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -296,6 +340,7 @@ class _MobileList extends ConsumerWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final item = items[i];
+        final share = _share(item, landed[i]);
         return Card(
           elevation: 1,
           shape:
@@ -328,9 +373,29 @@ class _MobileList extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
-                        color: Colors.purple.shade600),
-                    const Spacer(),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _lbl(
+                              'P.Price',
+                              share > 0
+                                  ? '${_money(item.purchasePrice)} → '
+                                      '${_money(item.purchasePrice + share)}'
+                                  : _money(item.purchasePrice),
+                              color: share > 0
+                                  ? Colors.green.shade700
+                                  : Colors.purple.shade600),
+                          _lbl(
+                              'S.Price',
+                              share > 0
+                                  ? '${_money(item.salePrice)} → '
+                                      '${_money(item.salePrice + share)}'
+                                  : _money(item.salePrice),
+                              color: share > 0 ? Colors.green.shade700 : null),
+                        ],
+                      ),
+                    ),
                     _QtyRowStepper(
                       value: item.quantity,
                       primaryColor: primary,

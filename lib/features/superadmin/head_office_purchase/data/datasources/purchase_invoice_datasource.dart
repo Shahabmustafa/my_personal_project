@@ -160,9 +160,10 @@ class PurchaseInvoiceDatasource {
   /// Purchase ka stock aana — quantity barhti hai aur variant ki purchase
   /// price purane aur naye maal ka weighted average (naya maal [landedCost]
   /// par, yani expense ke hisse ke sath). Pehle stock na ho to seedha
-  /// [landedCost].
-  Future<void> addPurchasedStock(
-      String stockId, int qty, double landedCost) async {
+  /// [landedCost]. Expense laga ho to [salePrice] (sale price + expense ka
+  /// hissa) variant ki nayi sale price ban jati hai.
+  Future<void> addPurchasedStock(String stockId, int qty, double landedCost,
+      {double? salePrice}) async {
     final res = await _client
         .from('stock_inventory')
         .select('quantity, purchase_price, products(purchase_price)')
@@ -181,6 +182,8 @@ class PurchaseInvoiceDatasource {
     await _client.from('stock_inventory').update({
       'quantity': currentQty + qty,
       'purchase_price': double.parse(newCost.toStringAsFixed(2)),
+      if (salePrice != null)
+        'sale_price': double.parse(salePrice.toStringAsFixed(2)),
     }).eq('id', stockId);
   }
 
@@ -269,10 +272,12 @@ class PurchaseInvoiceDatasource {
 
     await _client.from('purchase_invoice_items').insert(itemsPayload);
 
-    // STOCK INCREASE + purchase price (expense ke sath)
+    // STOCK INCREASE + purchase/sale price (expense ke sath)
     for (var i = 0; i < cartItems.length; i++) {
-      await addPurchasedStock(
-          cartItems[i].stockId, cartItems[i].quantity, landed[i]);
+      final item = cartItems[i];
+      final share = landed[i] - item.purchaseNetPrice;
+      await addPurchasedStock(item.stockId, item.quantity, landed[i],
+          salePrice: share > 0 ? item.salePrice + share : null);
     }
 
     // Deduct paid amount from cash counter
