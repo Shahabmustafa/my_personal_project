@@ -67,6 +67,25 @@ class PurchaseInvoiceDatasource {
     }).eq('id', counter.id);
   }
 
+  static const _purchaseExpenseHead = 'Purchase Expense';
+
+  /// "Purchase Expense" head ki id — na ho to bana deta hai.
+  Future<String> _purchaseExpenseHeadId() async {
+    final existing = await _client
+        .from('expense_heads')
+        .select('id')
+        .eq('name', _purchaseExpenseHead)
+        .limit(1)
+        .maybeSingle();
+    if (existing != null) return existing['id'] as String;
+    final created = await _client
+        .from('expense_heads')
+        .insert({'name': _purchaseExpenseHead})
+        .select('id')
+        .single();
+    return created['id'] as String;
+  }
+
   // ── Generate invoice number ───────────────────────────────────────────────
 
   Future<String> generateInvoiceNumber() async {
@@ -160,10 +179,9 @@ class PurchaseInvoiceDatasource {
   /// Purchase ka stock aana — quantity barhti hai aur variant ki purchase
   /// price purane aur naye maal ka weighted average (naya maal [landedCost]
   /// par, yani expense ke hisse ke sath). Pehle stock na ho to seedha
-  /// [landedCost]. Expense laga ho to [salePrice] (sale price + expense ka
-  /// hissa) variant ki nayi sale price ban jati hai.
-  Future<void> addPurchasedStock(String stockId, int qty, double landedCost,
-      {double? salePrice}) async {
+  /// [landedCost].
+  Future<void> addPurchasedStock(
+      String stockId, int qty, double landedCost) async {
     final res = await _client
         .from('stock_inventory')
         .select('quantity, purchase_price, products(purchase_price)')
@@ -182,49 +200,8 @@ class PurchaseInvoiceDatasource {
     await _client.from('stock_inventory').update({
       'quantity': currentQty + qty,
       'purchase_price': double.parse(newCost.toStringAsFixed(2)),
-      if (salePrice != null)
-        'sale_price': double.parse(salePrice.toStringAsFixed(2)),
     }).eq('id', stockId);
   }
-
-  /// Har line ki per-unit cost — net price + expense ka hissa. Expense lines
-  /// mein unki raqam (line total) ke hisaab se bat-ta hai; sab lines 0 ki
-  /// hon to quantity ke hisaab se.
-  static List<double> landedCosts(
-      List<PurchaseCartItem> items, double expenseTotal) {
-    final net = items.fold(0.0, (s, i) => s + i.purchaseLineTotal);
-    final qty = items.fold(0, (s, i) => s + i.quantity);
-    return [
-      for (final i in items)
-        i.quantity <= 0
-            ? i.purchaseNetPrice
-            : i.purchaseNetPrice +
-                (net > 0
-                        ? expenseTotal * i.purchaseLineTotal / net
-                        : qty > 0
-                            ? expenseTotal * i.quantity / qty
-                            : 0) /
-                    i.quantity,
-    ];
-  }
-
-  /// Har line ka per-unit hissa [expenseTotal] mein se.
-  static List<double> expenseShares(
-      List<PurchaseCartItem> items, double expenseTotal) {
-    final landed = landedCosts(items, expenseTotal);
-    return [
-      for (var i = 0; i < items.length; i++)
-        landed[i] - items[i].purchaseNetPrice,
-    ];
-  }
-
-  /// Wo kharche jo purchase price mein jaane hain.
-  static double purchasePriceExpense(List<PurchaseExpense> expenses) =>
-      expenses.where((e) => e.addToPurchasePrice).fold(0.0, (s, e) => s + e.amount);
-
-  /// Wo kharche jo sale price mein jaane hain.
-  static double salePriceExpense(List<PurchaseExpense> expenses) =>
-      expenses.where((e) => e.addToSalePrice).fold(0.0, (s, e) => s + e.amount);
 
   // ── Save purchase invoice + items ─────────────────────────────────────────
 
@@ -239,7 +216,6 @@ class PurchaseInvoiceDatasource {
     required double creditAmount,
     required String paymentMode,
     required List<PurchaseCartItem> cartItems,
-    List<PurchaseExpense> expenses = const [],
     String? notes,
   }) async {
     final invoiceRes = await _client
@@ -261,11 +237,6 @@ class PurchaseInvoiceDatasource {
 
     final invoice = PurchaseInvoiceModel.fromJson(invoiceRes);
 
-    // Expense company ko nahi jata, magar maal ki asal cost mein shamil hai.
-    final landed = landedCosts(cartItems, purchasePriceExpense(expenses));
-    final saleShares = expenseShares(cartItems, salePriceExpense(expenses));
-
-    var k = 0;
     final itemsPayload = cartItems
         .map((item) => {
               'purchase_invoice_id': invoice.id,
@@ -284,18 +255,16 @@ class PurchaseInvoiceDatasource {
               'discount_amount': item.purchaseDiscountAmount,
               'net_price': item.purchaseNetPrice,
               'line_total': item.purchaseLineTotal,
-              'landed_cost': double.parse(landed[k++].toStringAsFixed(2)),
+              // Expense company ko nahi jata, magar maal ki asal cost mein hai.
+              'landed_cost': double.parse(item.landedCost.toStringAsFixed(2)),
             })
         .toList();
 
     await _client.from('purchase_invoice_items').insert(itemsPayload);
 
-    // STOCK INCREASE + purchase/sale price (expense ke sath)
-    for (var i = 0; i < cartItems.length; i++) {
-      final item = cartItems[i];
-      await addPurchasedStock(item.stockId, item.quantity, landed[i],
-          salePrice:
-              saleShares[i] > 0 ? item.salePrice + saleShares[i] : null);
+    // STOCK INCREASE + purchase price (expense ke sath)
+    for (final item in cartItems) {
+      await addPurchasedStock(item.stockId, item.quantity, item.landedCost);
     }
 
     // Deduct paid amount from cash counter
@@ -303,13 +272,21 @@ class PurchaseInvoiceDatasource {
       await deductFromCounter(paidAmount);
     }
 
-    // Kharche — cash counter se, company ke khate se bahar.
-    await addPurchaseExpenses(
-      invoiceId: invoice.id,
-      invoiceNumber: invoiceNumber,
-      headOfficeId: headOfficeId,
-      expenses: expenses,
-    );
+    // Articles ke kharche — cash counter se, company ke khate se bahar.
+    final expenseTotal = cartItems.fold(0.0, (s, i) => s + i.expense);
+    if (expenseTotal > 0) {
+      await addPurchaseExpenses(
+        invoiceId: invoice.id,
+        invoiceNumber: invoiceNumber,
+        headOfficeId: headOfficeId,
+        expenses: [
+          PurchaseExpense(
+            expenseHeadId: await _purchaseExpenseHeadId(),
+            amount: expenseTotal,
+          ),
+        ],
+      );
+    }
 
     // Add credit amount to company opening_balance
     if (creditAmount > 0 && companyId != null) {

@@ -40,7 +40,6 @@ class PurchaseInvoiceRepository {
     required double creditAmount,
     required String paymentMode,
     required List<PurchaseCartItem> cartItems,
-    List<PurchaseExpense> expenses = const [],
     String? notes,
   }) =>
       _datasource.savePurchaseInvoice(
@@ -54,7 +53,6 @@ class PurchaseInvoiceRepository {
         creditAmount: creditAmount,
         paymentMode: paymentMode,
         cartItems: cartItems,
-        expenses: expenses,
         notes: notes,
       );
 

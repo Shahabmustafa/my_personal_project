@@ -132,10 +132,6 @@ class PurchaseInvoiceState {
   final bool invoiceLoading;
   final StockLookupItem? selectedCompany;
   final List<PurchaseCartItem> cartItems;
-
-  /// Transport / barcode waghera — cash se jate hain, company ke khate se
-  /// bahar. Har article ki purchase aur sale price mein bat jate hain.
-  final List<PurchaseExpense> expenses;
   final bool isSaving;
   final String? error;
 
@@ -144,20 +140,12 @@ class PurchaseInvoiceState {
     this.invoiceLoading = false,
     this.selectedCompany,
     this.cartItems = const [],
-    this.expenses = const [],
     this.isSaving = false,
     this.error,
   });
 
-  double get expenseTotal => expenses.fold(0, (s, e) => s + e.amount);
-
-  /// Har line ka per-unit hissa — un kharchon se jo purchase price mein jaate hain.
-  List<double> get purchasePriceShares => PurchaseInvoiceDatasource.expenseShares(
-      cartItems, PurchaseInvoiceDatasource.purchasePriceExpense(expenses));
-
-  /// Har line ka per-unit hissa — un kharchon se jo sale price mein jaate hain.
-  List<double> get salePriceShares => PurchaseInvoiceDatasource.expenseShares(
-      cartItems, PurchaseInvoiceDatasource.salePriceExpense(expenses));
+  /// Articles ke kharche — cash se jate hain, company ke khate mein nahi.
+  double get expenseTotal => cartItems.fold(0, (s, i) => s + i.expense);
 
   double get totalAmount =>
       cartItems.fold(0, (sum, i) => sum + (i.purchasePrice * i.quantity));
@@ -172,7 +160,6 @@ class PurchaseInvoiceState {
     StockLookupItem? selectedCompany,
     bool clearCompany = false,
     List<PurchaseCartItem>? cartItems,
-    List<PurchaseExpense>? expenses,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -183,7 +170,6 @@ class PurchaseInvoiceState {
         selectedCompany:
             clearCompany ? null : selectedCompany ?? this.selectedCompany,
         cartItems: cartItems ?? this.cartItems,
-        expenses: expenses ?? this.expenses,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
       );
@@ -241,13 +227,16 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     }
   }
 
-  void addCartItem(WarehouseStockModel stock, {int quantity = 1}) {
+  /// [expense] — is article ka kharcha, per unit iski purchase price mein.
+  void addCartItem(WarehouseStockModel stock,
+      {int quantity = 1, double expense = 0}) {
     final existing =
         state.cartItems.indexWhere((c) => c.stockId == stock.id);
     if (existing != -1) {
       final updated = List<PurchaseCartItem>.from(state.cartItems);
-      updated[existing] = updated[existing]
-          .copyWith(quantity: updated[existing].quantity + quantity);
+      updated[existing] = updated[existing].copyWith(
+          quantity: updated[existing].quantity + quantity,
+          expense: updated[existing].expense + expense);
       state = state.copyWith(cartItems: updated);
       return;
     }
@@ -274,6 +263,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
       // Purchase invoice mein discount concept use nahi hota — sirf
       // purchase price par based totals.
       discountPct: 0,
+      expense: expense,
     );
 
     state = state.copyWith(
@@ -294,12 +284,6 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
   }
 
 
-  void addExpense(PurchaseExpense expense) =>
-      state = state.copyWith(expenses: [...state.expenses, expense]);
-
-  void removeExpense(int index) => state = state.copyWith(
-      expenses: [...state.expenses]..removeAt(index));
-
   void removeItem(String stockId) {
     state = state.copyWith(
       cartItems: state.cartItems.where((c) => c.stockId != stockId).toList(),
@@ -316,7 +300,6 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     required String paymentMode,
     required PurchaseInvoiceRepository repo,
   }) async {
-    final expenses = state.expenses;
     if (state.cartItems.isEmpty) return 'Cart is empty';
     state = state.copyWith(isSaving: true, clearError: true);
 
@@ -334,7 +317,6 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
         creditAmount: creditAmount,
         paymentMode: paymentMode,
         cartItems: state.cartItems,
-        expenses: expenses,
       );
 
       if (mounted) {
@@ -360,7 +342,6 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
             creditAmount: creditAmount,
             paymentMode: paymentMode,
             cartItems: state.cartItems,
-            expenses: expenses,
           );
 
           if (mounted) {

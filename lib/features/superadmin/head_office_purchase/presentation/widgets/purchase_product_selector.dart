@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/warehouse_stock_model.dart';
@@ -27,6 +28,7 @@ class _PurchaseProductSelectorState
   final _barcodeCtrl = TextEditingController();
   final _barcodeFocus = FocusNode();
   final _qtyCtrl = TextEditingController(text: '1');
+  final _expenseCtrl = TextEditingController();
 
   WarehouseStockModel? _selectedStock;
   bool _barcodeNotFound = false;
@@ -36,6 +38,7 @@ class _PurchaseProductSelectorState
     _barcodeCtrl.dispose();
     _barcodeFocus.dispose();
     _qtyCtrl.dispose();
+    _expenseCtrl.dispose();
     super.dispose();
   }
 
@@ -85,11 +88,12 @@ class _PurchaseProductSelectorState
   void _addToCart() {
     if (_selectedStock == null) return;
     final qty = int.tryParse(_qtyCtrl.text) ?? 1;
-    ref
-        .read(purchaseInvoiceProvider.notifier)
-        .addCartItem(_selectedStock!, quantity: qty > 0 ? qty : 1);
+    final expense = double.tryParse(_expenseCtrl.text.trim()) ?? 0;
+    ref.read(purchaseInvoiceProvider.notifier).addCartItem(_selectedStock!,
+        quantity: qty > 0 ? qty : 1, expense: expense > 0 ? expense : 0);
     _barcodeCtrl.clear();
     _qtyCtrl.text = '1';
+    _expenseCtrl.clear();
     setState(() {
       _selectedStock = null;
       _barcodeNotFound = false;
@@ -222,6 +226,27 @@ class _PurchaseProductSelectorState
           ),
         );
 
+        // Is article ka kharcha — per unit sirf iski purchase price mein.
+        final expenseField = TextField(
+          controller: _expenseCtrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+          ],
+          decoration: InputDecoration(
+            labelText: 'Expense',
+            hintText: '0',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          ),
+          onSubmitted: (_) => _addToCart(),
+        );
+
         final pPriceBox = _InfoBox(
           label: 'P.Price',
           value: stock != null ? purchasePrice.toStringAsFixed(0) : null,
@@ -279,6 +304,8 @@ class _PurchaseProductSelectorState
                         barcodeField,
                         const SizedBox(height: 10),
                         articleDropdown,
+                        const SizedBox(height: 10),
+                        expenseField,
                       ],
                     )
                   : Row(
@@ -289,6 +316,8 @@ class _PurchaseProductSelectorState
                         Expanded(flex: 2, child: barcodeField),
                         const SizedBox(width: 10),
                         Expanded(flex: 3, child: articleDropdown),
+                        const SizedBox(width: 10),
+                        Expanded(flex: 1, child: expenseField),
                       ],
                     ),
 

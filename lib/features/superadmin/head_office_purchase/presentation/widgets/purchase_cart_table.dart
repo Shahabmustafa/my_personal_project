@@ -13,8 +13,6 @@ class PurchaseCartTable extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(purchaseInvoiceProvider);
     final items = state.cartItems;
-    final pShares = state.purchasePriceShares;
-    final sShares = state.salePriceShares;
 
     if (items.isEmpty) {
       return Center(
@@ -39,8 +37,8 @@ class PurchaseCartTable extends ConsumerWidget {
 
     return LayoutBuilder(builder: (ctx, constraints) {
       return constraints.maxWidth > 700
-          ? _DesktopTable(items: items, pShares: pShares, sShares: sShares)
-          : _MobileList(items: items, pShares: pShares, sShares: sShares);
+          ? _DesktopTable(items: items)
+          : _MobileList(items: items);
     });
   }
 }
@@ -49,10 +47,7 @@ class PurchaseCartTable extends ConsumerWidget {
 
 class _DesktopTable extends ConsumerWidget {
   final List<PurchaseCartItem> items;
-  final List<double> pShares;
-  final List<double> sShares;
-  const _DesktopTable(
-      {required this.items, required this.pShares, required this.sShares});
+  const _DesktopTable({required this.items});
 
   static const _hs = TextStyle(
       fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white);
@@ -89,11 +84,7 @@ class _DesktopTable extends ConsumerWidget {
           child: ListView.builder(
             itemCount: items.length,
             itemBuilder: (_, i) =>
-                _CartRow(
-                    item: items[i],
-                    pShare: pShares[i],
-                    sShare: sShares[i],
-                    index: i),
+                _CartRow(item: items[i], index: i),
           ),
         ),
         // ── Footer ──────────────────────────────────────────────────────
@@ -116,15 +107,8 @@ class _DesktopTable extends ConsumerWidget {
 class _CartRow extends ConsumerStatefulWidget {
   final PurchaseCartItem item;
 
-  /// Per-unit expense ka hissa — purchase / sale price mein.
-  final double pShare;
-  final double sShare;
   final int index;
-  const _CartRow(
-      {required this.item,
-      required this.pShare,
-      required this.sShare,
-      required this.index});
+  const _CartRow({required this.item, required this.index});
 
   @override
   ConsumerState<_CartRow> createState() => _CartRowState();
@@ -161,8 +145,8 @@ class _CartRowState extends ConsumerState<_CartRow> {
           _c(item.categoryName, flex: 2),
 
           // P.Price / S.Price — expense ho to nayi price neeche
-          _priceCell(item.purchasePrice, widget.pShare, Colors.purple.shade600),
-          _priceCell(item.salePrice, widget.sShare, Colors.black87),
+          _priceCell(item.purchasePrice, _share(item), Colors.purple.shade600),
+          _priceCell(item.salePrice, 0, Colors.black87),
 
           // Qty stepper
           Expanded(
@@ -239,6 +223,9 @@ class _CartRowState extends ConsumerState<_CartRow> {
     ),
   );
 }
+
+/// Line ke expense ka per-unit hissa.
+double _share(PurchaseCartItem item) => item.landedCost - item.purchaseNetPrice;
 
 String _money(double v) => v.toStringAsFixed(v % 1 == 0 ? 0 : 2);
 
@@ -331,10 +318,7 @@ class _Footer extends StatelessWidget {
 
 class _MobileList extends ConsumerWidget {
   final List<PurchaseCartItem> items;
-  final List<double> pShares;
-  final List<double> sShares;
-  const _MobileList(
-      {required this.items, required this.pShares, required this.sShares});
+  const _MobileList({required this.items});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -347,8 +331,7 @@ class _MobileList extends ConsumerWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final item = items[i];
-        final pShare = pShares[i];
-        final sShare = sShares[i];
+        final pShare = _share(item);
         return Card(
           elevation: 1,
           shape:
@@ -396,11 +379,7 @@ class _MobileList extends ConsumerWidget {
                                   : Colors.purple.shade600),
                           _lbl(
                               'S.Price',
-                              sShare > 0
-                                  ? '${_money(item.salePrice)} → '
-                                      '${_money(item.salePrice + sShare)}'
-                                  : _money(item.salePrice),
-                              color: sShare > 0 ? Colors.green.shade700 : null),
+                              _money(item.salePrice)),
                         ],
                       ),
                     ),

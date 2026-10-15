@@ -72,17 +72,10 @@ class PurchaseExpense {
   final String? headName;
   final double amount;
 
-  /// Invoice banate waqt — ye kharcha articles ki purchase price aur/ya sale
-  /// price mein bhi baantna hai (save nahi hota, sirf stock ki prices par asar).
-  final bool addToPurchasePrice;
-  final bool addToSalePrice;
-
   const PurchaseExpense({
     required this.expenseHeadId,
     this.headName,
     required this.amount,
-    this.addToPurchasePrice = false,
-    this.addToSalePrice = false,
   });
 
   factory PurchaseExpense.fromJson(Map<String, dynamic> json) =>
@@ -203,6 +196,10 @@ class PurchaseCartItem {
   double purchasePrice;
   double discountPct;
 
+  /// Is line ka kharcha (transport waghera) — cash se jata hai, company ke
+  /// khate mein nahi; per unit is article ki purchase price mein judta hai.
+  double expense;
+
   PurchaseCartItem({
     required this.stockId,
     required this.barcode,
@@ -223,7 +220,12 @@ class PurchaseCartItem {
     required this.salePrice,
     required this.purchasePrice,
     required this.discountPct,
+    this.expense = 0,
   });
+
+  /// Per-unit cost — net purchase price + [expense] ka per-unit hissa.
+  double get landedCost =>
+      quantity > 0 ? purchaseNetPrice + expense / quantity : purchaseNetPrice;
 
   // Sale price based (branch mein sale ke liye)
   double get discountAmount => salePrice * discountPct / 100;
@@ -240,6 +242,7 @@ class PurchaseCartItem {
     double? salePrice,
     double? purchasePrice,
     double? discountPct,
+    double? expense,
   }) {
     return PurchaseCartItem(
       stockId: stockId,
@@ -261,6 +264,7 @@ class PurchaseCartItem {
       salePrice: salePrice ?? this.salePrice,
       purchasePrice: purchasePrice ?? this.purchasePrice,
       discountPct: discountPct ?? this.discountPct,
+      expense: expense ?? this.expense,
     );
   }
 }
