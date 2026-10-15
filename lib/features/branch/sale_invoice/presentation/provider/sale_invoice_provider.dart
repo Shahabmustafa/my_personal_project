@@ -550,8 +550,9 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
   /// Offer wala article add hua aur us offer ke units taaq (odd) hain — jodi
   /// poori karne ke liye admin ke usi offer ka doosra, kam (ya barabar) qeemat
   /// wala article (stock mein ho to) free mein cart mein. Aisa koi na mile to
-  /// usi variant ka ek aur unit.
-  void _addB1g1FreeUnit(String branchStockId) {
+  /// usi variant ka ek aur unit. [sameItem] = row ka stepper barha — free
+  /// unit usi article ka (paid jitne, utne hi free).
+  void _addB1g1FreeUnit(String branchStockId, {bool sameItem = false}) {
     final idx = state.cartItems.indexWhere(
       (c) => c.branchStockId == branchStockId,
     );
@@ -560,27 +561,29 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     final offer = _b1g1OfferFor(item);
     if (offer == null || _b1g1Units(offer).isEven) return;
 
-    final inCart = {
-      for (final c in state.cartItems) c.branchStockId: c.quantity,
-    };
-    BranchStockModel? partner;
-    for (final s in _ref.read(branchStockCacheProvider).value ?? const []) {
-      if (s.id == item.branchStockId || s.salePrice > item.salePrice) continue;
-      if (s.quantity - (inCart[s.id] ?? 0) <= 0) continue;
-      final o = _b1g1OfferForIds(
-        productId: s.productId,
-        sizeId: s.sizeId,
-        colorId: s.colorId,
-        brandId: s.brandId,
-        categoryId: s.categoryId,
-        typeId: s.typeId,
-      );
-      if (o?.id != offer.id) continue;
-      if (partner == null || s.salePrice < partner.salePrice) partner = s;
-    }
-    if (partner != null) {
-      _addStock(partner, 1);
-      return;
+    if (!sameItem) {
+      final inCart = {
+        for (final c in state.cartItems) c.branchStockId: c.quantity,
+      };
+      BranchStockModel? partner;
+      for (final s in _ref.read(branchStockCacheProvider).value ?? const []) {
+        if (s.id == item.branchStockId || s.salePrice > item.salePrice) continue;
+        if (s.quantity - (inCart[s.id] ?? 0) <= 0) continue;
+        final o = _b1g1OfferForIds(
+          productId: s.productId,
+          sizeId: s.sizeId,
+          colorId: s.colorId,
+          brandId: s.brandId,
+          categoryId: s.categoryId,
+          typeId: s.typeId,
+        );
+        if (o?.id != offer.id) continue;
+        if (partner == null || s.salePrice < partner.salePrice) partner = s;
+      }
+      if (partner != null) {
+        _addStock(partner, 1);
+        return;
+      }
     }
 
     if (item.availableStock > 0 && item.quantity >= item.availableStock) return;
@@ -591,8 +594,20 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
 
   /// Offer wala unit kam hua aur jodi toot gayi — jo unit pehle free tha wo
   /// bhi cart se nikal do (warna wo paid ban kar bill mein reh jata).
-  void _dropB1g1FreeUnit(B1g1OfferModel? offer, List<SaleCartItem> before) {
+  /// Pehle usi line [branchStockId] se, taake paid aur free barabar rahen.
+  void _dropB1g1FreeUnit(
+    B1g1OfferModel? offer,
+    List<SaleCartItem> before,
+    String branchStockId,
+  ) {
     if (offer == null || _b1g1Units(offer).isEven) return;
+    final same = state.cartItems.where(
+      (c) => c.branchStockId == branchStockId,
+    );
+    if (same.isNotEmpty) {
+      _setQty(branchStockId, same.first.quantity - 1);
+      return;
+    }
     for (final b in before) {
       if (b.b1g1FreeQty <= 0 || _b1g1OfferFor(b)?.id != offer.id) continue;
       final now = state.cartItems.where(
@@ -628,9 +643,9 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     final item = current.first;
     _setQty(branchStockId, quantity);
     if (quantity > item.quantity) {
-      _addB1g1FreeUnit(branchStockId);
+      _addB1g1FreeUnit(branchStockId, sameItem: true);
     } else if (quantity < item.quantity) {
-      _dropB1g1FreeUnit(_b1g1OfferFor(item), before);
+      _dropB1g1FreeUnit(_b1g1OfferFor(item), before, branchStockId);
     }
   }
 
