@@ -4,6 +4,7 @@ import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_invoice_provider.dart';
+import '../../../head_office_stock/presentation/widgets/add_stock_inventory_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -248,6 +249,15 @@ class _PurchaseProductSelectorState
           ),
           onPressed: stock != null ? _addToCart : null,
         );
+        final stockButton = OutlinedButton.icon(
+          icon: AppIcon(AppIcons.inventory2Outlined, size: 18, color: primary),
+          label: const Text('Stock Inventory'),
+          style: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+          ),
+          onPressed: _openAddStock,
+        );
 
         return Container(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -310,6 +320,12 @@ class _PurchaseProductSelectorState
                             ),
                           ],
                         ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 48,
+                          width: double.infinity,
+                          child: stockButton,
+                        ),
                       ],
                     )
                   : Row(
@@ -325,6 +341,11 @@ class _PurchaseProductSelectorState
                           height: 48,
                           child: addButton,
                         ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          height: 48,
+                          child: stockButton,
+                        ),
                       ],
                     ),
             ],
@@ -332,6 +353,17 @@ class _PurchaseProductSelectorState
         );
       },
     );
+  }
+
+  /// Article inventory mein na ho to yahin se Stock Inventory mein add —
+  /// dialog band hone par Article dropdown taza list ke sath.
+  Future<void> _openAddStock() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AddStockInventoryDialog(),
+    );
+    if (mounted) ref.invalidate(warehouseStockCacheProvider);
   }
 
   InputDecoration _dropDecor(String label, {bool enabled = true}) {

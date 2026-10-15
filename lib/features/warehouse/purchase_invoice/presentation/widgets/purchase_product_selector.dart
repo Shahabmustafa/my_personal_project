@@ -4,6 +4,7 @@ import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_invoice_provider.dart';
+import '../../../stock_inventory/presentation/widgets/add_stock_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -284,6 +285,19 @@ class _PurchaseProductSelectorState
                       onPressed: stock != null ? _addToCart : null,
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      icon: AppIcon(AppIcons.inventory2Outlined, size: 18, color: primary),
+                      label: const Text('Stock Inventory'),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                      ),
+                      onPressed: _openAddStock,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -291,6 +305,17 @@ class _PurchaseProductSelectorState
         );
       },
     );
+  }
+
+  /// Article inventory mein na ho to yahin se Stock Inventory mein add —
+  /// dialog band hone par Article dropdown taza list ke sath.
+  Future<void> _openAddStock() async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AddStockDialog(),
+    );
+    if (mounted) ref.invalidate(warehouseStockCacheProvider);
   }
 
   InputDecoration _dropDecor(String label, {bool enabled = true}) {
