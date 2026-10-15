@@ -9,6 +9,8 @@ import '../providers/branch_cash_counter_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/widget/cash_counter_bar_chart.dart';
+import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_detail_panel.dart';
 class BranchCashCounterScreen extends ConsumerStatefulWidget {
   const BranchCashCounterScreen({super.key});
 
@@ -20,6 +22,9 @@ class BranchCashCounterScreen extends ConsumerStatefulWidget {
 class _BranchCashCounterScreenState
     extends ConsumerState<BranchCashCounterScreen> {
   String _searchQuery = '';
+
+  /// Row tap par right-side slider mein iska bar graph dikhta hai.
+  BranchCashCounterModel? _selected;
 
   @override
   void initState() {
@@ -63,7 +68,8 @@ class _BranchCashCounterScreenState
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
-      body: Column(
+      body: Stack(children: [
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header ────────────────────────────────────────────────────
@@ -210,13 +216,40 @@ class _BranchCashCounterScreenState
                     : filtered.isEmpty
                         ? const _EmptyView()
                         : isMobile
-                            ? _MobileList(records: filtered)
-                            : _DesktopTable(records: filtered),
+                            ? _MobileList(records: filtered, onTap: _select)
+                            : _DesktopTable(records: filtered, onTap: _select),
           ),
         ],
       ),
+      if (_selected != null)
+        ReportDetailOverlay(
+          title: 'Cash Counter',
+          subtitle: _fmtDate(_selected!.createdAt),
+          accent: const Color(0xFF3E63DD),
+          onClose: () => setState(() => _selected = null),
+          child: CashCounterBarChart(bars: _barsFor(_selected!)),
+        ),
+      ]),
     );
   }
+
+  void _select(BranchCashCounterModel r) => setState(() => _selected = r);
+
+  List<CashCounterBar> _barsFor(BranchCashCounterModel r) => [
+        CashCounterBar('Cash', 'Cash Sale', r.cashSale, const Color(0xFF3E63DD)),
+        CashCounterBar('Card', 'Card Sale', r.cardSale, const Color(0xFF0EA5E9)),
+        CashCounterBar('Total', 'Total Sale', r.totalSale, const Color(0xFF6366F1)),
+        CashCounterBar('Return', 'Return Sale', r.returnSale, const Color(0xFFE2483D)),
+        CashCounterBar('Ex.Out', 'Return in Exchange', r.returnAmountInExchange,
+            const Color(0xFFF472B6)),
+        CashCounterBar('Ex.In', 'Received in Exchange', r.receivedAmountInExchange,
+            const Color(0xFF14B8A6)),
+        CashCounterBar('Net', 'Net Sale', r.netSale, const Color(0xFF0F9D8F)),
+        CashCounterBar('Exp.', 'Expense', r.expense, const Color(0xFFE56A00)),
+        CashCounterBar('Gross', 'Gross', r.gross, const Color(0xFF22A06B)),
+        CashCounterBar('Paid', 'Paid Amount', r.paidAmount, const Color(0xFF64748B)),
+        CashCounterBar('Bal.', 'Total Amount', r.totalAmount, const Color(0xFF6C4DE0)),
+      ];
 }
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
@@ -285,7 +318,8 @@ class _SummaryCard extends StatelessWidget {
 
 class _DesktopTable extends StatelessWidget {
   final List<BranchCashCounterModel> records;
-  const _DesktopTable({required this.records});
+  final ValueChanged<BranchCashCounterModel> onTap;
+  const _DesktopTable({required this.records, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -302,6 +336,7 @@ class _DesktopTable extends StatelessWidget {
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: DataTable(
+              showCheckboxColumn: false,
               headingRowColor:
                   WidgetStateProperty.all(const Color(0xFFF7F8FC)),
               headingTextStyle: const TextStyle(
@@ -324,7 +359,7 @@ class _DesktopTable extends StatelessWidget {
                 DataColumn(label: Text('Total Amount'), numeric: true),
               ],
               rows: records
-                  .map((r) => DataRow(cells: [
+                  .map((r) => DataRow(onSelectChanged: (_) => onTap(r), cells: [
                         DataCell(Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
@@ -385,7 +420,8 @@ class _DesktopTable extends StatelessWidget {
 
 class _MobileList extends StatelessWidget {
   final List<BranchCashCounterModel> records;
-  const _MobileList({required this.records});
+  final ValueChanged<BranchCashCounterModel> onTap;
+  const _MobileList({required this.records, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +430,9 @@ class _MobileList extends StatelessWidget {
       itemCount: records.length,
       itemBuilder: (_, i) {
         final r = records[i];
-        return Container(
+        return GestureDetector(
+          onTap: () => onTap(r),
+          child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -474,6 +512,7 @@ class _MobileList extends StatelessWidget {
                   valueColor: const Color(0xFF6C4DE0)),
             ],
           ),
+        ),
         );
       },
     );

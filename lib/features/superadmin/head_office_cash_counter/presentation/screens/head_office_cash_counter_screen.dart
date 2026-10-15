@@ -7,6 +7,8 @@ import '../providers/head_office_cash_counter_state.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/widget/cash_counter_bar_chart.dart';
+import '../../../report/presentation/widgets/report_detail_panel.dart';
 
 class HeadOfficeCashCounterScreen extends ConsumerStatefulWidget {
   const HeadOfficeCashCounterScreen({super.key});
@@ -19,6 +21,9 @@ class HeadOfficeCashCounterScreen extends ConsumerStatefulWidget {
 class _HeadOfficeCashCounterScreenState
     extends ConsumerState<HeadOfficeCashCounterScreen> {
   String _searchQuery = '';
+
+  /// Row tap par right-side slider mein iska bar graph dikhta hai.
+  HeadOfficeCashCounterModel? _selected;
 
   @override
   void initState() {
@@ -59,7 +64,8 @@ class _HeadOfficeCashCounterScreenState
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
-      body: Column(
+      body: Stack(children: [
+      Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -175,13 +181,33 @@ class _HeadOfficeCashCounterScreenState
                     : filtered.isEmpty
                         ? const _EmptyView()
                         : isMobile
-                            ? _MobileList(records: filtered)
-                            : _DesktopTable(records: filtered),
+                            ? _MobileList(records: filtered, onTap: _select)
+                            : _DesktopTable(records: filtered, onTap: _select),
           ),
         ],
       ),
+      if (_selected != null)
+        ReportDetailOverlay(
+          title: 'Head Office Cash Counter',
+          subtitle: _fmtDate(_selected!.counterDate),
+          accent: const Color(0xFF3E63DD),
+          onClose: () => setState(() => _selected = null),
+          child: CashCounterBarChart(bars: [
+            CashCounterBar('Purchase', 'Total Purchase', _selected!.totalPurchase,
+                const Color(0xFF22A06B)),
+            CashCounterBar('Return', 'Total Return',
+                _selected!.totalReturnPurchase, const Color(0xFFE2483D)),
+            CashCounterBar(
+                'Expense', 'Expense', _selected!.expense, const Color(0xFFE56A00)),
+            CashCounterBar('Net', 'Net Amount', _selected!.netAmount,
+                const Color(0xFF3E63DD)),
+          ]),
+        ),
+      ]),
     );
   }
+
+  void _select(HeadOfficeCashCounterModel r) => setState(() => _selected = r);
 }
 
 // ── Summary Card ──────────────────────────────────────────────────────────────
@@ -255,8 +281,9 @@ class _SummaryCard extends StatelessWidget {
 
 class _DesktopTable extends StatelessWidget {
   final List<HeadOfficeCashCounterModel> records;
+  final ValueChanged<HeadOfficeCashCounterModel> onTap;
 
-  const _DesktopTable({required this.records});
+  const _DesktopTable({required this.records, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +319,9 @@ class _DesktopTable extends StatelessWidget {
                   itemBuilder: (_, i) {
                     final r = records[i];
                     final isLast = i == records.length - 1;
-                    return Container(
+                    return InkWell(
+                      onTap: () => onTap(r),
+                      child: Container(
                       decoration: BoxDecoration(
                         border: isLast
                             ? null
@@ -371,6 +400,7 @@ class _DesktopTable extends StatelessWidget {
                           )),
                         ),
                       ]),
+                    ),
                     );
                   },
                 ),
@@ -387,8 +417,9 @@ class _DesktopTable extends StatelessWidget {
 
 class _MobileList extends StatelessWidget {
   final List<HeadOfficeCashCounterModel> records;
+  final ValueChanged<HeadOfficeCashCounterModel> onTap;
 
-  const _MobileList({required this.records});
+  const _MobileList({required this.records, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +428,9 @@ class _MobileList extends StatelessWidget {
       itemCount: records.length,
       itemBuilder: (_, i) {
         final r = records[i];
-        return Container(
+        return GestureDetector(
+          onTap: () => onTap(r),
+          child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -459,6 +492,7 @@ class _MobileList extends StatelessWidget {
               ),
             ],
           ),
+        ),
         );
       },
     );
