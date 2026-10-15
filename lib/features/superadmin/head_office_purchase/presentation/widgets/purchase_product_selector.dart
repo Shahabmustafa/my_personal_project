@@ -29,6 +29,7 @@ class _PurchaseProductSelectorState
   final _barcodeFocus = FocusNode();
   final _qtyCtrl = TextEditingController(text: '1');
   final _expenseCtrl = TextEditingController();
+  final _expenseFocus = FocusNode();
 
   WarehouseStockModel? _selectedStock;
   bool _barcodeNotFound = false;
@@ -39,6 +40,7 @@ class _PurchaseProductSelectorState
     _barcodeFocus.dispose();
     _qtyCtrl.dispose();
     _expenseCtrl.dispose();
+    _expenseFocus.dispose();
     super.dispose();
   }
 
@@ -87,13 +89,22 @@ class _PurchaseProductSelectorState
 
   void _addToCart() {
     if (_selectedStock == null) return;
+    // Pehle expense — taa ke har article ki purchase price usi hisaab se bane.
+    if (ref.read(purchaseInvoiceProvider).expense == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: const Text('Pehle Expense likhein (na ho to 0).'),
+        backgroundColor: Colors.orange.shade700,
+        behavior: SnackBarBehavior.floating,
+      ));
+      _expenseFocus.requestFocus();
+      return;
+    }
     final qty = int.tryParse(_qtyCtrl.text) ?? 1;
-    final expense = double.tryParse(_expenseCtrl.text.trim()) ?? 0;
-    ref.read(purchaseInvoiceProvider.notifier).addCartItem(_selectedStock!,
-        quantity: qty > 0 ? qty : 1, expense: expense > 0 ? expense : 0);
+    ref
+        .read(purchaseInvoiceProvider.notifier)
+        .addCartItem(_selectedStock!, quantity: qty > 0 ? qty : 1);
     _barcodeCtrl.clear();
     _qtyCtrl.text = '1';
-    _expenseCtrl.clear();
     setState(() {
       _selectedStock = null;
       _barcodeNotFound = false;
@@ -107,6 +118,10 @@ class _PurchaseProductSelectorState
     final companiesAsync = ref.watch(purchaseCompaniesProvider);
     final invoiceState = ref.watch(purchaseInvoiceProvider);
     final primary = Theme.of(context).colorScheme.primary;
+    // Nayi invoice (reset) par expense field bhi khali.
+    ref.listen(purchaseInvoiceProvider.select((s) => s.expense), (_, next) {
+      if (next == null && _expenseCtrl.text.isNotEmpty) _expenseCtrl.clear();
+    });
 
     return stockAsync.when(
       // Realtime reload par purani list dikhti rahe — spinner/focus loss nahi.
@@ -226,15 +241,17 @@ class _PurchaseProductSelectorState
           ),
         );
 
-        // Is article ka kharcha — per unit sirf iski purchase price mein.
+        // Poori invoice ka kharcha — articles se pehle; sab articles ki
+        // purchase price mein bat jata hai.
         final expenseField = TextField(
           controller: _expenseCtrl,
+          focusNode: _expenseFocus,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
           ],
           decoration: InputDecoration(
-            labelText: 'Expense',
+            labelText: 'Expense *',
             hintText: '0',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             enabledBorder: OutlineInputBorder(
@@ -244,7 +261,9 @@ class _PurchaseProductSelectorState
             contentPadding:
                 const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
           ),
-          onSubmitted: (_) => _addToCart(),
+          onChanged: (v) => ref
+              .read(purchaseInvoiceProvider.notifier)
+              .setExpense(v.trim().isEmpty ? null : double.tryParse(v.trim())),
         );
 
         final pPriceBox = _InfoBox(

@@ -132,6 +132,12 @@ class PurchaseInvoiceState {
   final bool invoiceLoading;
   final StockLookupItem? selectedCompany;
   final List<PurchaseCartItem> cartItems;
+
+  /// Poori invoice ka kharcha (transport waghera) — articles add karne se
+  /// pehle likhna zaroori; null = abhi likha nahi. Cart ke articles mein
+  /// unki raqam ke hisaab se bat kar purchase price mein judta hai. Cash se
+  /// jata hai, company ke khate mein nahi.
+  final double? expense;
   final bool isSaving;
   final String? error;
 
@@ -140,11 +146,11 @@ class PurchaseInvoiceState {
     this.invoiceLoading = false,
     this.selectedCompany,
     this.cartItems = const [],
+    this.expense,
     this.isSaving = false,
     this.error,
   });
 
-  /// Articles ke kharche — cash se jate hain, company ke khate mein nahi.
   double get expenseTotal => cartItems.fold(0, (s, i) => s + i.expense);
 
   double get totalAmount =>
@@ -160,6 +166,8 @@ class PurchaseInvoiceState {
     StockLookupItem? selectedCompany,
     bool clearCompany = false,
     List<PurchaseCartItem>? cartItems,
+    double? expense,
+    bool clearExpense = false,
     bool? isSaving,
     String? error,
     bool clearError = false,
@@ -170,6 +178,7 @@ class PurchaseInvoiceState {
         selectedCompany:
             clearCompany ? null : selectedCompany ?? this.selectedCompany,
         cartItems: cartItems ?? this.cartItems,
+        expense: clearExpense ? null : expense ?? this.expense,
         isSaving: isSaving ?? this.isSaving,
         error: clearError ? null : error ?? this.error,
       );
@@ -227,17 +236,43 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     }
   }
 
-  /// [expense] — is article ka kharcha, per unit iski purchase price mein.
-  void addCartItem(WarehouseStockModel stock,
-      {int quantity = 1, double expense = 0}) {
+  /// Invoice ka kharcha — khali field = null (abhi likha nahi).
+  void setExpense(double? expense) {
+    state = expense == null
+        ? state.copyWith(clearExpense: true)
+        : state.copyWith(expense: expense);
+    _setCart(state.cartItems);
+  }
+
+  /// Har cart change isi se — [PurchaseInvoiceState.expense] har dafa sab
+  /// articles mein unki raqam (line total) ke hisaab se naye sire se bat-ta
+  /// hai; sab 0 ki hon to quantity ke hisaab se.
+  void _setCart(List<PurchaseCartItem> items) {
+    final total = state.expense ?? 0;
+    final net = items.fold(0.0, (s, i) => s + i.purchaseLineTotal);
+    final qty = items.fold(0, (s, i) => s + i.quantity);
+    state = state.copyWith(cartItems: [
+      for (final i in items)
+        i.copyWith(
+          expense: total <= 0
+              ? 0
+              : net > 0
+                  ? total * i.purchaseLineTotal / net
+                  : qty > 0
+                      ? total * i.quantity / qty
+                      : 0,
+        ),
+    ]);
+  }
+
+  void addCartItem(WarehouseStockModel stock, {int quantity = 1}) {
     final existing =
         state.cartItems.indexWhere((c) => c.stockId == stock.id);
     if (existing != -1) {
       final updated = List<PurchaseCartItem>.from(state.cartItems);
-      updated[existing] = updated[existing].copyWith(
-          quantity: updated[existing].quantity + quantity,
-          expense: updated[existing].expense + expense);
-      state = state.copyWith(cartItems: updated);
+      updated[existing] = updated[existing]
+          .copyWith(quantity: updated[existing].quantity + quantity);
+      _setCart(updated);
       return;
     }
 
@@ -263,13 +298,10 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
       // Purchase invoice mein discount concept use nahi hota — sirf
       // purchase price par based totals.
       discountPct: 0,
-      expense: expense,
     );
 
-    state = state.copyWith(
-      cartItems: [...state.cartItems, item],
-      clearError: true,
-    );
+    state = state.copyWith(clearError: true);
+    _setCart([...state.cartItems, item]);
   }
 
   void updateItemQuantity(String stockId, int quantity) {
@@ -280,14 +312,12 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     final updated = state.cartItems
         .map((i) => i.stockId == stockId ? i.copyWith(quantity: quantity) : i)
         .toList();
-    state = state.copyWith(cartItems: updated);
+    _setCart(updated);
   }
 
 
   void removeItem(String stockId) {
-    state = state.copyWith(
-      cartItems: state.cartItems.where((c) => c.stockId != stockId).toList(),
-    );
+    _setCart(state.cartItems.where((c) => c.stockId != stockId).toList());
   }
 
   void clearCart() {
