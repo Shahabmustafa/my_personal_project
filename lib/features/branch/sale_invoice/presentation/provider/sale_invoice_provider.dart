@@ -460,6 +460,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       );
       updated[existing] = current.copyWith(quantity: newQty);
       _setCart(updated);
+      _addB1g1FreeUnit(stock.id);
       return newQty - current.quantity;
     }
 
@@ -493,7 +494,50 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     );
 
     _setCart([...state.cartItems, item]);
+    _addB1g1FreeUnit(stock.id);
     return cappedQty;
+  }
+
+  /// Cart item kis chalte B1G1 offer mein hai — [computeB1g1] jaisa pehla match.
+  B1g1OfferModel? _b1g1OfferFor(SaleCartItem i) {
+    for (final o in state.b1g1Offers) {
+      if (o.matches(
+        productId: i.productId,
+        variantKey: b1g1VariantKey(
+          productId: i.productId,
+          sizeId: i.sizeId,
+          colorId: i.colorId,
+          brandId: i.brandId,
+          categoryId: i.categoryId,
+          typeId: i.typeId,
+        ),
+        brandId: i.brandId,
+        categoryId: i.categoryId,
+      )) {
+        return o;
+      }
+    }
+    return null;
+  }
+
+  /// Offer wala article add hua aur us offer ke units taaq (odd) hain — jodi
+  /// poori karne ke liye usi variant ka ek free unit khud cart mein (stock ho to).
+  void _addB1g1FreeUnit(String branchStockId) {
+    final idx = state.cartItems.indexWhere(
+      (c) => c.branchStockId == branchStockId,
+    );
+    if (idx == -1) return;
+    final item = state.cartItems[idx];
+    final offer = _b1g1OfferFor(item);
+    if (offer == null) return;
+    final units = state.cartItems
+        .where((c) => _b1g1OfferFor(c)?.id == offer.id)
+        .fold(0, (sum, c) => sum + c.quantity);
+    if (units.isEven) return;
+    if (item.availableStock > 0 && item.quantity >= item.availableStock) return;
+    final updated = List<SaleCartItem>.from(state.cartItems);
+    updated[idx] = item.copyWith(quantity: item.quantity + 1);
+    _setCart(updated);
   }
 
   void updateItemQuantity(String branchStockId, int quantity) {
