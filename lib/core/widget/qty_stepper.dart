@@ -24,6 +24,9 @@ class QtyStepperField extends StatefulWidget {
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTapOutside;
 
+  /// Called on every keystroke (used by [QtyStepper.live]).
+  final ValueChanged<String>? onChanged;
+
   /// When set, − / + report the new value here instead of only editing text
   /// (cart rows push it straight to their notifier).
   final ValueChanged<int>? onStep;
@@ -39,6 +42,7 @@ class QtyStepperField extends StatefulWidget {
     this.fontSize = 15,
     this.onSubmitted,
     this.onTapOutside,
+    this.onChanged,
     this.onStep,
   });
 
@@ -139,6 +143,7 @@ class _QtyStepperFieldState extends State<QtyStepperField> {
                 disabledBorder: InputBorder.none,
               ),
               onSubmitted: widget.onSubmitted,
+              onChanged: widget.onChanged,
               onTapOutside: widget.onTapOutside == null
                   ? null
                   : (_) => widget.onTapOutside!(),
@@ -167,12 +172,17 @@ class QtyStepper extends StatefulWidget {
   final int? max;
   final ValueChanged<int> onChanged;
 
+  /// true = har keystroke par value report (totals foran update), sirf
+  /// submit / tap outside ka intezar nahi.
+  final bool live;
+
   const QtyStepper({
     super.key,
     required this.value,
     required this.color,
     required this.onChanged,
     this.max,
+    this.live = false,
   });
 
   @override
@@ -205,6 +215,16 @@ class _QtyStepperState extends State<QtyStepper> {
     if (safe != widget.value) widget.onChanged(safe);
   }
 
+  /// Type karte hue — sahi number (>= 1, max tak) foran report; khali ya
+  /// 0 ho to commit (blur) tak intezar.
+  void _liveChange(String text) {
+    final v = int.tryParse(text);
+    if (v == null || v < 1) return;
+    final max = widget.max;
+    if (max != null && max > 0 && v > max) return;
+    if (v != widget.value) widget.onChanged(v);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Align(
@@ -218,6 +238,7 @@ class _QtyStepperState extends State<QtyStepper> {
           height: 32,
           fontSize: 13,
           onStep: widget.onChanged,
+          onChanged: widget.live ? _liveChange : null,
           onSubmitted: (_) => _commit(),
           onTapOutside: _commit,
         ),

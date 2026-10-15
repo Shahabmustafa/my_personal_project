@@ -83,8 +83,8 @@ class _DesktopTable extends ConsumerWidget {
         Expanded(
           child: ListView.builder(
             itemCount: items.length,
-            itemBuilder: (_, i) =>
-                _CartRow(item: items[i], index: i),
+            itemBuilder: (_, i) => _CartRow(
+                key: ValueKey(items[i].stockId), item: items[i], index: i),
           ),
         ),
         // ── Footer ──────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ class _CartRow extends ConsumerStatefulWidget {
   final PurchaseCartItem item;
 
   final int index;
-  const _CartRow({required this.item, required this.index});
+  const _CartRow({super.key, required this.item, required this.index});
 
   @override
   ConsumerState<_CartRow> createState() => _CartRowState();
@@ -247,6 +247,7 @@ class _QtyRowStepper extends StatelessWidget {
         value: value,
         color: primaryColor,
         onChanged: onChanged,
+        live: true,
       );
 }
 
@@ -333,6 +334,7 @@ class _MobileList extends ConsumerWidget {
         final item = items[i];
         final pShare = _share(item);
         return Card(
+          key: ValueKey(item.stockId),
           elevation: 1,
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

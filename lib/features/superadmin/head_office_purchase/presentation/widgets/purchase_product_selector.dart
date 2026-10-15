@@ -30,6 +30,8 @@ class _PurchaseProductSelectorState
   final _qtyCtrl = TextEditingController(text: '1');
   final _expenseCtrl = TextEditingController();
   final _expenseFocus = FocusNode();
+  final _pPriceCtrl = TextEditingController();
+  final _sPriceCtrl = TextEditingController();
 
   WarehouseStockModel? _selectedStock;
   bool _barcodeNotFound = false;
@@ -41,6 +43,8 @@ class _PurchaseProductSelectorState
     _qtyCtrl.dispose();
     _expenseCtrl.dispose();
     _expenseFocus.dispose();
+    _pPriceCtrl.dispose();
+    _sPriceCtrl.dispose();
     super.dispose();
   }
 
@@ -75,6 +79,7 @@ class _PurchaseProductSelectorState
     if (barcode.isEmpty) return;
     try {
       final stock = allStock.firstWhere((s) => s.barcode == barcode);
+      _fillPrices(stock);
       setState(() {
         _barcodeNotFound = false;
         _selectedStock = stock;
@@ -86,6 +91,14 @@ class _PurchaseProductSelectorState
       });
     }
   }
+
+  /// Article chunte hi uski purchase / sale price fields mein — badal sakte ho.
+  void _fillPrices(WarehouseStockModel s) {
+    _pPriceCtrl.text = _fmt(s.purchasePrice);
+    _sPriceCtrl.text = _fmt(s.salePrice);
+  }
+
+  static String _fmt(double v) => v.toStringAsFixed(v % 1 == 0 ? 0 : 2);
 
   void _addToCart() {
     if (_selectedStock == null) return;
@@ -100,11 +113,16 @@ class _PurchaseProductSelectorState
       return;
     }
     final qty = int.tryParse(_qtyCtrl.text) ?? 1;
-    ref
-        .read(purchaseInvoiceProvider.notifier)
-        .addCartItem(_selectedStock!, quantity: qty > 0 ? qty : 1);
+    ref.read(purchaseInvoiceProvider.notifier).addCartItem(
+          _selectedStock!,
+          quantity: qty > 0 ? qty : 1,
+          purchasePrice: double.tryParse(_pPriceCtrl.text.trim()),
+          salePrice: double.tryParse(_sPriceCtrl.text.trim()),
+        );
     _barcodeCtrl.clear();
     _qtyCtrl.text = '1';
+    _pPriceCtrl.clear();
+    _sPriceCtrl.clear();
     setState(() {
       _selectedStock = null;
       _barcodeNotFound = false;
@@ -135,7 +153,6 @@ class _PurchaseProductSelectorState
             ? null
             : allStock.firstWhere((s) => s.id == sel.id, orElse: () => sel);
         final totalQty = stock?.quantity ?? 0;
-        final purchasePrice = stock?.purchasePrice ?? 0.0;
         final isMobile = Responsive(context).isMobile;
 
         final companyDropdown = companiesAsync.when(
@@ -205,6 +222,7 @@ class _PurchaseProductSelectorState
               a.categoryId == b.categoryId &&
               a.typeId == b.typeId,
           onSelected: (s) => setState(() {
+            if (s != null) _fillPrices(s);
             _selectedStock = s;
             _barcodeCtrl.clear();
             _barcodeNotFound = false;
@@ -266,10 +284,18 @@ class _PurchaseProductSelectorState
               .setExpense(v.trim().isEmpty ? null : double.tryParse(v.trim())),
         );
 
-        final pPriceBox = _InfoBox(
+        final pPriceBox = _PriceField(
           label: 'P.Price',
-          value: stock != null ? purchasePrice.toStringAsFixed(0) : null,
-          valueColor: Colors.purple.shade600,
+          controller: _pPriceCtrl,
+          enabled: stock != null,
+          color: Colors.purple.shade600,
+          onSubmit: (_) => _addToCart(),
+        );
+        final sPriceBox = _PriceField(
+          label: 'S.Price',
+          controller: _sPriceCtrl,
+          enabled: stock != null,
+          onSubmit: (_) => _addToCart(),
         );
         final tQtyBox = _InfoBox(
           label: 'T.Quantity',
@@ -342,7 +368,7 @@ class _PurchaseProductSelectorState
 
               const SizedBox(height: 10),
 
-              // ── ROW 2: P.Price | T.Qty | Qty | Add ──
+              // ── ROW 2: P.Price | S.Price | T.Qty | Qty | Add ──
               isMobile
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,6 +377,8 @@ class _PurchaseProductSelectorState
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Expanded(child: pPriceBox),
+                            const SizedBox(width: 10),
+                            Expanded(child: sPriceBox),
                             const SizedBox(width: 10),
                             Expanded(child: tQtyBox),
                           ],
@@ -380,6 +408,8 @@ class _PurchaseProductSelectorState
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Expanded(flex: 2, child: pPriceBox),
+                        const SizedBox(width: 10),
+                        Expanded(flex: 2, child: sPriceBox),
                         const SizedBox(width: 10),
                         Expanded(flex: 2, child: tQtyBox),
                         const SizedBox(width: 10),
@@ -429,6 +459,69 @@ class _PurchaseProductSelectorState
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       filled: !enabled,
       fillColor: Colors.grey.shade50,
+    );
+  }
+}
+
+/// Label ke neeche editable price — [_InfoBox] jaisi shakal.
+class _PriceField extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final bool enabled;
+  final Color? color;
+  final ValueChanged<String> onSubmit;
+
+  const _PriceField({
+    required this.label,
+    required this.controller,
+    required this.enabled,
+    required this.onSubmit,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 48,
+          child: TextField(
+            controller: controller,
+            enabled: enabled,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+            ],
+            style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color ?? Colors.black87),
+            decoration: InputDecoration(
+              hintText: '—',
+              isDense: true,
+              filled: !enabled,
+              fillColor: Colors.grey.shade50,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+            ),
+            onSubmitted: onSubmit,
+          ),
+        ),
+      ],
     );
   }
 }

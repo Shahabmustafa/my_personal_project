@@ -78,7 +78,8 @@ class WarehouseStockModel {
       quantity:    (json['quantity'] as num? ?? 0).toInt(),
 
       // ✅ FIX: _toDouble() — String "1200.00" bhi handle karta hai
-      salePrice:     _toDouble(productMap?['sale_price']),
+      // Variant ki apni sale price (purchase par set), warna article ki.
+      salePrice:     _toDouble(json['sale_price'] ?? productMap?['sale_price']),
       purchasePrice: _toDouble(productMap?['purchase_price']),
       discountPct:   _toDouble(json['discount']),
 

@@ -265,13 +265,18 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
     ]);
   }
 
-  void addCartItem(WarehouseStockModel stock, {int quantity = 1}) {
+  /// [purchasePrice] / [salePrice] — field mein badli hui prices (null =
+  /// stock wali).
+  void addCartItem(WarehouseStockModel stock,
+      {int quantity = 1, double? purchasePrice, double? salePrice}) {
     final existing =
         state.cartItems.indexWhere((c) => c.stockId == stock.id);
     if (existing != -1) {
       final updated = List<PurchaseCartItem>.from(state.cartItems);
-      updated[existing] = updated[existing]
-          .copyWith(quantity: updated[existing].quantity + quantity);
+      updated[existing] = updated[existing].copyWith(
+          quantity: updated[existing].quantity + quantity,
+          purchasePrice: purchasePrice,
+          salePrice: salePrice);
       _setCart(updated);
       return;
     }
@@ -293,8 +298,8 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
       typeName: stock.typeName ?? '',
       totalStock: stock.quantity,
       quantity: quantity,
-      salePrice: stock.salePrice,
-      purchasePrice: stock.purchasePrice,
+      salePrice: salePrice ?? stock.salePrice,
+      purchasePrice: purchasePrice ?? stock.purchasePrice,
       // Purchase invoice mein discount concept use nahi hota — sirf
       // purchase price par based totals.
       discountPct: 0,
