@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/datasources/purchase_invoice_datasource.dart';
 import '../../data/models/purchase_invoice_model.dart';
 import '../../data/models/purchase_return_model.dart';
 import '../providers/purchase_invoice_provider.dart';
@@ -336,6 +337,43 @@ class _PaymentDialog extends ConsumerStatefulWidget {
   ConsumerState<_PaymentDialog> createState() => _PaymentDialogState();
 }
 
+/// Expense ke baad har article ki nayi per-unit purchase price —
+/// e.g. "ss-1345 · 42 · White — 1000 → 1060".
+class _LandedCostList extends StatelessWidget {
+  final List<PurchaseCartItem> items;
+  final double expenseTotal;
+  const _LandedCostList({required this.items, required this.expenseTotal});
+
+  @override
+  Widget build(BuildContext context) {
+    final landed = PurchaseInvoiceDatasource.landedCosts(items, expenseTotal);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 120),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Text(
+                  '${items[i].productName} · ${items[i].sizeName} · '
+                  '${items[i].colorName} — '
+                  '${items[i].purchaseNetPrice.toStringAsFixed(0)} → '
+                  '${landed[i].toStringAsFixed(landed[i] % 1 == 0 ? 0 : 2)}',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green.shade800),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Dialog ki ek expense line — head + amount. Dono khaali ho to ignore.
 class _ExpenseLine {
   String? headId;
@@ -626,9 +664,15 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   'Expense PKR ${expenseTotal.toStringAsFixed(0)} cash se jayega '
-                  '— company ke khate mein nahi.',
+                  '— company ke khate mein nahi. Ye har article ki purchase '
+                  'price mein add hoga (stock inventory mein):',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 ),
+              ),
+            if (expenseTotal > 0)
+              _LandedCostList(
+                items: widget.invoiceState.cartItems,
+                expenseTotal: expenseTotal,
               ),
             if (expenseInvalid)
               Padding(

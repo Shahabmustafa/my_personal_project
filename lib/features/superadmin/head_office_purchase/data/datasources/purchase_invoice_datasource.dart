@@ -157,6 +157,54 @@ class PurchaseInvoiceDatasource {
         .update({'quantity': currentQty + qty}).eq('id', stockId);
   }
 
+  /// Purchase ka stock aana — quantity barhti hai aur variant ki purchase
+  /// price purane aur naye maal ka weighted average (naya maal [landedCost]
+  /// par, yani expense ke hisse ke sath). Pehle stock na ho to seedha
+  /// [landedCost].
+  Future<void> addPurchasedStock(
+      String stockId, int qty, double landedCost) async {
+    final res = await _client
+        .from('stock_inventory')
+        .select('quantity, purchase_price, products(purchase_price)')
+        .eq('id', stockId)
+        .single();
+    final currentQty = (res['quantity'] as int? ?? 0);
+    final oldQty = currentQty < 0 ? 0 : currentQty;
+    final oldCost = (res['purchase_price'] as num? ??
+            (res['products'] as Map<String, dynamic>?)?['purchase_price']
+                as num? ??
+            landedCost)
+        .toDouble();
+    final newCost = oldQty + qty > 0
+        ? (oldQty * oldCost + qty * landedCost) / (oldQty + qty)
+        : landedCost;
+    await _client.from('stock_inventory').update({
+      'quantity': currentQty + qty,
+      'purchase_price': double.parse(newCost.toStringAsFixed(2)),
+    }).eq('id', stockId);
+  }
+
+  /// Har line ki per-unit cost — net price + expense ka hissa. Expense lines
+  /// mein unki raqam (line total) ke hisaab se bat-ta hai; sab lines 0 ki
+  /// hon to quantity ke hisaab se.
+  static List<double> landedCosts(
+      List<PurchaseCartItem> items, double expenseTotal) {
+    final net = items.fold(0.0, (s, i) => s + i.purchaseLineTotal);
+    final qty = items.fold(0, (s, i) => s + i.quantity);
+    return [
+      for (final i in items)
+        i.quantity <= 0
+            ? i.purchaseNetPrice
+            : i.purchaseNetPrice +
+                (net > 0
+                        ? expenseTotal * i.purchaseLineTotal / net
+                        : qty > 0
+                            ? expenseTotal * i.quantity / qty
+                            : 0) /
+                    i.quantity,
+    ];
+  }
+
   // ── Save purchase invoice + items ─────────────────────────────────────────
 
   Future<PurchaseInvoiceModel> savePurchaseInvoice({
@@ -192,6 +240,11 @@ class PurchaseInvoiceDatasource {
 
     final invoice = PurchaseInvoiceModel.fromJson(invoiceRes);
 
+    // Expense company ko nahi jata, magar maal ki asal cost mein shamil hai.
+    final landed = landedCosts(
+        cartItems, expenses.fold(0.0, (s, e) => s + e.amount));
+
+    var k = 0;
     final itemsPayload = cartItems
         .map((item) => {
               'purchase_invoice_id': invoice.id,
@@ -210,14 +263,16 @@ class PurchaseInvoiceDatasource {
               'discount_amount': item.purchaseDiscountAmount,
               'net_price': item.purchaseNetPrice,
               'line_total': item.purchaseLineTotal,
+              'landed_cost': double.parse(landed[k++].toStringAsFixed(2)),
             })
         .toList();
 
     await _client.from('purchase_invoice_items').insert(itemsPayload);
 
-    // STOCK INCREASE
-    for (final item in cartItems) {
-      await incrementStockQuantity(item.stockId, item.quantity);
+    // STOCK INCREASE + purchase price (expense ke sath)
+    for (var i = 0; i < cartItems.length; i++) {
+      await addPurchasedStock(
+          cartItems[i].stockId, cartItems[i].quantity, landed[i]);
     }
 
     // Deduct paid amount from cash counter

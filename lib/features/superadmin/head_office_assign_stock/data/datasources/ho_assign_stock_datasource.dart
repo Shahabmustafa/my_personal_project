@@ -21,6 +21,7 @@ class HoAssignStockDatasource {
     brand_id,
     category_id,
     type_id,
+    purchase_price,
     products ( article_name, sale_price, purchase_price ),
     sizes    ( number ),
     colors   ( name ),
@@ -108,7 +109,9 @@ class HoAssignStockDatasource {
           'products': {
             'article_name': productMap['article_name'] as String? ?? '',
             'sale_price': _toDouble(productMap['sale_price']),
-            'purchase_price': _toDouble(productMap['purchase_price']),
+            // Variant ki apni cost (purchase expense ke sath), warna article ki.
+            'purchase_price': _toDouble(
+                map['purchase_price'] ?? productMap['purchase_price']),
           },
           'sizes': {'number': sizeMap['number'] as String? ?? ''},
           'colors': {'name': colorMap['name'] as String? ?? ''},
