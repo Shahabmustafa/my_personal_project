@@ -100,9 +100,9 @@ class B1g1LineResult {
 }
 
 /// Cart lines (price + kis offer mein hai) le kar har line ke free units
-/// nikalta hai. Har line ke apne units pehle jodi banate hain (aadhe free);
-/// har line ka bacha hua akela unit offer ki doosri lines ke akele units ke
-/// saath qeemat ke hisaab se (mehnge pehle) jodta hai — jodi ka sasta free.
+/// nikalta hai. Har offer ke units qeemat ke hisaab se (mehnge pehle) line
+/// mein lagte hain; mehnge aadhe paid, saste aadhe free (taaq ho to beech
+/// wala paid).
 ///
 /// [lines] mein har entry: (price, quantity, productId, variantKey, brandId,
 /// categoryId).
@@ -138,25 +138,21 @@ List<B1g1LineResult> computeB1g1(
   // Jis offer ke 2 se kam units hon wo laga hi nahi — wo lines normal sale.
   final applied = <String>{};
   for (final offer in offers) {
-    final offerLines = [
+    final units = <({int line, double price})>[
       for (final e in offerOf.entries)
-        if (e.value.id == offer.id) e.key,
-    ];
-    final totalUnits =
-        offerLines.fold<int>(0, (s, i) => s + lines[i].quantity);
-    if (totalUnits >= 2) applied.add(offer.id);
-    // Pehle har line apne andar jodi banati hai — 2 paid to 2 free usi
-    // article ke. Sirf bacha hua akela unit doosri line ke saath jodta hai.
-    final leftovers = <({int line, double price})>[];
-    for (final i in offerLines) {
-      free[i] += lines[i].quantity ~/ 2;
-      if (lines[i].quantity.isOdd) {
-        leftovers.add((line: i, price: lines[i].price));
-      }
-    }
-    leftovers.sort((a, b) => b.price.compareTo(a.price));
-    for (var u = 1; u < leftovers.length; u += 2) {
-      free[leftovers[u].line]++;
+        if (e.value.id == offer.id)
+          for (var q = 0; q < lines[e.key].quantity; q++)
+            (line: e.key, price: lines[e.key].price),
+    ]..sort((a, b) {
+        final byPrice = b.price.compareTo(a.price);
+        // Barabar qeemat par pehle add hui line paid rahe.
+        return byPrice != 0 ? byPrice : a.line.compareTo(b.line);
+      });
+    if (units.length >= 2) applied.add(offer.id);
+    // Mehnge aadhe units paid, baqi saste aadhe free — 2 paid to 2 free,
+    // aur free wala article hamesha paid se sasta (ya barabar).
+    for (var u = (units.length + 1) ~/ 2; u < units.length; u++) {
+      free[units[u].line]++;
     }
   }
 
