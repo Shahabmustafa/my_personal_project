@@ -13,7 +13,8 @@ class PurchaseCartTable extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(purchaseInvoiceProvider);
     final items = state.cartItems;
-    final landed = state.landedCosts;
+    final pShares = state.purchasePriceShares;
+    final sShares = state.salePriceShares;
 
     if (items.isEmpty) {
       return Center(
@@ -38,8 +39,8 @@ class PurchaseCartTable extends ConsumerWidget {
 
     return LayoutBuilder(builder: (ctx, constraints) {
       return constraints.maxWidth > 700
-          ? _DesktopTable(items: items, landed: landed)
-          : _MobileList(items: items, landed: landed);
+          ? _DesktopTable(items: items, pShares: pShares, sShares: sShares)
+          : _MobileList(items: items, pShares: pShares, sShares: sShares);
     });
   }
 }
@@ -48,8 +49,10 @@ class PurchaseCartTable extends ConsumerWidget {
 
 class _DesktopTable extends ConsumerWidget {
   final List<PurchaseCartItem> items;
-  final List<double> landed;
-  const _DesktopTable({required this.items, required this.landed});
+  final List<double> pShares;
+  final List<double> sShares;
+  const _DesktopTable(
+      {required this.items, required this.pShares, required this.sShares});
 
   static const _hs = TextStyle(
       fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white);
@@ -86,7 +89,11 @@ class _DesktopTable extends ConsumerWidget {
           child: ListView.builder(
             itemCount: items.length,
             itemBuilder: (_, i) =>
-                _CartRow(item: items[i], landed: landed[i], index: i),
+                _CartRow(
+                    item: items[i],
+                    pShare: pShares[i],
+                    sShare: sShares[i],
+                    index: i),
           ),
         ),
         // ── Footer ──────────────────────────────────────────────────────
@@ -109,11 +116,15 @@ class _DesktopTable extends ConsumerWidget {
 class _CartRow extends ConsumerStatefulWidget {
   final PurchaseCartItem item;
 
-  /// Per-unit cost, expense ke hisse ke sath.
-  final double landed;
+  /// Per-unit expense ka hissa — purchase / sale price mein.
+  final double pShare;
+  final double sShare;
   final int index;
   const _CartRow(
-      {required this.item, required this.landed, required this.index});
+      {required this.item,
+      required this.pShare,
+      required this.sShare,
+      required this.index});
 
   @override
   ConsumerState<_CartRow> createState() => _CartRowState();
@@ -150,10 +161,8 @@ class _CartRowState extends ConsumerState<_CartRow> {
           _c(item.categoryName, flex: 2),
 
           // P.Price / S.Price — expense ho to nayi price neeche
-          _priceCell(item.purchasePrice, _share(item, widget.landed),
-              Colors.purple.shade600),
-          _priceCell(item.salePrice, _share(item, widget.landed),
-              Colors.black87),
+          _priceCell(item.purchasePrice, widget.pShare, Colors.purple.shade600),
+          _priceCell(item.salePrice, widget.sShare, Colors.black87),
 
           // Qty stepper
           Expanded(
@@ -230,10 +239,6 @@ class _CartRowState extends ConsumerState<_CartRow> {
     ),
   );
 }
-
-/// Line par per-unit expense ka hissa.
-double _share(PurchaseCartItem item, double landed) =>
-    landed - item.purchaseNetPrice;
 
 String _money(double v) => v.toStringAsFixed(v % 1 == 0 ? 0 : 2);
 
@@ -326,8 +331,10 @@ class _Footer extends StatelessWidget {
 
 class _MobileList extends ConsumerWidget {
   final List<PurchaseCartItem> items;
-  final List<double> landed;
-  const _MobileList({required this.items, required this.landed});
+  final List<double> pShares;
+  final List<double> sShares;
+  const _MobileList(
+      {required this.items, required this.pShares, required this.sShares});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -340,7 +347,8 @@ class _MobileList extends ConsumerWidget {
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, i) {
         final item = items[i];
-        final share = _share(item, landed[i]);
+        final pShare = pShares[i];
+        final sShare = sShares[i];
         return Card(
           elevation: 1,
           shape:
@@ -379,20 +387,20 @@ class _MobileList extends ConsumerWidget {
                         children: [
                           _lbl(
                               'P.Price',
-                              share > 0
+                              pShare > 0
                                   ? '${_money(item.purchasePrice)} → '
-                                      '${_money(item.purchasePrice + share)}'
+                                      '${_money(item.purchasePrice + pShare)}'
                                   : _money(item.purchasePrice),
-                              color: share > 0
+                              color: pShare > 0
                                   ? Colors.green.shade700
                                   : Colors.purple.shade600),
                           _lbl(
                               'S.Price',
-                              share > 0
+                              sShare > 0
                                   ? '${_money(item.salePrice)} → '
-                                      '${_money(item.salePrice + share)}'
+                                      '${_money(item.salePrice + sShare)}'
                                   : _money(item.salePrice),
-                              color: share > 0 ? Colors.green.shade700 : null),
+                              color: sShare > 0 ? Colors.green.shade700 : null),
                         ],
                       ),
                     ),

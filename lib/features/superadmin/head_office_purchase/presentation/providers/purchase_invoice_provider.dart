@@ -151,9 +151,13 @@ class PurchaseInvoiceState {
 
   double get expenseTotal => expenses.fold(0, (s, e) => s + e.amount);
 
-  /// [cartItems] ki har line ki per-unit cost — net price + expense ka hissa.
-  List<double> get landedCosts =>
-      PurchaseInvoiceDatasource.landedCosts(cartItems, expenseTotal);
+  /// Har line ka per-unit hissa — un kharchon se jo purchase price mein jaate hain.
+  List<double> get purchasePriceShares => PurchaseInvoiceDatasource.expenseShares(
+      cartItems, PurchaseInvoiceDatasource.purchasePriceExpense(expenses));
+
+  /// Har line ka per-unit hissa — un kharchon se jo sale price mein jaate hain.
+  List<double> get salePriceShares => PurchaseInvoiceDatasource.expenseShares(
+      cartItems, PurchaseInvoiceDatasource.salePriceExpense(expenses));
 
   double get totalAmount =>
       cartItems.fold(0, (sum, i) => sum + (i.purchasePrice * i.quantity));

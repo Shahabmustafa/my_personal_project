@@ -208,6 +208,24 @@ class PurchaseInvoiceDatasource {
     ];
   }
 
+  /// Har line ka per-unit hissa [expenseTotal] mein se.
+  static List<double> expenseShares(
+      List<PurchaseCartItem> items, double expenseTotal) {
+    final landed = landedCosts(items, expenseTotal);
+    return [
+      for (var i = 0; i < items.length; i++)
+        landed[i] - items[i].purchaseNetPrice,
+    ];
+  }
+
+  /// Wo kharche jo purchase price mein jaane hain.
+  static double purchasePriceExpense(List<PurchaseExpense> expenses) =>
+      expenses.where((e) => e.addToPurchasePrice).fold(0.0, (s, e) => s + e.amount);
+
+  /// Wo kharche jo sale price mein jaane hain.
+  static double salePriceExpense(List<PurchaseExpense> expenses) =>
+      expenses.where((e) => e.addToSalePrice).fold(0.0, (s, e) => s + e.amount);
+
   // ── Save purchase invoice + items ─────────────────────────────────────────
 
   Future<PurchaseInvoiceModel> savePurchaseInvoice({
@@ -244,8 +262,8 @@ class PurchaseInvoiceDatasource {
     final invoice = PurchaseInvoiceModel.fromJson(invoiceRes);
 
     // Expense company ko nahi jata, magar maal ki asal cost mein shamil hai.
-    final landed = landedCosts(
-        cartItems, expenses.fold(0.0, (s, e) => s + e.amount));
+    final landed = landedCosts(cartItems, purchasePriceExpense(expenses));
+    final saleShares = expenseShares(cartItems, salePriceExpense(expenses));
 
     var k = 0;
     final itemsPayload = cartItems
@@ -275,9 +293,9 @@ class PurchaseInvoiceDatasource {
     // STOCK INCREASE + purchase/sale price (expense ke sath)
     for (var i = 0; i < cartItems.length; i++) {
       final item = cartItems[i];
-      final share = landed[i] - item.purchaseNetPrice;
       await addPurchasedStock(item.stockId, item.quantity, landed[i],
-          salePrice: share > 0 ? item.salePrice + share : null);
+          salePrice:
+              saleShares[i] > 0 ? item.salePrice + saleShares[i] : null);
     }
 
     // Deduct paid amount from cash counter

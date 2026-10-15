@@ -72,10 +72,17 @@ class PurchaseExpense {
   final String? headName;
   final double amount;
 
+  /// Invoice banate waqt — ye kharcha articles ki purchase price aur/ya sale
+  /// price mein bhi baantna hai (save nahi hota, sirf stock ki prices par asar).
+  final bool addToPurchasePrice;
+  final bool addToSalePrice;
+
   const PurchaseExpense({
     required this.expenseHeadId,
     this.headName,
     required this.amount,
+    this.addToPurchasePrice = false,
+    this.addToSalePrice = false,
   });
 
   factory PurchaseExpense.fromJson(Map<String, dynamic> json) =>

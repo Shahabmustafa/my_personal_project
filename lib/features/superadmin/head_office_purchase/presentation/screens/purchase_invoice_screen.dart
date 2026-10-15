@@ -366,7 +366,8 @@ class _ExpenseBar extends ConsumerWidget {
             InputChip(
               label: Text(
                   '${state.expenses[i].headName ?? 'Expense'} · '
-                  'PKR ${state.expenses[i].amount.toStringAsFixed(0)}',
+                  'PKR ${state.expenses[i].amount.toStringAsFixed(0)}'
+                  '${_appliesTo(state.expenses[i])}',
                   style: const TextStyle(fontSize: 12)),
               onDeleted: () => notifier.removeExpense(i),
               deleteIcon:
@@ -386,8 +387,7 @@ class _ExpenseBar extends ConsumerWidget {
           if (state.expenseTotal > 0)
             Text(
               'Total PKR ${state.expenseTotal.toStringAsFixed(0)} — cash se, '
-              'company ke khate mein nahi. Har article ki P.Price aur S.Price '
-              'mein add.',
+              'company ke khate mein nahi.',
               style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
             ),
         ],
@@ -395,6 +395,17 @@ class _ExpenseBar extends ConsumerWidget {
     );
   }
 }
+
+/// Chip par — kharcha kis price mein ja raha hai.
+String _appliesTo(PurchaseExpense e) => switch ((
+      e.addToPurchasePrice,
+      e.addToSalePrice,
+    )) {
+      (true, true) => ' → P.Price + S.Price',
+      (true, false) => ' → P.Price',
+      (false, true) => ' → S.Price',
+      _ => '',
+    };
 
 /// Expense head + amount — head yahin se naya bhi ban sakta hai.
 class _AddExpenseDialog extends ConsumerStatefulWidget {
@@ -408,6 +419,8 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
   final _amountCtrl = TextEditingController();
   List<ExpenseHeadModel> _heads = [];
   String? _headId;
+  bool _toPurchase = true;
+  bool _toSale = false;
 
   @override
   void initState() {
@@ -455,6 +468,8 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
         expenseHeadId: _headId!,
         headName: head.isEmpty ? null : head.first.name,
         amount: _amount,
+        addToPurchasePrice: _toPurchase,
+        addToSalePrice: _toSale,
       ),
     );
   }
@@ -520,6 +535,28 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
               decoration: _deco('Amount'),
               onChanged: (_) => setState(() {}),
               onSubmitted: (_) => _submit(),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Har article ki is price mein add karo:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700)),
+            ),
+            CheckboxListTile(
+              value: _toPurchase,
+              onChanged: (v) => setState(() => _toPurchase = v ?? false),
+              title: const Text('Purchase Price', style: TextStyle(fontSize: 14)),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            CheckboxListTile(
+              value: _toSale,
+              onChanged: (v) => setState(() => _toSale = v ?? false),
+              title: const Text('Sale Price', style: TextStyle(fontSize: 14)),
+              dense: true,
+              contentPadding: EdgeInsets.zero,
+              controlAffinity: ListTileControlAffinity.leading,
             ),
           ],
         ),
