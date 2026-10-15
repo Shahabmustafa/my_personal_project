@@ -9,8 +9,8 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 
-/// Admin yahan "Buy 1 Get 1 Free" offers banata hai — kin Articles / Brands /
-/// Categories par lagega. Sab branches ki Sale Invoice mein har 2 pairs mein
+/// Admin yahan "Buy 1 Get 1 Free" offers banata hai — kin Articles (size /
+/// color ke sath) par lagega. Sab branches ki Sale Invoice mein har 2 pairs mein
 /// se sasta wala khud free ho jata hai. Offer wali invoice par koi aur
 /// discount nahi lagta aur offer wale items return/exchange nahi hote.
 class B1g1OffersScreen extends ConsumerWidget {
@@ -23,8 +23,6 @@ class B1g1OffersScreen extends ConsumerWidget {
     final offersAsync = ref.watch(b1g1OffersProvider);
     final products = ref.watch(b1g1ProductsProvider).value ?? const [];
     final variants = ref.watch(b1g1VariantsProvider).value ?? const [];
-    final brands = ref.watch(b1g1BrandsProvider).value ?? const [];
-    final categories = ref.watch(b1g1CategoriesProvider).value ?? const [];
     final variantByKey = {for (final v in variants) v.key: v};
 
     String names(List<String> ids, List<B1g1Lookup> all) {
@@ -39,7 +37,7 @@ class B1g1OffersScreen extends ConsumerWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         SizedBox(height: 4),
         Text(
-          'Chune hue Articles / Brands / Categories par har 2 pairs mein se sasta wala free — sab branches ke liye. Is offer wale items return nahi hote.',
+          'Chune hue Articles par har 2 pairs mein se sasta wala free — sab branches ke liye. Is offer wale items return nahi hote.',
           style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
         ),
       ],
@@ -98,10 +96,6 @@ class B1g1OffersScreen extends ConsumerWidget {
                               'Articles: ${o.variantKeys.map((k) => variantByKey[k]?.label ?? '…').join(', ')}',
                             if (o.productIds.isNotEmpty)
                               'Articles (sab sizes/colors): ${names(o.productIds, products)}',
-                            if (o.brandIds.isNotEmpty)
-                              'Brands: ${names(o.brandIds, brands)}',
-                            if (o.categoryIds.isNotEmpty)
-                              'Categories: ${names(o.categoryIds, categories)}',
                           ],
                           onEdit: () => _openForm(context, offer: o),
                           onDelete: () => _confirmDelete(context, ref, o),
@@ -280,8 +274,6 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
   late final TextEditingController _nameCtrl;
   late Set<String> _productIds;
   late Set<String> _variantKeys;
-  late Set<String> _brandIds;
-  late Set<String> _categoryIds;
   DateTime? _start;
   DateTime? _end;
   String? _error;
@@ -294,8 +286,6 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
     _nameCtrl = TextEditingController(text: o?.name ?? '');
     _productIds = {...?o?.productIds};
     _variantKeys = {...?o?.variantKeys};
-    _brandIds = {...?o?.brandIds};
-    _categoryIds = {...?o?.categoryIds};
     _start = o?.startDate;
     _end = o?.endDate;
   }
@@ -323,11 +313,8 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
     String? error;
     if (name.isEmpty) {
       error = 'Offer ka naam likhein';
-    } else if (_productIds.isEmpty &&
-        _variantKeys.isEmpty &&
-        _brandIds.isEmpty &&
-        _categoryIds.isEmpty) {
-      error = 'Kam az kam ek Article, Brand ya Category chunein';
+    } else if (_productIds.isEmpty && _variantKeys.isEmpty) {
+      error = 'Kam az kam ek Article chunein';
     } else if (_start != null && _end != null && _end!.isBefore(_start!)) {
       error = 'End date start date se pehle nahi ho sakti';
     }
@@ -345,8 +332,6 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
             name: name,
             productIds: _productIds.toList(),
             variantKeys: _variantKeys.toList(),
-            brandIds: _brandIds.toList(),
-            categoryIds: _categoryIds.toList(),
             startDate: _start,
             endDate: _end,
             isActive: widget.offer?.isActive ?? true,
@@ -388,8 +373,6 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
   Widget build(BuildContext context) {
     final products = ref.watch(b1g1ProductsProvider).value ?? const [];
     final variants = ref.watch(b1g1VariantsProvider).value ?? const [];
-    final brands = ref.watch(b1g1BrandsProvider).value ?? const [];
-    final categories = ref.watch(b1g1CategoriesProvider).value ?? const [];
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -425,11 +408,6 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
                 'Do items mein se jis ki qeemat kam hai wo free hoga.',
                 style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32)),
               ),
-              const SizedBox(height: 12),
-              _multi('Brands', brands, _brandIds, (v) => _brandIds = v),
-              const SizedBox(height: 12),
-              _multi('Categories', categories, _categoryIds,
-                  (v) => _categoryIds = v),
               const SizedBox(height: 14),
               Row(children: [
                 _dateBtn('Start', _start, true),

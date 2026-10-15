@@ -107,8 +107,6 @@ class B1g1OfferDatasource {
   }
 
   Future<List<B1g1Lookup>> getProducts() => _lookup('products', 'article_name');
-  Future<List<B1g1Lookup>> getBrands() => _lookup('brands', 'name');
-  Future<List<B1g1Lookup>> getCategories() => _lookup('categories', 'name');
 
   Future<List<B1g1Variant>> getVariants() async {
     final res = await _client.from('stock_inventory').select('''
