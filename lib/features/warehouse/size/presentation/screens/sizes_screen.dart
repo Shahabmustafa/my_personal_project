@@ -4,6 +4,7 @@ import '../../data/model/size_model.dart';
 import '../providers/size_provider.dart';
 import '../providers/size_state.dart';
 import '../widgets/size_form_dialog.dart';
+import '../widgets/size_groups_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -108,6 +109,25 @@ class _SizesScreenState extends ConsumerState<SizesScreen> {
                   ],
                 ),
                 const Spacer(),
+                OutlinedButton.icon(
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) =>
+                        SizeGroupsDialog(readOnly: widget.readOnly),
+                  ),
+                  icon: const AppIcon(AppIcons.formatSizeOutlined,
+                      size: 18, color: Color(0xFF3E63DD)),
+                  label: const Text('Size Groups'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF3E63DD),
+                    side: const BorderSide(color: Color(0xFF3E63DD)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                const SizedBox(width: 12),
                 ElevatedButton.icon(
                   onPressed: () => _showForm(),
                   icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
