@@ -5,10 +5,10 @@ import '../../../sale_invoice/presentation/screens/sale_invoices_list_screen.dar
 import '../provider/sale_exchange_provider.dart';
 import 'sale_exchange_screen.dart';
 
-/// Exchange ka entry point — invoice list dikhata hai (jahan se cashier
-/// original invoice select karta hai) aur har row par "Exchange" action
-/// deta hai. Tap hone par selected invoice ki detail load hoti hai aur
-/// SaleExchangeScreen push ho jati hai.
+/// Exchange ka entry point — sab branches ki invoices, ek din ki (default
+/// aaj, date filter se badal sakte hain). Har row par "Exchange" action hai;
+/// tap hone par invoice ki detail load hoti hai aur SaleExchangeScreen push
+/// ho jati hai.
 class SaleExchangeInvoicePickerScreen extends ConsumerWidget {
   const SaleExchangeInvoicePickerScreen({super.key});
 
@@ -16,6 +16,7 @@ class SaleExchangeInvoicePickerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return SaleInvoicesListScreen(
       showNewInvoiceButton: false,
+      allBranchesByDate: true,
       onExchangeTap: (invoice) => _startExchange(context, ref, invoice),
     );
   }
@@ -24,11 +25,15 @@ class SaleExchangeInvoicePickerScreen extends ConsumerWidget {
       BuildContext context, WidgetRef ref, SaleInvoiceModel invoice) async {
     await ref.read(saleExchangeProvider.notifier).selectOriginalInvoice(invoice);
     if (!context.mounted) return;
+    final branch = invoice.branchName;
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => Scaffold(
-          appBar: AppBar(title: Text('Exchange — ${invoice.invoiceNumber}')),
+          appBar: AppBar(
+              title: Text(branch == null || branch.isEmpty
+                  ? 'Exchange — ${invoice.invoiceNumber}'
+                  : 'Exchange — ${invoice.invoiceNumber} ($branch)')),
           body: const SaleExchangeScreen(),
         ),
       ),

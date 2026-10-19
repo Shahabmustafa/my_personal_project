@@ -9,16 +9,14 @@ class BranchAssignDatasource {
   // ── Fetch assignments for a specific branch ───────────────────────────────
   // Items ko bhi embed karte hain taake list screen par total quantity /
   // total sale price jaisi summary cards bina extra per-row calls ke ban sakein.
-  Future<List<AssignStockModel>> fetchBranchAssignments(
-      String branchId) async {
+  Future<List<AssignStockModel>> fetchBranchAssignments(String branchId) async {
     final res = await _client
         .from('assign_stock_to_branch')
         .select('*, branches(branch_name), assign_stock_to_branch_items(*)')
         .eq('assigned_to', branchId)
         .order('created_at', ascending: false);
 
-    final rows =
-        (res as List).map((e) => e as Map<String, dynamic>).toList();
+    final rows = (res as List).map((e) => e as Map<String, dynamic>).toList();
     final sources = await _resolveSources({
       for (final r in rows) r['assigned_by'] as String,
     });
@@ -44,12 +42,17 @@ class BranchAssignDatasource {
   // assigned_by par FK nahi (id head office / warehouse / branch kisi ki bhi
   // ho sakti hai), is liye teeno tables mein dhoondte hain.
   Future<Map<String, ({String type, String name})>> _resolveSources(
-      Set<String> ids) async {
+    Set<String> ids,
+  ) async {
     final out = <String, ({String type, String name})>{};
     if (ids.isEmpty) return out;
 
     Future<void> lookup(
-        String table, String nameCol, String type, String fallback) async {
+      String table,
+      String nameCol,
+      String type,
+      String fallback,
+    ) async {
       final missing = ids.where((id) => !out.containsKey(id)).toList();
       if (missing.isEmpty) return;
       final res = await _client
@@ -65,8 +68,12 @@ class BranchAssignDatasource {
       }
     }
 
-    await lookup('head_offices', 'head_office_name', 'head_office',
-        'Head Office');
+    await lookup(
+      'head_offices',
+      'head_office_name',
+      'head_office',
+      'Head Office',
+    );
     await lookup('warehouses', 'warehouse_name', 'warehouse', 'Warehouse');
     await lookup('branches', 'branch_name', 'branch', 'Branch');
     return out;
@@ -80,8 +87,7 @@ class BranchAssignDatasource {
         .eq('id', assignmentId)
         .single();
 
-    final sources =
-        await _resolveSources({headerRes['assigned_by'] as String});
+    final sources = await _resolveSources({headerRes['assigned_by'] as String});
     final source = sources[headerRes['assigned_by']];
     final sourceName = source?.name;
     final sourceType = source?.type;

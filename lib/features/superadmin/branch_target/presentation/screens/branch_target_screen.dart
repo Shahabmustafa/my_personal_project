@@ -122,7 +122,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
         }
       });
     } catch (e) {
-      if (mounted) _snack(e.toString().replaceAll('Exception: ', ''), error: true);
+      if (mounted) _snack(e.toString().replaceFirst(RegExp(r'^Exception: '), ''), error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -143,9 +143,9 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
   void _divide() {
     final end = _end;
     final total = double.tryParse(_totalCtrl.text.trim()) ?? 0;
-    if (_branchId == null) return _snack('Pehle branch select karein', error: true);
-    if (end == null) return _snack('End date select karein', error: true);
-    if (total <= 0) return _snack('Target amount daalein', error: true);
+    if (_branchId == null) return _snack('Select a branch first', error: true);
+    if (end == null) return _snack('Select an end date', error: true);
+    if (total <= 0) return _snack('Enter the target amount', error: true);
 
     _total = total;
     final days = end.difference(_start).inDays + 1;
@@ -173,9 +173,9 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
       await ref
           .read(branchTargetDatasourceProvider)
           .save(id, _sortedDays.last, targets);
-      if (mounted) _snack('Target save ho gaya');
+      if (mounted) _snack('Target saved');
     } catch (e) {
-      if (mounted) _snack(e.toString().replaceAll('Exception: ', ''), error: true);
+      if (mounted) _snack(e.toString().replaceFirst(RegExp(r'^Exception: '), ''), error: true);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -251,7 +251,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           const Text(
-            'Target aaj se shuru hota hai. End date aur total amount daalein — amount har din mein barabar divide hoga, phir Saturday/Sunday jaise kisi bhi din ka target alag se badha sakte hain.',
+            'The target starts today. Enter the end date and total amount — the amount is divided equally across the days, then you can raise the target for any day (e.g. Saturday/Sunday) separately.',
             style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
           ),
           const SizedBox(height: 20),
@@ -308,10 +308,10 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
               child: Text.rich(TextSpan(
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                 children: [
-                  TextSpan(text: '${days.length} din  •  Total Rs. ${_fmtAmt(_daysSum)}'),
+                  TextSpan(text: '${days.length} days  •  Total Rs. ${_fmtAmt(_daysSum)}'),
                   if ((_daysSum - _total).abs() > 0.5)
                     TextSpan(
-                      text: '  (target Rs. ${_fmtAmt(_total)} se ${_daysSum > _total ? 'zyada' : 'kam'})',
+                      text: '  (${_daysSum > _total ? 'above' : 'below'} target Rs. ${_fmtAmt(_total)})',
                       style: const TextStyle(color: Color(0xFFE56A00), fontSize: 12),
                     ),
                 ],

@@ -95,7 +95,7 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
             ],
           ),
           const SizedBox(height: 4),
-          Text('$label (current month) — branch par click karein: saal → mahine → din',
+          Text('$label (current month) — click a branch: year → month → day',
               style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3))),
           const SizedBox(height: 16),
           if (myTarget != null)

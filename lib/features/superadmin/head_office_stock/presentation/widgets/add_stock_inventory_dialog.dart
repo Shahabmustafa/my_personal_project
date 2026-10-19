@@ -26,14 +26,8 @@ import 'package:safishoe_app/features/superadmin/head_office_assign_stock/presen
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
-// ── Per-size entry model ──────────────────────────────────────────────────
-class _SizeQtyEntry {
-  StockLookupItem? size;
-  int quantity = 1;
-  final TextEditingController qtyCtrl = TextEditingController(text: '1');
-
-  void dispose() => qtyCtrl.dispose();
-}
+import 'package:safishoe_app/features/warehouse/size/data/model/size_group_model.dart';
+import 'package:safishoe_app/features/warehouse/size/presentation/providers/size_group_provider.dart';
 
 class AddStockInventoryDialog extends ConsumerStatefulWidget {
   const AddStockInventoryDialog({super.key});
@@ -50,7 +44,10 @@ class _AddStockInventoryDialogState
   StockLookupItem? _company;
   final _discountCtrl = TextEditingController(text: '0');
 
-  final List<_SizeQtyEntry> _sizeRows = [_SizeQtyEntry()];
+  // Size grid: null group = all sizes. Qty per size id; blank/0 = skip.
+  String? _groupId;
+  final Map<String, TextEditingController> _qtyCtrls = {};
+  final _fillAllCtrl = TextEditingController();
 
   StockLookupItem? _color;
   StockLookupItem? _category;
@@ -69,9 +66,10 @@ class _AddStockInventoryDialogState
 
   @override
   void dispose() {
-    for (final row in _sizeRows) {
-      row.dispose();
+    for (final c in _qtyCtrls.values) {
+      c.dispose();
     }
+    _fillAllCtrl.dispose();
     _discountCtrl.dispose();
     super.dispose();
   }
@@ -93,14 +91,55 @@ class _AddStockInventoryDialogState
     return digits.join() + check.toString();
   }
 
+  TextEditingController _qtyCtrl(String sizeId) =>
+      _qtyCtrls.putIfAbsent(sizeId, TextEditingController.new);
+
+  int _qtyOf(String sizeId) =>
+      int.tryParse(_qtyCtrls[sizeId]?.text.trim() ?? '') ?? 0;
+
+  /// Sizes shown in the grid — the chosen group's, or all — in size order.
+  List<StockLookupItem> _gridSizes(
+      List<StockLookupItem> allSizes, List<SizeGroupModel> groups) {
+    final group = groups.where((g) => g.id == _groupId).firstOrNull;
+    final sizes = group == null
+        ? [...allSizes]
+        : allSizes.where((s) => group.sizeIds.contains(s.id)).toList();
+    return sizes..sort((a, b) => compareSizeLabels(a.label, b.label));
+  }
+
+  List<StockLookupItem> get _visibleSizes => _gridSizes(
+      ref.read(stockSizesProvider).value ?? const [],
+      ref.read(sizeGroupsProvider).value ?? const []);
+
+  void _fillAll() {
+    final qty = int.tryParse(_fillAllCtrl.text.trim());
+    if (qty == null) return;
+    setState(() {
+      for (final s in _visibleSizes) {
+        _qtyCtrl(s.id).text = qty == 0 ? '' : '$qty';
+      }
+      _previewed = false;
+    });
+  }
+
+  void _clearQty() {
+    setState(() {
+      for (final c in _qtyCtrls.values) {
+        c.clear();
+      }
+      _previewed = false;
+    });
+  }
+
   bool _validate() {
     bool ok = true;
-    final hasSizeError = _sizeRows.any((r) => r.size == null || r.quantity <= 0);
+    final hasSizeError = !_visibleSizes.any((s) => _qtyOf(s.id) > 0);
 
     setState(() {
       _productError = _product == null ? 'Required' : null;
       _brandError = _brand == null ? 'Required' : null;
-      _sizesError = hasSizeError ? 'Each size row must have a size & qty' : null;
+      _sizesError =
+          hasSizeError ? 'Enter quantity for at least one size' : null;
       _colorsError = _color == null ? 'Required' : null;
       _categoriesError = _category == null ? 'Required' : null;
       _typesError = _type == null ? 'Required' : null;
@@ -126,17 +165,19 @@ class _AddStockInventoryDialogState
     final rows = <_StockRow>[];
     int counter = 1;
 
-    for (final sizeEntry in _sizeRows) {
+    for (final size in _visibleSizes) {
+      final qty = _qtyOf(size.id);
+      if (qty <= 0) continue;
       rows.add(_StockRow(
         barcode: _generateBarcode(counter),
         product: _product!,
-        size: sizeEntry.size!,
+        size: size,
         color: _color!,
         category: _category!,
         type: _type!,
         brand: _brand!,
         company: _company,
-        quantity: sizeEntry.quantity,
+        quantity: qty,
         discount: discount,
       ));
       counter++;
@@ -229,22 +270,6 @@ class _AddStockInventoryDialogState
     );
   }
 
-  void _addSizeRow() {
-    setState(() {
-      _sizeRows.add(_SizeQtyEntry());
-      _previewed = false;
-    });
-  }
-
-  void _removeSizeRow(int index) {
-    if (_sizeRows.length == 1) return;
-    setState(() {
-      _sizeRows[index].dispose();
-      _sizeRows.removeAt(index);
-      _previewed = false;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final productsAsync = ref.watch(stockProductsProvider);
@@ -254,7 +279,12 @@ class _AddStockInventoryDialogState
     final colorsAsync = ref.watch(stockColorsProvider);
     final categoriesAsync = ref.watch(stockCategoriesProvider);
     final typesAsync = ref.watch(stockTypesProvider);
+    final groupsAsync = ref.watch(sizeGroupsProvider);
     final theme = Theme.of(context);
+    final groups = groupsAsync.value ?? const <SizeGroupModel>[];
+    final gridSizes = _gridSizes(sizesAsync.value ?? const [], groups);
+    final totalPairs =
+        gridSizes.fold<int>(0, (sum, s) => sum + _qtyOf(s.id));
 
     final isLoading = [
       productsAsync,
@@ -264,6 +294,7 @@ class _AddStockInventoryDialogState
       colorsAsync,
       categoriesAsync,
       typesAsync,
+      groupsAsync,
     ].any((a) => a.isLoading);
 
     return Dialog(
@@ -388,55 +419,126 @@ class _AddStockInventoryDialogState
                           Expanded(
                             child: _SectionLabel(
                               icon: AppIcons.formatSizeOutlined,
-                              label: 'Sizes & Quantities  —  one size per row',
+                              label:
+                                  'Sizes & Quantities  —  blank size is skipped',
                             ),
                           ),
-                          TextButton.icon(
-                            icon: const AppIcon(AppIcons.add, size: 16),
-                            label: const Text('Add Size',
-                                style: TextStyle(fontSize: 13)),
-                            onPressed: _addSizeRow,
+                          if (totalPairs > 0)
+                            Text('$totalPairs pairs',
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: theme.colorScheme.primary)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: DropdownButtonFormField<String?>(
+                              initialValue: groups.any((g) => g.id == _groupId)
+                                  ? _groupId
+                                  : null,
+                              isExpanded: true,
+                              decoration: InputDecoration(
+                                labelText: 'Size Group',
+                                prefixIcon: const TextFieldIcon(
+                                    AppIcons.formatSizeOutlined,
+                                    size: 24),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 14),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              items: [
+                                const DropdownMenuItem<String?>(
+                                    value: null, child: Text('All Sizes')),
+                                ...groups.map((g) => DropdownMenuItem<String?>(
+                                    value: g.id, child: Text(g.name))),
+                              ],
+                              onChanged: (v) => setState(() {
+                                _groupId = v;
+                                _previewed = false;
+                              }),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            flex: 2,
+                            child: TextField(
+                              controller: _fillAllCtrl,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly
+                              ],
+                              decoration: InputDecoration(
+                                labelText: 'Same qty in all',
+                                hintText: 'e.g. 12',
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 14),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              onSubmitted: (_) => _fillAll(),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton.tonal(
+                            onPressed: _fillAll,
+                            child: const Text('Fill'),
+                          ),
+                          TextButton(
+                            onPressed: _clearQty,
+                            child: const Text('Clear'),
                           ),
                         ],
                       ),
                       if (_sizesError != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(_sizesError!,
                             style: TextStyle(
                                 color: theme.colorScheme.error, fontSize: 12)),
                       ],
-                      const SizedBox(height: 8),
-                      ..._sizeRows.asMap().entries.map((entry) {
-                        final idx = entry.key;
-                        final row = entry.value;
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: _SizeQtyRow(
-                            index: idx,
-                            entry: row,
-                            allSizes: (sizesAsync.value ?? [])
-                                .where((s) => !_sizeRows.any((r) =>
-                                    !identical(r, row) &&
-                                    r.size?.id == s.id))
-                                .toList(),
-                            canRemove: _sizeRows.length > 1,
-                            onSizeChanged: (size) => setState(() {
-                              row.size = size;
-                              _previewed = false;
-                            }),
-                            onQtyChanged: (qty) {
-                              row.quantity = qty;
-                              _previewed = false;
-                            },
-                            onRemove: () => _removeSizeRow(idx),
-                          ),
-                        );
-                      }),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
+                      if (gridSizes.isEmpty)
+                        Text('No sizes in this group',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.grey.shade500))
+                      else
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: gridSizes
+                              .map((s) => _SizeQtyCell(
+                                    label: s.label,
+                                    controller: _qtyCtrl(s.id),
+                                    onChanged: () => setState(() {
+                                      _previewed = false;
+                                      _sizesError = null;
+                                    }),
+                                  ))
+                              .toList(),
+                        ),
+                      const SizedBox(height: 24),
                       _SectionLabel(
                           icon: AppIcons.tuneOutlined,
                           label:
-                              'Variations  —  each combination = 1 stock entry'),
+                              'Variations  —  same for every size above'),
                       const SizedBox(height: 12),
                       Row(children: [
                         Expanded(
@@ -575,86 +677,68 @@ class _AddStockInventoryDialogState
   }
 }
 
-// ── Size + Qty row widget ─────────────────────────────────────────────────
+// ── Size grid cell: size label on top, qty box below ──────────────────────
 
-class _SizeQtyRow extends StatelessWidget {
-  final int index;
-  final _SizeQtyEntry entry;
-  final List<StockLookupItem> allSizes;
-  final bool canRemove;
-  final ValueChanged<StockLookupItem?> onSizeChanged;
-  final ValueChanged<int> onQtyChanged;
-  final VoidCallback onRemove;
+class _SizeQtyCell extends StatelessWidget {
+  final String label;
+  final TextEditingController controller;
+  final VoidCallback onChanged;
 
-  const _SizeQtyRow({
-    required this.index,
-    required this.entry,
-    required this.allSizes,
-    required this.canRemove,
-    required this.onSizeChanged,
-    required this.onQtyChanged,
-    required this.onRemove,
+  const _SizeQtyCell({
+    required this.label,
+    required this.controller,
+    required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: AppSearchDropdown<StockLookupItem>(
-            label: 'Size ${index + 1}',
-            items: allSizes,
-            selectedItem: entry.size,
-            itemLabel: (s) => s.label,
-            isRequired: true,
-            prefixIcon: const TextFieldIcon(AppIcons.formatSizeOutlined, size: 24),
-            onChanged: onSizeChanged,
+    final primary = Theme.of(context).colorScheme.primary;
+    final filled = (int.tryParse(controller.text) ?? 0) > 0;
+    return Container(
+      width: 72,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+            color: filled ? primary : Colors.grey.shade300,
+            width: filled ? 1.5 : 1),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: filled ? primary : Colors.grey.shade100,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(9)),
+            ),
+            child: Text(label,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: filled ? Colors.white : Colors.black87)),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: TextFormField(
-            controller: entry.qtyCtrl,
+          TextField(
+            controller: controller,
+            textAlign: TextAlign.center,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.next,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(
-              labelText: 'Quantity *',
-              prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 24),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10)),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 14),
-              filled: true,
-              fillColor: Colors.white,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            decoration: const InputDecoration(
+              hintText: '0',
+              border: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
             ),
-            onChanged: (v) {
-              final parsed = int.tryParse(v);
-              if (parsed != null && parsed > 0) {
-                onQtyChanged(parsed);
-              }
-            },
+            onChanged: (_) => onChanged(),
           ),
-        ),
-        const SizedBox(width: 4),
-        Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: IconButton(
-            icon: AppIcon(
-              AppIcons.removeCircleOutline,
-              color: canRemove ? Colors.red.shade400 : Colors.grey.shade300,
-            ),
-            tooltip: canRemove ? 'Remove row' : 'At least one size required',
-            onPressed: canRemove ? onRemove : null,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

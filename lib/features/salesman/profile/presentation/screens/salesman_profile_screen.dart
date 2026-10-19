@@ -32,7 +32,7 @@ class SalesmanProfileScreen extends ConsumerWidget {
               const Text('My Profile',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 2),
-              const Text('Aapki salary, commission aur sale ka khulasa',
+              const Text('Summary of your salary, commission and sales',
                   style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3))),
               const SizedBox(height: 20),
               _ProfileHeaderCard(
@@ -66,8 +66,8 @@ class SalesmanProfileScreen extends ConsumerWidget {
                       padding: EdgeInsets.symmetric(vertical: 40),
                       child: Center(
                         child: Text(
-                          'Abhi tak koi salary/commission record set nahi hua.\n'
-                          'Apne manager ya admin se rabta karein.',
+                          'No salary/commission record has been set yet.\n'
+                          'Please contact your manager or admin.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Color(0xFF8A8FA3)),
                         ),
@@ -120,7 +120,7 @@ class _ProfileHeaderCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE7E9F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -278,7 +278,7 @@ class _StatCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE7E9F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -288,7 +288,7 @@ class _StatCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: spec.color.withOpacity(0.1),
+              color: spec.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: AppIcon(spec.icon, color: spec.color, size: 20),
@@ -338,7 +338,7 @@ class _SalaryHistoryCard extends ConsumerWidget {
         border: Border.all(color: const Color(0xFFE7E9F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -349,7 +349,7 @@ class _SalaryHistoryCard extends ConsumerWidget {
           const Text('Salary History',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
-          const Text('Pichle mahinon ka record',
+          const Text('Record of previous months',
               style: TextStyle(fontSize: 12, color: Color(0xFF8A8FA3))),
           const SizedBox(height: 14),
           historyAsync.when(
@@ -363,7 +363,7 @@ class _SalaryHistoryCard extends ConsumerWidget {
               if (history.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text('Koi past record nahi hai',
+                  child: Text('No past records',
                       style: TextStyle(color: Color(0xFF8A8FA3))),
                 );
               }

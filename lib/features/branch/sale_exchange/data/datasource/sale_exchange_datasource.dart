@@ -20,6 +20,9 @@ class SaleExchangeDatasource {
   Future<SaleExchangeModel> saveExchange({
     required String exchangeNumber,
     required String branchId,
+    // Cash counter kis branch ka badle (original invoice ki branch) — branchId se
+    // alag ho to cross-branch exchange hai.
+    String? cashBranchId,
     String? originalInvoiceId,
     String? printerId,
     String? cashierId,
@@ -122,6 +125,8 @@ class SaleExchangeDatasource {
                 .map((p) => {
                       'sale_exchange_id': exchange.id,
                       'branch_id': branchId,
+                      if (cashBranchId != null && cashBranchId != branchId)
+                        'cash_branch_id': cashBranchId,
                       'bank_entry_id': p.bankEntryId,
                       'direction': p.direction,
                       'payment_type': p.type,

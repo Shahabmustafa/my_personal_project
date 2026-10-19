@@ -133,7 +133,7 @@ class BranchTargetReportNotifier extends StateNotifier<BranchTargetReportState> 
       state = state.copyWith(rows: rows, isLoading: false, asOf: DateTime.now());
     } catch (e) {
       if (stale()) return;
-      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

@@ -23,7 +23,7 @@ class BranchNotifier extends StateNotifier<BranchState> {
       final branches = await _repo.getAllBranches();
       state = state.copyWith(status: BranchStatus.success, branches: branches);
     } catch (e) {
-      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -33,7 +33,7 @@ class BranchNotifier extends StateNotifier<BranchState> {
       final branches = await _repo.getBranchesForUser(branchIds);
       state = state.copyWith(status: BranchStatus.success, branches: branches);
     } catch (e) {
-      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -43,7 +43,7 @@ class BranchNotifier extends StateNotifier<BranchState> {
       final created = await _repo.createBranch(branch);
       state = state.copyWith(status: BranchStatus.success, branches: [...state.branches, created]);
     } catch (e) {
-      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -54,7 +54,7 @@ class BranchNotifier extends StateNotifier<BranchState> {
       final list = state.branches.map((b) => b.id == updated.id ? updated : b).toList();
       state = state.copyWith(status: BranchStatus.success, branches: list);
     } catch (e) {
-      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -64,7 +64,7 @@ class BranchNotifier extends StateNotifier<BranchState> {
       await _repo.deleteBranch(id);
       state = state.copyWith(status: BranchStatus.success, branches: state.branches.where((b) => b.id != id).toList());
     } catch (e) {
-      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: BranchStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

@@ -59,7 +59,7 @@ class AttendanceMachineDatasource {
           .update({'machine_user_id': v.isEmpty ? null : v}).eq('id', userId);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
-        throw Exception('Machine ID $v pehle kisi aur ko di ja chuki hai');
+        throw Exception('Machine ID $v is already assigned to someone else');
       }
       rethrow;
     }

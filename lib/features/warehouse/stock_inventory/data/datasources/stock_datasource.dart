@@ -194,7 +194,7 @@ class StockDatasource {
         ''')
         .single();
 
-    return WarehouseStockModel.fromJson(response as Map<String, dynamic>);
+    return WarehouseStockModel.fromJson(response);
   }
 
   // ── Update discount ───────────────────────────────────────────────────────
@@ -217,7 +217,7 @@ class StockDatasource {
         ''')
         .single();
 
-    return WarehouseStockModel.fromJson(response as Map<String, dynamic>);
+    return WarehouseStockModel.fromJson(response);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

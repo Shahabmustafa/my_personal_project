@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import '../../data/datasource/sale_discount_tier_datasource.dart';
 import '../../data/model/sale_discount_tier_model.dart';
 import '../../data/repository/sale_discount_tier_repository.dart';
@@ -15,9 +16,14 @@ final saleDiscountTierRepositoryProvider = Provider<SaleDiscountTierRepository>(
 
 /// Sale Invoice (aur kahin bhi) se seedha read karne ke liye — sab tiers,
 /// highest min_sale_amount pehle.
-final saleDiscountTiersProvider = FutureProvider<List<SaleDiscountTierModel>>(
-  (ref) => ref.read(saleDiscountTierRepositoryProvider).getAll(),
-);
+final saleDiscountTiersProvider = FutureProvider<List<SaleDiscountTierModel>>((
+  ref,
+) {
+  // Realtime — admin tier add/edit/delete kare to sab branches ki sale invoice
+  // par turant naye tiers (page refresh ki zaroorat nahi).
+  ref.watch(tableChangesProvider('sale_discount_tiers'));
+  return ref.read(saleDiscountTierRepositoryProvider).getAll();
+});
 
 class SaleDiscountTierState {
   final List<SaleDiscountTierModel> tiers;
@@ -54,7 +60,7 @@ class SaleDiscountTierNotifier extends StateNotifier<SaleDiscountTierState> {
       state = state.copyWith(tiers: tiers, isLoading: false);
       _ref.invalidate(saleDiscountTiersProvider);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 

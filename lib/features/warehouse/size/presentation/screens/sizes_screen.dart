@@ -11,7 +11,10 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 class SizesScreen extends ConsumerStatefulWidget {
   final bool readOnly;
-  const SizesScreen({super.key, this.readOnly = false});
+  /// Size Groups (for the Add Stock size grid) are superadmin-only.
+  final bool showSizeGroups;
+  const SizesScreen(
+      {super.key, this.readOnly = false, this.showSizeGroups = false});
 
   @override
   ConsumerState<SizesScreen> createState() => _SizesScreenState();
@@ -109,25 +112,27 @@ class _SizesScreenState extends ConsumerState<SizesScreen> {
                   ],
                 ),
                 const Spacer(),
-                OutlinedButton.icon(
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) =>
-                        SizeGroupsDialog(readOnly: widget.readOnly),
+                if (widget.showSizeGroups) ...[
+                  OutlinedButton.icon(
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) =>
+                          SizeGroupsDialog(readOnly: widget.readOnly),
+                    ),
+                    icon: const AppIcon(AppIcons.formatSizeOutlined,
+                        size: 18, color: Color(0xFF3E63DD)),
+                    label: const Text('Size Groups'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF3E63DD),
+                      side: const BorderSide(color: Color(0xFF3E63DD)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
-                  icon: const AppIcon(AppIcons.formatSizeOutlined,
-                      size: 18, color: Color(0xFF3E63DD)),
-                  label: const Text('Size Groups'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF3E63DD),
-                    side: const BorderSide(color: Color(0xFF3E63DD)),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                const SizedBox(width: 12),
+                  const SizedBox(width: 12),
+                ],
                 ElevatedButton.icon(
                   onPressed: () => _showForm(),
                   icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
@@ -362,7 +367,7 @@ class _IconBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(6)),
           child: AppIcon(icon, size: 16, color: color),
         ),

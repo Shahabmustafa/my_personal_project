@@ -55,7 +55,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
     } catch (e) {
       state = state.copyWith(
           isFirstLoad: false,
-          error: e.toString().replaceAll('Exception: ', ''));
+          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -91,7 +91,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
       _invalidateLookups();
       return null;
     } catch (e) {
-      return e.toString().replaceAll('Exception: ', '');
+      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
     }
   }
 
@@ -102,7 +102,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
       _invalidateLookups();
       return null;
     } catch (e) {
-      return e.toString().replaceAll('Exception: ', '');
+      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
     }
   }
 
@@ -113,7 +113,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
       _invalidateLookups();
       return null;
     } catch (e) {
-      return e.toString().replaceAll('Exception: ', '');
+      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
     }
   }
 }

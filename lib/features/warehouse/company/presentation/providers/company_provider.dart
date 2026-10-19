@@ -42,7 +42,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -55,7 +55,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -73,7 +73,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -90,7 +90,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -105,7 +105,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

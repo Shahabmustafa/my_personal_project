@@ -28,7 +28,7 @@ class CustomerNotifier extends PaginatedListNotifier<CustomerModel> {
   Future<PageResult<CustomerModel>> fetchPage(PageRequest request) =>
       _repo.fetchPage(request, branchIds: _scopeBranchIds);
 
-  static String _msg(Object e) => e.toString().replaceAll('Exception: ', '');
+  static String _msg(Object e) => e.toString().replaceFirst(RegExp(r'^Exception: '), '');
 
   Future<String?> createCustomer(CustomerModel customer) async {
     try {

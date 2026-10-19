@@ -14,13 +14,17 @@ import '../../data/repository/branch_stock_return_repository.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
-final branchStockReturnDatasourceProvider = Provider<BranchStockReturnDatasource>(
-  (_) => BranchStockReturnDatasource(Supabase.instance.client),
-);
+final branchStockReturnDatasourceProvider =
+    Provider<BranchStockReturnDatasource>(
+      (_) => BranchStockReturnDatasource(Supabase.instance.client),
+    );
 
-final branchStockReturnRepositoryProvider = Provider<BranchStockReturnRepository>(
-  (ref) => BranchStockReturnRepository(ref.read(branchStockReturnDatasourceProvider)),
-);
+final branchStockReturnRepositoryProvider =
+    Provider<BranchStockReturnRepository>(
+      (ref) => BranchStockReturnRepository(
+        ref.read(branchStockReturnDatasourceProvider),
+      ),
+    );
 
 // ── Destination branches (sab active branches, khud ko chhod kar) ─────────
 
@@ -32,7 +36,9 @@ final otherBranchesForReturnProvider = FutureProvider<List<BranchModel>>(
 
 // ── Sent / incoming returns lists ──────────────────────────────────────────
 
-final sentStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((ref) {
+final sentStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((
+  ref,
+) {
   // Realtime — doosri branch accept/reject kare to reload.
   ref.watch(tableChangesProvider('branch_stock_returns'));
   return ref
@@ -40,13 +46,14 @@ final sentStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((r
       .getSentReturns(ref.watch(currentBranchIdProvider));
 });
 
-final incomingStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((ref) {
-  // Realtime — naya return aate hi reload.
-  ref.watch(tableChangesProvider('branch_stock_returns'));
-  return ref
-      .watch(branchStockReturnRepositoryProvider)
-      .getIncomingReturns(ref.watch(currentBranchIdProvider));
-});
+final incomingStockReturnsProvider =
+    FutureProvider<List<BranchStockReturnModel>>((ref) {
+      // Realtime — naya return aate hi reload.
+      ref.watch(tableChangesProvider('branch_stock_returns'));
+      return ref
+          .watch(branchStockReturnRepositoryProvider)
+          .getIncomingReturns(ref.watch(currentBranchIdProvider));
+    });
 
 // ── Cart / active return state ─────────────────────────────────────────────
 
@@ -78,16 +85,16 @@ class BranchStockReturnState {
     bool? isSaving,
     String? error,
     bool clearError = false,
-  }) =>
-      BranchStockReturnState(
-        returnNumber: returnNumber ?? this.returnNumber,
-        numberLoading: numberLoading ?? this.numberLoading,
-        destinationBranch:
-            clearDestination ? null : destinationBranch ?? this.destinationBranch,
-        cartItems: cartItems ?? this.cartItems,
-        isSaving: isSaving ?? this.isSaving,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => BranchStockReturnState(
+    returnNumber: returnNumber ?? this.returnNumber,
+    numberLoading: numberLoading ?? this.numberLoading,
+    destinationBranch: clearDestination
+        ? null
+        : destinationBranch ?? this.destinationBranch,
+    cartItems: cartItems ?? this.cartItems,
+    isSaving: isSaving ?? this.isSaving,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
 class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
@@ -96,7 +103,7 @@ class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
   final String _fromBranchId;
 
   BranchStockReturnNotifier(this._ref, this._repo, this._fromBranchId)
-      : super(const BranchStockReturnState()) {
+    : super(const BranchStockReturnState()) {
     _loadNumber();
   }
 
@@ -110,7 +117,10 @@ class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
       }
     } catch (_) {
       if (mounted) {
-        state = state.copyWith(returnNumber: 'RTB-000001', numberLoading: false);
+        state = state.copyWith(
+          returnNumber: 'RTB-000001',
+          numberLoading: false,
+        );
       }
     }
   }
@@ -175,7 +185,10 @@ class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
       discount: stock.discount,
     );
 
-    state = state.copyWith(cartItems: [...state.cartItems, item], clearError: true);
+    state = state.copyWith(
+      cartItems: [...state.cartItems, item],
+      clearError: true,
+    );
     return null;
   }
 
@@ -202,7 +215,8 @@ class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
 
   Future<String?> saveReturn({String? notes}) async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
-    if (state.destinationBranch == null) return 'Please select a destination branch';
+    if (state.destinationBranch == null)
+      return 'Please select a destination branch';
 
     state = state.copyWith(isSaving: true, clearError: true);
     try {
@@ -242,9 +256,9 @@ class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
 
 final branchStockReturnProvider =
     StateNotifierProvider<BranchStockReturnNotifier, BranchStockReturnState>(
-  (ref) => BranchStockReturnNotifier(
-    ref,
-    ref.read(branchStockReturnRepositoryProvider),
-    ref.watch(currentBranchIdProvider),
-  ),
-);
+      (ref) => BranchStockReturnNotifier(
+        ref,
+        ref.read(branchStockReturnRepositoryProvider),
+        ref.watch(currentBranchIdProvider),
+      ),
+    );

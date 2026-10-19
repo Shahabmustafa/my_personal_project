@@ -37,7 +37,7 @@ class B1g1OffersScreen extends ConsumerWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         SizedBox(height: 4),
         Text(
-          'Chune hue Articles par har 2 pairs mein se sasta wala free — sab branches ke liye. Is offer wale items return nahi hote.',
+          'On the selected articles, the cheaper of every 2 pairs is free — for all branches. Items in this offer cannot be returned.',
           style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
         ),
       ],
@@ -83,7 +83,7 @@ class B1g1OffersScreen extends ConsumerWidget {
               ),
               data: (offers) => offers.isEmpty
                   ? const Center(
-                      child: Text('Koi offer nahi bana',
+                      child: Text('No offers created yet',
                           style: TextStyle(color: Color(0xFF8A8FA3))))
                   : ListView.builder(
                       itemCount: offers.length,
@@ -95,7 +95,7 @@ class B1g1OffersScreen extends ConsumerWidget {
                             if (o.variantKeys.isNotEmpty)
                               'Articles: ${o.variantKeys.map((k) => variantByKey[k]?.label ?? '…').join(', ')}',
                             if (o.productIds.isNotEmpty)
-                              'Articles (sab sizes/colors): ${names(o.productIds, products)}',
+                              'Articles (all sizes/colors): ${names(o.productIds, products)}',
                           ],
                           onEdit: () => _openForm(context, offer: o),
                           onDelete: () => _confirmDelete(context, ref, o),
@@ -128,7 +128,7 @@ class B1g1OffersScreen extends ConsumerWidget {
       builder: (dialogCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Offer?'),
-        content: Text('"${o.name}" offer delete kar dein?'),
+        content: Text('Delete the offer "${o.name}"?'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
@@ -312,11 +312,11 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
     final name = _nameCtrl.text.trim();
     String? error;
     if (name.isEmpty) {
-      error = 'Offer ka naam likhein';
+      error = 'Enter the offer name';
     } else if (_productIds.isEmpty && _variantKeys.isEmpty) {
-      error = 'Kam az kam ek Article chunein';
+      error = 'Select at least one article';
     } else if (_start != null && _end != null && _end!.isBefore(_start!)) {
-      error = 'End date start date se pehle nahi ho sakti';
+      error = 'End date cannot be before the start date';
     }
     if (error != null) {
       setState(() => _error = error);
@@ -400,12 +400,12 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
               // Purane offers jin mein poora article (har size/color) chuna tha.
               if (_productIds.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                _multi('Articles (sab sizes/colors)', products, _productIds,
+                _multi('Articles (all sizes/colors)', products, _productIds,
                     (v) => _productIds = v),
               ],
               const SizedBox(height: 4),
               const Text(
-                'Do items mein se jis ki qeemat kam hai wo free hoga.',
+                'Of the two items, the one with the lower price is free.',
                 style: TextStyle(fontSize: 11, color: Color(0xFF2E7D32)),
               ),
               const SizedBox(height: 14),
@@ -416,7 +416,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
               ]),
               const SizedBox(height: 4),
               const Text(
-                'Date khali chhorein to offer hamesha chalega (jab tak On ho). Date hatane ke liye button dabaye rakhein.',
+                'Leave the dates empty and the offer runs indefinitely (while it is On). To clear a date, press and hold its button.',
                 style: TextStyle(fontSize: 11, color: Color(0xFF8A8FA3)),
               ),
               if (_error != null) ...[
@@ -567,7 +567,7 @@ class _VariantPickerDialogState extends State<_VariantPickerDialog> {
               dense: true,
               value: allShownSelected,
               activeColor: primary,
-              title: Text('Sab select karein (${filtered.length})',
+              title: Text('Select all (${filtered.length})',
                   style: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w600)),
               onChanged: filtered.isEmpty

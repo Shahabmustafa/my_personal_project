@@ -32,7 +32,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -46,7 +46,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -61,7 +61,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -75,7 +75,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

@@ -194,7 +194,7 @@ class _StaffAttendanceScreenState extends ConsumerState<StaffAttendanceScreen> {
                       style: const TextStyle(color: _red))),
               data: (rows) => rows.isEmpty
                   ? const Center(
-                      child: Text('Is branch mein koi staff nahi',
+                      child: Text('No staff in this branch',
                           style: TextStyle(color: _grey)))
                   : SingleChildScrollView(
                       child: ReportTableShell(

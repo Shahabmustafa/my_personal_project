@@ -30,15 +30,21 @@ class BranchStockReturnModel {
     this.items = const [],
   });
 
-  factory BranchStockReturnModel.fromJson(Map<String, dynamic> json,
-      {List<BranchStockReturnItemModel> items = const []}) {
+  factory BranchStockReturnModel.fromJson(
+    Map<String, dynamic> json, {
+    List<BranchStockReturnItemModel> items = const [],
+  }) {
     final fromBranch = json['from_branch'] as Map<String, dynamic>?;
     final toBranch = json['to_branch'] as Map<String, dynamic>?;
     final itemsJson = items.isNotEmpty
         ? items
         : ((json['branch_stock_return_items'] as List?) ?? const [])
-            .map((e) => BranchStockReturnItemModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+              .map(
+                (e) => BranchStockReturnItemModel.fromJson(
+                  e as Map<String, dynamic>,
+                ),
+              )
+              .toList();
 
     return BranchStockReturnModel(
       id: json['id'] as String,
@@ -127,11 +133,14 @@ class BranchStockReturnItemModel {
       salePrice: _toDouble(json['sale_price']),
       purchasePrice: _toDouble(json['purchase_price']),
       discount: _toDouble(json['discount']),
-      productName: (json['products'] as Map<String, dynamic>?)?['article_name'] as String?,
+      productName:
+          (json['products'] as Map<String, dynamic>?)?['article_name']
+              as String?,
       sizeName: (json['sizes'] as Map<String, dynamic>?)?['number'] as String?,
       colorName: (json['colors'] as Map<String, dynamic>?)?['name'] as String?,
       brandName: (json['brands'] as Map<String, dynamic>?)?['name'] as String?,
-      categoryName: (json['categories'] as Map<String, dynamic>?)?['name'] as String?,
+      categoryName:
+          (json['categories'] as Map<String, dynamic>?)?['name'] as String?,
       typeName: (json['types'] as Map<String, dynamic>?)?['name'] as String?,
     );
   }

@@ -30,7 +30,7 @@ class HeadOfficeCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeCashCounterStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

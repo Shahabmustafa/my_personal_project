@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/constants/app_constants.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../auth/data/model/user_model.dart';
 
@@ -67,14 +68,29 @@ class UserRemoteDatasource {
     String phoneNumber = '',
     List<String> branchIds = const [],
   }) async {
-    // Step 1: Supabase Auth signup
-    final authResponse = await _client.auth.signUp(
-      email: email,
-      password: password,
+    // Step 1: Supabase Auth signup — alag, session-less client se. Main client
+    // par signUp karne se app ka session naye user par chala jata hai aur
+    // superadmin ki baad ki writes (assign, etc.) RLS se reject ho jati hain.
+    final signupClient = SupabaseClient(
+      AppConstants.supabaseUrl,
+      AppConstants.supabaseAnonKey,
+      authOptions: const AuthClientOptions(
+        autoRefreshToken: false,
+        authFlowType: AuthFlowType.implicit,
+      ),
     );
-
-    final authUser = authResponse.user;
-    if (authUser == null) throw Exception('Failed to create auth user');
+    final User? signedUp;
+    try {
+      signedUp = (await signupClient.auth.signUp(
+        email: email,
+        password: password,
+      ))
+          .user;
+    } finally {
+      await signupClient.dispose();
+    }
+    if (signedUp == null) throw Exception('Failed to create auth user');
+    final authUser = signedUp;
 
     // Step 2: Insert into users table
     await _client.from('users').insert({

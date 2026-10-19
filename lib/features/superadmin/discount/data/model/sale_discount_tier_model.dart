@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/money.dart';
 enum DiscountTierType { flat, percent }
 
 /// Head office ka ek global sale-amount discount tier — jab kisi invoice ka
@@ -26,7 +27,7 @@ class SaleDiscountTierModel {
   double discountFor(double saleAmount) {
     final raw = discountType == DiscountTierType.flat
         ? discountValue
-        : saleAmount * discountValue / 100;
+        : roundMoney(saleAmount * discountValue / 100);
     return raw.clamp(0, saleAmount);
   }
 

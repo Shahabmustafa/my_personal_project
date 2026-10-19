@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/money.dart';
 export '../../../sale_invoice/data/model/sale_invoice_model.dart'
     show SaleCartItem, EmployeeLookupItem, BankEntryLookupItem, PrinterLookupItem;
 
@@ -419,7 +420,7 @@ class ReturnCartItem {
 
   int get alreadyReturned => isB1g1 ? 0 : soldQuantity - maxQuantity;
 
-  double get discountAmount => salePrice * discountPct / 100;
+  double get discountAmount => roundMoney(salePrice * discountPct / 100);
   double get netPrice => salePrice - discountAmount;
   double get lineTotal => netPrice * quantity;
 

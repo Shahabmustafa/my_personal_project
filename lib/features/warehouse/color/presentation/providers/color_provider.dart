@@ -32,7 +32,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -46,7 +46,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -61,7 +61,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -75,7 +75,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

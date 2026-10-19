@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/user_provider.dart';
-import '../providers/user_state.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -227,7 +226,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                   decoration: BoxDecoration(
                     color: const Color(0xFFEAEFFD),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFF3E63DD).withOpacity(0.2)),
+                    border: Border.all(color: const Color(0xFF3E63DD).withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: [

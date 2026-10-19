@@ -83,7 +83,7 @@ class PurchaseInvoiceDatasource {
         .maybeSingle();
 
     if (res == null) return null;
-    return WarehouseStockModel.fromJson(res as Map<String, dynamic>);
+    return WarehouseStockModel.fromJson(res);
   }
 
   // ── Fetch all companies ───────────────────────────────────────────────────
@@ -106,7 +106,7 @@ class PurchaseInvoiceDatasource {
         .eq('id', companyId)
         .maybeSingle();
     if (res == null) return null;
-    return CompanyWithBalance.fromJson(res as Map<String, dynamic>);
+    return CompanyWithBalance.fromJson(res);
   }
 
   // ── Update company opening_balance ────────────────────────────────────────
@@ -167,7 +167,7 @@ class PurchaseInvoiceDatasource {
         .single();
 
     final invoice =
-        PurchaseInvoiceModel.fromJson(invoiceRes as Map<String, dynamic>);
+        PurchaseInvoiceModel.fromJson(invoiceRes);
 
     // 2. Insert line items
     final itemsPayload = cartItems
@@ -256,7 +256,7 @@ class PurchaseInvoiceDatasource {
         .toList();
 
     return PurchaseInvoiceModel.fromJson(
-      invoiceRes as Map<String, dynamic>,
+      invoiceRes,
       items: items,
     );
   }

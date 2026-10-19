@@ -56,7 +56,7 @@ class MyExchangesScreen extends ConsumerWidget {
                   if (exchanges.isEmpty)
                     const _EmptyState(
                       icon: AppIcons.swapHorizOutlined,
-                      text: 'Abhi tak koi exchange nahi hua',
+                      text: 'No exchanges yet',
                     )
                   else
                     LayoutBuilder(builder: (context, constraints) {

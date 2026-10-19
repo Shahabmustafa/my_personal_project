@@ -34,12 +34,11 @@ class BranchAssignListState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      BranchAssignListState(
-        assignments: assignments ?? this.assignments,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => BranchAssignListState(
+    assignments: assignments ?? this.assignments,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
 class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
@@ -47,7 +46,7 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
   final String _branchId;
 
   BranchAssignNotifier(this._repo, this._branchId)
-      : super(const BranchAssignListState()) {
+    : super(const BranchAssignListState()) {
     loadAssignments();
   }
 
@@ -96,18 +95,21 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
   }
 }
 
-final branchAssignProvider = StateNotifierProvider<BranchAssignNotifier, BranchAssignListState>(
-  (ref) {
-    final notifier = BranchAssignNotifier(
-      ref.read(branchAssignRepositoryProvider),
-      ref.watch(currentBranchIdProvider),
-    );
-    // Realtime — naya assignment aate hi list reload.
-    ref.listen(tableChangesProvider('assign_stock_to_branch'),
-        (_, _) => notifier.loadAssignments());
-    // Items header ke baad insert hote hain — un ka event bhi suno.
-    ref.listen(tableChangesProvider('assign_stock_to_branch_items'),
-        (_, _) => notifier.loadAssignments());
-    return notifier;
-  },
-);
+final branchAssignProvider =
+    StateNotifierProvider<BranchAssignNotifier, BranchAssignListState>((ref) {
+      final notifier = BranchAssignNotifier(
+        ref.read(branchAssignRepositoryProvider),
+        ref.watch(currentBranchIdProvider),
+      );
+      // Realtime — naya assignment aate hi list reload.
+      ref.listen(
+        tableChangesProvider('assign_stock_to_branch'),
+        (_, _) => notifier.loadAssignments(),
+      );
+      // Items header ke baad insert hote hain — un ka event bhi suno.
+      ref.listen(
+        tableChangesProvider('assign_stock_to_branch_items'),
+        (_, _) => notifier.loadAssignments(),
+      );
+      return notifier;
+    });

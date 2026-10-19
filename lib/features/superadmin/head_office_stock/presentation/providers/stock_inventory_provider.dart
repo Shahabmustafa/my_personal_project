@@ -65,7 +65,7 @@ class HeadOfficeStockNotifier
     } catch (e) {
       state = state.copyWith(
           isFirstLoad: false,
-          error: e.toString().replaceAll('Exception: ', ''));
+          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

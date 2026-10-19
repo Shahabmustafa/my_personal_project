@@ -22,7 +22,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final warehouses = await _repo.getAllWarehouses();
       state = state.copyWith(status: WarehouseStatus.success, warehouses: warehouses);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -32,7 +32,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final warehouses = await _repo.getWarehousesForUser(warehouseIds);
       state = state.copyWith(status: WarehouseStatus.success, warehouses: warehouses);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -42,7 +42,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final created = await _repo.createWarehouse(warehouse);
       state = state.copyWith(status: WarehouseStatus.success, warehouses: [...state.warehouses, created]);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -53,7 +53,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final list = state.warehouses.map((w) => w.id == updated.id ? updated : w).toList();
       state = state.copyWith(status: WarehouseStatus.success, warehouses: list);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -63,7 +63,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       await _repo.deleteWarehouse(id);
       state = state.copyWith(status: WarehouseStatus.success, warehouses: state.warehouses.where((w) => w.id != id).toList());
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

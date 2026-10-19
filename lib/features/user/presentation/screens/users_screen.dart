@@ -464,9 +464,9 @@ class _BranchWarehouseInfoDialog extends ConsumerWidget {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: bgColor.withOpacity(0.5),
+                color: bgColor.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: accentColor.withOpacity(0.15)),
+                border: Border.all(color: accentColor.withValues(alpha: 0.15)),
               ),
               child: Row(
                 children: [
@@ -560,7 +560,7 @@ class _IconBtn extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         child: Container(
           padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
           child: AppIcon(icon, size: 16, color: color),
         ),
       ),

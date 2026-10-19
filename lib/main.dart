@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safishoe_app/core/storage/tab_scoped_supabase_storage.dart';
 import 'package:safishoe_app/core/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'features/auth/presentation/screens/login_screen.dart';
+import 'features/auth/presentation/screens/app_gate.dart';
 import 'features/website/website_app.dart';
 
 final supabase = Supabase.instance.client;
@@ -23,7 +23,7 @@ void main()async{
 
   await Supabase.initialize(
     url: _supabaseUrl,
-    anonKey: 'sb_publishable_cS8IX_ntAcRH7YJErWi9YQ_fw8LzqXr',
+    publishableKey: 'sb_publishable_cS8IX_ntAcRH7YJErWi9YQ_fw8LzqXr',
     // On web, keep each browser tab's login session in that tab only —
     // otherwise logging in as one role in another tab overwrites the shared
     // localStorage session used by every tab on the same origin.
@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
       title: 'Safi Shoes',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: LoginScreen(),
+      home: const AppGate(),
     );
   }
 }

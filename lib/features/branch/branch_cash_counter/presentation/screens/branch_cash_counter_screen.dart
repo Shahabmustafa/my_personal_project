@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch_payment/presentation/providers/branch_payment_provider.dart';
 import '../../../shared/current_branch_provider.dart';
+import '../../../../../core/pagination/pagination.dart';
 import '../../data/model/branch_cash_counter_model.dart';
 import '../providers/branch_cash_counter_provider.dart';
 
@@ -21,20 +22,8 @@ class BranchCashCounterScreen extends ConsumerStatefulWidget {
 
 class _BranchCashCounterScreenState
     extends ConsumerState<BranchCashCounterScreen> {
-  String _searchQuery = '';
-
   /// Row tap par right-side slider mein iska bar graph dikhta hai.
   BranchCashCounterModel? _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final branchId = ref.read(currentBranchIdProvider);
-      if (branchId.isEmpty) return;
-      ref.read(branchCashCounterProvider.notifier).loadByBranch(branchId);
-    });
-  }
 
   /// [available] is today's running balance — the most recent record is
   /// today's counter (rows are loaded newest first).
@@ -44,8 +33,7 @@ class _BranchCashCounterScreenState
       builder: (_) => _PayToHeadOfficeDialog(available: available),
     );
     if (paid != true || !mounted) return;
-    final branchId = ref.read(currentBranchIdProvider);
-    ref.read(branchCashCounterProvider.notifier).loadByBranch(branchId);
+    ref.read(branchCashCounterProvider.notifier).refresh();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Payment sent — waiting for Head Office to accept'),
@@ -57,14 +45,9 @@ class _BranchCashCounterScreenState
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(branchCashCounterProvider);
+    final stats = ref.watch(branchCashCounterStatsProvider);
+    final notifier = ref.read(branchCashCounterProvider.notifier);
     final isMobile = MediaQuery.of(context).size.width < 768;
-
-    final filtered = state.records.where((r) {
-      final q = _searchQuery.toLowerCase();
-      if (q.isEmpty) return true;
-      final dateStr = _fmtDate(r.createdAt);
-      return dateStr.contains(q) || r.totalSale.toString().contains(q);
-    }).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
@@ -85,16 +68,18 @@ class _BranchCashCounterScreenState
                           style: TextStyle(
                               fontSize: 22, fontWeight: FontWeight.bold)),
                       Text(
-                          '${state.records.length} record${state.records.length == 1 ? '' : 's'} — read only',
+                          '${state.isFirstLoad ? '…' : groupThousands(state.totalCount)} record${state.totalCount == 1 ? '' : 's'} — read only',
                           style: const TextStyle(
                               fontSize: 13, color: Color(0xFF8A8FA3))),
                     ],
                   ),
                 ),
                 FilledButton.icon(
-                  onPressed: state.records.isEmpty
+                  // Aaj ka balance sab se naya record hai — search lagi ho to
+                  // rows filtered hoti hain, is liye tab Pay band rehta hai.
+                  onPressed: state.rows.isEmpty || state.search.isNotEmpty
                       ? null
-                      : () => _onPay(state.records.first.totalAmount),
+                      : () => _onPay(state.rows.first.totalAmount),
                   icon: const AppIcon(AppIcons.sendOutlined,
                       size: 16, color: Colors.white),
                   label: Text(isMobile ? 'Pay' : 'Pay to Head Office'),
@@ -104,7 +89,7 @@ class _BranchCashCounterScreenState
           ),
 
           // ── Summary Cards ─────────────────────────────────────────────
-          if (!state.isLoading && state.records.isNotEmpty)
+          if (stats != null && !state.isFirstLoad && stats.recordCount > 0)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: isMobile
@@ -114,14 +99,14 @@ class _BranchCashCounterScreenState
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Sale',
-                                  amount: state.totalSale,
+                                  amount: stats.totalSale,
                                   icon: AppIcons.pointOfSaleOutlined,
                                   color: const Color(0xFF3E63DD))),
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Net Sale',
-                                  amount: state.totalNetSale,
+                                  amount: stats.netSale,
                                   icon: AppIcons.publishedWithChangesOutlined,
                                   color: const Color(0xFF0F9D8F))),
                         ]),
@@ -130,14 +115,14 @@ class _BranchCashCounterScreenState
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Gross',
-                                  amount: state.totalGross,
+                                  amount: stats.gross,
                                   icon: AppIcons.trendingUpOutlined,
                                   color: const Color(0xFF22A06B))),
                           const SizedBox(width: 12),
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Expense',
-                                  amount: state.totalExpense,
+                                  amount: stats.expense,
                                   icon: AppIcons.receiptLongOutlined,
                                   color: const Color(0xFFE56A00))),
                         ]),
@@ -146,7 +131,7 @@ class _BranchCashCounterScreenState
                           Expanded(
                               child: _SummaryCard(
                                   label: 'Total Amount',
-                                  amount: state.totalAmount,
+                                  amount: stats.totalAmount,
                                   icon: AppIcons.accountBalanceWalletOutlined,
                                   color: const Color(0xFF6C4DE0))),
                         ]),
@@ -156,35 +141,35 @@ class _BranchCashCounterScreenState
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Sale',
-                              amount: state.totalSale,
+                              amount: stats.totalSale,
                               icon: AppIcons.pointOfSaleOutlined,
                               color: const Color(0xFF3E63DD))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Net Sale',
-                              amount: state.totalNetSale,
+                              amount: stats.netSale,
                               icon: AppIcons.publishedWithChangesOutlined,
                               color: const Color(0xFF0F9D8F))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Gross',
-                              amount: state.totalGross,
+                              amount: stats.gross,
                               icon: AppIcons.trendingUpOutlined,
                               color: const Color(0xFF22A06B))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Expense',
-                              amount: state.totalExpense,
+                              amount: stats.expense,
                               icon: AppIcons.receiptLongOutlined,
                               color: const Color(0xFFE56A00))),
                       const SizedBox(width: 14),
                       Expanded(
                           child: _SummaryCard(
                               label: 'Total Amount',
-                              amount: state.totalAmount,
+                              amount: stats.totalAmount,
                               icon: AppIcons.accountBalanceWalletOutlined,
                               color: const Color(0xFF6C4DE0))),
                     ]),
@@ -194,30 +179,29 @@ class _BranchCashCounterScreenState
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
             child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v),
-              decoration: _searchDecor('Search by date or amount...'),
+              onChanged: notifier.setSearch,
+              decoration: _searchDecor('Search by date (dd/mm/yyyy, mm/yyyy) or total sale amount...'),
             ),
           ),
 
           // ── Content ───────────────────────────────────────────────────
           Expanded(
-            child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                // A failed add/edit/delete only shows the snackbar; keep the list.
-                : state.status == BranchCashCounterStatus.error && state.records.isEmpty
-                    ? _ErrorView(
-                        message:
-                            state.errorMessage ?? 'Error loading records',
-                        onRetry: () => ref
-                            .read(branchCashCounterProvider.notifier)
-                            .loadByBranch(
-                                ref.read(currentBranchIdProvider)),
-                      )
-                    : filtered.isEmpty
-                        ? const _EmptyView()
-                        : isMobile
-                            ? _MobileList(records: filtered, onTap: _select)
-                            : _DesktopTable(records: filtered, onTap: _select),
+            child: isMobile
+                ? PaginatedListView<BranchCashCounterModel>(
+                    state: state,
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    emptyText: 'No cash counter records found',
+                    onLoadMore: notifier.loadMore,
+                    onRefresh: notifier.refresh,
+                    onRetry: notifier.refresh,
+                    itemBuilder: (_, r, _) =>
+                        _MobileCard(record: r, onTap: _select),
+                  )
+                : _DesktopTable(
+                    state: state,
+                    notifier: notifier,
+                    onTap: _select,
+                  ),
           ),
         ],
       ),
@@ -281,7 +265,7 @@ class _SummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: AppIcon(icon, color: color, size: 20),
@@ -314,12 +298,37 @@ class _SummaryCard extends StatelessWidget {
   }
 }
 
-// ── Desktop Table (horizontal scroll — many columns) ───────────────────────────
+// ── Desktop Table (horizontal scroll — many columns, rows lazily built) ───────
+
+class _Col {
+  final String label;
+  final double width;
+  const _Col(this.label, this.width);
+}
+
+const _cols = [
+  _Col('Date', 120),
+  _Col('Cash Sale', 120),
+  _Col('Card Sale', 120),
+  _Col('Total Sale', 130),
+  _Col('Return Sale', 120),
+  _Col('Return in Exch.', 140),
+  _Col('Received in Exch.', 150),
+  _Col('Net Sale', 130),
+  _Col('Expense', 120),
+  _Col('Gross', 120),
+  _Col('Paid Amount', 130),
+  _Col('Total Amount', 140),
+];
+
+final double _tableWidth = _cols.fold(0.0, (w, c) => w + c.width);
 
 class _DesktopTable extends StatelessWidget {
-  final List<BranchCashCounterModel> records;
+  final PaginatedListState<BranchCashCounterModel> state;
+  final BranchCashCounterNotifier notifier;
   final ValueChanged<BranchCashCounterModel> onTap;
-  const _DesktopTable({required this.records, required this.onTap});
+  const _DesktopTable(
+      {required this.state, required this.notifier, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -335,186 +344,209 @@ class _DesktopTable extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: DataTable(
-              showCheckboxColumn: false,
-              headingRowColor:
-                  WidgetStateProperty.all(const Color(0xFFF7F8FC)),
-              headingTextStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF8A8FA3)),
-              dataTextStyle: const TextStyle(fontSize: 13),
-              columns: const [
-                DataColumn(label: Text('Date')),
-                DataColumn(label: Text('Cash Sale'), numeric: true),
-                DataColumn(label: Text('Card Sale'), numeric: true),
-                DataColumn(label: Text('Total Sale'), numeric: true),
-                DataColumn(label: Text('Return Sale'), numeric: true),
-                DataColumn(label: Text('Return in Exch.'), numeric: true),
-                DataColumn(label: Text('Received in Exch.'), numeric: true),
-                DataColumn(label: Text('Net Sale'), numeric: true),
-                DataColumn(label: Text('Expense'), numeric: true),
-                DataColumn(label: Text('Gross'), numeric: true),
-                DataColumn(label: Text('Paid Amount'), numeric: true),
-                DataColumn(label: Text('Total Amount'), numeric: true),
-              ],
-              rows: records
-                  .map((r) => DataRow(onSelectChanged: (_) => onTap(r), cells: [
-                        DataCell(Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEAEFFD),
-                            borderRadius: BorderRadius.circular(6),
+            child: SizedBox(
+              width: _tableWidth,
+              child: Column(
+                children: [
+                  Container(
+                    height: 48,
+                    color: const Color(0xFFF7F8FC),
+                    child: Row(
+                      children: [
+                        for (final c in _cols)
+                          _cell(
+                            c.width,
+                            Text(c.label,
+                                style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF8A8FA3))),
+                            alignRight: c.label != 'Date',
                           ),
-                          child: Text(_fmtDate(r.createdAt),
-                              style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF3E63DD))),
-                        )),
-                        DataCell(Text('Rs. ${_fmtAmt(r.cashSale)}')),
-                        DataCell(Text('Rs. ${_fmtAmt(r.cardSale)}')),
-                        DataCell(Text('Rs. ${_fmtAmt(r.totalSale)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF3E63DD)))),
-                        DataCell(Text('Rs. ${_fmtAmt(r.returnSale)}',
-                            style: TextStyle(
-                                color: r.returnSale > 0
-                                    ? const Color(0xFFE2483D)
-                                    : const Color(0xFF8A8FA3)))),
-                        DataCell(Text(
-                            'Rs. ${_fmtAmt(r.returnAmountInExchange)}')),
-                        DataCell(Text(
-                            'Rs. ${_fmtAmt(r.receivedAmountInExchange)}')),
-                        DataCell(Text('Rs. ${_fmtAmt(r.netSale)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF0F9D8F)))),
-                        DataCell(Text('Rs. ${_fmtAmt(r.expense)}',
-                            style: TextStyle(
-                                color: r.expense > 0
-                                    ? const Color(0xFFE56A00)
-                                    : const Color(0xFF8A8FA3)))),
-                        DataCell(Text('Rs. ${_fmtAmt(r.gross)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF22A06B)))),
-                        DataCell(Text('Rs. ${_fmtAmt(r.paidAmount)}')),
-                        DataCell(Text('Rs. ${_fmtAmt(r.totalAmount)}',
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF6C4DE0)))),
-                      ]))
-                  .toList(),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFE7E9F0)),
+                  Expanded(
+                    child: PaginatedListView<BranchCashCounterModel>(
+                      state: state,
+                      padding: EdgeInsets.zero,
+                      emptyText: 'No cash counter records found',
+                      onLoadMore: notifier.loadMore,
+                      onRefresh: notifier.refresh,
+                      onRetry: notifier.refresh,
+                      separatorBuilder: (_, _) =>
+                          const Divider(height: 1, color: Color(0xFFF0F1F6)),
+                      itemBuilder: (_, r, _) => _row(r),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
     );
   }
-}
 
-// ── Mobile List ───────────────────────────────────────────────────────────────
-
-class _MobileList extends StatelessWidget {
-  final List<BranchCashCounterModel> records;
-  final ValueChanged<BranchCashCounterModel> onTap;
-  const _MobileList({required this.records, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      itemCount: records.length,
-      itemBuilder: (_, i) {
-        final r = records[i];
-        return GestureDetector(
-          onTap: () => onTap(r),
-          child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE7E9F0)),
+  static Widget _cell(double width, Widget child, {bool alignRight = true}) =>
+      SizedBox(
+        width: width,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Align(
+            alignment:
+                alignRight ? Alignment.centerRight : Alignment.centerLeft,
+            child: child,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        ),
+      );
+
+  Widget _row(BranchCashCounterModel r) {
+    const base = TextStyle(fontSize: 13);
+    Widget amt(int col, double v, {Color? color, FontWeight? weight}) => _cell(
+          _cols[col].width,
+          Text('Rs. ${_fmtAmt(v)}',
+              style: base.copyWith(color: color, fontWeight: weight)),
+        );
+    const grey = Color(0xFF8A8FA3);
+
+    return InkWell(
+      onTap: () => onTap(r),
+      child: SizedBox(
+        height: 52,
+        child: Row(
+          children: [
+            _cell(
+              _cols[0].width,
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAEFFD),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(_fmtDate(r.createdAt),
                     style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                         color: Color(0xFF3E63DD))),
               ),
-              const SizedBox(height: 14),
-              const Divider(height: 1, color: Color(0xFFE7E9F0)),
-              const SizedBox(height: 12),
-              _MobileRow(
-                  label: 'Cash Sale', value: 'Rs. ${_fmtAmt(r.cashSale)}'),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Card Sale', value: 'Rs. ${_fmtAmt(r.cardSale)}'),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Total Sale',
-                  value: 'Rs. ${_fmtAmt(r.totalSale)}',
-                  valueColor: const Color(0xFF3E63DD)),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Return Sale',
-                  value: 'Rs. ${_fmtAmt(r.returnSale)}',
-                  valueColor: r.returnSale > 0
-                      ? const Color(0xFFE2483D)
-                      : const Color(0xFF8A8FA3)),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Return in Exchange',
-                  value: 'Rs. ${_fmtAmt(r.returnAmountInExchange)}'),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Received in Exchange',
-                  value: 'Rs. ${_fmtAmt(r.receivedAmountInExchange)}'),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Net Sale',
-                  value: 'Rs. ${_fmtAmt(r.netSale)}',
-                  valueColor: const Color(0xFF0F9D8F)),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Expense',
-                  value: 'Rs. ${_fmtAmt(r.expense)}',
-                  valueColor: r.expense > 0
-                      ? const Color(0xFFE56A00)
-                      : const Color(0xFF8A8FA3)),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Gross',
-                  value: 'Rs. ${_fmtAmt(r.gross)}',
-                  valueColor: const Color(0xFF22A06B)),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Paid Amount',
-                  value: 'Rs. ${_fmtAmt(r.paidAmount)}'),
-              const SizedBox(height: 8),
-              _MobileRow(
-                  label: 'Total Amount',
-                  value: 'Rs. ${_fmtAmt(r.totalAmount)}',
-                  valueColor: const Color(0xFF6C4DE0)),
-            ],
-          ),
+              alignRight: false,
+            ),
+            amt(1, r.cashSale),
+            amt(2, r.cardSale),
+            amt(3, r.totalSale,
+                color: const Color(0xFF3E63DD), weight: FontWeight.w600),
+            amt(4, r.returnSale,
+                color: r.returnSale > 0 ? const Color(0xFFE2483D) : grey),
+            amt(5, r.returnAmountInExchange),
+            amt(6, r.receivedAmountInExchange),
+            amt(7, r.netSale,
+                color: const Color(0xFF0F9D8F), weight: FontWeight.w600),
+            amt(8, r.expense,
+                color: r.expense > 0 ? const Color(0xFFE56A00) : grey),
+            amt(9, r.gross,
+                color: const Color(0xFF22A06B), weight: FontWeight.w600),
+            amt(10, r.paidAmount),
+            amt(11, r.totalAmount,
+                color: const Color(0xFF6C4DE0), weight: FontWeight.w700),
+          ],
         ),
-        );
-      },
+      ),
+    );
+  }
+}
+
+// ── Mobile card ───────────────────────────────────────────────────────────────
+
+class _MobileCard extends StatelessWidget {
+  final BranchCashCounterModel record;
+  final ValueChanged<BranchCashCounterModel> onTap;
+  const _MobileCard({required this.record, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final r = record;
+    return GestureDetector(
+      onTap: () => onTap(r),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7E9F0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAEFFD),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(_fmtDate(r.createdAt),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: Color(0xFF3E63DD))),
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: Color(0xFFE7E9F0)),
+            const SizedBox(height: 12),
+            _MobileRow(label: 'Cash Sale', value: 'Rs. ${_fmtAmt(r.cashSale)}'),
+            const SizedBox(height: 8),
+            _MobileRow(label: 'Card Sale', value: 'Rs. ${_fmtAmt(r.cardSale)}'),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Total Sale',
+                value: 'Rs. ${_fmtAmt(r.totalSale)}',
+                valueColor: const Color(0xFF3E63DD)),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Return Sale',
+                value: 'Rs. ${_fmtAmt(r.returnSale)}',
+                valueColor: r.returnSale > 0
+                    ? const Color(0xFFE2483D)
+                    : const Color(0xFF8A8FA3)),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Return in Exchange',
+                value: 'Rs. ${_fmtAmt(r.returnAmountInExchange)}'),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Received in Exchange',
+                value: 'Rs. ${_fmtAmt(r.receivedAmountInExchange)}'),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Net Sale',
+                value: 'Rs. ${_fmtAmt(r.netSale)}',
+                valueColor: const Color(0xFF0F9D8F)),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Expense',
+                value: 'Rs. ${_fmtAmt(r.expense)}',
+                valueColor: r.expense > 0
+                    ? const Color(0xFFE56A00)
+                    : const Color(0xFF8A8FA3)),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Gross',
+                value: 'Rs. ${_fmtAmt(r.gross)}',
+                valueColor: const Color(0xFF22A06B)),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Paid Amount', value: 'Rs. ${_fmtAmt(r.paidAmount)}'),
+            const SizedBox(height: 8),
+            _MobileRow(
+                label: 'Total Amount',
+                value: 'Rs. ${_fmtAmt(r.totalAmount)}',
+                valueColor: const Color(0xFF6C4DE0)),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -563,49 +595,6 @@ String _fmtDate(DateTime d) {
 String _fmtAmt(double v) {
   if (v == v.truncate()) return v.toStringAsFixed(0);
   return v.toStringAsFixed(2);
-}
-
-// ── Error / Empty views ─────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const AppIcon(AppIcons.errorOutline,
-                size: 48, color: Colors.redAccent),
-            const SizedBox(height: 12),
-            Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-          ]),
-    );
-  }
-}
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppIcon(AppIcons.accountBalanceWalletOutlined,
-                size: 48, color: Colors.grey[300]),
-            const SizedBox(height: 12),
-            const Text('No cash counter records found',
-                style: TextStyle(color: Color(0xFF8A8FA3))),
-          ]),
-    );
-  }
 }
 
 InputDecoration _searchDecor(String hint) => InputDecoration(
@@ -671,7 +660,7 @@ class _PayToHeadOfficeDialogState
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = e.toString().replaceAll('Exception: ', '');
+          _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
         });
       }
     }

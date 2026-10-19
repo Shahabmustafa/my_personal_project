@@ -57,7 +57,7 @@ class PurchaseInvoiceDatasource {
           'expense_head_id': e.expenseHeadId,
           'purchase_invoice_id': invoiceId,
           'amount': e.amount,
-          'note': 'Purchase Invoice $invoiceNumber ka expense',
+          'note': 'Expense of Purchase Invoice $invoiceNumber',
         },
     ]);
     final total = expenses.fold(0.0, (s, e) => s + e.amount);

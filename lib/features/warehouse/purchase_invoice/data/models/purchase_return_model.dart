@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/money.dart';
 // ── Purchase Return Models ────────────────────────────────────────────────
 
 class PurchaseReturnModel {
@@ -186,12 +187,12 @@ class ReturnCartItem {
   });
 
   // Sale price based (branch mein sale ke liye)
-  double get discountAmount => salePrice * discountPct / 100;
+  double get discountAmount => roundMoney(salePrice * discountPct / 100);
   double get netPrice => salePrice - discountAmount;
   double get lineTotal => netPrice * quantity;
 
   // Purchase price based (company ko/se payment ke liye)
-  double get purchaseDiscountAmount => purchasePrice * discountPct / 100;
+  double get purchaseDiscountAmount => roundMoney(purchasePrice * discountPct / 100);
   double get purchaseNetPrice => purchasePrice - purchaseDiscountAmount;
   double get purchaseLineTotal => purchaseNetPrice * quantity;
 

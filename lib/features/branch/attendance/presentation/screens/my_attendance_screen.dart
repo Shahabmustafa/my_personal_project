@@ -84,7 +84,7 @@ class _MyAttendanceScreenState extends ConsumerState<MyAttendanceScreen> {
 
   static String _message(Object e) => e is PostgrestException
       ? e.message
-      : e.toString().replaceAll('Exception: ', '');
+      : e.toString().replaceFirst(RegExp(r'^Exception: '), '');
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +131,7 @@ class _MyAttendanceScreenState extends ConsumerState<MyAttendanceScreen> {
               const Text('My Attendance',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 2),
-              const Text('Duty par aate hi Check In, jaate waqt Check Out',
+              const Text('Check In when you arrive for duty, Check Out when you leave',
                   style: TextStyle(fontSize: 13, color: _grey)),
               const SizedBox(height: 16),
               _TodayCard(
@@ -163,7 +163,7 @@ class _MyAttendanceScreenState extends ConsumerState<MyAttendanceScreen> {
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
                   child: Center(
-                      child: Text('Abhi tak koi attendance nahi',
+                      child: Text('No attendance yet',
                           style: TextStyle(color: _grey))),
                 )
               else
@@ -253,7 +253,7 @@ class _TodayCard extends StatelessWidget {
       );
     } else {
       title = 'Not checked in yet';
-      subtitle = 'Duty shuru karte hi Check In dabayein';
+      subtitle = 'Tap Check In when your duty starts';
       action = _bigButton('Check In', green, AppIcons.accessTimeOutlined,
           onCheckIn);
     }

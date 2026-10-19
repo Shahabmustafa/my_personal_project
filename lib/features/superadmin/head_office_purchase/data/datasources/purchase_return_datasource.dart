@@ -195,16 +195,19 @@ class PurchaseReturnDatasource {
       await decrementStockQuantity(item.stockId, item.quantity);
     }
 
-    // Cash wapas head office mein aaya
-    await addBackToCounter(netAmount);
-
-    // Company balance decrease
+    // Raqam sirf ek dafa wapas aati hai: pehle company ka udhaar kam hota
+    // hai (jitna baqi hai), aur sirf bacha hua hissa cash counter mein aata hai.
+    var payableReduced = 0.0;
     if (companyId != null && netAmount > 0) {
       final current = await fetchCompanyWithBalance(companyId);
       final currentBal = current?.openingBalance ?? 0;
-      final newBal = (currentBal - netAmount).clamp(0.0, double.infinity);
-      await updateCompanyOpeningBalance(companyId, newBal);
+      payableReduced = netAmount < currentBal ? netAmount : currentBal;
+      if (payableReduced > 0) {
+        await updateCompanyOpeningBalance(companyId, currentBal - payableReduced);
+      }
     }
+    final cashBack = netAmount - payableReduced;
+    if (cashBack > 0) await addBackToCounter(cashBack);
 
     return returnModel;
   }

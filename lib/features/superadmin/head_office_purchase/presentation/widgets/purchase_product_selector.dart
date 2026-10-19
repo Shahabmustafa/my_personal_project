@@ -105,7 +105,7 @@ class _PurchaseProductSelectorState
     // Pehle expense — taa ke har article ki purchase price usi hisaab se bane.
     if (ref.read(purchaseInvoiceProvider).expense == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('Pehle Expense likhein (na ho to 0).'),
+        content: const Text('Enter the Expense first (0 if none).'),
         backgroundColor: Colors.orange.shade700,
         behavior: SnackBarBehavior.floating,
       ));

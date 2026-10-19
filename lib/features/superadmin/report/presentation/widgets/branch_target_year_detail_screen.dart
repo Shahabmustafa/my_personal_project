@@ -120,7 +120,7 @@ class _BranchTargetYearDetailScreenState
                   ],
                 ]),
           const SizedBox(height: 8),
-          const Text('Mahine par click karein — din-wise detail',
+          const Text('Click a month — day-wise detail',
               style: TextStyle(fontSize: 12, color: _grey)),
           const SizedBox(height: 8),
           Expanded(

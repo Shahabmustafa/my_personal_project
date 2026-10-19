@@ -103,7 +103,7 @@ class StockDatasource {
         .eq('id', stockId)
         .select(_joinSelect)
         .single();
-    return WarehouseStockModel.fromJson(response as Map<String, dynamic>);
+    return WarehouseStockModel.fromJson(response);
   }
 
   // ── Update sale price and discount ────────────────────────────────────────
@@ -118,7 +118,7 @@ class StockDatasource {
         .eq('id', stockId)
         .select(_joinSelect)
         .single();
-    return WarehouseStockModel.fromJson(response as Map<String, dynamic>);
+    return WarehouseStockModel.fromJson(response);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

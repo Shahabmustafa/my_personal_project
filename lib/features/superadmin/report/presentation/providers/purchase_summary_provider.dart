@@ -96,7 +96,7 @@ class PurchaseSummaryNotifier extends StateNotifier<PurchaseSummaryState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceAll('Exception: ', ''),
+        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
       );
     }
   }

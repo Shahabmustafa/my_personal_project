@@ -67,3 +67,34 @@ class BranchCashCounterModel {
   double get netSale =>
       totalSale - returnSale - returnAmountInExchange + receivedAmountInExchange;
 }
+
+/// Poori table ke totals (server-side SUM) — loaded page ki rows se nahi.
+class BranchCashCounterStats {
+  final int recordCount;
+  final double totalSale;
+  final double netSale;
+  final double expense;
+  final double gross;
+  final double totalAmount;
+
+  const BranchCashCounterStats({
+    this.recordCount = 0,
+    this.totalSale = 0,
+    this.netSale = 0,
+    this.expense = 0,
+    this.gross = 0,
+    this.totalAmount = 0,
+  });
+
+  factory BranchCashCounterStats.fromJson(Map<String, dynamic> j) {
+    double d(String k) => (j[k] as num?)?.toDouble() ?? 0;
+    return BranchCashCounterStats(
+      recordCount: (j['record_count'] as num?)?.toInt() ?? 0,
+      totalSale: d('total_sale'),
+      netSale: d('net_sale'),
+      expense: d('expense'),
+      gross: d('gross'),
+      totalAmount: d('total_amount'),
+    );
+  }
+}

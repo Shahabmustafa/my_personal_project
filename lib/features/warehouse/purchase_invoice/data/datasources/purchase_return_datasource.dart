@@ -98,7 +98,7 @@ class PurchaseReturnDatasource {
         .maybeSingle();
 
     if (res == null) return null;
-    return WarehouseStockModel.fromJson(res as Map<String, dynamic>);
+    return WarehouseStockModel.fromJson(res);
   }
 
   // ── Fetch companies ───────────────────────────────────────────────────────
@@ -121,7 +121,7 @@ class PurchaseReturnDatasource {
         .eq('id', companyId)
         .maybeSingle();
     if (res == null) return null;
-    return CompanyWithBalance.fromJson(res as Map<String, dynamic>);
+    return CompanyWithBalance.fromJson(res);
   }
 
   // ── Update company opening_balance ────────────────────────────────────────
@@ -197,7 +197,7 @@ class PurchaseReturnDatasource {
         .single();
 
     final returnModel =
-        PurchaseReturnModel.fromJson(returnRes as Map<String, dynamic>);
+        PurchaseReturnModel.fromJson(returnRes);
 
     // 2. Insert line items
     final itemsPayload = cartItems
@@ -228,19 +228,19 @@ class PurchaseReturnDatasource {
       await decrementStockQuantity(item.stockId, item.quantity);
     }
 
-    // 4. Add back net_amount to cash counter (cash wapas warehouse mein aaya)
-    await addBackToCounter(warehouseId, netAmount);
-
-    // 5. ── COMPANY BALANCE DECREASE: return hua → company ka udhaar ghata ─
-    //    Purchase invoice mein creditAmount → company ka balance badha tha
-    //    Ab return ho raha hai → company ka balance ghata do
+    // 4. Raqam sirf ek dafa wapas aati hai: pehle company ka udhaar kam hota
+    //    hai (jitna baqi hai), aur sirf bacha hua hissa cash counter mein aata hai.
+    var payableReduced = 0.0;
     if (companyId != null && netAmount > 0) {
       final current = await fetchCompanyWithBalance(companyId);
       final currentBal = current?.openingBalance ?? 0;
-      // Balance 0 se neeche nahi jayega
-      final newBal = (currentBal - netAmount).clamp(0.0, double.infinity);
-      await updateCompanyOpeningBalance(companyId, newBal);
+      payableReduced = netAmount < currentBal ? netAmount : currentBal;
+      if (payableReduced > 0) {
+        await updateCompanyOpeningBalance(companyId, currentBal - payableReduced);
+      }
     }
+    final cashBack = netAmount - payableReduced;
+    if (cashBack > 0) await addBackToCounter(warehouseId, cashBack);
 
     return returnModel;
   }
@@ -287,7 +287,7 @@ class PurchaseReturnDatasource {
         .toList();
 
     return PurchaseReturnModel.fromJson(
-      returnRes as Map<String, dynamic>,
+      returnRes,
       items: items,
     );
   }

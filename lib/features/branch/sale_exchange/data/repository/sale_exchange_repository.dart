@@ -10,6 +10,7 @@ class SaleExchangeRepository {
   Future<SaleExchangeModel> saveExchange({
     required String exchangeNumber,
     required String branchId,
+    String? cashBranchId,
     String? originalInvoiceId,
     String? printerId,
     String? cashierId,
@@ -32,6 +33,7 @@ class SaleExchangeRepository {
       _datasource.saveExchange(
         exchangeNumber: exchangeNumber,
         branchId: branchId,
+        cashBranchId: cashBranchId,
         originalInvoiceId: originalInvoiceId,
         printerId: printerId,
         cashierId: cashierId,

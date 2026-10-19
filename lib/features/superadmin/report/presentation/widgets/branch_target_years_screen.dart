@@ -111,7 +111,7 @@ class _BranchTargetYearsScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
+        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
         _loading = false;
       });
     }
@@ -155,7 +155,7 @@ class _BranchTargetYearsScreenState
           const SizedBox(height: 4),
           const Padding(
             padding: EdgeInsets.only(left: 52),
-            child: Text('Saal par click karein — us saal ke mahine',
+            child: Text('Click a year — months of that year',
                 style: TextStyle(fontSize: 12, color: _grey)),
           ),
           const SizedBox(height: 16),

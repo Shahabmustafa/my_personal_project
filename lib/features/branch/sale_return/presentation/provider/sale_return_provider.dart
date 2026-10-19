@@ -8,7 +8,11 @@ import '../../../customer/data/model/customer_model.dart';
 import '../../../sale_exchange/data/model/sale_exchange_model.dart' show ReturnCartItem;
 import '../../../sale_invoice/data/model/sale_invoice_model.dart' show SaleInvoiceModel;
 import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
-    show customersForSaleProvider, salesmenProvider, saleInvoiceRepositoryProvider;
+    show
+        customersForSaleProvider,
+        salesmenProvider,
+        saleInvoiceRepositoryProvider,
+        currentBranchMaxInvoiceDiscountPctProvider;
 import '../../data/datasource/sale_return_datasource.dart';
 import '../../data/model/sale_return_model.dart';
 import '../../data/repository/sale_return_repository.dart';
@@ -72,7 +76,7 @@ class SaleReturnListNotifier extends StateNotifier<SaleReturnListState> {
       state = state.copyWith(returns: list, isLoading: false);
     } catch (e) {
       state = state.copyWith(
-          isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+          isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }
@@ -194,6 +198,11 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
   final SaleReturnRepository _repo;
   final String _branchId;
 
+  /// Branch ka admin-set discount % — invoice ke bina return mein customer ke
+  /// paas purani invoice nahi hoti, is liye wahi discount maan kar refund banta
+  /// hai (warna poori list price wapas ho jati).
+  double _branchDiscountPct = 0;
+
   SaleReturnNotifier(this._ref, this._repo, this._branchId)
       : super(const SaleReturnState()) {
     _loadReturnNumber();
@@ -274,7 +283,9 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
                 quantity: 0,
                 salePrice: i.salePrice,
                 purchasePrice: i.purchasePrice,
-                discountPct: i.discountPct,
+                // Invoice-wise discount (branch %, bulk tier) bhi shamil — customer
+                // ko wahi raqam wapas jo us ne asal mein di thi.
+                discountPct: detail.effectiveDiscountPct(i.discountPct),
                 isB1g1: i.isB1g1,
               ))
           .toList();
@@ -321,7 +332,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       if (mounted) {
         state = state.copyWith(
           originalInvoiceLoading: false,
-          error: e.toString().replaceAll('Exception: ', ''),
+          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
         );
       }
     }
@@ -424,9 +435,8 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       quantity: qty,
       salePrice: stock.salePrice,
       purchasePrice: stock.purchasePrice,
-      // Per-article branch stock discount is disabled — only the invoice-wise
-      // Branch Invoice Discount is allowed now.
-      discountPct: 0,
+      // Invoice ke bina return: branch ka discount % maan kar refund banta hai.
+      discountPct: _branchDiscountPct,
     );
 
     state = state.copyWith(
@@ -454,6 +464,20 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
   }
 
   void clearCart() => state = state.copyWith(cartItems: []);
+
+  /// Branch ka discount % badla (ya load hua) — invoice ke bina wali cart lines
+  /// par bhi wahi % lagao.
+  void setBranchDiscountPct(double pct) {
+    if (!mounted) return;
+    _branchDiscountPct = pct.clamp(0, 100).toDouble();
+    if (state.cartItems.isEmpty) return;
+    state = state.copyWith(
+      cartItems: [
+        for (final i in state.cartItems)
+          i.copyWith(discountPct: _branchDiscountPct),
+      ],
+    );
+  }
 
   List<PaymentInput> _buildPayments() {
     switch (state.paymentType) {
@@ -650,10 +674,17 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
 }
 
 final saleReturnProvider =
-    StateNotifierProvider<SaleReturnNotifier, SaleReturnState>(
-  (ref) => SaleReturnNotifier(
+    StateNotifierProvider<SaleReturnNotifier, SaleReturnState>((ref) {
+  final notifier = SaleReturnNotifier(
     ref,
     ref.read(saleReturnRepositoryProvider),
     ref.watch(currentBranchIdProvider),
-  ),
-);
+  );
+  // Admin ka branch discount % — load hote hi aur badalne par (realtime).
+  ref.listen(
+    currentBranchMaxInvoiceDiscountPctProvider,
+    (_, next) => notifier.setBranchDiscountPct(next.value ?? 0),
+    fireImmediately: true,
+  );
+  return notifier;
+});

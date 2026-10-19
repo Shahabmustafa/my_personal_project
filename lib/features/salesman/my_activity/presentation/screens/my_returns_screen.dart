@@ -55,7 +55,7 @@ class MyReturnsScreen extends ConsumerWidget {
                   if (returns.isEmpty)
                     const _EmptyState(
                       icon: AppIcons.assignmentReturnOutlined,
-                      text: 'Abhi tak koi return nahi hua',
+                      text: 'No returns yet',
                     )
                   else
                     LayoutBuilder(builder: (context, constraints) {

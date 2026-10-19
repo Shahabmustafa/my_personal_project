@@ -33,7 +33,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -47,7 +47,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -62,7 +62,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -76,7 +76,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

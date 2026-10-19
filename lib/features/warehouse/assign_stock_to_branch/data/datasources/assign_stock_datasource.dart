@@ -195,7 +195,7 @@ class AssignStockDatasource {
       await decrementStockQuantity(item.stockId, item.quantity);
     }
 
-    return AssignStockModel.fromJson(headerRes as Map<String, dynamic>);
+    return AssignStockModel.fromJson(headerRes);
   }
 
   // ── Fetch all assignments for warehouse ────────────────────────────────────
@@ -237,7 +237,7 @@ class AssignStockDatasource {
         .toList();
 
     return AssignStockModel.fromJson(
-      headerRes as Map<String, dynamic>,
+      headerRes,
       items: items,
     );
   }

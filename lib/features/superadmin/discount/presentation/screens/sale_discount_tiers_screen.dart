@@ -31,7 +31,7 @@ class SaleDiscountTiersScreen extends ConsumerWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         SizedBox(height: 4),
         Text(
-          'Jab kisi invoice ka amount yahan diye gaye minimum tak pohanche, discount automatically lag jata hai — sab branches ke liye ek sath.',
+          'When an invoice amount reaches the minimum set here, the discount is applied automatically — for all branches.',
           style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
         ),
       ],
@@ -137,7 +137,7 @@ class SaleDiscountTiersScreen extends ConsumerWidget {
       builder: (_) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Tier?'),
-        content: Text('Rs. ${t.minSaleAmount.toStringAsFixed(0)}+ tier delete kar dein?'),
+        content: Text('Delete the Rs. ${t.minSaleAmount.toStringAsFixed(0)}+ tier?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
@@ -244,7 +244,7 @@ class _TierCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _accent.withOpacity(0.08),
+                    color: _accent.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const AppIcon(AppIcons.editOutlined, size: 18, color: _accent),
@@ -257,7 +257,7 @@ class _TierCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.redAccent.withOpacity(0.08),
+                    color: Colors.redAccent.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const AppIcon(AppIcons.deleteOutline, size: 18, color: Colors.redAccent),

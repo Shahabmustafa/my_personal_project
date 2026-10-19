@@ -61,7 +61,7 @@ class _AssignDialogState extends ConsumerState<AssignDialog> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Text(
-                    'Yeh role sirf ek ${_showBranches ? 'branch' : 'warehouse'} tak limited hai.',
+                    'This role is limited to a single ${_showBranches ? 'branch' : 'warehouse'}.',
                     style: const TextStyle(fontSize: 12, color: Color(0xFF8A8FA3)),
                   ),
                 ),

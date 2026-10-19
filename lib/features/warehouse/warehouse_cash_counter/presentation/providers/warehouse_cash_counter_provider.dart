@@ -31,7 +31,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -48,7 +48,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -66,7 +66,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -81,7 +81,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

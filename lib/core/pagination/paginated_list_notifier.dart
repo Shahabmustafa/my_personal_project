@@ -197,5 +197,5 @@ abstract class PaginatedListNotifier<T>
     }
   }
 
-  String _message(Object e) => e.toString().replaceAll('Exception: ', '');
+  String _message(Object e) => e.toString().replaceFirst(RegExp(r'^Exception: '), '');
 }

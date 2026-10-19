@@ -61,7 +61,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(e.toString().replaceFirst(RegExp(r'^Exception: '), '')),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -97,7 +97,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
                   color: const Color(0xFFFFF8E7),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: const Color(0xFFD4A017).withOpacity(0.3)),
+                      color: const Color(0xFFD4A017).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [

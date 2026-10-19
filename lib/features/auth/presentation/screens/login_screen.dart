@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../dashboard/branch_dashboard.dart';
-import '../../../dashboard/salesman_dashboard.dart';
-import '../../../dashboard/superadmin_dashboard.dart';
-import '../../../dashboard/warehouse_dashboard.dart';
 import '../providers/auth_provider.dart';
 import '../providers/auth_state.dart';
 import '../widgets/custom_text_field.dart';
 import '../widgets/primary_button.dart';
-import 'select_workspace_screen.dart';
+import 'auth_destination.dart';
 
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -38,38 +34,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  Widget _getDashboard(AuthState state) {
-    final user = state.user!;
-    switch (user.role) {
-      // ── Superadmin → sab kuch
-      case 'superadmin':
-        return const SuperAdminDashboard();
-
-      // ── Branch sidebar → cashier, manager
-      case 'cashier':
-      case 'manager':
-        return const BranchDashboard();
-
-      // ── Salesman → apna, restricted dashboard (sale/return/exchange +
-      // apni history + profile)
-      case 'salesman':
-        return const SalesmanDashboard();
-      case 'warehouse_manager':
-      case 'inventory_manager':
-        return const WarehouseDashboard();
-
-      // ── Supervisor: koi dedicated dashboard nahi — jo bhi ek workspace
-      // assign hai (branch ya warehouse) usi ke hisaab se route karo.
-      case 'supervisor':
-        if (user.branchIds.isNotEmpty) return const BranchDashboard();
-        if (user.warehouseIds.isNotEmpty) return const WarehouseDashboard();
-        return const BranchDashboard();
-
-      default:
-        return const SuperAdminDashboard();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -86,13 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       if (next.status == AuthStatus.success && next.user != null) {
-        final user = next.user!;
-        final needsWorkspaceSelection = !user.isSuperAdmin &&
-            (user.branchIds.length + user.warehouseIds.length) > 1;
-
-        final destination = needsWorkspaceSelection
-            ? const SelectWorkspaceScreen()
-            : _getDashboard(next);
+        final destination = destinationForUser(next.user!);
 
         Navigator.pushReplacement(
           context,

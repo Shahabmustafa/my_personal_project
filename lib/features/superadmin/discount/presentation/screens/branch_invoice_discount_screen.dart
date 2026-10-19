@@ -8,9 +8,9 @@ import '../../../branch/presentation/providers/branch_state.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
-/// Superadmin yahan har branch ke liye max percentage set karta hai jo us
-/// branch ka cashier Sale Invoice par invoice-wise (extra) discount ke taur
-/// par laga sakta hai. 0 = us branch par discount field dikhta hi nahi.
+/// Superadmin yahan har branch ke liye ek fixed % likhta hai jo us branch ki
+/// HAR Sale Invoice par khud extra discount ke taur par lagta hai (cashier
+/// ka field disable rehta hai). 0 = us branch par koi extra discount nahi.
 class BranchInvoiceDiscountScreen extends ConsumerStatefulWidget {
   const BranchInvoiceDiscountScreen({super.key});
 
@@ -67,7 +67,7 @@ class _BranchInvoiceDiscountScreenState
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
                 Text(
-                  'Har branch ka cashier Sale Invoice par max itne % tak extra discount laga sakega. 0 = discount allowed nahi.',
+                  'The % set here is applied automatically as an extra discount on every Sale Invoice of that branch (the cashier cannot edit it). 0 = no extra discount.',
                   style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
                 ),
               ],
@@ -186,6 +186,11 @@ class _BranchDiscountRowState extends ConsumerState<_BranchDiscountRow> {
           color: Color(0xFF3E63DD), size: 20),
     );
 
+    final active = b.maxInvoiceDiscountPct > 0;
+    final statusText = active
+        ? '${_fmt(b.maxInvoiceDiscountPct)}% is applied automatically on every invoice'
+        : 'No extra discount';
+
     final info = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -193,13 +198,11 @@ class _BranchDiscountRowState extends ConsumerState<_BranchDiscountRow> {
             style: const TextStyle(
                 fontWeight: FontWeight.w600, fontSize: 14)),
         Text(
-          b.maxInvoiceDiscountPct > 0
-              ? 'Allowed up to ${_fmt(b.maxInvoiceDiscountPct)}%'
-              : 'Not allowed',
+          statusText,
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: b.maxInvoiceDiscountPct > 0
+            color: active
                 ? const Color(0xFF2E7D32)
                 : const Color(0xFF8A8FA3),
           ),
@@ -217,7 +220,7 @@ class _BranchDiscountRowState extends ConsumerState<_BranchDiscountRow> {
       onChanged: (_) => setState(() {}),
       onSubmitted: (_) => _save(),
       decoration: InputDecoration(
-        labelText: 'Max %',
+        labelText: 'Discount %',
         suffixText: '%',
         isDense: true,
         contentPadding:
@@ -247,7 +250,11 @@ class _BranchDiscountRowState extends ConsumerState<_BranchDiscountRow> {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(children: [icon, const SizedBox(width: 14), Expanded(child: info)]),
+                Row(children: [
+                  icon,
+                  const SizedBox(width: 14),
+                  Expanded(child: info),
+                ]),
                 const SizedBox(height: 12),
                 Row(children: [
                   Expanded(child: field),

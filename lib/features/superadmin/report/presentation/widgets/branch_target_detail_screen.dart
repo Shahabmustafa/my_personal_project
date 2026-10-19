@@ -106,7 +106,7 @@ class _BranchTargetDetailScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
+        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
         _loading = false;
       });
     }
@@ -219,7 +219,7 @@ class _BranchTargetDetailScreenState
     if (_lines.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(32),
-        child: Center(child: Text('Is branch ka koi target set nahi hai')),
+        child: Center(child: Text('No target is set for this branch')),
       );
     }
     return ReportTableShell(

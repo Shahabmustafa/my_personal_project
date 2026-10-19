@@ -97,7 +97,7 @@ class EmployeeSalaryReportNotifier
     } catch (e) {
       if (state.month != requested) return;
       state = state.copyWith(
-          isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+          isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 

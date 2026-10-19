@@ -69,16 +69,16 @@ class BranchTransferState {
     bool? isSaving,
     String? error,
     bool clearError = false,
-  }) =>
-      BranchTransferState(
-        transferNumber: transferNumber ?? this.transferNumber,
-        numberLoading: numberLoading ?? this.numberLoading,
-        destinationBranch:
-            clearDestination ? null : destinationBranch ?? this.destinationBranch,
-        cartItems: cartItems ?? this.cartItems,
-        isSaving: isSaving ?? this.isSaving,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => BranchTransferState(
+    transferNumber: transferNumber ?? this.transferNumber,
+    numberLoading: numberLoading ?? this.numberLoading,
+    destinationBranch: clearDestination
+        ? null
+        : destinationBranch ?? this.destinationBranch,
+    cartItems: cartItems ?? this.cartItems,
+    isSaving: isSaving ?? this.isSaving,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
 class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
@@ -87,7 +87,7 @@ class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
   final String _fromBranchId;
 
   BranchTransferNotifier(this._ref, this._repo, this._fromBranchId)
-      : super(const BranchTransferState()) {
+    : super(const BranchTransferState()) {
     _loadNumber();
   }
 
@@ -101,7 +101,10 @@ class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
       }
     } catch (_) {
       if (mounted) {
-        state = state.copyWith(transferNumber: 'ASB-000001', numberLoading: false);
+        state = state.copyWith(
+          transferNumber: 'ASB-000001',
+          numberLoading: false,
+        );
       }
     }
   }
@@ -166,7 +169,10 @@ class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
       discount: stock.discount,
     );
 
-    state = state.copyWith(cartItems: [...state.cartItems, item], clearError: true);
+    state = state.copyWith(
+      cartItems: [...state.cartItems, item],
+      clearError: true,
+    );
     return null;
   }
 
@@ -193,7 +199,8 @@ class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
 
   Future<String?> saveTransfer({String? notes}) async {
     if (state.cartItems.isEmpty) return 'Cart is empty';
-    if (state.destinationBranch == null) return 'Please select a destination branch';
+    if (state.destinationBranch == null)
+      return 'Please select a destination branch';
 
     state = state.copyWith(isSaving: true, clearError: true);
     try {
@@ -229,9 +236,9 @@ class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
 
 final branchTransferProvider =
     StateNotifierProvider<BranchTransferNotifier, BranchTransferState>(
-  (ref) => BranchTransferNotifier(
-    ref,
-    ref.read(branchTransferRepositoryProvider),
-    ref.watch(currentBranchIdProvider),
-  ),
-);
+      (ref) => BranchTransferNotifier(
+        ref,
+        ref.read(branchTransferRepositoryProvider),
+        ref.watch(currentBranchIdProvider),
+      ),
+    );

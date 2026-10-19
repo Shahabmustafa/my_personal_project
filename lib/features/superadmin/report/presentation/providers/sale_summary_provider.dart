@@ -79,7 +79,7 @@ class SaleSummaryNotifier extends StateNotifier<SaleSummaryState> {
         isLoading: false,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 

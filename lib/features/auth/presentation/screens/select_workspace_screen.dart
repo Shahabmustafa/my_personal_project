@@ -60,7 +60,7 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
+        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
         _isLoading = false;
       });
     }
@@ -113,7 +113,7 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Aapko multiple branches/warehouses assign hain.\nAage badhne ke liye ek select karein.',
+                    'You are assigned to multiple branches/warehouses.\nSelect one to continue.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                   ),
@@ -250,7 +250,7 @@ class _WorkspaceCard extends StatelessWidget {
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.1),
+                    color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: AppIcon(icon, size: 20, color: Theme.of(context).primaryColor),

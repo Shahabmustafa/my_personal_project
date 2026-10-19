@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import '../../../../../core/pagination/pagination.dart';
+import '../../../../../core/service/realtime/table_changes_provider.dart';
+import '../../../shared/current_branch_provider.dart';
 import '../../data/datasource/branch_cash_counter_remote_datasource.dart';
 import '../../data/model/branch_cash_counter_model.dart';
 import '../../data/repository/branch_cash_counter_repository.dart';
@@ -15,62 +18,62 @@ final branchCashCounterRepositoryProvider =
       remoteDatasource: ref.read(branchCashCounterDatasourceProvider)),
 );
 
-enum BranchCashCounterStatus { initial, loading, success, error }
+/// Summary cards ke totals (poori table, server-side SUM). List ke saath
+/// nahi, alag RPC call se aate hain — list ki pehli page / refresh / search
+/// badalne par [BranchCashCounterNotifier] isay naye sire se laata hai.
+final branchCashCounterStatsProvider =
+    StateProvider<BranchCashCounterStats?>((_) => null);
 
-class BranchCashCounterState {
-  final BranchCashCounterStatus status;
-  final List<BranchCashCounterModel> records;
-  final String? errorMessage;
-
-  const BranchCashCounterState({
-    this.status = BranchCashCounterStatus.initial,
-    this.records = const [],
-    this.errorMessage,
-  });
-
-  bool get isLoading => status == BranchCashCounterStatus.loading;
-
-  double get totalSale => records.fold(0, (s, r) => s + r.totalSale);
-  double get totalNetSale => records.fold(0, (s, r) => s + r.netSale);
-  double get totalExpense => records.fold(0, (s, r) => s + r.expense);
-  double get totalGross => records.fold(0, (s, r) => s + r.gross);
-  double get totalAmount => records.fold(0, (s, r) => s + r.totalAmount);
-
-  BranchCashCounterState copyWith({
-    BranchCashCounterStatus? status,
-    List<BranchCashCounterModel>? records,
-    String? errorMessage,
-    bool clearError = false,
-  }) =>
-      BranchCashCounterState(
-        status: status ?? this.status,
-        records: records ?? this.records,
-        errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
-      );
-}
-
-class BranchCashCounterNotifier extends StateNotifier<BranchCashCounterState> {
+// ── Server-paginated cash counter list ────────────────────────────────────
+class BranchCashCounterNotifier extends PaginatedListNotifier<BranchCashCounterModel> {
   final BranchCashCounterRepository _repo;
-  BranchCashCounterNotifier(this._repo) : super(const BranchCashCounterState());
+  final String _branchId;
+  final void Function(BranchCashCounterStats?) _onStats;
 
-  Future<void> loadByBranch(String branchId) async {
-    state = state.copyWith(
-        status: BranchCashCounterStatus.loading, clearError: true);
+  /// Tez search / refresh mein purana jawab naye ko overwrite na kare.
+  int _statsSeq = 0;
+
+  BranchCashCounterNotifier(this._repo, this._branchId, this._onStats)
+      : super(pageSize: 30);
+
+  @override
+  Future<PageResult<BranchCashCounterModel>> fetchPage(PageRequest request) {
+    // withCount sirf pehli page / refresh / search badalne par true hota hai —
+    // scroll (loadMore) par totals dobara nahi mangte.
+    if (request.withCount) _loadStats(request.search);
+    return _repo.fetchPage(request, branchId: _branchId);
+  }
+
+  /// Realtime change par: loaded rows aur totals dono chupchaap dobara —
+  /// spinner ya scroll reset ke baghair.
+  Future<void> reloadLive() async {
+    await Future.wait([reloadLoaded(), _loadStats(state.search)]);
+  }
+
+  Future<void> _loadStats(String search) async {
+    final seq = ++_statsSeq;
     try {
-      final records = await _repo.getByBranch(branchId);
-      state = state.copyWith(
-          status: BranchCashCounterStatus.success, records: records);
-    } catch (e) {
-      state = state.copyWith(
-        status: BranchCashCounterStatus.error,
-        errorMessage: e.toString().replaceAll('Exception: ', ''),
-      );
+      final stats = await _repo.getStats(_branchId, search: search);
+      if (mounted && seq == _statsSeq) _onStats(stats);
+    } catch (_) {
+      // Cards chhup jate hain; list apni jagah chalti rahti hai.
+      if (mounted && seq == _statsSeq) _onStats(null);
     }
   }
 }
 
-final branchCashCounterProvider =
-    StateNotifierProvider<BranchCashCounterNotifier, BranchCashCounterState>(
-  (ref) =>
-      BranchCashCounterNotifier(ref.read(branchCashCounterRepositoryProvider)),
+final branchCashCounterProvider = StateNotifierProvider<
+    BranchCashCounterNotifier, PaginatedListState<BranchCashCounterModel>>(
+  (ref) {
+    final notifier = BranchCashCounterNotifier(
+      ref.read(branchCashCounterRepositoryProvider),
+      ref.watch(currentBranchIdProvider),
+      (stats) => ref.read(branchCashCounterStatsProvider.notifier).state = stats,
+    );
+    // Realtime — sale, return, exchange ya expense se counter row badalte hi
+    // list aur summary cards update (bina Refresh).
+    ref.listen(tableChangesProvider('branch_cash_counter'),
+        (_, _) => notifier.reloadLive());
+    return notifier;
+  },
 );

@@ -26,7 +26,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -35,8 +35,8 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     if (state.headOffices.isNotEmpty) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: 'Sirf ek head office allowed hai. '
-              'Pehle wala edit karein ya delete karein.');
+          errorMessage: 'Only one head office is allowed. '
+              'Edit or delete the existing one first.');
       return;
     }
     state = state.copyWith(status: HeadOfficeStatus.loading, errorMessage: null);
@@ -48,7 +48,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -64,7 +64,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -78,7 +78,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

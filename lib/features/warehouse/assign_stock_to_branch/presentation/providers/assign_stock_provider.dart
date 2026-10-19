@@ -23,15 +23,14 @@ final branchesProvider = FutureProvider<List<BranchModel>>(
 );
 
 // ── Warehouse stock cache ─────────────────────────────────────────────────
-final assignWarehouseStockProvider =
-    FutureProvider<List<WarehouseStockModel>>(
-  (ref) {
-    ref.watch(tableChangesProvider('warehouse_stock_inventory'));
-    return ref
-        .watch(assignStockRepositoryProvider)
-        .getWarehouseStock(ref.watch(currentWarehouseIdProvider));
-  },
-);
+final assignWarehouseStockProvider = FutureProvider<List<WarehouseStockModel>>((
+  ref,
+) {
+  ref.watch(tableChangesProvider('warehouse_stock_inventory'));
+  return ref
+      .watch(assignStockRepositoryProvider)
+      .getWarehouseStock(ref.watch(currentWarehouseIdProvider));
+});
 
 // ── Assignment list ───────────────────────────────────────────────────────
 
@@ -51,12 +50,11 @@ class AssignListState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      AssignListState(
-        assignments: assignments ?? this.assignments,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => AssignListState(
+    assignments: assignments ?? this.assignments,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
 class AssignListNotifier extends StateNotifier<AssignListState> {
@@ -64,7 +62,7 @@ class AssignListNotifier extends StateNotifier<AssignListState> {
   final String _warehouseId;
 
   AssignListNotifier(this._repo, this._warehouseId)
-      : super(const AssignListState()) {
+    : super(const AssignListState()) {
     loadAssignments();
   }
 
@@ -98,18 +96,18 @@ class AssignListNotifier extends StateNotifier<AssignListState> {
 }
 
 final assignListProvider =
-    StateNotifierProvider<AssignListNotifier, AssignListState>(
-  (ref) {
-    final notifier = AssignListNotifier(
-      ref.read(assignStockRepositoryProvider),
-      ref.watch(currentWarehouseIdProvider),
-    );
-    // Realtime — branch accept/reject kare to list reload.
-    ref.listen(tableChangesProvider('assign_stock_to_branch'),
-        (_, _) => notifier.loadAssignments());
-    return notifier;
-  },
-);
+    StateNotifierProvider<AssignListNotifier, AssignListState>((ref) {
+      final notifier = AssignListNotifier(
+        ref.read(assignStockRepositoryProvider),
+        ref.watch(currentWarehouseIdProvider),
+      );
+      // Realtime — branch accept/reject kare to list reload.
+      ref.listen(
+        tableChangesProvider('assign_stock_to_branch'),
+        (_, _) => notifier.loadAssignments(),
+      );
+      return notifier;
+    });
 
 // ── Cart / active assignment state ────────────────────────────────────────
 
@@ -130,8 +128,7 @@ class AssignStockState {
     this.error,
   });
 
-  int get totalQuantity =>
-      cartItems.fold(0, (sum, i) => sum + i.quantity);
+  int get totalQuantity => cartItems.fold(0, (sum, i) => sum + i.quantity);
 
   AssignStockState copyWith({
     String? assignmentNumber,
@@ -142,16 +139,14 @@ class AssignStockState {
     bool? isSaving,
     String? error,
     bool clearError = false,
-  }) =>
-      AssignStockState(
-        assignmentNumber: assignmentNumber ?? this.assignmentNumber,
-        numberLoading: numberLoading ?? this.numberLoading,
-        selectedBranch:
-            clearBranch ? null : selectedBranch ?? this.selectedBranch,
-        cartItems: cartItems ?? this.cartItems,
-        isSaving: isSaving ?? this.isSaving,
-        error: clearError ? null : error ?? this.error,
-      );
+  }) => AssignStockState(
+    assignmentNumber: assignmentNumber ?? this.assignmentNumber,
+    numberLoading: numberLoading ?? this.numberLoading,
+    selectedBranch: clearBranch ? null : selectedBranch ?? this.selectedBranch,
+    cartItems: cartItems ?? this.cartItems,
+    isSaving: isSaving ?? this.isSaving,
+    error: clearError ? null : error ?? this.error,
+  );
 }
 
 class AssignStockNotifier extends StateNotifier<AssignStockState> {
@@ -159,7 +154,7 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
   final String _warehouseId;
 
   AssignStockNotifier(this._repo, this._warehouseId)
-      : super(const AssignStockState()) {
+    : super(const AssignStockState()) {
     _loadNumber();
   }
 
@@ -174,7 +169,9 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
     } catch (_) {
       if (mounted) {
         state = state.copyWith(
-            assignmentNumber: 'ASB-000001', numberLoading: false);
+          assignmentNumber: 'ASB-000001',
+          numberLoading: false,
+        );
       }
     }
   }
@@ -195,8 +192,7 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
       return 'No stock available for this item';
     }
 
-    final existing =
-        state.cartItems.indexWhere((c) => c.stockId == stock.id);
+    final existing = state.cartItems.indexWhere((c) => c.stockId == stock.id);
 
     if (existing != -1) {
       final cur = state.cartItems[existing];
@@ -223,25 +219,25 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
     }
 
     final item = AssignCartItem(
-      stockId:        stock.id,
-      barcode:        stock.barcode,
-      productId:      stock.productId,
-      productName:    stock.productName ?? '',
-      sizeId:         stock.sizeId,
-      sizeName:       stock.sizeName ?? '',
-      colorId:        stock.colorId,
-      colorName:      stock.colorName ?? '',
-      brandId:        stock.brandId,
-      brandName:      stock.brandName ?? '',
-      categoryId:     stock.categoryId,
-      categoryName:   stock.categoryName ?? '',
-      typeId:         stock.typeId,
-      typeName:       stock.typeName ?? '',
+      stockId: stock.id,
+      barcode: stock.barcode,
+      productId: stock.productId,
+      productName: stock.productName ?? '',
+      sizeId: stock.sizeId,
+      sizeName: stock.sizeName ?? '',
+      colorId: stock.colorId,
+      colorName: stock.colorName ?? '',
+      brandId: stock.brandId,
+      brandName: stock.brandName ?? '',
+      categoryId: stock.categoryId,
+      categoryName: stock.categoryName ?? '',
+      typeId: stock.typeId,
+      typeName: stock.typeName ?? '',
       warehouseStock: stock.quantity,
-      quantity:       quantity,
-      salePrice:      stock.salePrice,
-      purchasePrice:  stock.purchasePrice,
-      discount:       stock.discountPct,
+      quantity: quantity,
+      salePrice: stock.salePrice,
+      purchasePrice: stock.purchasePrice,
+      discount: stock.discountPct,
     );
 
     state = state.copyWith(
@@ -285,10 +281,10 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
 
       await _repo.saveAssignment(
         assignmentNumber: freshNumber,
-        warehouseId:      _warehouseId,
-        branchId:         state.selectedBranch!.id,
-        cartItems:        state.cartItems,
-        notes:            notes,
+        warehouseId: _warehouseId,
+        branchId: state.selectedBranch!.id,
+        cartItems: state.cartItems,
+        notes: notes,
       );
 
       if (mounted) {
@@ -312,8 +308,8 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
 
 final assignStockProvider =
     StateNotifierProvider<AssignStockNotifier, AssignStockState>(
-  (ref) => AssignStockNotifier(
-    ref.read(assignStockRepositoryProvider),
-    ref.watch(currentWarehouseIdProvider),
-  ),
-);
+      (ref) => AssignStockNotifier(
+        ref.read(assignStockRepositoryProvider),
+        ref.watch(currentWarehouseIdProvider),
+      ),
+    );

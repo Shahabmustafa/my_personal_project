@@ -418,7 +418,7 @@ class _TopArticleCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEF6C00).withOpacity(0.12),
+                    color: const Color(0xFFEF6C00).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Center(
@@ -497,7 +497,7 @@ class _StatCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: data.color.withOpacity(0.12),
+                  color: data.color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Center(child: AppIcon(data.icon, color: data.color, size: 20)),

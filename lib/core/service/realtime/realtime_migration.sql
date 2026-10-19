@@ -24,3 +24,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.branch_stock_inventory;
 -- Warehouse stock screens + purchase/return/assign dropdowns — quantity live
 -- update (2026-10-07, applied to LIVE database).
 ALTER PUBLICATION supabase_realtime ADD TABLE public.warehouse_stock_inventory;
+
+-- Branch Invoice Discount (superadmin) badalte hi har branch ki Sale Invoice
+-- screen par limit live update (2026-10-17, applied to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.branches;
+
+-- Sale Discount Tiers (admin) add/edit karte hi har branch ki Sale Invoice par
+-- naya discount turant (2026-10-17, applied to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.sale_discount_tiers;
+
+-- Branch Cash Counter — sale / return / exchange / expense ke baad (triggers
+-- row badalte hain) screen bina refresh ke live update (2026-10-18, applied
+-- to LIVE database).
+ALTER PUBLICATION supabase_realtime ADD TABLE public.branch_cash_counter;

@@ -61,7 +61,7 @@ class BankHeadCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.08),
+                color: Colors.redAccent.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const AppIcon(AppIcons.deleteOutline,

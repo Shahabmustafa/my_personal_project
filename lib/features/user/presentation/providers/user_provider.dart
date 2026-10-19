@@ -24,7 +24,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -36,7 +36,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -67,7 +67,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
       return false;
     }
   }
@@ -85,7 +85,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -103,7 +103,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -120,7 +120,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -138,7 +138,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 
@@ -156,7 +156,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceAll('Exception: ', ''));
+          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
     }
   }
 }

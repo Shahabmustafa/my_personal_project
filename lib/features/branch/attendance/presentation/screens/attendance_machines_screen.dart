@@ -56,11 +56,11 @@ class _AttendanceMachinesScreenState
     ));
   }
 
-  static String _err(Object e) => e.toString().replaceAll('Exception: ', '');
+  static String _err(Object e) => e.toString().replaceFirst(RegExp(r'^Exception: '), '');
 
-  /// Web par chal rahi app ka apna domain — wahi machine mein daalna hai.
+  /// The web app's own domain — this is what goes into the machine.
   String get _serverAddress =>
-      kIsWeb ? Uri.base.host : 'aap ki web app ka domain (jaise safishoe.vercel.app)';
+      kIsWeb ? Uri.base.host : 'your web app domain (e.g. safishoe.vercel.app)';
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +84,7 @@ class _AttendanceMachinesScreenState
           ),
         ]),
         const SizedBox(height: 2),
-        const Text('Fingerprint machine (ZKTeco ADMS) se attendance',
+        const Text('Attendance from fingerprint machine (ZKTeco ADMS)',
             style: TextStyle(fontSize: 13, color: _grey)),
         const SizedBox(height: 16),
         _setupCard(),
@@ -93,7 +93,7 @@ class _AttendanceMachinesScreenState
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
         const Text(
-            'Machine server se judte hi yahan "Pending" aa jati hai — Edit kar ke branch chunein aur Approve karein',
+            'As soon as a machine connects to the server it appears here as "Pending" — Edit it, choose a branch and Approve',
             style: TextStyle(fontSize: 12, color: _grey)),
         const SizedBox(height: 10),
         devices.when(
@@ -105,8 +105,8 @@ class _AttendanceMachinesScreenState
               Text('Error: $e', style: const TextStyle(color: _red)),
           data: (list) => list.isEmpty
               ? _emptyBox(
-                  'Abhi koi machine nahi judi. Machine mein upar wali setting karein — '
-                  'judte hi yahan nazar aayegi.')
+                  'No machine connected yet. Apply the setting above on the machine — '
+                  'it will appear here once it connects.')
               : ReportTableShell(
                   columns: const [
                     DataColumn(label: Text('Machine')),
@@ -124,7 +124,7 @@ class _AttendanceMachinesScreenState
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 4),
         const Text(
-            'Machine mein har employee ko jo User ID (number) diya, wahi yahan likhein — har banda ka alag number',
+            'Enter the User ID (number) given to each employee on the machine — every person needs a different number',
             style: TextStyle(fontSize: 12, color: _grey)),
         const SizedBox(height: 10),
         staff.when(
@@ -134,7 +134,7 @@ class _AttendanceMachinesScreenState
           error: (e, _) =>
               Text('Error: $e', style: const TextStyle(color: _red)),
           data: (list) => list.isEmpty
-              ? _emptyBox('Koi manager / cashier / salesman nahi')
+              ? _emptyBox('No manager / cashier / salesman')
               : ReportTableShell(
                   columns: const [
                     DataColumn(label: Text('Name')),
@@ -234,20 +234,20 @@ class _AttendanceMachinesScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Machine ki setting (Menu → Comm. → Cloud Server Setting)',
+          const Text('Machine setting (Menu → Comm. → Cloud Server Setting)',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
           line('Server Address', _serverAddress, copy: kIsWeb),
           line('Server Port', '443'),
           line('Enable Domain Name', 'ON'),
-          line('HTTPS', 'ON (agar option ho)'),
+          line('HTTPS', 'ON (if the option exists)'),
           const SizedBox(height: 6),
           const Text(
-            '1) Machine ko router se jodein (Comm. → Ethernet → DHCP ON)\n'
-            '2) Upar wali setting save karein — machine neeche "Machines" mein Pending aa jayegi\n'
-            '3) Edit → branch chunein → Approve\n'
-            '4) Har employee ka thumb machine mein register karein (User Mgt → New User) aur wahi User ID neeche "Staff Machine ID" mein likhein\n'
-            'Din ka pehla thumb = Check In, aakhri thumb = Check Out',
+            '1) Connect the machine to the router (Comm. → Ethernet → DHCP ON)\n'
+            '2) Save the setting above — the machine will appear below under "Machines" as Pending\n'
+            '3) Edit → choose a branch → Approve\n'
+            '4) Register each employee\'s thumb on the machine (User Mgt → New User) and enter the same User ID below under "Staff Machine ID"\n'
+            'First thumb of the day = Check In, last thumb = Check Out',
             style: TextStyle(fontSize: 12.5, height: 1.6, color: Color(0xFF3A3F55)),
           ),
         ],
@@ -320,8 +320,8 @@ class _AttendanceMachinesScreenState
       builder: (ctx) => AlertDialog(
         title: const Text('Remove machine?'),
         content: Text(
-            '${d.serialNumber} hata dein? Is ke saved punches bhi hat jayenge '
-            '(lagi hui attendance waisi rahegi). Machine dobara jude to phir Pending aayegi.'),
+            'Remove ${d.serialNumber}? Its saved punches will also be deleted '
+            '(attendance already marked stays as is). If the machine connects again it will show as Pending.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -371,7 +371,7 @@ class _DeviceDialogState extends ConsumerState<_DeviceDialog> {
 
   Future<void> _save() async {
     if (_active && _branchId == null) {
-      setState(() => _error = 'Approve karne ke liye branch chunein');
+      setState(() => _error = 'Choose a branch to approve');
       return;
     }
     setState(() {
@@ -389,7 +389,7 @@ class _DeviceDialogState extends ConsumerState<_DeviceDialog> {
     } catch (e) {
       setState(() {
         _saving = false;
-        _error = e.toString().replaceAll('Exception: ', '');
+        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
       });
     }
   }
@@ -432,7 +432,7 @@ class _DeviceDialogState extends ConsumerState<_DeviceDialog> {
               onChanged: (v) => setState(() => _active = v),
               title: const Text('Approved'),
               subtitle: const Text(
-                  'Approve hone par is machine ke thumbs attendance mein lagte hain',
+                  'Once approved, this machine\'s thumbs are recorded in attendance',
                   style: TextStyle(fontSize: 12)),
             ),
             if (_error != null)

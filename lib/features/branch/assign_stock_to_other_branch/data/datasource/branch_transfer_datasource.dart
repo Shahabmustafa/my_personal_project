@@ -109,7 +109,7 @@ class BranchTransferDatasource {
       await decrementStockQuantity(item.stockId, item.quantity);
     }
 
-    return AssignStockModel.fromJson(headerRes as Map<String, dynamic>);
+    return AssignStockModel.fromJson(headerRes);
   }
 
   /// Is branch ne doosri branches ko jo transfer bheje hain, unki history.

@@ -84,7 +84,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
       if (!mounted) return;
       setState(() {
         _detailLoading = false;
-        _error = e.toString().replaceAll('Exception: ', '');
+        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
       });
     }
   }
@@ -131,7 +131,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = e.toString().replaceAll('Exception: ', '');
+        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
       });
     }
   }

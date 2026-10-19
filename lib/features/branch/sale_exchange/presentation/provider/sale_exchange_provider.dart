@@ -10,6 +10,7 @@ import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
 import '../../data/datasource/sale_exchange_datasource.dart';
 import '../../data/model/sale_exchange_model.dart';
 import '../../data/repository/sale_exchange_repository.dart';
+import 'package:safishoe_app/core/utils/money.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -184,7 +185,8 @@ class SaleExchangeNotifier extends StateNotifier<SaleExchangeState> {
                 quantity: 0,
                 salePrice: i.salePrice,
                 purchasePrice: i.purchasePrice,
-                discountPct: i.discountPct,
+                // Invoice-wise discount bhi shamil — wahi raqam wapas jo di thi.
+                discountPct: detail.effectiveDiscountPct(i.discountPct),
                 isB1g1: i.isB1g1,
               ))
           .toList();
@@ -213,7 +215,7 @@ class SaleExchangeNotifier extends StateNotifier<SaleExchangeState> {
       if (mounted) {
         state = state.copyWith(
           originalInvoiceLoading: false,
-          error: e.toString().replaceAll('Exception: ', ''),
+          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
         );
       }
     }
@@ -381,12 +383,13 @@ class SaleExchangeNotifier extends StateNotifier<SaleExchangeState> {
 
     final cashierId = _ref.read(authProvider).user?.id;
     final salesmanCommissionPercent = state.salesman?.commissionPercent ?? 0;
-    final salesmanCommissionAmount = state.differenceAmount * salesmanCommissionPercent / 100;
+    final salesmanCommissionAmount = roundMoney(state.differenceAmount * salesmanCommissionPercent / 100);
     final returnItems = state.returnCartItems.where((i) => i.quantity > 0).toList();
 
     Future<SaleExchangeModel> attemptSave(String number) => _repo.saveExchange(
           exchangeNumber: number,
           branchId: _branchId,
+          cashBranchId: state.originalInvoice!.branchId,
           originalInvoiceId: state.originalInvoice!.id,
           printerId: state.printer?.id,
           cashierId: cashierId,

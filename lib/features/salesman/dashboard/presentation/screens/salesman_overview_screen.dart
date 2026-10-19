@@ -39,7 +39,7 @@ class SalesmanOverviewScreen extends ConsumerWidget {
               Text('Assalam-o-Alaikum, ${user?.username ?? ''}',
                   style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               const SizedBox(height: 2),
-              const Text('Aapki aaj ki sale aur profile ka khulasa',
+              const Text('Summary of your sales today and your profile',
                   style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3))),
               const SizedBox(height: 20),
               salesAsync.when(
@@ -152,7 +152,7 @@ class _OverviewCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE7E9F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -162,7 +162,7 @@ class _OverviewCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: spec.color.withOpacity(0.1),
+              color: spec.color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: AppIcon(spec.icon, color: spec.color, size: 22),
@@ -206,7 +206,7 @@ class _RecentSalesCard extends StatelessWidget {
         border: Border.all(color: const Color(0xFFE7E9F0)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -220,7 +220,7 @@ class _RecentSalesCard extends StatelessWidget {
           if (sales.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
-              child: Text('Abhi tak koi sale nahi hui',
+              child: Text('No sales yet',
                   style: TextStyle(color: Color(0xFF8A8FA3))),
             )
           else

@@ -48,7 +48,7 @@ class SaleReturnDatasource {
         .select()
         .single();
 
-    final saleReturn = SaleReturnModel.fromJson(returnRes as Map<String, dynamic>);
+    final saleReturn = SaleReturnModel.fromJson(returnRes);
 
     final itemsPayload = cartItems
         .map((item) => {

@@ -59,7 +59,7 @@ class MySalesScreen extends ConsumerWidget {
                   if (sales.isEmpty)
                     const _EmptyState(
                       icon: AppIcons.receiptLongOutlined,
-                      text: 'Abhi tak koi sale nahi hui',
+                      text: 'No sales yet',
                     )
                   else
                     LayoutBuilder(builder: (context, constraints) {

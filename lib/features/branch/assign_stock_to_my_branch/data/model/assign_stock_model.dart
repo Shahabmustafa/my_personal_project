@@ -27,15 +27,18 @@ class AssignStockModel {
     this.items = const [],
   });
 
-  factory AssignStockModel.fromJson(Map<String, dynamic> json,
-      {List<AssignStockItemModel> items = const []}) {
+  factory AssignStockModel.fromJson(
+    Map<String, dynamic> json, {
+    List<AssignStockItemModel> items = const [],
+  }) {
     return AssignStockModel(
       id: json['id'] as String,
       assignmentNumber: json['assignment_number'] as String,
       warehouseId: json['assigned_by'] as String,
       branchId: json['assigned_to'] as String,
       branchName:
-          (json['branches'] as Map<String, dynamic>?)?['branch_name'] as String?,
+          (json['branches'] as Map<String, dynamic>?)?['branch_name']
+              as String?,
       status: json['status'] as String? ?? 'pending',
       notes: json['notes'] as String?,
       assignedAt: DateTime.parse(json['assigned_at'] as String),
@@ -117,17 +120,14 @@ class AssignStockItemModel {
       salePrice: _toDouble(json['sale_price']),
       purchasePrice: _toDouble(json['purchase_price']),
       productName:
-          (json['products'] as Map<String, dynamic>?)?['article_name'] as String?,
-      sizeName:
-          (json['sizes'] as Map<String, dynamic>?)?['number'] as String?,
-      colorName:
-          (json['colors'] as Map<String, dynamic>?)?['name'] as String?,
-      brandName:
-          (json['brands'] as Map<String, dynamic>?)?['name'] as String?,
+          (json['products'] as Map<String, dynamic>?)?['article_name']
+              as String?,
+      sizeName: (json['sizes'] as Map<String, dynamic>?)?['number'] as String?,
+      colorName: (json['colors'] as Map<String, dynamic>?)?['name'] as String?,
+      brandName: (json['brands'] as Map<String, dynamic>?)?['name'] as String?,
       categoryName:
           (json['categories'] as Map<String, dynamic>?)?['name'] as String?,
-      typeName:
-          (json['types'] as Map<String, dynamic>?)?['name'] as String?,
+      typeName: (json['types'] as Map<String, dynamic>?)?['name'] as String?,
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_invoice_model.dart';
@@ -13,10 +14,15 @@ class SaleInvoicesListScreen extends ConsumerStatefulWidget {
   final bool showNewInvoiceButton;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
 
+  /// Sab branches ki invoices, ek din ki (date filter ke sath, default aaj) —
+  /// Sale Exchange ke liye. False ho to sirf apni branch ki saari invoices.
+  final bool allBranchesByDate;
+
   const SaleInvoicesListScreen({
     super.key,
     this.showNewInvoiceButton = true,
     this.onExchangeTap,
+    this.allBranchesByDate = false,
   });
 
   @override
@@ -25,12 +31,63 @@ class SaleInvoicesListScreen extends ConsumerStatefulWidget {
 }
 
 class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen> {
+  late DateTime _date = _today();
+
+  /// Invoice number search (server-side) — sab branches, kisi bhi din ki.
+  /// Search likha ho to date filter ignore hota hai.
+  String _search = '';
+  Timer? _debounce;
+
+  static DateTime _today() {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  bool get _isToday => _date == _today();
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearch(String v) {
+    final next = v.trim();
+    if (next == _search) return;
+    setState(() => _search = next);
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), _load);
+  }
+
+  void _load() {
+    if (widget.allBranchesByDate) {
+      ref.read(exchangeInvoiceListProvider.notifier).loadByDate(_date, search: _search);
+    } else {
       ref.read(saleInvoiceListProvider.notifier).loadInvoices();
-    });
+    }
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2020),
+      lastDate: _today(),
+    );
+    if (picked == null || !mounted) return;
+    setState(() => _date = DateTime(picked.year, picked.month, picked.day));
+    _load();
+  }
+
+  void _setToday() {
+    setState(() => _date = _today());
+    _load();
   }
 
   Future<void> _onPrint(SaleInvoiceModel inv) async {
@@ -55,7 +112,9 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(saleInvoiceListProvider);
+    final state = widget.allBranchesByDate
+        ? ref.watch(exchangeInvoiceListProvider)
+        : ref.watch(saleInvoiceListProvider);
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -68,8 +127,8 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Sale Invoices',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text(widget.allBranchesByDate ? 'Sale Exchange' : 'Sale Invoices',
+                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 2),
                     Text(
                         '${state.invoices.length} invoice${state.invoices.length == 1 ? '' : 's'} · Total Rs. ${state.totalAmount.toStringAsFixed(0)}',
@@ -77,10 +136,22 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                   ],
                 ),
               ),
+              if (widget.allBranchesByDate) ...[
+                OutlinedButton.icon(
+                  onPressed: _search.isEmpty ? _pickDate : null,
+                  icon: const AppIcon(AppIcons.calendarTodayOutlined, size: 16),
+                  label: Text(_formatDateStatic(_date)),
+                ),
+                if (!_isToday) ...[
+                  const SizedBox(width: 8),
+                  TextButton(onPressed: _setToday, child: const Text('Today')),
+                ],
+                const SizedBox(width: 4),
+              ],
               Tooltip(
                 message: 'Refresh',
                 child: IconButton(
-                  onPressed: () => ref.read(saleInvoiceListProvider.notifier).loadInvoices(),
+                  onPressed: _load,
                   icon: const AppIcon(AppIcons.refresh, size: 18),
                 ),
               ),
@@ -105,6 +176,19 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 ),
             ],
           ),
+          if (widget.allBranchesByDate) ...[
+            const SizedBox(height: 12),
+            TextField(
+              onChanged: _onSearch,
+              decoration: InputDecoration(
+                hintText: 'Search by invoice number (all branches, any date)...',
+                hintStyle: const TextStyle(fontSize: 13),
+                prefixIcon: const AppIcon(AppIcons.search, size: 18),
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
 
           if (state.isLoading)
@@ -115,14 +199,20 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                   child: Text('Error: ${state.error}', style: const TextStyle(color: Colors.red))),
             )
           else if (state.invoices.isEmpty)
-            const Expanded(
+            Expanded(
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AppIcon(AppIcons.receiptLongOutlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 12),
-                    Text('No sale invoices yet', style: TextStyle(color: Colors.grey, fontSize: 15)),
+                    const AppIcon(AppIcons.receiptLongOutlined, size: 64, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    Text(
+                        !widget.allBranchesByDate
+                            ? 'No sale invoices yet'
+                            : _search.isNotEmpty
+                                ? 'No invoice found for "$_search"'
+                                : 'No sale invoices on this date',
+                        style: const TextStyle(color: Colors.grey, fontSize: 15)),
                   ],
                 ),
               ),
@@ -134,10 +224,12 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
                 return isWide
                     ? _DesktopInvoiceTable(
                         invoices: state.invoices,
+                        showBranch: widget.allBranchesByDate,
                         onExchangeTap: widget.onExchangeTap,
                         onPrintTap: _onPrint)
                     : _MobileInvoiceList(
                         invoices: state.invoices,
+                        showBranch: widget.allBranchesByDate,
                         onExchangeTap: widget.onExchangeTap,
                         onPrintTap: _onPrint);
               }),
@@ -154,8 +246,12 @@ class _DesktopInvoiceTable extends StatelessWidget {
   final List<SaleInvoiceModel> invoices;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
   final void Function(SaleInvoiceModel invoice) onPrintTap;
+  final bool showBranch;
   const _DesktopInvoiceTable(
-      {required this.invoices, this.onExchangeTap, required this.onPrintTap});
+      {required this.invoices,
+      this.onExchangeTap,
+      required this.onPrintTap,
+      this.showBranch = false});
 
   @override
   Widget build(BuildContext context) {
@@ -169,6 +265,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
           ),
           child: Row(children: [
             _hcell('Invoice #', flex: 2, style: headerStyle),
+            if (showBranch) _hcell('Branch', flex: 2, style: headerStyle),
             _hcell('Customer', flex: 2, style: headerStyle),
             _hcell('Date', flex: 2, style: headerStyle),
             _hcell('Type', flex: 1, style: headerStyle),
@@ -209,6 +306,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (showBranch) _dcell(inv.branchName ?? '—', flex: 2),
                   _dcell(inv.customerName ?? '—', flex: 2),
                   _dcell(_formatDate(inv.createdAt), flex: 2),
                   _dcell(inv.paymentTypeLabel.toUpperCase(), flex: 1),
@@ -247,8 +345,8 @@ class _DesktopInvoiceTable extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              const Expanded(
-                  flex: 7, child: Text('TOTALS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+              Expanded(
+                  flex: showBranch ? 9 : 7, child: const Text('TOTALS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
               Expanded(
                 flex: 2,
                 child: Text(invoices.fold(0.0, (s, i) => s + i.subtotal).toStringAsFixed(0),
@@ -299,6 +397,9 @@ class _DesktopInvoiceTable extends StatelessWidget {
       '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 }
 
+String _formatDateStatic(DateTime dt) =>
+    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+
 /// Returns minus exchange ka farq — jitna invoice ki sale se kam hua.
 String _returnedText(SaleInvoiceModel inv) {
   final v = inv.returnedAmount - inv.exchangeDifference;
@@ -312,8 +413,12 @@ class _MobileInvoiceList extends StatelessWidget {
   final List<SaleInvoiceModel> invoices;
   final void Function(SaleInvoiceModel invoice)? onExchangeTap;
   final void Function(SaleInvoiceModel invoice) onPrintTap;
+  final bool showBranch;
   const _MobileInvoiceList(
-      {required this.invoices, this.onExchangeTap, required this.onPrintTap});
+      {required this.invoices,
+      this.onExchangeTap,
+      required this.onPrintTap,
+      this.showBranch = false});
 
   @override
   Widget build(BuildContext context) {
@@ -375,6 +480,14 @@ class _MobileInvoiceList extends StatelessWidget {
                       ),
                   ],
                 ),
+                if (showBranch && (inv.branchName ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(inv.branchName!,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).colorScheme.primary)),
+                ],
                 if (inv.customerName != null && inv.customerName!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(inv.customerName!, style: const TextStyle(fontSize: 12, color: Colors.black87)),

@@ -57,7 +57,7 @@ class SizeGroupsDialog extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
+            content: Text(e.toString().replaceFirst(RegExp(r'^Exception: '), '')),
             backgroundColor: Colors.redAccent));
       }
     }
@@ -102,7 +102,7 @@ class SizeGroupsDialog extends ConsumerWidget {
             const Padding(
               padding: EdgeInsets.fromLTRB(20, 0, 20, 12),
               child: Text(
-                'Group chunne se Add Stock Entry mein us ke saare sizes ek saath aa jate hain.',
+                'Choosing a group adds all of its sizes to Add Stock Entry at once.',
                 style: TextStyle(fontSize: 12, color: _muted),
               ),
             ),
@@ -237,7 +237,7 @@ class _SizeGroupFormDialogState extends ConsumerState<_SizeGroupFormDialog> {
     } catch (e) {
       setState(() {
         _saving = false;
-        _nameError = e.toString().replaceAll('Exception: ', '');
+        _nameError = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
       });
     }
   }
@@ -309,7 +309,7 @@ class _SizeGroupFormDialogState extends ConsumerState<_SizeGroupFormDialog> {
                     .map((s) => FilterChip(
                           label: Text(s.label),
                           selected: _selected.contains(s.id),
-                          selectedColor: _primary.withOpacity(0.15),
+                          selectedColor: _primary.withValues(alpha: 0.15),
                           checkmarkColor: _primary,
                           onSelected: (v) => setState(() {
                             v ? _selected.add(s.id) : _selected.remove(s.id);

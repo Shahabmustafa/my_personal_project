@@ -115,7 +115,7 @@ class AppSearchDropdown<T> extends StatelessWidget {
               color: theme.colorScheme.primary, size: 18)
               : null,
           tileColor: isSelected
-              ? theme.colorScheme.primary.withOpacity(0.06)
+              ? theme.colorScheme.primary.withValues(alpha: 0.06)
               : null,
         ),
       ),

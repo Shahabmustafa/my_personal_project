@@ -17,6 +17,7 @@ import '../../../customer/presentation/providers/customer_provider.dart';
 import '../../data/datasource/sale_invoice_datasource.dart';
 import '../../data/model/sale_invoice_model.dart';
 import '../../data/repository/sale_invoice_repository.dart';
+import 'package:safishoe_app/core/utils/money.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -80,12 +81,15 @@ final printersForSaleProvider = FutureProvider<List<PrinterLookupItem>>(
 );
 
 /// Superadmin ki "Discount → Branch Invoice Discount" screen se set hota hai —
-/// is branch ka cashier sale invoice par max kitne % tak extra (invoice-wise)
-/// discount laga sakta hai. 0 hone par discount field dikhta hi nahi.
+/// is branch ki HAR sale invoice par itna % extra discount khud lagta hai
+/// (cashier edit nahi kar sakta). 0 = koi extra discount nahi.
 final currentBranchMaxInvoiceDiscountPctProvider = FutureProvider<double>((
   ref,
 ) async {
   final branchId = ref.watch(currentBranchIdProvider);
+  // Realtime — superadmin limit badle to har branch ki screen par turant
+  // naya value (page refresh ki zaroorat nahi).
+  ref.watch(tableChangesProvider('branches'));
   if (branchId.isEmpty) return 0;
   final branch = await ref
       .read(branchRepositoryProvider)
@@ -137,7 +141,7 @@ class SaleInvoiceListNotifier extends StateNotifier<SaleInvoiceListState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceAll('Exception: ', ''),
+        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
       );
     }
   }
@@ -149,6 +153,40 @@ final saleInvoiceListProvider =
         ref.read(saleInvoiceRepositoryProvider),
         ref.watch(currentBranchIdProvider),
       ),
+    );
+
+/// Sale Exchange ki list: sab branches ki, ek din ki invoices. Alag provider
+/// hai taake baqi jagah (jaise claim dialog) ki apni-branch list na badle.
+class SaleInvoiceDayListNotifier extends StateNotifier<SaleInvoiceListState> {
+  final SaleInvoiceRepository _repo;
+
+  /// Tez search / date badalne par purana jawab naye ko overwrite na kare.
+  int _seq = 0;
+
+  SaleInvoiceDayListNotifier(this._repo) : super(const SaleInvoiceListState());
+
+  Future<void> loadByDate(DateTime date, {String search = ''}) async {
+    final seq = ++_seq;
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final from = DateTime(date.year, date.month, date.day);
+      final to = DateTime(date.year, date.month, date.day + 1);
+      final list = await _repo.getAllBranchInvoicesByDate(from, to, search: search);
+      if (!mounted || seq != _seq) return;
+      state = state.copyWith(invoices: list, isLoading: false);
+    } catch (e) {
+      if (!mounted || seq != _seq) return;
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+      );
+    }
+  }
+}
+
+final exchangeInvoiceListProvider =
+    StateNotifierProvider<SaleInvoiceDayListNotifier, SaleInvoiceListState>(
+      (ref) => SaleInvoiceDayListNotifier(ref.read(saleInvoiceRepositoryProvider)),
     );
 
 // ── Cart / active invoice state ───────────────────────────────────────────
@@ -170,6 +208,10 @@ class SaleInvoiceState {
   /// max % (superadmin set) tak clamp hota hai. Rupees amount [invoiceDiscount]
   /// getter se nikalta hai taaki cart badalne par apne aap recalculate ho.
   final double invoiceDiscountPct;
+
+  /// Admin ka tay kiya hua fixed % (Branch Invoice Discount screen) — har
+  /// invoice par khud lagta hai; B1G1 ya tier discount ho to nahi lagta.
+  final double branchDiscountPct;
 
   /// Head office ki "Sale Discount Tiers" screen se — sab tiers, highest
   /// min_sale_amount pehle. Load hote hi ek dafa fetch ho jate hain.
@@ -194,6 +236,7 @@ class SaleInvoiceState {
     this.note = '',
     this.cartItems = const [],
     this.invoiceDiscountPct = 0,
+    this.branchDiscountPct = 0,
     this.discountTiers = const [],
     this.b1g1Offers = const [],
     this.isSaving = false,
@@ -209,8 +252,13 @@ class SaleInvoiceState {
       cartItems.fold(0, (sum, i) => sum + i.b1g1Discount);
 
   /// Invoice-wise extra discount, rupees mein — % of items total.
-  double get invoiceDiscount =>
-      b1g1Applied ? 0 : itemsTotal * invoiceDiscountPct / 100;
+  double get invoiceDiscount => manualDiscountLocked
+      ? 0
+      : roundMoney(itemsTotal * invoiceDiscountPct / 100);
+
+  /// B1G1 ya head office ka auto (tier) discount lagne par cashier ka manual
+  /// "Extra Discount %" disable — dono discount stack nahi hote.
+  bool get manualDiscountLocked => b1g1Applied || matchedDiscountTier != null;
 
   /// Head office ki tier jo [itemsTotal] par qualify karti hai — sab se
   /// zyada min_sale_amount wali jeet ti hai (stacking nahi hoti).
@@ -261,6 +309,7 @@ class SaleInvoiceState {
     String? note,
     List<SaleCartItem>? cartItems,
     double? invoiceDiscountPct,
+    double? branchDiscountPct,
     List<SaleDiscountTierModel>? discountTiers,
     List<B1g1OfferModel>? b1g1Offers,
     bool? isSaving,
@@ -280,6 +329,7 @@ class SaleInvoiceState {
     note: note ?? this.note,
     cartItems: cartItems ?? this.cartItems,
     invoiceDiscountPct: invoiceDiscountPct ?? this.invoiceDiscountPct,
+    branchDiscountPct: branchDiscountPct ?? this.branchDiscountPct,
     discountTiers: discountTiers ?? this.discountTiers,
     b1g1Offers: b1g1Offers ?? this.b1g1Offers,
     isSaving: isSaving ?? this.isSaving,
@@ -287,6 +337,41 @@ class SaleInvoiceState {
     lastSavedInvoice: lastSavedInvoice ?? this.lastSavedInvoice,
   );
 }
+
+// ── Held invoices (hold / resume) ─────────────────────────────────────────
+
+/// Cashier ne chalti invoice "hold" par rakhi — customer abhi aur shopping
+/// kar raha hai. Stock reserve nahi hota; resume par dobara check hota hai.
+class HeldInvoice {
+  final String id;
+  final DateTime heldAt;
+  final SaleInvoiceState snapshot;
+
+  const HeldInvoice({
+    required this.id,
+    required this.heldAt,
+    required this.snapshot,
+  });
+
+  String get customerName => snapshot.customer?.name ?? 'Customer';
+  int get totalQuantity => snapshot.totalQuantity;
+  double get totalAmount => snapshot.totalAmount;
+}
+
+/// Sirf memory mein (page refresh/logout par saaf) — branch badalne ya logout
+/// par provider dobara bannta hai, to doosre user ko purani holds nahi dikhtin.
+class HeldInvoicesNotifier extends StateNotifier<List<HeldInvoice>> {
+  HeldInvoicesNotifier() : super(const []);
+
+  void add(HeldInvoice h) => state = [...state, h];
+  void remove(String id) => state = state.where((h) => h.id != id).toList();
+}
+
+final heldInvoicesProvider =
+    StateNotifierProvider<HeldInvoicesNotifier, List<HeldInvoice>>((ref) {
+  ref.watch(currentBranchIdProvider);
+  return HeldInvoicesNotifier();
+});
 
 class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
   final Ref _ref;
@@ -321,7 +406,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
   }
 
   /// Har cart change isi se — B1G1 free units har dafa naye sire se.
-  void _setCart(List<SaleCartItem> items, {double? invoiceDiscountPct}) {
+  void _setCart(List<SaleCartItem> items) {
     final results = computeB1g1([
       for (final i in items)
         (
@@ -350,9 +435,32 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
                   b1g1FreeQty: results[k].freeQty,
                 ),
       ],
-      invoiceDiscountPct: invoiceDiscountPct,
       clearError: true,
     );
+    _syncDiscount();
+  }
+
+  /// Invoice par lagne wala % = admin ka branch % — magar B1G1 ya tier discount
+  /// lage to 0 (dono stack nahi hote). Cart/tiers/branch % badalne par chalta hai.
+  void _syncDiscount() {
+    final target = state.manualDiscountLocked ? 0.0 : state.branchDiscountPct;
+    if (state.invoiceDiscountPct != target) {
+      state = state.copyWith(invoiceDiscountPct: target);
+    }
+  }
+
+  /// Admin ne branch ka fixed % badla (ya pehli dafa load hua) — realtime.
+  void setBranchDiscountPct(double pct) {
+    if (!mounted) return;
+    state = state.copyWith(branchDiscountPct: pct.clamp(0, 100).toDouble());
+    _syncDiscount();
+  }
+
+  /// Admin ne tiers badle (realtime) — naye tiers lagao.
+  void setDiscountTiers(List<SaleDiscountTierModel> tiers) {
+    if (!mounted) return;
+    state = state.copyWith(discountTiers: tiers);
+    _syncDiscount();
   }
 
   /// Manager branch se auto-resolve hota hai (koi dropdown nahi — cashier
@@ -630,9 +738,10 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     }
     _setCart(state.cartItems.map((i) {
       if (i.branchStockId != branchStockId) return i;
+      // Stock <= 0 'unlimited' nahi hai — quantity badh nahi sakti.
       final capped = i.availableStock > 0
           ? quantity.clamp(1, i.availableStock)
-          : quantity;
+          : (quantity < i.quantity ? quantity : i.quantity);
       return i.copyWith(quantity: capped);
     }).toList());
   }
@@ -660,14 +769,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     _setQty(branchStockId, item.first.quantity - item.first.b1g1FreeQty);
   }
 
-  void clearCart() => _setCart(const [], invoiceDiscountPct: 0);
-
-  /// Invoice-wise extra discount %, 0..[maxPct] tak clamp. [maxPct] superadmin
-  /// ki "Branch Invoice Discount" screen se aata hai (0 = allowed nahi).
-  void setInvoiceDiscountPct(double pct, {required double maxPct}) {
-    final capped = pct.clamp(0, maxPct <= 0 ? 0 : maxPct);
-    state = state.copyWith(invoiceDiscountPct: capped.toDouble());
-  }
+  void clearCart() => _setCart(const []);
 
   /// Current state se payment legs banata hai — cash/card ek row, cash_card do rows.
   List<PaymentInput> _buildPayments() {
@@ -710,11 +812,11 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       }
     }
     for (final item in state.cartItems) {
-      if (item.availableStock > 0 && item.quantity > item.availableStock) {
+      if (item.quantity > item.availableStock) {
         return '${item.productName} — only ${item.availableStock} in stock';
       }
     }
-    if (state.invoiceDiscount > state.itemsTotal) {
+    if (state.invoiceDiscount + state.autoDiscount > state.itemsTotal) {
       return 'Discount cannot exceed the items total';
     }
 
@@ -732,11 +834,13 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     // Cashier hamesha logged-in user hi hota hai — koi dropdown/selection nahi.
     final cashierId = _ref.read(authProvider).user?.id;
     final managerCommissionPercent = manager.commissionPercent;
-    final managerCommissionAmount =
-        state.totalAmount * managerCommissionPercent / 100;
+    final managerCommissionAmount = roundMoney(
+      state.totalAmount * managerCommissionPercent / 100,
+    );
     final salesmanCommissionPercent = state.salesman?.commissionPercent ?? 0;
-    final salesmanCommissionAmount =
-        state.totalAmount * salesmanCommissionPercent / 100;
+    final salesmanCommissionAmount = roundMoney(
+      state.totalAmount * salesmanCommissionPercent / 100,
+    );
 
     Future<SaleInvoiceModel> attemptSave(String number) =>
         _repo.saveSaleInvoice(
@@ -751,8 +855,8 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           totalDiscount: state.totalDiscount,
           // Manual invoice discount + head office ka automatic sale-tier
           // discount — dono ek hi column mein combine ho kar save hote hain.
-          invoiceDiscount: state.invoiceDiscount + state.autoDiscount,
-          totalAmount: state.totalAmount,
+          invoiceDiscount: roundMoney(state.invoiceDiscount + state.autoDiscount),
+          totalAmount: roundMoney(state.totalAmount),
           salesmanCommissionPercent: salesmanCommissionPercent,
           salesmanCommissionAmount: salesmanCommissionAmount,
           managerCommissionPercent: managerCommissionPercent,
@@ -873,6 +977,91 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     );
   }
 
+  // ── Hold / resume ───────────────────────────────────────────────────────
+
+  HeldInvoice _snapshotCurrent() => HeldInvoice(
+    id: DateTime.now().microsecondsSinceEpoch.toString(),
+    heldAt: DateTime.now(),
+    snapshot: state.copyWith(
+      cartItems: [for (final i in state.cartItems) i.copyWith()],
+    ),
+  );
+
+  /// Chalti invoice hold par rakh kar naya khali invoice shuru. Cart khali ho
+  /// ya save ho raha ho to false.
+  Future<bool> holdInvoice() async {
+    if (state.cartItems.isEmpty || state.isSaving) return false;
+    _ref.read(heldInvoicesProvider.notifier).add(_snapshotCurrent());
+    await resetInvoice();
+    return true;
+  }
+
+  /// Held invoice wapas kholo. Chalti invoice mein items hon to wo khud hold
+  /// ho jati hai (swap). Stock dobara check hota hai — return value mein jo
+  /// items hataye/kam kiye gaye unka message (null = sab theek).
+  Future<String?> resumeHeld(String heldId) async {
+    final held = _ref
+        .read(heldInvoicesProvider)
+        .where((h) => h.id == heldId)
+        .firstOrNull;
+    if (held == null) return 'Held invoice not found';
+    if (state.isSaving) return 'Invoice is being saved — try again in a moment';
+
+    final heldNotifier = _ref.read(heldInvoicesProvider.notifier);
+    heldNotifier.remove(heldId);
+    if (state.cartItems.isNotEmpty) heldNotifier.add(_snapshotCurrent());
+
+    final snap = held.snapshot;
+    final stockList = _ref.read(branchStockCacheProvider).value ?? const [];
+    final byId = {for (final s in stockList) s.id: s};
+    final kept = <SaleCartItem>[];
+    final notes = <String>[];
+    for (final item in snap.cartItems) {
+      if (stockList.isEmpty) {
+        kept.add(item.copyWith());
+        continue;
+      }
+      final stock = byId[item.branchStockId];
+      if (stock == null || stock.quantity <= 0) {
+        notes.add('${item.productName} is out of stock — removed');
+        continue;
+      }
+      final qty = item.quantity > stock.quantity
+          ? stock.quantity
+          : item.quantity;
+      if (qty < item.quantity) {
+        notes.add(
+          '${item.productName}: only ${stock.quantity} left — quantity reduced',
+        );
+      }
+      if (stock.salePrice != item.salePrice) {
+        notes.add('${item.productName}: price has changed (new price applied)');
+      }
+      kept.add(
+        item.copyWith(
+          quantity: qty,
+          availableStock: stock.quantity,
+          salePrice: stock.salePrice,
+        ),
+      );
+    }
+
+    state = state.copyWith(
+      customer: snap.customer,
+      salesman: snap.salesman,
+      bankEntry: snap.bankEntry,
+      printer: snap.printer,
+      paymentType: snap.paymentType,
+      cashAmount: snap.cashAmount,
+      note: snap.note,
+    );
+    _setCart(kept);
+    return notes.isEmpty ? null : notes.join('\n');
+  }
+
+  void discardHeld(String heldId) =>
+      _ref.read(heldInvoicesProvider.notifier).remove(heldId);
+
   Future<void> resetInvoice() async {
     if (!mounted) return;
     // Tiers aur B1G1 offers naye invoice par bhi wahi rehte hain.
@@ -880,6 +1069,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       invoiceLoading: true,
       discountTiers: state.discountTiers,
       b1g1Offers: state.b1g1Offers,
+      branchDiscountPct: state.branchDiscountPct,
     );
     await _loadInvoiceNumber();
     await _loadDefaultCustomer();
@@ -896,6 +1086,20 @@ final saleInvoiceProvider =
           ref.watch(currentBranchIdProvider),
         );
         // Admin ke B1G1 offers — load hote hi aur realtime badalne par.
+        // Admin ka branch fixed % — load hote hi aur badalne par (realtime).
+        ref.listen(
+          currentBranchMaxInvoiceDiscountPctProvider,
+          (_, next) => notifier.setBranchDiscountPct(next.value ?? 0),
+          fireImmediately: true,
+        );
+        // Admin ke discount tiers — badalte hi (realtime) naye tiers lagao.
+        ref.listen(
+          saleDiscountTiersProvider,
+          (_, next) {
+            final tiers = next.value;
+            if (tiers != null) notifier.setDiscountTiers(tiers);
+          },
+        );
         ref.listen(
           runningB1g1OffersProvider,
           (_, next) => notifier.setB1g1Offers(next.value ?? const []),

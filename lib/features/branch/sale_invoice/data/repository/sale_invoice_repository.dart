@@ -65,6 +65,10 @@ class SaleInvoiceRepository {
   Future<List<SaleInvoiceModel>> getAllBranchInvoices() =>
       _datasource.fetchAllBranchInvoices();
 
+  Future<List<SaleInvoiceModel>> getAllBranchInvoicesByDate(
+          DateTime from, DateTime to, {String search = ''}) =>
+      _datasource.fetchAllBranchInvoicesByDate(from, to, search: search);
+
   Future<List<SaleInvoiceModel>> getInvoicesBySalesman(
           String branchId, String salesmanId) =>
       _datasource.fetchInvoicesBySalesman(branchId, salesmanId);

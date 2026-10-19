@@ -53,7 +53,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: _primary.withOpacity(0.1),
+                    color: _primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const AppIcon(AppIcons.inventory2Outlined,
@@ -204,7 +204,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                   border: Border.all(color: const Color(0xFFE7E9F0)),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -474,7 +474,7 @@ class _SummaryCard extends StatelessWidget {
           border: Border.all(color: const Color(0xFFE7E9F0)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -485,7 +485,7 @@ class _SummaryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(9),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: AppIcon(icon, size: 20, color: color),

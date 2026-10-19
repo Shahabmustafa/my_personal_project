@@ -44,33 +44,38 @@ class BranchStockReturnDatasource {
     final returnNumber = await generateReturnNumber();
 
     final items = cartItems
-        .map((item) => {
-              'stock_id': item.stockId,
-              'barcode': item.barcode,
-              'product_id': item.productId,
-              'size_id': item.sizeId,
-              'color_id': item.colorId,
-              'brand_id': item.brandId,
-              'category_id': item.categoryId,
-              'type_id': item.typeId,
-              'quantity': item.quantity,
-              'sale_price': item.salePrice,
-              'purchase_price': item.purchasePrice,
-              'discount': item.discount,
-            })
+        .map(
+          (item) => {
+            'stock_id': item.stockId,
+            'barcode': item.barcode,
+            'product_id': item.productId,
+            'size_id': item.sizeId,
+            'color_id': item.colorId,
+            'brand_id': item.brandId,
+            'category_id': item.categoryId,
+            'type_id': item.typeId,
+            'quantity': item.quantity,
+            'sale_price': item.salePrice,
+            'purchase_price': item.purchasePrice,
+            'discount': item.discount,
+          },
+        )
         .toList();
 
     // Server-side function raises an exception (surfaced here as a
     // PostgrestException) if any line's quantity exceeds what's actually
     // in branch_stock_inventory for fromBranchId — nothing gets written.
-    await _client.rpc('create_branch_stock_return', params: {
-      'p_return_number': returnNumber,
-      'p_from_branch_id': fromBranchId,
-      'p_to_branch_id': toBranchId,
-      'p_returned_by': returnedBy,
-      'p_notes': notes,
-      'p_items': items,
-    });
+    await _client.rpc(
+      'create_branch_stock_return',
+      params: {
+        'p_return_number': returnNumber,
+        'p_from_branch_id': fromBranchId,
+        'p_to_branch_id': toBranchId,
+        'p_returned_by': returnedBy,
+        'p_notes': notes,
+        'p_items': items,
+      },
+    );
   }
 
   static const _returnSelect =
@@ -80,7 +85,9 @@ class BranchStockReturnDatasource {
   /// Is branch ne doosri branches ko jo returns bheje hain. Items ko bhi
   /// embed karte hain taake list screen par total quantity / total value
   /// jaisi summary cards bina extra per-row calls ke ban sakein.
-  Future<List<BranchStockReturnModel>> fetchSentReturns(String fromBranchId) async {
+  Future<List<BranchStockReturnModel>> fetchSentReturns(
+    String fromBranchId,
+  ) async {
     final res = await _client
         .from('branch_stock_returns')
         .select('$_returnSelect, branch_stock_return_items(*)')
@@ -89,9 +96,13 @@ class BranchStockReturnDatasource {
 
     return (res as List).map((e) {
       final json = e as Map<String, dynamic>;
-      final itemsJson = (json['branch_stock_return_items'] as List?) ?? const [];
+      final itemsJson =
+          (json['branch_stock_return_items'] as List?) ?? const [];
       final items = itemsJson
-          .map((i) => BranchStockReturnItemModel.fromJson(i as Map<String, dynamic>))
+          .map(
+            (i) =>
+                BranchStockReturnItemModel.fromJson(i as Map<String, dynamic>),
+          )
           .toList();
       return BranchStockReturnModel.fromJson(json, items: items);
     }).toList();
@@ -119,14 +130,18 @@ class BranchStockReturnDatasource {
         .eq('return_id', returnId);
 
     final items = (itemsRes as List)
-        .map((e) => BranchStockReturnItemModel.fromJson(e as Map<String, dynamic>))
+        .map(
+          (e) => BranchStockReturnItemModel.fromJson(e as Map<String, dynamic>),
+        )
         .toList();
 
     return BranchStockReturnModel.fromJson(headerRes, items: items);
   }
 
   /// Is branch ko doosri branches se jo returns aaye hain (accept/reject ke liye).
-  Future<List<BranchStockReturnModel>> fetchIncomingReturns(String toBranchId) async {
+  Future<List<BranchStockReturnModel>> fetchIncomingReturns(
+    String toBranchId,
+  ) async {
     final res = await _client
         .from('branch_stock_returns')
         .select('$_returnSelect, branch_stock_return_items(*)')
@@ -135,19 +150,29 @@ class BranchStockReturnDatasource {
 
     return (res as List).map((e) {
       final json = e as Map<String, dynamic>;
-      final itemsJson = (json['branch_stock_return_items'] as List?) ?? const [];
+      final itemsJson =
+          (json['branch_stock_return_items'] as List?) ?? const [];
       final items = itemsJson
-          .map((i) => BranchStockReturnItemModel.fromJson(i as Map<String, dynamic>))
+          .map(
+            (i) =>
+                BranchStockReturnItemModel.fromJson(i as Map<String, dynamic>),
+          )
           .toList();
       return BranchStockReturnModel.fromJson(json, items: items);
     }).toList();
   }
 
   Future<void> acceptReturn(String returnId) async {
-    await _client.rpc('accept_branch_stock_return', params: {'p_return_id': returnId});
+    await _client.rpc(
+      'accept_branch_stock_return',
+      params: {'p_return_id': returnId},
+    );
   }
 
   Future<void> rejectReturn(String returnId) async {
-    await _client.rpc('reject_branch_stock_return', params: {'p_return_id': returnId});
+    await _client.rpc(
+      'reject_branch_stock_return',
+      params: {'p_return_id': returnId},
+    );
   }
 }

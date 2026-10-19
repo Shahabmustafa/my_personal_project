@@ -17,14 +17,13 @@ class BranchStockReturnRepository {
     String? returnedBy,
     String? notes,
     required List<BranchReturnCartItem> cartItems,
-  }) =>
-      _datasource.saveReturn(
-        fromBranchId: fromBranchId,
-        toBranchId: toBranchId,
-        returnedBy: returnedBy,
-        notes: notes,
-        cartItems: cartItems,
-      );
+  }) => _datasource.saveReturn(
+    fromBranchId: fromBranchId,
+    toBranchId: toBranchId,
+    returnedBy: returnedBy,
+    notes: notes,
+    cartItems: cartItems,
+  );
 
   Future<List<BranchStockReturnModel>> getSentReturns(String fromBranchId) =>
       _datasource.fetchSentReturns(fromBranchId);
@@ -35,7 +34,9 @@ class BranchStockReturnRepository {
   Future<List<BranchStockReturnModel>> getIncomingReturns(String toBranchId) =>
       _datasource.fetchIncomingReturns(toBranchId);
 
-  Future<void> acceptReturn(String returnId) => _datasource.acceptReturn(returnId);
+  Future<void> acceptReturn(String returnId) =>
+      _datasource.acceptReturn(returnId);
 
-  Future<void> rejectReturn(String returnId) => _datasource.rejectReturn(returnId);
+  Future<void> rejectReturn(String returnId) =>
+      _datasource.rejectReturn(returnId);
 }
