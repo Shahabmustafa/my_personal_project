@@ -32,7 +32,7 @@ class ReportSummaryCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: AppIcon(icon, color: color, size: 20),
@@ -57,5 +57,33 @@ class ReportSummaryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// [ReportSummaryCard]s ki responsive row — wide screen par ek line, tang
+/// screen par 2 columns, bohat tang (< 340) par 1 column.
+class ReportSummaryCards extends StatelessWidget {
+  final List<Widget> children;
+  final double gap;
+  const ReportSummaryCards({super.key, required this.children, this.gap = 14});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      final w = c.maxWidth;
+      final cols = w >= 700
+          ? children.length
+          : w >= 340
+              ? 2
+              : 1;
+      final cardW = (w - gap * (cols - 1)) / cols;
+      return Wrap(
+        spacing: gap,
+        runSpacing: gap,
+        children: [
+          for (final card in children) SizedBox(width: cardW, child: card),
+        ],
+      );
+    });
   }
 }

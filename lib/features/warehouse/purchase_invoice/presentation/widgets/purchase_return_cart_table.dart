@@ -385,7 +385,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
       height: 34,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: TextField(
         controller: _ctrl,
@@ -537,27 +537,34 @@ class _MobileList extends ConsumerWidget {
                     '${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
-                    _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
-                        color: Colors.purple.shade600),
-                    const Spacer(),
-                    _QtyRowStepper(
+                Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Wrap(
+ spacing: 12,
+ runSpacing: 4,
+ children: [_lbl('S.Price', item.salePrice.toStringAsFixed(0)), _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
+                        color: Colors.purple.shade600)],
+ ),
+ const SizedBox(height: 8),
+ Row(
+ children: [
+ _QtyRowStepper(
                       value: item.quantity,
                       primaryColor: primary,
                       onChanged: (v) =>
                           notifier.updateItemQuantity(item.stockId, v),
                     ),
-                    const SizedBox(width: 10),
-                    Text(item.purchaseLineTotal.toStringAsFixed(0),
+ const Spacer(),
+ Text(item.purchaseLineTotal.toStringAsFixed(0),
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: primary)),
-                  ],
-                ),
+                            color: primary))
+ ],
+ ),
+ ],
+ ),
               ],
             ),
           ),

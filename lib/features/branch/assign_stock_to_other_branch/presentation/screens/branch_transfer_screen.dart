@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../../superadmin/report/presentation/widgets/report_detail_panel.dart';
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
+import '../../../../superadmin/report/presentation/widgets/report_table_shell.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/invoice_page_body.dart';
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
 import '../../../sale_invoice/data/model/sale_invoice_model.dart'
     show PrinterLookupItem;
@@ -19,6 +22,7 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
 import 'package:safishoe_app/core/widget/printer_picker_field.dart';
+
 const _primary = Color(0xFF1565C0);
 
 /// Sending branch's screen for transferring stock directly to another
@@ -55,10 +59,11 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
           .getTransferDetail(a.id);
       String? fromName;
       try {
-        fromName = (await ref
-                .read(branchRepositoryProvider)
-                .getBranchById(ref.read(currentBranchIdProvider)))
-            .branchName;
+        fromName =
+            (await ref
+                    .read(branchRepositoryProvider)
+                    .getBranchById(ref.read(currentBranchIdProvider)))
+                .branchName;
       } catch (_) {
         // Slip still prints without the sender name.
       }
@@ -70,12 +75,14 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
         fromName: fromName,
         toName: a.branchName ?? '-',
         lines: detail.items
-            .map((i) => StockSlipLine(
-                  name: i.productName ?? '-',
-                  sizeName: i.sizeName,
-                  colorName: i.colorName,
-                  quantity: i.quantity,
-                ))
+            .map(
+              (i) => StockSlipLine(
+                name: i.productName ?? '-',
+                sizeName: i.sizeName,
+                colorName: i.colorName,
+                quantity: i.quantity,
+              ),
+            )
             .toList(),
         printer: choice.printer,
         footerNote: switch (a.status) {
@@ -128,60 +135,76 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
   @override
   Widget build(BuildContext context) {
     final transfersAsync = ref.watch(sentTransfersProvider);
+    final isMobile = Responsive(context).isMobile;
+
+    const titleBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Assign Stock to Other Branch',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 2),
+        Text(
+          'Stock transfers sent from this branch to other branches',
+          style: TextStyle(color: Colors.grey, fontSize: 13),
+        ),
+      ],
+    );
+
+    final refreshButton = Tooltip(
+      message: 'Refresh',
+      child: IconButton(
+        onPressed: () => ref.invalidate(sentTransfersProvider),
+        icon: const AppIcon(AppIcons.refresh, size: 18),
+      ),
+    );
+
+    final newTransferButton = FilledButton.icon(
+      icon: const AppIcon(AppIcons.add, color: Colors.white),
+      label: const Text('New Transfer'),
+      style: FilledButton.styleFrom(backgroundColor: _primary),
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: const Text('New Stock Transfer')),
+              body: const _NewTransferForm(),
+            ),
+          ),
+        );
+        if (context.mounted) ref.invalidate(sentTransfersProvider);
+      },
+    );
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Column(
+          isMobile
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Assign Stock to Other Branch',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Stock transfers sent from this branch to other branches',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    titleBlock,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(child: newTransferButton),
+                        refreshButton,
+                      ],
                     ),
                   ],
+                )
+              : Row(
+                  children: [
+                    const Expanded(child: titleBlock),
+                    refreshButton,
+                    const SizedBox(width: 8),
+                    newTransferButton,
+                  ],
                 ),
-              ),
-              Tooltip(
-                message: 'Refresh',
-                child: IconButton(
-                  onPressed: () => ref.invalidate(sentTransfersProvider),
-                  icon: const AppIcon(AppIcons.refresh, size: 18),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                icon: const AppIcon(AppIcons.add, color: Colors.white),
-                label: const Text('New Transfer'),
-                style: FilledButton.styleFrom(backgroundColor: _primary),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(title: const Text('New Stock Transfer')),
-                        body: const _NewTransferForm(),
-                      ),
-                    ),
-                  );
-                  if (context.mounted) ref.invalidate(sentTransfersProvider);
-                },
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           transfersAsync.when(
             loading: () => const SizedBox.shrink(),
@@ -205,61 +228,56 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Summary cards ────────────────────────────────────
-                  Row(
+                  ReportSummaryCards(
                     children: [
-                      Expanded(
-                        child: ReportSummaryCard(
-                          label: 'Total Transfers',
-                          value: '${filtered.length}',
-                          icon: AppIcons.compareArrowsOutlined,
-                          color: _primary,
-                        ),
+                      ReportSummaryCard(
+                        label: 'Total Transfers',
+                        value: '${filtered.length}',
+                        icon: AppIcons.compareArrowsOutlined,
+                        color: _primary,
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: ReportSummaryCard(
-                          label: 'Total Quantity',
-                          value: '$totalQuantity',
-                          icon: AppIcons.inventory2Outlined,
-                          color: const Color(0xFFE56A00),
-                        ),
+                      ReportSummaryCard(
+                        label: 'Total Quantity',
+                        value: '$totalQuantity',
+                        icon: AppIcons.inventory2Outlined,
+                        color: const Color(0xFFE56A00),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: ReportSummaryCard(
-                          label: 'Total Value',
-                          value: 'Rs. ${_fmtAmt(totalValue)}',
-                          icon: AppIcons.sellOutlined,
-                          color: const Color(0xFF22A06B),
-                        ),
+                      ReportSummaryCard(
+                        label: 'Total Value',
+                        value: 'Rs. ${_fmtAmt(totalValue)}',
+                        icon: AppIcons.sellOutlined,
+                        color: const Color(0xFF22A06B),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // ── Status filter chips ──────────────────────────────
-                  Row(
-                    children: [
-                      _chip('All', 'all', transfers.length),
-                      const SizedBox(width: 8),
-                      _chip(
-                        'Pending',
-                        'pending',
-                        transfers.where((t) => t.status == 'pending').length,
-                      ),
-                      const SizedBox(width: 8),
-                      _chip(
-                        'Accepted',
-                        'accepted',
-                        transfers.where((t) => t.status == 'accepted').length,
-                      ),
-                      const SizedBox(width: 8),
-                      _chip(
-                        'Rejected',
-                        'rejected',
-                        transfers.where((t) => t.status == 'rejected').length,
-                      ),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _chip('All', 'all', transfers.length),
+                        const SizedBox(width: 8),
+                        _chip(
+                          'Pending',
+                          'pending',
+                          transfers.where((t) => t.status == 'pending').length,
+                        ),
+                        const SizedBox(width: 8),
+                        _chip(
+                          'Accepted',
+                          'accepted',
+                          transfers.where((t) => t.status == 'accepted').length,
+                        ),
+                        const SizedBox(width: 8),
+                        _chip(
+                          'Rejected',
+                          'rejected',
+                          transfers.where((t) => t.status == 'rejected').length,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -267,12 +285,11 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
             },
           ),
 
-          // ── Table + detail panel ───────────────────────────────────────
+          // ── Table + detail overlay ─────────────────────────────────────
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: [
-                Expanded(
+                Positioned.fill(
                   child: transfersAsync.when(
                     loading: () => const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
@@ -312,6 +329,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 'Tap "New Transfer" to send stock to another branch.',
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.grey.shade400,
                                   fontSize: 12,
@@ -331,7 +349,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                   ),
                 ),
                 if (_selected != null)
-                  ReportDetailPanel(
+                  ReportDetailOverlay(
                     title: _selected!.assignmentNumber,
                     subtitle:
                         '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.assignedAt)}',
@@ -440,195 +458,169 @@ class _NewTransferForm extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(branchTransferProvider);
     final branchesAsync = ref.watch(otherBranchesProvider);
+    final isMobile = Responsive(context).isMobile;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Header card ───────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              children: [
-                // Transfer number
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Transfer No :',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        state.numberLoading
-                            ? const SizedBox(
-                                width: 100,
-                                child: LinearProgressIndicator(minHeight: 2),
-                              )
-                            : Text(
-                                state.transferNumber.isEmpty
-                                    ? '...'
-                                    : state.transferNumber,
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: _primary,
-                                ),
-                              ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref
-                              .read(branchTransferProvider.notifier)
-                              .resetTransfer(),
-                          child: const AppIcon(
-                            AppIcons.refresh,
-                            size: 17,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 20),
-
-                // Destination branch dropdown
-                Expanded(
-                  flex: 4,
-                  child: branchesAsync.when(
-                    loading: () => const SizedBox(
-                      height: 48,
-                      child: Center(child: LinearProgressIndicator()),
-                    ),
-                    error: (e, _) => Text(
-                      'Error: $e',
-                      style: const TextStyle(color: Colors.red, fontSize: 12),
-                    ),
-                    data: (branches) => DropdownSearch<BranchModel>(
-                      items: (filter, _) => branches
-                          .where(
-                            (b) => b.label.toLowerCase().contains(
-                              filter.toLowerCase(),
-                            ),
-                          )
-                          .toList(),
-                      selectedItem: state.destinationBranch,
-                      itemAsString: (b) => b.label,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: (b) => ref
-                          .read(branchTransferProvider.notifier)
-                          .selectDestinationBranch(b),
-                      decoratorProps: DropDownDecoratorProps(
-                        decoration: InputDecoration(
-                          labelText: 'Send To Branch *',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
-                        ),
-                      ),
-                      popupProps: PopupProps.menu(
-                        fit: FlexFit.loose,
-                        showSearchBox: true,
-                        constraints: const BoxConstraints(maxHeight: 260),
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Search branch...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
-                            isDense: true,
-                          ),
-                        ),
-                        itemBuilder: (ctx, branch, isSelected, _) => ListTile(
-                          leading: const AppIcon(
-                            AppIcons.storeOutlined,
-                            size: 18,
-                            color: _primary,
-                          ),
-                          title: Text(
-                            branch.branchName,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: branch.city != null
-                              ? Text(
-                                  branch.city!,
-                                  style: const TextStyle(fontSize: 11),
-                                )
-                              : null,
-                          selected: isSelected,
-                        ),
-                      ),
+    final numberBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Transfer No :',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            state.numberLoading
+                ? const SizedBox(
+                    width: 100,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  )
+                : Text(
+                    state.transferNumber.isEmpty ? '...' : state.transferNumber,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: _primary,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
+            const SizedBox(width: 8),
+            InkWell(
+              borderRadius: BorderRadius.circular(4),
+              onTap: () =>
+                  ref.read(branchTransferProvider.notifier).resetTransfer(),
+              child: const AppIcon(
+                AppIcons.refresh,
+                size: 17,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
 
-                // Date
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+    final branchField = branchesAsync.when(
+      loading: () => const SizedBox(
+        height: 48,
+        child: Center(child: LinearProgressIndicator()),
+      ),
+      error: (e, _) => Text(
+        'Error: $e',
+        style: const TextStyle(color: Colors.red, fontSize: 12),
+      ),
+      data: (branches) => DropdownSearch<BranchModel>(
+        items: (filter, _) => branches
+            .where((b) => b.label.toLowerCase().contains(filter.toLowerCase()))
+            .toList(),
+        selectedItem: state.destinationBranch,
+        itemAsString: (b) => b.label,
+        compareFn: (a, b) => a.id == b.id,
+        onSelected: (b) => ref
+            .read(branchTransferProvider.notifier)
+            .selectDestinationBranch(b),
+        decoratorProps: DropDownDecoratorProps(
+          decoration: InputDecoration(
+            labelText: 'Send To Branch *',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
+          ),
+        ),
+        popupProps: PopupProps.menu(
+          fit: FlexFit.loose,
+          showSearchBox: true,
+          constraints: const BoxConstraints(maxHeight: 260),
+          searchFieldProps: const TextFieldProps(
+            decoration: InputDecoration(
+              hintText: 'Search branch...',
+              prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
+              isDense: true,
+            ),
+          ),
+          itemBuilder: (ctx, branch, isSelected, _) => ListTile(
+            leading: const AppIcon(
+              AppIcons.storeOutlined,
+              size: 18,
+              color: _primary,
+            ),
+            title: Text(
+              branch.branchName,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+            subtitle: branch.city != null
+                ? Text(branch.city!, style: const TextStyle(fontSize: 11))
+                : null,
+            selected: isSelected,
+          ),
+        ),
+      ),
+    );
+
+    final dateBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          'Date',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _formatDate(DateTime.now()),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+
+    return InvoicePageBody(
+      top: [
+        // ── Header card ───────────────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDate(DateTime.now()),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Row(children: [numberBlock, const Spacer(), dateBlock]),
+                    const SizedBox(height: 12),
+                    branchField,
+                  ],
+                )
+              : Row(
+                  children: [
+                    numberBlock,
+                    const SizedBox(width: 20),
+                    Expanded(flex: 4, child: branchField),
+                    const SizedBox(width: 16),
+                    dateBlock,
                   ],
                 ),
-              ],
-            ),
-          ),
+        ),
 
-          const SizedBox(height: 12),
-          const BranchTransferProductSelector(),
-          const SizedBox(height: 12),
-
-          // ── Cart Table ─────────────────────────────────────────────────
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const BranchTransferCartTable(),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          const _TransferFooter(),
-        ],
+        const SizedBox(height: 12),
+        const BranchTransferProductSelector(),
+        const SizedBox(height: 12),
+      ],
+      cart: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: const BranchTransferCartTable(),
       ),
+      bottom: const [SizedBox(height: 12), _TransferFooter()],
     );
   }
 
@@ -645,6 +637,78 @@ class _TransferFooter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(branchTransferProvider);
 
+    final isMobile = Responsive(context).isMobile;
+
+    final pairsBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Total Pairs',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${state.totalQuantity}',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: _primary,
+          ),
+        ),
+      ],
+    );
+
+    final Widget? branchLabel = state.destinationBranch == null
+        ? null
+        : Row(
+            children: [
+              const AppIcon(AppIcons.storeOutlined, size: 16, color: _primary),
+              const SizedBox(width: 6),
+              Text(
+                state.destinationBranch!.label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          );
+
+    final clearButton = OutlinedButton.icon(
+      icon: const AppIcon(AppIcons.clearAll, size: 18),
+      label: const Text('Clear'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.red,
+        side: const BorderSide(color: Colors.red),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      onPressed: state.cartItems.isEmpty
+          ? null
+          : () => ref.read(branchTransferProvider.notifier).clearCart(),
+    );
+
+    final sendButton = state.isSaving
+        ? const SizedBox(
+            width: 180,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        : FilledButton.icon(
+            icon: const AppIcon(AppIcons.sendOutlined, size: 18),
+            label: const Text('Send Stock'),
+            style: FilledButton.styleFrom(
+              backgroundColor: _primary,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: state.cartItems.isEmpty
+                ? null
+                : () => _onSend(context, ref),
+          );
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -652,85 +716,37 @@ class _TransferFooter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Total Pairs',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${state.totalQuantity}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: _primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 24),
-          if (state.destinationBranch != null)
-            Row(
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const AppIcon(AppIcons.storeOutlined, size: 16, color: _primary),
-                const SizedBox(width: 6),
-                Text(
-                  state.destinationBranch!.label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [pairsBlock, if (branchLabel != null) branchLabel],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    clearButton,
+                    const SizedBox(width: 10),
+                    Expanded(child: sendButton),
+                  ],
                 ),
               ],
+            )
+          : Row(
+              children: [
+                pairsBlock,
+                const SizedBox(width: 24),
+                if (branchLabel != null) branchLabel,
+                const Spacer(),
+                clearButton,
+                const SizedBox(width: 12),
+                sendButton,
+              ],
             ),
-          const Spacer(),
-          OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: state.cartItems.isEmpty
-                ? null
-                : () => ref.read(branchTransferProvider.notifier).clearCart(),
-          ),
-          const SizedBox(width: 12),
-          state.isSaving
-              ? const SizedBox(
-                  width: 180,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : FilledButton.icon(
-                  icon: const AppIcon(AppIcons.sendOutlined, size: 18),
-                  label: const Text('Send Stock'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _primary,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: state.cartItems.isEmpty
-                      ? null
-                      : () => _onSend(context, ref),
-                ),
-        ],
-      ),
     );
   }
 
@@ -760,12 +776,14 @@ class _TransferFooter extends ConsumerWidget {
     final branchName = state.destinationBranch?.branchName ?? 'branch';
     // Cart is cleared right after saving — keep what the slip needs.
     final slipLines = state.cartItems
-        .map((i) => StockSlipLine(
-              name: i.productName,
-              sizeName: i.sizeName,
-              colorName: i.colorName,
-              quantity: i.quantity,
-            ))
+        .map(
+          (i) => StockSlipLine(
+            name: i.productName,
+            sizeName: i.sizeName,
+            colorName: i.colorName,
+            quantity: i.quantity,
+          ),
+        )
         .toList();
     final error = await ref
         .read(branchTransferProvider.notifier)
@@ -797,10 +815,11 @@ class _TransferFooter extends ConsumerWidget {
       try {
         String? fromName;
         try {
-          fromName = (await ref
-                  .read(branchRepositoryProvider)
-                  .getBranchById(ref.read(currentBranchIdProvider)))
-              .branchName;
+          fromName =
+              (await ref
+                      .read(branchRepositoryProvider)
+                      .getBranchById(ref.read(currentBranchIdProvider)))
+                  .branchName;
         } catch (_) {
           // Slip still prints without the sender name.
         }
@@ -892,7 +911,11 @@ class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
               children: [
                 Row(
                   children: [
-                    const AppIcon(AppIcons.storeOutlined, size: 16, color: _primary),
+                    const AppIcon(
+                      AppIcons.storeOutlined,
+                      size: 16,
+                      color: _primary,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       branchName,
@@ -963,9 +986,8 @@ class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
 String _fmtDate(DateTime dt) =>
     '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
 
-// ── Table (flex-based — poori width par phailti hai) ─────────────────────
+// ── Table (ReportTableShell — chhoti screen par horizontal scroll) ────────
 
-const _colFlex = <int>[1, 3, 5, 3, 2, 2, 3, 3];
 const _colLabels = <String>[
   '#',
   'Transfer #',
@@ -992,146 +1014,81 @@ class _TransferTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              color: const Color(0xFFF7F8FC),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                children: [
-                  for (var c = 0; c < _colLabels.length; c++)
-                    Expanded(
-                      flex: _colFlex[c],
-                      child: Text(
-                        _colLabels[c],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF5A5F73),
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const Divider(height: 1, color: Color(0xFFEEF0F6)),
-            // Body
-            Expanded(
-              child: ListView.separated(
-                itemCount: rows.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, color: Color(0xFFEEF0F6)),
-                itemBuilder: (context, i) => _row(rows[i], i),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return ReportTableShell(
+      columns: [for (final l in _colLabels) DataColumn(label: Text(l))],
+      rows: [for (var i = 0; i < rows.length; i++) _row(rows[i], i)],
     );
   }
 
-  Widget _row(AssignStockModel a, int index) {
+  DataRow _row(AssignStockModel a, int index) {
     final qty = a.items.fold<int>(0, (s, it) => s + it.quantity);
-    final selected = selectedId == a.id;
-    return InkWell(
-      onTap: () => onView(a),
-      child: Container(
-        color: selected
-            ? const Color(0xFFEAEFFD)
-            : (index.isEven ? const Color(0xFFFAFBFF) : Colors.white),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              flex: _colFlex[0],
-              child: Text(
-                '${index + 1}',
-                style: const TextStyle(color: Color(0xFF8A8FA3)),
-              ),
-            ),
-            Expanded(
-              flex: _colFlex[1],
-              child: Text(
-                a.assignmentNumber,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: _primary,
-                  fontFamily: 'monospace',
-                ),
-              ),
-            ),
-            Expanded(
-              flex: _colFlex[2],
-              child: Row(
-                children: [
-                  const AppIcon(
-                    AppIcons.storeOutlined,
-                    size: 14,
-                    color: Color(0xFF8A8FA3),
-                  ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      a.branchName ?? a.branchId,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              flex: _colFlex[3],
-              child: Text(
-                _fmtDate(a.assignedAt),
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF5A5F73)),
-              ),
-            ),
-            Expanded(flex: _colFlex[4], child: Text('${a.items.length}')),
-            Expanded(flex: _colFlex[5], child: Text('$qty')),
-            Expanded(
-              flex: _colFlex[6],
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: _StatusChip(a.status),
-              ),
-            ),
-            Expanded(
-              flex: _colFlex[7],
-              child: Row(
-                children: [
-                  _ActionIcon(
-                    icon: AppIcons.visibilityOutlined,
-                    tooltip: 'View',
-                    color: _primary,
-                    onTap: () => onView(a),
-                  ),
-                  const SizedBox(width: 6),
-                  _ActionIcon(
-                    icon: AppIcons.printOutlined,
-                    tooltip: 'Print slip',
-                    color: _primary,
-                    onTap: () => onPrint(a),
-                  ),
-                ],
-              ),
-            ),
-          ],
+    return DataRow(
+      selected: selectedId == a.id,
+      onSelectChanged: (_) => onView(a),
+      cells: [
+        DataCell(
+          Text(
+            '${index + 1}',
+            style: const TextStyle(color: Color(0xFF8A8FA3)),
+          ),
         ),
-      ),
+        DataCell(
+          Text(
+            a.assignmentNumber,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              color: _primary,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+        DataCell(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AppIcon(
+                AppIcons.storeOutlined,
+                size: 14,
+                color: Color(0xFF8A8FA3),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                a.branchName ?? a.branchId,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+        DataCell(
+          Text(
+            _fmtDate(a.assignedAt),
+            style: const TextStyle(fontSize: 13, color: Color(0xFF5A5F73)),
+          ),
+        ),
+        DataCell(Text('${a.items.length}')),
+        DataCell(Text('$qty')),
+        DataCell(_StatusChip(a.status)),
+        DataCell(
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ActionIcon(
+                icon: AppIcons.visibilityOutlined,
+                tooltip: 'View',
+                color: _primary,
+                onTap: () => onView(a),
+              ),
+              const SizedBox(width: 6),
+              _ActionIcon(
+                icon: AppIcons.printOutlined,
+                tooltip: 'Print slip',
+                color: _primary,
+                onTap: () => onPrint(a),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1282,7 +1239,7 @@ class _StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: fg.withOpacity(0.3)),
+        border: Border.all(color: fg.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

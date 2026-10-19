@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/widget/invoice_page_body.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/current_head_office_provider.dart';
 import '../providers/ho_assign_stock_provider.dart';
@@ -27,11 +28,8 @@ class _AssignStockTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(hoAssignStockProvider);
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return InvoicePageBody(
+        top: [
           const Row(
             children: [
               AppIcon(AppIcons.localShippingOutlined,
@@ -117,20 +115,19 @@ class _AssignStockTab extends ConsumerWidget {
           const SizedBox(height: 8),
           const HoAssignProductSelector(),
           const SizedBox(height: 12),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const HoAssignCartTable(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _AssignFooter(),
         ],
-      ),
+        cart: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: const HoAssignCartTable(),
+        ),
+        bottom: const [
+          SizedBox(height: 12),
+          _AssignFooter(),
+        ],
     );
   }
 

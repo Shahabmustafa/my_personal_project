@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/purchase_return_model.dart';
 import '../providers/purchase_invoice_provider.dart';
 import '../widgets/purchase_cart_table.dart';
 import '../widgets/purchase_product_selector.dart';
@@ -62,14 +61,22 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
       ],
     );
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
+    final isMobile = Responsive(context).isMobile;
+
+    final cartCard = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: const PurchaseCartTable(),
+    );
+
+    final children = <Widget>[
+          Text(
             'Purchase Invoice',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: isMobile ? 18 : 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 14),
 
@@ -94,21 +101,27 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
           const PurchaseProductSelector(),
           const SizedBox(height: 12),
 
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const PurchaseCartTable(),
-            ),
-          ),
+          // Mobile: poora page scroll hota hai, cart ko fixed height window.
+          if (isMobile)
+            SizedBox(
+                height: (MediaQuery.of(context).size.height * 0.55)
+                    .clamp(320.0, 520.0)
+                    .toDouble(),
+                child: cartCard)
+          else
+            Expanded(child: cartCard),
 
           const SizedBox(height: 12),
           _InvoiceFooter(),
-        ],
-      ),
+    ];
+
+    return Padding(
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
+      child: isMobile
+          ? ListView(children: children)
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children),
     );
   }
 
@@ -493,8 +506,8 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Expense PKR ${expenseTotal.toStringAsFixed(0)} cash se jayega '
-                  '— company ke khate mein nahi.',
+                  'Expense PKR ${expenseTotal.toStringAsFixed(0)} will be paid from cash '
+                  '— not added to the company account.',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 ),
               ),
@@ -502,8 +515,8 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  'Cash in hand (PKR ${cashAmount.toStringAsFixed(0)}) pay + expense '
-                  'ke liye kam hai. Pay amount kam karein.',
+                  'Cash in hand (PKR ${cashAmount.toStringAsFixed(0)}) is not enough for '
+                  'pay + expense. Reduce the pay amount.',
                   style: TextStyle(fontSize: 12, color: Colors.red.shade700),
                 ),
               ),
@@ -633,12 +646,8 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
     required String icon,
     required Widget child,
   }) {
-    return Row(
+    final labelRow = Row(
       children: [
-        SizedBox(
-          width: 140,
-          child: Row(
-            children: [
               AppIcon(icon, size: 15, color: Colors.grey),
               const SizedBox(width: 6),
               Expanded(
@@ -646,13 +655,25 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                     style: const TextStyle(
                         fontSize: 13, color: Colors.grey)),
               ),
-            ],
-          ),
-        ),
-        Expanded(child: child),
       ],
     );
+    // Dialog narrow ho (mobile) to label field ke upar, warna side by side.
+    return LayoutBuilder(builder: (context, c) {
+      if (c.maxWidth < 320) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [labelRow, const SizedBox(height: 6), child],
+        );
+      }
+      return Row(
+        children: [
+          SizedBox(width: 140, child: labelRow),
+          Expanded(child: child),
+        ],
+      );
+    });
   }
+
 
   Widget _readOnlyField(
       {required String value, Color? color, bool bold = false}) {

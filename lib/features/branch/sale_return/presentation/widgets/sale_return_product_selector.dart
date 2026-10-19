@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
@@ -41,7 +42,10 @@ class _SaleReturnProductSelectorState
     super.dispose();
   }
 
-  List<BranchStockModel> _filterStock(List<BranchStockModel> all, String query) {
+  List<BranchStockModel> _filterStock(
+    List<BranchStockModel> all,
+    String query,
+  ) {
     if (query.trim().isEmpty) return all;
     final q = query.toLowerCase();
     return all.where((s) {
@@ -89,10 +93,9 @@ class _SaleReturnProductSelectorState
     if (stock == null) return;
     final requested = int.tryParse(_qtyCtrl.text) ?? 1;
 
-    ref.read(saleReturnProvider.notifier).addCartItem(
-          stock,
-          quantity: requested > 0 ? requested : 1,
-        );
+    ref
+        .read(saleReturnProvider.notifier)
+        .addCartItem(stock, quantity: requested > 0 ? requested : 1);
 
     _barcodeCtrl.clear();
     _qtyCtrl.text = '1';
@@ -106,13 +109,16 @@ class _SaleReturnProductSelectorState
   @override
   Widget build(BuildContext context) {
     final stockAsync = ref.watch(branchStockCacheProvider);
-    final primary = Colors.red.shade600; // return = red accent, sale = theme primary
+    final primary =
+        Colors.red.shade600; // return = red accent, sale = theme primary
 
     return stockAsync.when(
       // Realtime reload par purani list dikhti rahe — spinner/focus loss nahi.
       skipLoadingOnReload: true,
-      loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
+      loading: () =>
+          const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      error: (e, _) =>
+          Text('Error: $e', style: const TextStyle(color: Colors.red)),
       data: (allStock) {
         // Taza list se selected article — sale/return ke baad qty purani na rahe.
         final sel = _selectedStock;
@@ -121,124 +127,168 @@ class _SaleReturnProductSelectorState
             : allStock.firstWhere((s) => s.id == sel.id, orElse: () => sel);
         final currentQty = stock?.quantity ?? 0;
 
+        final isMobile = Responsive(context).isMobile;
+
+        final field0 = TextField(
+          controller: _barcodeCtrl,
+          focusNode: _barcodeFocus,
+          autofocus: true,
+          decoration: InputDecoration(
+            labelText: 'Bar Code',
+            hintText: 'Scan barcode...',
+            prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 18),
+            errorText: _barcodeNotFound ? 'Not found' : null,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              vertical: 14,
+              horizontal: 12,
+            ),
+          ),
+          onSubmitted: (_) => _onBarcodeSubmit(allStock),
+        );
+
+        final field1 = DropdownSearch<BranchStockModel>(
+          items: (f, _) => _filterStock(allStock, f),
+          selectedItem: _selectedStock,
+          itemAsString: (s) {
+            final variant = _variantLine(s);
+            final name = s.productName ?? s.productId;
+            return variant.isEmpty ? name : '$name — $variant';
+          },
+          compareFn: (a, b) =>
+              a.productId == b.productId &&
+              a.sizeId == b.sizeId &&
+              a.colorId == b.colorId &&
+              a.categoryId == b.categoryId &&
+              a.typeId == b.typeId,
+          onSelected: (s) => setState(() {
+            _selectedStock = s;
+            _barcodeCtrl.clear();
+            _barcodeNotFound = false;
+          }),
+          decoratorProps: DropDownDecoratorProps(
+            decoration: _dropDecor('Article'),
+          ),
+          popupProps: PopupProps.menu(
+            fit: FlexFit.loose,
+            showSearchBox: true,
+            constraints: const BoxConstraints(maxHeight: 320),
+            searchFieldProps: const TextFieldProps(
+              decoration: InputDecoration(
+                hintText: 'Search article, color, size, category...',
+                prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
+                isDense: true,
+              ),
+            ),
+            itemBuilder: (context, s, isSelected, isFocused) {
+              final variant = _variantLine(s);
+              return ListTile(
+                dense: true,
+                selected: isSelected,
+                title: Text(
+                  s.productName ?? s.productId,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                subtitle: Text(
+                  variant.isEmpty
+                      ? 'Barcode: ${s.barcode}'
+                      : '$variant  •  Barcode: ${s.barcode}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+                trailing: Text(
+                  'Qty ${s.quantity}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: s.quantity > 0 ? Colors.green.shade700 : Colors.red,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+
+        final info0 = _InfoBox(
+          label: 'Current Stock',
+          value: stock != null ? '$currentQty' : null,
+          valueColor: Colors.grey.shade700,
+        );
+
+        final qtyField = _QtyStepperInput(
+          controller: _qtyCtrl,
+          enabled: stock != null,
+          primaryColor: primary,
+          onSubmit: (_) => _addToCart(),
+        );
+
+        final btn0 = SizedBox(
+          height: 48,
+          child: FilledButton.icon(
+            icon: const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
+            label: const Text('Add to Return'),
+            style: FilledButton.styleFrom(
+              backgroundColor: primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
+            ),
+            onPressed: stock != null ? _addToCart : null,
+          ),
+        );
+
         return Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: EdgeInsets.fromLTRB(
+            isMobile ? 12 : 16,
+            8,
+            isMobile ? 12 : 16,
+            8,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200),
           ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                flex: 3,
-                child: TextField(
-                  controller: _barcodeCtrl,
-                  focusNode: _barcodeFocus,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Bar Code',
-                    hintText: 'Scan barcode...',
-                    prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 18),
-                    errorText: _barcodeNotFound ? 'Not found' : null,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    field0,
+                    const SizedBox(height: 10),
+                    field1,
+                    const SizedBox(height: 10),
+                    info0,
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        qtyField,
+                        const SizedBox(width: 10),
+                        Expanded(child: btn0),
+                      ],
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-                  ),
-                  onSubmitted: (_) => _onBarcodeSubmit(allStock),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(flex: 3, child: field0),
+                    const SizedBox(width: 10),
+                    Expanded(flex: 5, child: field1),
+                    const SizedBox(width: 10),
+                    Expanded(flex: 2, child: info0),
+                    const SizedBox(width: 10),
+                    qtyField,
+                    const SizedBox(width: 10),
+                    btn0,
+                  ],
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 5,
-                child: DropdownSearch<BranchStockModel>(
-                  items: (f, _) => _filterStock(allStock, f),
-                  selectedItem: _selectedStock,
-                  itemAsString: (s) {
-                    final variant = _variantLine(s);
-                    final name = s.productName ?? s.productId;
-                    return variant.isEmpty ? name : '$name — $variant';
-                  },
-                  compareFn: (a, b) =>
-                      a.productId == b.productId &&
-                      a.sizeId == b.sizeId &&
-                      a.colorId == b.colorId &&
-                      a.categoryId == b.categoryId &&
-                      a.typeId == b.typeId,
-                  onSelected: (s) => setState(() {
-                    _selectedStock = s;
-                    _barcodeCtrl.clear();
-                    _barcodeNotFound = false;
-                  }),
-                  decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Article')),
-                  popupProps: PopupProps.menu(
-                    fit: FlexFit.loose,
-                    showSearchBox: true,
-                    constraints: const BoxConstraints(maxHeight: 320),
-                    searchFieldProps: const TextFieldProps(
-                      decoration: InputDecoration(
-                        hintText: 'Search article, color, size, category...',
-                        prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
-                        isDense: true,
-                      ),
-                    ),
-                    itemBuilder: (context, s, isSelected, isFocused) {
-                      final variant = _variantLine(s);
-                      return ListTile(
-                        dense: true,
-                        selected: isSelected,
-                        title: Text(s.productName ?? s.productId,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                        subtitle: Text(
-                          variant.isEmpty ? 'Barcode: ${s.barcode}' : '$variant  •  Barcode: ${s.barcode}',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                        ),
-                        trailing: Text('Qty ${s.quantity}',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: s.quantity > 0 ? Colors.green.shade700 : Colors.red)),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: _InfoBox(
-                  label: 'Current Stock',
-                  value: stock != null ? '$currentQty' : null,
-                  valueColor: Colors.grey.shade700,
-                ),
-              ),
-              const SizedBox(width: 10),
-              _QtyStepperInput(
-                controller: _qtyCtrl,
-                enabled: stock != null,
-                primaryColor: primary,
-                onSubmit: (_) => _addToCart(),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                height: 48,
-                child: FilledButton.icon(
-                  icon: const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
-                  label: const Text('Add to Return'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 0),
-                  ),
-                  onPressed: stock != null ? _addToCart : null,
-                ),
-              ),
-            ],
-          ),
         );
       },
     );
@@ -250,7 +300,9 @@ class _SaleReturnProductSelectorState
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: enabled ? Colors.grey.shade300 : Colors.grey.shade200),
+        borderSide: BorderSide(
+          color: enabled ? Colors.grey.shade300 : Colors.grey.shade200,
+        ),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -277,7 +329,10 @@ class _InfoBox extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
         const SizedBox(height: 4),
         Container(
           width: double.infinity,
@@ -291,8 +346,12 @@ class _InfoBox extends StatelessWidget {
             isEmpty ? '—' : value!,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: (!isEmpty && valueColor != null) ? FontWeight.w600 : FontWeight.normal,
-              color: isEmpty ? Colors.grey.shade400 : (valueColor ?? Colors.black87),
+              fontWeight: (!isEmpty && valueColor != null)
+                  ? FontWeight.w600
+                  : FontWeight.normal,
+              color: isEmpty
+                  ? Colors.grey.shade400
+                  : (valueColor ?? Colors.black87),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -321,7 +380,10 @@ class _QtyStepperInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Quantity', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text(
+          'Quantity',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
         const SizedBox(height: 4),
         SizedBox(
           width: 64,
@@ -341,10 +403,14 @@ class _QtyStepperInput extends StatelessWidget {
               isDense: true,
               filled: !enabled,
               fillColor: Colors.grey.shade50,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: primaryColor.withOpacity(0.5)),
+                borderSide: BorderSide(
+                  color: primaryColor.withValues(alpha: 0.5),
+                ),
               ),
               disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),

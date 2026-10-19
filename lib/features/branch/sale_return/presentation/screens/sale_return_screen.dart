@@ -1,5 +1,8 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/widget/invoice_page_body.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/adaptive_row.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/service/print/print_service.dart';
@@ -24,19 +27,30 @@ class SaleReturnScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isMobile = Responsive(context).isMobile;
     final state = ref.watch(saleReturnProvider);
     const accent = Colors.red;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (state.originalInvoice != null) ...[
+    final bodyContent = state.originalInvoice != null
+        ? (state.originalInvoiceLoading
+            ? const Center(child: CircularProgressIndicator())
+            : const SaleReturnItemsPicker())
+        : Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: const SaleReturnCartTable(),
+          );
+
+    return InvoicePageBody(
+      top: [
+if (state.originalInvoice != null) ...[
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: accent.withOpacity(0.1),
+                color: accent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text('Against ${state.originalInvoice!.invoiceNumber}',
@@ -44,18 +58,61 @@ class SaleReturnScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
           ],
-
-          // ── Return header card ──────────────────────────────────────────
-          Container(
+Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Row(
-              children: [
-                Column(
+            child: isMobile
+ ? Column(
+ crossAxisAlignment: CrossAxisAlignment.stretch,
+ children: [
+ Row(children: [Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Return Number :',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        state.numberLoading
+                            ? const SizedBox(width: 80, child: LinearProgressIndicator(minHeight: 2))
+                            : Text(
+                                state.returnNumber.isEmpty ? '...' : state.returnNumber,
+                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: accent),
+                              ),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(4),
+                          onTap: () => ref.read(saleReturnProvider.notifier).resetReturn(),
+                          child: const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                        ),
+                      ],
+                    ),
+                  ],
+                ), const Spacer(), Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Date', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                    const SizedBox(height: 4),
+                    Text(_formatDate(DateTime.now()),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  ],
+                )]),
+ const SizedBox(height: 12),
+ _RefundTypeToggle(
+ stretch: isMobile,
+                  value: state.paymentType,
+                  onChanged: (t) => ref.read(saleReturnProvider.notifier).selectPaymentType(t),
+                ),
+ ],
+ )
+ : Row(
+ children: [
+ Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -80,16 +137,14 @@ class SaleReturnScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                const SizedBox(width: 20),
-
-                // Refund type toggle
-                _RefundTypeToggle(
+ const SizedBox(width: 20),
+ _RefundTypeToggle(
+ stretch: isMobile,
                   value: state.paymentType,
                   onChanged: (t) => ref.read(saleReturnProvider.notifier).selectPaymentType(t),
                 ),
-                const Spacer(),
-
-                Column(
+ const Spacer(),
+ Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text('Date', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
@@ -98,44 +153,22 @@ class SaleReturnScreen extends ConsumerWidget {
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   ],
                 ),
-              ],
-            ),
+ ],
+ ),
           ),
-
+const SizedBox(height: 8),
+const _ReturnMetaRow(),
+const SizedBox(height: 8),
+        if (state.originalInvoice == null) ...[
+          const SaleReturnProductSelector(),
           const SizedBox(height: 8),
-
-          // ── Printer / Bank / Cash amount ─────────────────────────────
-          const _ReturnMetaRow(),
-
-          const SizedBox(height: 8),
-
-          if (state.originalInvoice != null) ...[
-            if (state.originalInvoiceLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-              const Expanded(child: SaleReturnItemsPicker()),
-          ] else ...[
-            const SaleReturnProductSelector(),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: const SaleReturnCartTable(),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 12),
-          const _ReturnFooter(),
         ],
-      ),
+      ],
+      cart: bodyContent,
+      bottom: [
+const SizedBox(height: 12),
+const _ReturnFooter(),
+      ],
     );
   }
 
@@ -148,7 +181,11 @@ class SaleReturnScreen extends ConsumerWidget {
 class _RefundTypeToggle extends StatelessWidget {
   final String value;
   final void Function(String) onChanged;
-  const _RefundTypeToggle({required this.value, required this.onChanged});
+
+  /// Mobile: fill the row width, segments share it equally.
+  final bool stretch;
+  const _RefundTypeToggle(
+      {required this.value, required this.onChanged, this.stretch = false});
 
   @override
   Widget build(BuildContext context) {
@@ -158,7 +195,7 @@ class _RefundTypeToggle extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade300),
       ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
+      child: Row(mainAxisSize: stretch ? MainAxisSize.max : MainAxisSize.min, children: [
         _seg('Cash', 'cash', AppIcons.paymentsOutlined, accent),
         _seg('Card', 'card', AppIcons.creditCardOutlined, accent),
         _seg('Cash + Card', 'cash_card', AppIcons.syncAlt, accent),
@@ -168,25 +205,35 @@ class _RefundTypeToggle extends StatelessWidget {
 
   Widget _seg(String label, String type, String icon, Color accent) {
     final selected = value == type;
-    return InkWell(
+    final seg = InkWell(
       onTap: () => onChanged(type),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(horizontal: stretch ? 6 : 16, vertical: 12),
         decoration: BoxDecoration(
           color: selected ? accent : Colors.transparent,
           borderRadius: BorderRadius.circular(7),
         ),
-        child: Row(children: [
+        child: Row(
+            mainAxisAlignment:
+                stretch ? MainAxisAlignment.center : MainAxisAlignment.start,
+            children: [
           AppIcon(icon, size: 16, color: selected ? Colors.white : Colors.grey.shade600),
           const SizedBox(width: 6),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: selected ? Colors.white : Colors.grey.shade700)),
+          stretch ? Flexible(child: Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: stretch ? 12 : 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : Colors.grey.shade700))) : Text(label,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: stretch ? 12 : 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : Colors.grey.shade700)),
         ]),
       ),
     );
+    return stretch ? Expanded(child: seg) : seg;
   }
 }
 
@@ -210,6 +257,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = Responsive(context).isMobile;
     final state = ref.watch(saleReturnProvider);
     final notifier = ref.read(saleReturnProvider.notifier);
     final invoicesAsync = ref.watch(returnInvoiceOptionsProvider);
@@ -225,9 +273,9 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+      child: adaptiveFieldRow(
+ isMobile,
+ [
           Expanded(
             flex: 3,
             child: invoicesAsync.isLoading
@@ -354,7 +402,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
             ),
           ],
         ],
-      ),
+ ),
     );
   }
 
@@ -384,6 +432,7 @@ class _ReturnFooter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isMobile = Responsive(context).isMobile;
     final state = ref.watch(saleReturnProvider);
     const accent = Colors.red;
 
@@ -394,7 +443,71 @@ class _ReturnFooter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
+      child: isMobile
+ ? Column(
+ crossAxisAlignment: CrossAxisAlignment.stretch,
+ children: [
+Wrap(
+ spacing: 24,
+ runSpacing: 10,
+ crossAxisAlignment: WrapCrossAlignment.end,
+ children: [_stat('Sub Total', state.subtotal.toStringAsFixed(0)), _stat('Discount', '- ${state.totalDiscount.toStringAsFixed(0)}', color: Colors.orange.shade700), Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              const Text('Refund Amount', style: TextStyle(fontSize: 11, color: Colors.grey)),
+              Text(
+                state.totalAmount.toStringAsFixed(0),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: accent),
+              ),
+            ],
+          )],
+ ),
+const SizedBox(height: 12),
+TextField(
+              onChanged: (v) => ref.read(saleReturnProvider.notifier).setNote(v),
+              decoration: InputDecoration(
+                hintText: 'Note (optional)',
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              ),
+            ),
+const SizedBox(height: 12),
+Row(
+ children: [
+ OutlinedButton.icon(
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
+            label: const Text('Clear'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: state.isInvoiceLinked || state.cartItems.isEmpty
+                ? null
+                : () => ref.read(saleReturnProvider.notifier).clearCart(),
+          ),
+ const SizedBox(width: 10),
+ Expanded(child: FilledButton.icon(
+            icon: state.isSaving
+                ? const SizedBox(
+                    width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
+            label: const Text('Sale Return'),
+            style: FilledButton.styleFrom(
+              backgroundColor: accent,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed:
+                state.isSaving || state.totalQuantity == 0 ? null : () => _onSaveTap(context, ref),
+          )),
+ ],
+ ),
+ ],
+ )
+ : Row(
         children: [
           _stat('Sub Total', state.subtotal.toStringAsFixed(0)),
           const SizedBox(width: 28),

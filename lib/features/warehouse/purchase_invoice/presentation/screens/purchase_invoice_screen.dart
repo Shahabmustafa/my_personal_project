@@ -2,8 +2,6 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/purchase_invoice_model.dart';
-import '../../data/models/purchase_return_model.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../providers/purchase_invoice_provider.dart';
 import '../widgets/purchase_cart_table.dart';
@@ -20,14 +18,26 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
     final state = ref.watch(purchaseInvoiceProvider);
     final companiesAsync = ref.watch(purchaseCompaniesProvider);
 
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
+    final cartCard = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: const PurchaseCartTable(),
+    );
+
     return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
+      child: _wrapBody(
+        isMobile: isMobile,
         children: [
-          const Text(
+          Text(
             'Purchase Invoice',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                fontSize: isMobile ? 18 : 22, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 14),
 
@@ -39,138 +49,160 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.grey.shade200),
             ),
-            child: Row(
-              children: [
-                // Invoice Number
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Invoice Number :',
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        state.invoiceLoading
-                            ? const SizedBox(
-                                width: 80,
-                                child: LinearProgressIndicator(minHeight: 2))
-                            : Text(
-                                state.invoiceNumber.isEmpty
-                                    ? '...'
-                                    : state.invoiceNumber,
-                                style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w700,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary),
-                              ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref
-                              .read(purchaseInvoiceProvider.notifier)
-                              .resetInvoice(),
-                          child: const AppIcon(AppIcons.refresh,
-                              size: 17, color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 20),
-
-                // Company dropdown
-                Expanded(
-                  flex: 4,
-                  child: companiesAsync.when(
-                    loading: () => const SizedBox(
-                        height: 48,
-                        child: Center(child: LinearProgressIndicator())),
-                    error: (e, _) => Text('Error: $e',
-                        style: const TextStyle(
-                            color: Colors.red, fontSize: 12)),
-                    data: (companies) => DropdownSearch<StockLookupItem>(
-                      items: (filter, _) => companies
-                          .where((c) => c.label
-                              .toLowerCase()
-                              .contains(filter.toLowerCase()))
-                          .toList(),
-                      selectedItem: state.selectedCompany,
-                      itemAsString: (c) => c.label,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: (c) => ref
-                          .read(purchaseInvoiceProvider.notifier)
-                          .selectCompany(c),
-                      decoratorProps: DropDownDecoratorProps(
-                        decoration: InputDecoration(
-                          labelText: 'Select Company',
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide:
-                                BorderSide(color: Colors.grey.shade300),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 14),
-                        ),
-                      ),
-                      popupProps: PopupProps.menu(
-                        fit: FlexFit.loose,
-                        showSearchBox: true,
-                        constraints: const BoxConstraints(maxHeight: 260),
-                        searchFieldProps: const TextFieldProps(
-                          decoration: InputDecoration(
-                            hintText: 'Search company...',
-                            prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-
-                // Date
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Date',
-                        style: TextStyle(
-                            fontSize: 11, color: Colors.grey.shade500)),
-                    const SizedBox(height: 4),
-                    Text(_formatDate(DateTime.now()),
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w500)),
-                  ],
-                ),
-              ],
+            child: _headerLayout(
+              isMobile: isMobile,
+              invoiceNo: _invoiceNo(context, ref, state),
+              company: _company(ref, state, companiesAsync),
+              date: _date(),
             ),
           ),
 
           const SizedBox(height: 12),
           const PurchaseProductSelector(),
           const SizedBox(height: 12),
-
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const PurchaseCartTable(),
-            ),
-          ),
-
+          if (isMobile)
+            SizedBox(
+                height: (MediaQuery.of(context).size.height * 0.55)
+                    .clamp(320.0, 520.0)
+                    .toDouble(),
+                child: cartCard)
+          else
+            Expanded(child: cartCard),
           const SizedBox(height: 12),
           _InvoiceFooter(),
         ],
       ),
+    );
+  }
+
+  /// Desktop: fixed column, cart fills the leftover height.
+  /// Mobile: whole page scrolls and the cart gets a fixed-height window.
+  Widget _wrapBody({
+    required bool isMobile,
+    required List<Widget> children,
+  }) {
+    if (!isMobile) {
+      return Column(
+          crossAxisAlignment: CrossAxisAlignment.start, children: children);
+    }
+    return ListView(children: children);
+  }
+
+  Widget _headerLayout({
+    required bool isMobile,
+    required Widget invoiceNo,
+    required Widget company,
+    required Widget date,
+  }) {
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [invoiceNo, const Spacer(), date]),
+          const SizedBox(height: 12),
+          company,
+        ],
+      );
+    }
+    return Row(children: [
+      invoiceNo,
+      const SizedBox(width: 20),
+      Expanded(flex: 4, child: company),
+      const SizedBox(width: 16),
+      date,
+    ]);
+  }
+
+  Widget _invoiceNo(
+      BuildContext context, WidgetRef ref, PurchaseInvoiceState state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('Invoice Number :',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            state.invoiceLoading
+                ? const SizedBox(
+                    width: 80, child: LinearProgressIndicator(minHeight: 2))
+                : Text(
+                    state.invoiceNumber.isEmpty ? '...' : state.invoiceNumber,
+                    style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).colorScheme.primary),
+                  ),
+            const SizedBox(width: 8),
+            InkWell(
+              borderRadius: BorderRadius.circular(4),
+              onTap: () =>
+                  ref.read(purchaseInvoiceProvider.notifier).resetInvoice(),
+              child:
+                  const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _company(WidgetRef ref, PurchaseInvoiceState state,
+      AsyncValue<List<StockLookupItem>> companiesAsync) {
+    return companiesAsync.when(
+      loading: () => const SizedBox(
+          height: 48, child: Center(child: LinearProgressIndicator())),
+      error: (e, _) => Text('Error: $e',
+          style: const TextStyle(color: Colors.red, fontSize: 12)),
+      data: (companies) => DropdownSearch<StockLookupItem>(
+        items: (filter, _) => companies
+            .where((c) => c.label.toLowerCase().contains(filter.toLowerCase()))
+            .toList(),
+        selectedItem: state.selectedCompany,
+        itemAsString: (c) => c.label,
+        compareFn: (a, b) => a.id == b.id,
+        onSelected: (c) =>
+            ref.read(purchaseInvoiceProvider.notifier).selectCompany(c),
+        decoratorProps: DropDownDecoratorProps(
+          decoration: InputDecoration(
+            labelText: 'Select Company',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+          ),
+        ),
+        popupProps: PopupProps.menu(
+          fit: FlexFit.loose,
+          showSearchBox: true,
+          constraints: const BoxConstraints(maxHeight: 260),
+          searchFieldProps: const TextFieldProps(
+            decoration: InputDecoration(
+              hintText: 'Search company...',
+              prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
+              isDense: true,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _date() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text('Date',
+            style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        const SizedBox(height: 4),
+        Text(_formatDate(DateTime.now()),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+      ],
     );
   }
 
@@ -195,67 +227,95 @@ class _InvoiceFooter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
+      child: LayoutBuilder(builder: (context, c) {
+        final isMobile = c.maxWidth < 600;
+        final stats = [
           _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-          const SizedBox(width: 28),
-          _stat('Discount',
-              '- ${state.totalDiscount.toStringAsFixed(0)}',
+          _stat('Discount', '- ${state.totalDiscount.toStringAsFixed(0)}',
               color: Colors.orange.shade700),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        ];
+        final net = Column(
+          crossAxisAlignment:
+              isMobile ? CrossAxisAlignment.end : CrossAxisAlignment.end,
+          children: [
+            const Text('Net Amount',
+                style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              state.netAmount.toStringAsFixed(0),
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: theme.colorScheme.primary),
+            ),
+          ],
+        );
+        final clearBtn = OutlinedButton.icon(
+          icon: const AppIcon(AppIcons.clearAll, size: 18),
+          label: const Text('Clear'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.red,
+            side: const BorderSide(color: Colors.red),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: state.cartItems.isEmpty
+              ? null
+              : () => ref.read(purchaseInvoiceProvider.notifier).clearCart(),
+        );
+        final saveBtn = FilledButton.icon(
+          icon: state.isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: Colors.white))
+              : const AppIcon(AppIcons.receiptLong, size: 18),
+          label: const Text('Purchase Invoice'),
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: state.isSaving || state.cartItems.isEmpty
+              ? null
+              : () => _onPurchaseInvoiceTap(context, ref),
+        );
+
+        if (isMobile) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Net Amount',
-                  style: TextStyle(fontSize: 11, color: Colors.grey)),
-              Text(
-                state.netAmount.toStringAsFixed(0),
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: theme.colorScheme.primary),
-              ),
+              Row(children: [
+                stats[0],
+                const SizedBox(width: 20),
+                stats[1],
+                const Spacer(),
+                net,
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                clearBtn,
+                const SizedBox(width: 10),
+                Expanded(child: saveBtn),
+              ]),
             ],
-          ),
-          const SizedBox(width: 20),
-          OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: state.cartItems.isEmpty
-                ? null
-                : () =>
-                    ref.read(purchaseInvoiceProvider.notifier).clearCart(),
-          ),
-          const SizedBox(width: 10),
-          FilledButton.icon(
-            icon: state.isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : const AppIcon(AppIcons.receiptLong, size: 18),
-            label: const Text('Purchase Invoice'),
-            style: FilledButton.styleFrom(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: state.isSaving || state.cartItems.isEmpty
-                ? null
-                : () => _onPurchaseInvoiceTap(context, ref),
-          ),
-        ],
-      ),
+          );
+        }
+        return Row(
+          children: [
+            stats[0],
+            const SizedBox(width: 28),
+            stats[1],
+            const Spacer(),
+            net,
+            const SizedBox(width: 20),
+            clearBtn,
+            const SizedBox(width: 10),
+            saveBtn,
+          ],
+        );
+      }),
     );
   }
 
@@ -645,12 +705,8 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
     required String icon,
     required Widget child,
   }) {
-    return Row(
+    final labelRow = Row(
       children: [
-        SizedBox(
-          width: 140,
-          child: Row(
-            children: [
               AppIcon(icon, size: 15, color: Colors.grey),
               const SizedBox(width: 6),
               Expanded(
@@ -658,13 +714,25 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                     style: const TextStyle(
                         fontSize: 13, color: Colors.grey)),
               ),
-            ],
-          ),
-        ),
-        Expanded(child: child),
       ],
     );
+    // Dialog narrow ho (mobile) to label field ke upar, warna side by side.
+    return LayoutBuilder(builder: (context, c) {
+      if (c.maxWidth < 320) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [labelRow, const SizedBox(height: 6), child],
+        );
+      }
+      return Row(
+        children: [
+          SizedBox(width: 140, child: labelRow),
+          Expanded(child: child),
+        ],
+      );
+    });
   }
+
 
   Widget _readOnlyField(
       {required String value, Color? color, bool bold = false}) {

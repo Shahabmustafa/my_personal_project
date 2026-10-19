@@ -282,24 +282,31 @@ class _MobileList extends ConsumerWidget {
                 Text('${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
-                    _lbl('Stock', '${item.availableStock}',
-                        color: item.availableStock <= 0 ? Colors.red : Colors.grey.shade700),
-                    const Spacer(),
-                    _QtyRowStepper(
+                Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Wrap(
+ spacing: 12,
+ runSpacing: 4,
+ children: [_lbl('S.Price', item.salePrice.toStringAsFixed(0)), _lbl('Stock', '${item.availableStock}',
+                        color: item.availableStock <= 0 ? Colors.red : Colors.grey.shade700)],
+ ),
+ const SizedBox(height: 8),
+ Row(
+ children: [
+ _QtyRowStepper(
                       value: item.quantity,
                       maxValue: item.availableStock,
                       primaryColor: primary,
                       onChanged: (v) => notifier.updateNewItemQuantity(item.branchStockId, v),
                     ),
-                    const SizedBox(width: 10),
-                    Text(item.lineTotal.toStringAsFixed(0),
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: primary)),
-                  ],
-                ),
+ const Spacer(),
+ Text(item.lineTotal.toStringAsFixed(0),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: primary))
+ ],
+ ),
+ ],
+ ),
               ],
             ),
           ),

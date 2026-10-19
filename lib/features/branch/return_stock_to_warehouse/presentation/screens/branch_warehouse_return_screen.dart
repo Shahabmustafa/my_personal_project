@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/widget/invoice_page_body.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/min_width_scroll.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../superadmin/report/presentation/widgets/report_detail_panel.dart';
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
@@ -11,6 +15,7 @@ import '../widgets/branch_warehouse_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+
 const _primary = Color(0xFF1565C0);
 
 String _fmtAmt(double v) =>
@@ -71,63 +76,130 @@ class _BranchWarehouseReturnScreenState
   Widget build(BuildContext context) {
     final returnsAsync = ref.watch(sentWarehouseReturnsProvider);
 
+    final isMobile = Responsive(context).isMobile;
+
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Column(
+          isMobile
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Return Stock to Admin',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Return Stock to Admin',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Stock returns sent from this branch back to Admin (Head Office)',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            icon: const AppIcon(
+                              AppIcons.add,
+                              color: Colors.white,
+                            ),
+                            label: const Text('New Return'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _primary,
+                            ),
+                            onPressed: () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => Scaffold(
+                                    appBar: AppBar(
+                                      title: const Text('New Return to Admin'),
+                                    ),
+                                    body: const _NewReturnForm(),
+                                  ),
+                                ),
+                              );
+                              if (context.mounted) {
+                                ref.invalidate(sentWarehouseReturnsProvider);
+                              }
+                            },
+                          ),
+                        ),
+                        Tooltip(
+                          message: 'Refresh',
+                          child: IconButton(
+                            onPressed: () =>
+                                ref.invalidate(sentWarehouseReturnsProvider),
+                            icon: const AppIcon(AppIcons.refresh, size: 18),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Return Stock to Admin',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Stock returns sent from this branch back to Admin (Head Office)',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Stock returns sent from this branch back to Admin (Head Office)',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    Tooltip(
+                      message: 'Refresh',
+                      child: IconButton(
+                        onPressed: () =>
+                            ref.invalidate(sentWarehouseReturnsProvider),
+                        icon: const AppIcon(AppIcons.refresh, size: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      icon: const AppIcon(AppIcons.add, color: Colors.white),
+                      label: const Text('New Return'),
+                      style: FilledButton.styleFrom(backgroundColor: _primary),
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => Scaffold(
+                              appBar: AppBar(
+                                title: const Text('New Return to Admin'),
+                              ),
+                              body: const _NewReturnForm(),
+                            ),
+                          ),
+                        );
+                        if (context.mounted) {
+                          ref.invalidate(sentWarehouseReturnsProvider);
+                        }
+                      },
                     ),
                   ],
                 ),
-              ),
-              Tooltip(
-                message: 'Refresh',
-                child: IconButton(
-                  onPressed: () => ref.invalidate(sentWarehouseReturnsProvider),
-                  icon: const AppIcon(AppIcons.refresh, size: 18),
-                ),
-              ),
-              const SizedBox(width: 8),
-              FilledButton.icon(
-                icon: const AppIcon(AppIcons.add, color: Colors.white),
-                label: const Text('New Return'),
-                style: FilledButton.styleFrom(backgroundColor: _primary),
-                onPressed: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => Scaffold(
-                        appBar: AppBar(
-                          title: const Text('New Return to Admin'),
-                        ),
-                        body: const _NewReturnForm(),
-                      ),
-                    ),
-                  );
-                  if (context.mounted) {
-                    ref.invalidate(sentWarehouseReturnsProvider);
-                  }
-                },
-              ),
-            ],
-          ),
           const SizedBox(height: 16),
           returnsAsync.when(
             loading: () => const SizedBox.shrink(),
@@ -138,8 +210,10 @@ class _BranchWarehouseReturnScreenState
                 return t.status == _filterStatus;
               }).toList();
               final filteredItems = filtered.expand((t) => t.items);
-              final totalQuantity =
-                  filteredItems.fold<int>(0, (s, i) => s + i.quantity);
+              final totalQuantity = filteredItems.fold<int>(
+                0,
+                (s, i) => s + i.quantity,
+              );
               final totalValue = filteredItems.fold<double>(
                 0,
                 (s, i) => s + (i.salePrice * i.quantity),
@@ -149,61 +223,56 @@ class _BranchWarehouseReturnScreenState
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Summary cards ────────────────────────────────────
-                  Row(
+                  ReportSummaryCards(
                     children: [
-                      Expanded(
-                        child: ReportSummaryCard(
-                          label: 'Total Returns',
-                          value: '${filtered.length}',
-                          icon: AppIcons.assignmentReturnOutlined,
-                          color: _primary,
-                        ),
+                      ReportSummaryCard(
+                        label: 'Total Returns',
+                        value: '${filtered.length}',
+                        icon: AppIcons.assignmentReturnOutlined,
+                        color: _primary,
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: ReportSummaryCard(
-                          label: 'Total Quantity',
-                          value: '$totalQuantity',
-                          icon: AppIcons.inventory2Outlined,
-                          color: const Color(0xFFE56A00),
-                        ),
+                      ReportSummaryCard(
+                        label: 'Total Quantity',
+                        value: '$totalQuantity',
+                        icon: AppIcons.inventory2Outlined,
+                        color: const Color(0xFFE56A00),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: ReportSummaryCard(
-                          label: 'Total Value',
-                          value: 'Rs. ${_fmtAmt(totalValue)}',
-                          icon: AppIcons.sellOutlined,
-                          color: const Color(0xFF22A06B),
-                        ),
+                      ReportSummaryCard(
+                        label: 'Total Value',
+                        value: 'Rs. ${_fmtAmt(totalValue)}',
+                        icon: AppIcons.sellOutlined,
+                        color: const Color(0xFF22A06B),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // ── Status filter chips ──────────────────────────────
-                  Row(
-                    children: [
-                      _chip('All', 'all', returns.length),
-                      const SizedBox(width: 8),
-                      _chip(
-                        'Pending',
-                        'pending',
-                        returns.where((t) => t.status == 'pending').length,
-                      ),
-                      const SizedBox(width: 8),
-                      _chip(
-                        'Accepted',
-                        'accepted',
-                        returns.where((t) => t.status == 'accepted').length,
-                      ),
-                      const SizedBox(width: 8),
-                      _chip(
-                        'Rejected',
-                        'rejected',
-                        returns.where((t) => t.status == 'rejected').length,
-                      ),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _chip('All', 'all', returns.length),
+                        const SizedBox(width: 8),
+                        _chip(
+                          'Pending',
+                          'pending',
+                          returns.where((t) => t.status == 'pending').length,
+                        ),
+                        const SizedBox(width: 8),
+                        _chip(
+                          'Accepted',
+                          'accepted',
+                          returns.where((t) => t.status == 'accepted').length,
+                        ),
+                        const SizedBox(width: 8),
+                        _chip(
+                          'Rejected',
+                          'rejected',
+                          returns.where((t) => t.status == 'rejected').length,
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
@@ -213,10 +282,9 @@ class _BranchWarehouseReturnScreenState
 
           // ── Table + detail panel ───────────────────────────────────────
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: [
-                Expanded(
+                Positioned.fill(
                   child: returnsAsync.when(
                     loading: () => const Center(
                       child: CircularProgressIndicator(strokeWidth: 2),
@@ -274,7 +342,7 @@ class _BranchWarehouseReturnScreenState
                   ),
                 ),
                 if (_selected != null)
-                  ReportDetailPanel(
+                  ReportDetailOverlay(
                     title: _selected!.returnNumber,
                     subtitle:
                         '${_selected!.destinationLabel} · ${_fmtDate(_selected!.returnedAt)}',
@@ -334,8 +402,11 @@ class _BranchWarehouseReturnScreenState
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(chipIcon,
-                size: 15, color: isSelected ? Colors.white : chipColor),
+            AppIcon(
+              chipIcon,
+              size: 15,
+              color: isSelected ? Colors.white : chipColor,
+            ),
             const SizedBox(width: 6),
             Text(
               '$label ($count)',
@@ -393,47 +464,52 @@ class _ReturnTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          children: [
-            Container(
-              color: const Color(0xFFF7F8FC),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                children: [
-                  for (var c = 0; c < _colLabels.length; c++)
-                    Expanded(
-                      flex: _colFlex[c],
-                      child: Text(
-                        _colLabels[c],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF5A5F73),
-                          letterSpacing: 0.3,
+    return MinWidthScroll(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7E9F0)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            children: [
+              Container(
+                color: const Color(0xFFF7F8FC),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    for (var c = 0; c < _colLabels.length; c++)
+                      Expanded(
+                        flex: _colFlex[c],
+                        child: Text(
+                          _colLabels[c],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF5A5F73),
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1, color: Color(0xFFEEF0F6)),
-            Expanded(
-              child: ListView.separated(
-                itemCount: rows.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, color: Color(0xFFEEF0F6)),
-                itemBuilder: (context, i) => _row(rows[i], i),
+              const Divider(height: 1, color: Color(0xFFEEF0F6)),
+              Expanded(
+                child: ListView.separated(
+                  itemCount: rows.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFEEF0F6)),
+                  itemBuilder: (context, i) => _row(rows[i], i),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -453,8 +529,10 @@ class _ReturnTable extends StatelessWidget {
           children: [
             Expanded(
               flex: _colFlex[0],
-              child: Text('${index + 1}',
-                  style: const TextStyle(color: Color(0xFF8A8FA3))),
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(color: Color(0xFF8A8FA3)),
+              ),
             ),
             Expanded(
               flex: _colFlex[1],
@@ -472,8 +550,11 @@ class _ReturnTable extends StatelessWidget {
               flex: _colFlex[2],
               child: Row(
                 children: [
-                  const AppIcon(AppIcons.businessOutlined,
-                      size: 14, color: Color(0xFF8A8FA3)),
+                  const AppIcon(
+                    AppIcons.businessOutlined,
+                    size: 14,
+                    color: Color(0xFF8A8FA3),
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -512,8 +593,11 @@ class _ReturnTable extends StatelessWidget {
                   borderRadius: BorderRadius.circular(6),
                   child: const Padding(
                     padding: EdgeInsets.all(5),
-                    child: AppIcon(AppIcons.visibilityOutlined,
-                        size: 19, color: _primary),
+                    child: AppIcon(
+                      AppIcons.visibilityOutlined,
+                      size: 19,
+                      color: _primary,
+                    ),
                   ),
                 ),
               ),
@@ -540,8 +624,10 @@ class _ReturnDetailBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = detail?.items ?? const [];
     final totalQty = items.fold<int>(0, (s, i) => s + i.quantity);
-    final totalValue =
-        items.fold<double>(0, (s, i) => s + (i.salePrice * i.quantity));
+    final totalValue = items.fold<double>(
+      0,
+      (s, i) => s + (i.salePrice * i.quantity),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -565,8 +651,10 @@ class _ReturnDetailBody extends StatelessWidget {
         else if (detail == null)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Text('Could not load items.',
-                style: TextStyle(color: Color(0xFF8A8FA3))),
+            child: Text(
+              'Could not load items.',
+              style: TextStyle(color: Color(0xFF8A8FA3)),
+            ),
           )
         else ...[
           DetailSectionLabel('ITEMS (${items.length})'),
@@ -599,144 +687,253 @@ class _NewReturnForm extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isMobile = Responsive(context).isMobile;
     final state = ref.watch(branchWarehouseReturnProvider);
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              children: [
-                Column(
+    return InvoicePageBody(
+      top: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: isMobile
+              ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Return No :',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
                     Row(
                       children: [
-                        state.numberLoading
-                            ? const SizedBox(
-                                width: 100,
-                                child: LinearProgressIndicator(minHeight: 2),
-                              )
-                            : Text(
-                                state.returnNumber.isEmpty
-                                    ? '...'
-                                    : state.returnNumber,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Return No :',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                state.numberLoading
+                                    ? const SizedBox(
+                                        width: 100,
+                                        child: LinearProgressIndicator(
+                                          minHeight: 2,
+                                        ),
+                                      )
+                                    : Text(
+                                        state.returnNumber.isEmpty
+                                            ? '...'
+                                            : state.returnNumber,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700,
+                                          color: _primary,
+                                        ),
+                                      ),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(4),
+                                  onTap: () => ref
+                                      .read(
+                                        branchWarehouseReturnProvider.notifier,
+                                      )
+                                      .resetReturn(),
+                                  child: const AppIcon(
+                                    AppIcons.refresh,
+                                    size: 17,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Date',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _formatDate(DateTime.now()),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Return To',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const AppIcon(
+                              AppIcons.businessOutlined,
+                              size: 16,
+                              color: _primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              state.destinationHeadOffice?.headOfficeName ??
+                                  'Admin (Head Office)',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Return No :',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            state.numberLoading
+                                ? const SizedBox(
+                                    width: 100,
+                                    child: LinearProgressIndicator(
+                                      minHeight: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    state.returnNumber.isEmpty
+                                        ? '...'
+                                        : state.returnNumber,
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w700,
+                                      color: _primary,
+                                    ),
+                                  ),
+                            const SizedBox(width: 8),
+                            InkWell(
+                              borderRadius: BorderRadius.circular(4),
+                              onTap: () => ref
+                                  .read(branchWarehouseReturnProvider.notifier)
+                                  .resetReturn(),
+                              child: const AppIcon(
+                                AppIcons.refresh,
+                                size: 17,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Return To',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade500,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const AppIcon(
+                                AppIcons.businessOutlined,
+                                size: 16,
+                                color: _primary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                state.destinationHeadOffice?.headOfficeName ??
+                                    'Admin (Head Office)',
                                 style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: _primary,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref
-                              .read(branchWarehouseReturnProvider.notifier)
-                              .resetReturn(),
-                          child: const AppIcon(
-                            AppIcons.refresh,
-                            size: 17,
-                            color: Colors.red,
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Date',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _formatDate(DateTime.now()),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Return To',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const AppIcon(
-                            AppIcons.businessOutlined,
-                            size: 16,
-                            color: _primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            state.destinationHeadOffice?.headOfficeName ??
-                                'Admin (Head Office)',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDate(DateTime.now()),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const BranchWarehouseReturnProductSelector(),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const BranchWarehouseReturnCartTable(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _ReturnFooter(),
-        ],
+        ),
+        const SizedBox(height: 12),
+        const BranchWarehouseReturnProductSelector(),
+        const SizedBox(height: 12),
+      ],
+      cart: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: const BranchWarehouseReturnCartTable(),
       ),
+      bottom: [const SizedBox(height: 12), const _ReturnFooter()],
     );
   }
 
@@ -751,6 +948,7 @@ class _ReturnFooter extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isMobile = Responsive(context).isMobile;
     final state = ref.watch(branchWarehouseReturnProvider);
 
     return Container(
@@ -760,76 +958,169 @@ class _ReturnFooter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Total Pairs',
-                style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${state.totalQuantity}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: _primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 24),
-          if (state.destinationHeadOffice != null)
-            Row(
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const AppIcon(AppIcons.businessOutlined, size: 16, color: _primary),
-                const SizedBox(width: 6),
-                Text(
-                  state.destinationHeadOffice!.headOfficeName,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Total Pairs',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${state.totalQuantity}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: _primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (state.destinationHeadOffice != null)
+                      Row(
+                        children: [
+                          const AppIcon(
+                            AppIcons.businessOutlined,
+                            size: 16,
+                            color: _primary,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            state.destinationHeadOffice!.headOfficeName,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const AppIcon(AppIcons.clearAll, size: 18),
+                      label: const Text('Clear'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: state.cartItems.isEmpty
+                          ? null
+                          : () => ref
+                                .read(branchWarehouseReturnProvider.notifier)
+                                .clearCart(),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: state.isSaving
+                          ? const SizedBox(
+                              width: 180,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            )
+                          : FilledButton.icon(
+                              icon: const AppIcon(
+                                AppIcons.assignmentReturnOutlined,
+                                size: 18,
+                              ),
+                              label: const Text('Send Return'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: _primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              onPressed: state.cartItems.isEmpty
+                                  ? null
+                                  : () => _onSend(context, ref),
+                            ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          const Spacer(),
-          OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: state.cartItems.isEmpty
-                ? null
-                : () => ref
-                      .read(branchWarehouseReturnProvider.notifier)
-                      .clearCart(),
-          ),
-          const SizedBox(width: 12),
-          state.isSaving
-              ? const SizedBox(
-                  width: 180,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Total Pairs',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${state.totalQuantity}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: _primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 24),
+                if (state.destinationHeadOffice != null)
+                  Row(
+                    children: [
+                      const AppIcon(
+                        AppIcons.businessOutlined,
+                        size: 16,
+                        color: _primary,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        state.destinationHeadOffice!.headOfficeName,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                )
-              : FilledButton.icon(
-                  icon: const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
-                  label: const Text('Send Return'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _primary,
+                const Spacer(),
+                OutlinedButton.icon(
+                  icon: const AppIcon(AppIcons.clearAll, size: 18),
+                  label: const Text('Clear'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 14,
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -837,10 +1128,40 @@ class _ReturnFooter extends ConsumerWidget {
                   ),
                   onPressed: state.cartItems.isEmpty
                       ? null
-                      : () => _onSend(context, ref),
+                      : () => ref
+                            .read(branchWarehouseReturnProvider.notifier)
+                            .clearCart(),
                 ),
-        ],
-      ),
+                const SizedBox(width: 12),
+                state.isSaving
+                    ? const SizedBox(
+                        width: 180,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : FilledButton.icon(
+                        icon: const AppIcon(
+                          AppIcons.assignmentReturnOutlined,
+                          size: 18,
+                        ),
+                        label: const Text('Send Return'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: _primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: state.cartItems.isEmpty
+                            ? null
+                            : () => _onSend(context, ref),
+                      ),
+              ],
+            ),
     );
   }
 
@@ -1008,4 +1329,3 @@ class _ConfirmSendDialog extends StatelessWidget {
     ],
   );
 }
-

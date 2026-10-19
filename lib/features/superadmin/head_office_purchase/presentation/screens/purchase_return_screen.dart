@@ -1,8 +1,8 @@
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/widget/invoice_page_body.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/models/purchase_return_model.dart';
 import '../providers/purchase_return_provider.dart';
 import '../widgets/purchase_return_cart_table.dart';
 import '../widgets/purchase_return_product_selector.dart';
@@ -19,13 +19,9 @@ class PurchaseReturnScreen extends ConsumerWidget {
     final invoicesAsync = ref.watch(returnInvoiceNumbersProvider);
     final isMobile = Responsive(context).isMobile;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Title ─────────────────────────────────────────────────────
-          Row(
+    return InvoicePageBody(
+ top: [
+Row(
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -54,10 +50,8 @@ class PurchaseReturnScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-
-          // ── Header card ────────────────────────────────────────────────
-          Container(
+const SizedBox(height: 14),
+Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -201,13 +195,11 @@ class PurchaseReturnScreen extends ConsumerWidget {
               );
             }),
           ),
-
-          const SizedBox(height: 12),
-          const PurchaseReturnProductSelector(),
-          const SizedBox(height: 12),
-
-          Expanded(
-            child: Container(
+const SizedBox(height: 12),
+const PurchaseReturnProductSelector(),
+const SizedBox(height: 12),
+ ],
+ cart: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
@@ -215,13 +207,11 @@ class PurchaseReturnScreen extends ConsumerWidget {
               ),
               child: const PurchaseReturnCartTable(),
             ),
-          ),
-
-          const SizedBox(height: 12),
-          _ReturnFooter(),
-        ],
-      ),
-    );
+ bottom: [
+const SizedBox(height: 12),
+_ReturnFooter(),
+ ],
+ );
   }
 
   String _formatDate(DateTime dt) =>
@@ -355,7 +345,7 @@ class _ReturnFooter extends ConsumerWidget {
     final state = ref.read(purchaseReturnProvider);
     if (state.selectedCompany == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Pehle company select karein — bina company ke return nahi hoga'),
+        content: Text('Select a company first — a return needs a company'),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ));

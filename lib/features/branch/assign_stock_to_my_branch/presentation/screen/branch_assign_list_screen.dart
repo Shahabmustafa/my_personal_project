@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/widget/min_width_scroll.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
@@ -8,6 +10,7 @@ import '../provider/branch_assign_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+
 class BranchAssignListScreen extends ConsumerStatefulWidget {
   const BranchAssignListScreen({super.key});
 
@@ -31,6 +34,16 @@ class _BranchAssignListScreenState
     Future.microtask(
       () => ref.read(branchAssignProvider.notifier).loadAssignments(),
     );
+  }
+
+  /// Accept/Reject ke baad detail side panel band (agar wahi row khuli ho).
+  void _closePanel([String? id]) {
+    if (!mounted) return;
+    if (id != null && _selected?.id != id) return;
+    setState(() {
+      _selected = null;
+      _detail = null;
+    });
   }
 
   Future<void> _openDetail(AssignStockModel a) async {
@@ -131,76 +144,70 @@ class _BranchAssignListScreenState
           const SizedBox(height: 16),
 
           // ── Summary cards ────────────────────────────────────────────
-          Row(
+          ReportSummaryCards(
             children: [
-              Expanded(
-                child: ReportSummaryCard(
-                  label: 'Total Assignments',
-                  value: '${filtered.length}',
-                  icon: AppIcons.moveToInboxOutlined,
-                  color: _primary,
-                ),
+              ReportSummaryCard(
+                label: 'Total Assignments',
+                value: '${filtered.length}',
+                icon: AppIcons.moveToInboxOutlined,
+                color: _primary,
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: ReportSummaryCard(
-                  label: 'Total Quantity',
-                  value: '$totalQuantity',
-                  icon: AppIcons.inventory2Outlined,
-                  color: const Color(0xFFE56A00),
-                ),
+              ReportSummaryCard(
+                label: 'Total Quantity',
+                value: '$totalQuantity',
+                icon: AppIcons.inventory2Outlined,
+                color: const Color(0xFFE56A00),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: ReportSummaryCard(
-                  label: 'Total Sale Price',
-                  value: 'Rs. ${_fmtAmt(totalSalePrice)}',
-                  icon: AppIcons.sellOutlined,
-                  color: const Color(0xFF22A06B),
-                ),
+              ReportSummaryCard(
+                label: 'Total Sale Price',
+                value: 'Rs. ${_fmtAmt(totalSalePrice)}',
+                icon: AppIcons.sellOutlined,
+                color: const Color(0xFF22A06B),
               ),
             ],
           ),
           const SizedBox(height: 16),
 
           // ── Status filter chips ─────────────────────────────────────
-          Row(
-            children: [
-              _chip('All', 'all', listState.assignments.length),
-              const SizedBox(width: 8),
-              _chip(
-                'Pending',
-                'pending',
-                listState.assignments
-                    .where((a) => a.status == 'pending')
-                    .length,
-              ),
-              const SizedBox(width: 8),
-              _chip(
-                'Accepted',
-                'accepted',
-                listState.assignments
-                    .where((a) => a.status == 'accepted')
-                    .length,
-              ),
-              const SizedBox(width: 8),
-              _chip(
-                'Rejected',
-                'rejected',
-                listState.assignments
-                    .where((a) => a.status == 'rejected')
-                    .length,
-              ),
-            ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _chip('All', 'all', listState.assignments.length),
+                const SizedBox(width: 8),
+                _chip(
+                  'Pending',
+                  'pending',
+                  listState.assignments
+                      .where((a) => a.status == 'pending')
+                      .length,
+                ),
+                const SizedBox(width: 8),
+                _chip(
+                  'Accepted',
+                  'accepted',
+                  listState.assignments
+                      .where((a) => a.status == 'accepted')
+                      .length,
+                ),
+                const SizedBox(width: 8),
+                _chip(
+                  'Rejected',
+                  'rejected',
+                  listState.assignments
+                      .where((a) => a.status == 'rejected')
+                      .length,
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
           // ── Table + detail panel ────────────────────────────────────
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: [
-                Expanded(
+                Positioned.fill(
                   child: listState.isLoading
                       ? const Center(child: CircularProgressIndicator())
                       : listState.error != null
@@ -216,10 +223,11 @@ class _BranchAssignListScreenState
                           rows: filtered,
                           selectedId: _selected?.id,
                           onView: _openDetail,
+                          onActionDone: _closePanel,
                         ),
                 ),
                 if (_selected != null)
-                  ReportDetailPanel(
+                  ReportDetailOverlay(
                     title: _selected!.assignmentNumber,
                     subtitle:
                         '${_selected!.sourceLabel} · ${_fmtDate(_selected!.assignedAt)}',
@@ -232,6 +240,7 @@ class _BranchAssignListScreenState
                       brief: _selected!,
                       detail: _detail,
                       loading: _loadingDetail,
+                      onDone: _closePanel,
                     ),
                   ),
               ],
@@ -341,58 +350,65 @@ class _AssignTable extends ConsumerWidget {
   final List<AssignStockModel> rows;
   final String? selectedId;
   final void Function(AssignStockModel) onView;
+  final void Function(String id) onActionDone;
 
   const _AssignTable({
     required this.rows,
     required this.selectedId,
     required this.onView,
+    required this.onActionDone,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE7E9F0)),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              color: const Color(0xFFF7F8FC),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              child: Row(
-                children: [
-                  for (var c = 0; c < _colLabels.length; c++)
-                    Expanded(
-                      flex: _colFlex[c],
-                      child: Text(
-                        _colLabels[c],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF5A5F73),
-                          letterSpacing: 0.3,
+    return MinWidthScroll(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7E9F0)),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                color: const Color(0xFFF7F8FC),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                child: Row(
+                  children: [
+                    for (var c = 0; c < _colLabels.length; c++)
+                      Expanded(
+                        flex: _colFlex[c],
+                        child: Text(
+                          _colLabels[c],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF5A5F73),
+                            letterSpacing: 0.3,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const Divider(height: 1, color: Color(0xFFEEF0F6)),
-            // Body
-            Expanded(
-              child: ListView.separated(
-                itemCount: rows.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, color: Color(0xFFEEF0F6)),
-                itemBuilder: (context, i) => _row(context, ref, rows[i], i),
+              const Divider(height: 1, color: Color(0xFFEEF0F6)),
+              // Body
+              Expanded(
+                child: ListView.separated(
+                  itemCount: rows.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: Color(0xFFEEF0F6)),
+                  itemBuilder: (context, i) => _row(context, ref, rows[i], i),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -483,14 +499,24 @@ class _AssignTable extends ConsumerWidget {
                         icon: AppIcons.checkCircleOutline,
                         tooltip: 'Accept',
                         color: Colors.green.shade600,
-                        onTap: () => _confirmAccept(context, ref, a),
+                        onTap: () => _confirmAccept(
+                          context,
+                          ref,
+                          a,
+                          onDone: () => onActionDone(a.id),
+                        ),
                       ),
                       const SizedBox(width: 4),
                       _ActionIcon(
                         icon: AppIcons.cancelOutlined,
                         tooltip: 'Reject',
                         color: Colors.red.shade600,
-                        onTap: () => _confirmReject(context, ref, a),
+                        onTap: () => _confirmReject(
+                          context,
+                          ref,
+                          a,
+                          onDone: () => onActionDone(a.id),
+                        ),
                       ),
                     ],
                   ],
@@ -583,11 +609,13 @@ class _AssignDetailBody extends ConsumerWidget {
   final AssignStockModel brief;
   final AssignStockModel? detail;
   final bool loading;
+  final VoidCallback onDone;
 
   const _AssignDetailBody({
     required this.brief,
     required this.detail,
     required this.loading,
+    required this.onDone,
   });
 
   @override
@@ -656,7 +684,8 @@ class _AssignDetailBody extends ConsumerWidget {
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
                   ),
-                  onPressed: () => _confirmAccept(context, ref, brief),
+                  onPressed: () =>
+                      _confirmAccept(context, ref, brief, onDone: onDone),
                 ),
               ),
               const SizedBox(width: 10),
@@ -668,7 +697,8 @@ class _AssignDetailBody extends ConsumerWidget {
                     foregroundColor: Colors.red.shade600,
                     side: BorderSide(color: Colors.red.shade300),
                   ),
-                  onPressed: () => _confirmReject(context, ref, brief),
+                  onPressed: () =>
+                      _confirmReject(context, ref, brief, onDone: onDone),
                 ),
               ),
             ],
@@ -695,8 +725,9 @@ Color _statusColor(String status) {
 Future<void> _confirmAccept(
   BuildContext context,
   WidgetRef ref,
-  AssignStockModel a,
-) async {
+  AssignStockModel a, {
+  VoidCallback? onDone,
+}) async {
   final confirm = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
@@ -754,6 +785,8 @@ Future<void> _confirmAccept(
   final error = await ref
       .read(branchAssignProvider.notifier)
       .acceptAssignment(a.id);
+  // Panel pehle band (callback ka apna mounted check hai).
+  if (error == null) onDone?.call();
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
@@ -773,8 +806,9 @@ Future<void> _confirmAccept(
 Future<void> _confirmReject(
   BuildContext context,
   WidgetRef ref,
-  AssignStockModel a,
-) async {
+  AssignStockModel a, {
+  VoidCallback? onDone,
+}) async {
   final confirm = await showDialog<bool>(
     context: context,
     builder: (_) => AlertDialog(
@@ -832,6 +866,8 @@ Future<void> _confirmReject(
   final error = await ref
       .read(branchAssignProvider.notifier)
       .rejectAssignment(a.id);
+  // Panel pehle band (callback ka apna mounted check hai).
+  if (error == null) onDone?.call();
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(

@@ -6,12 +6,16 @@ import '../../../../../core/service/print/print_service.dart';
 import '../../../../superadmin/employee_salary/presentation/providers/employee_salary_providers.dart';
 import '../../../customer/data/model/customer_model.dart';
 import '../../data/model/sale_invoice_model.dart';
+import '../../../../superadmin/discount/data/model/sale_discount_tier_model.dart';
 import '../provider/sale_invoice_provider.dart';
 import '../widgets/sale_cart_table.dart';
 import '../widgets/sale_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/invoice_page_body.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+
 class SaleInvoiceScreen extends ConsumerWidget {
   const SaleInvoiceScreen({super.key});
 
@@ -20,128 +24,122 @@ class SaleInvoiceScreen extends ConsumerWidget {
     final state = ref.watch(saleInvoiceProvider);
     final primary = Theme.of(context).colorScheme.primary;
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Invoice header card ───────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Invoice Number :',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
+    final isMobile = Responsive(context).isMobile;
+
+    final invoiceNo = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Invoice Number :',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            state.invoiceLoading
+                ? const SizedBox(
+                    width: 80,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  )
+                : Text(
+                    state.invoiceNumber.isEmpty ? '...' : state.invoiceNumber,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: primary,
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        state.invoiceLoading
-                            ? const SizedBox(
-                                width: 80,
-                                child: LinearProgressIndicator(minHeight: 2),
-                              )
-                            : Text(
-                                state.invoiceNumber.isEmpty
-                                    ? '...'
-                                    : state.invoiceNumber,
-                                style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: primary,
-                                ),
-                              ),
-                        const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref
-                              .read(saleInvoiceProvider.notifier)
-                              .resetInvoice(),
-                          child: const AppIcon(
-                            AppIcons.refresh,
-                            size: 17,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 20),
-
-                // Payment type toggle
-                _SaleTypeToggle(
-                  value: state.paymentType,
-                  onChanged: (t) => ref
-                      .read(saleInvoiceProvider.notifier)
-                      .selectPaymentType(t),
-                ),
-                const Spacer(),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDate(DateTime.now()),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // ── Manager missing warning ──────────────────────────────────
-          const _ManagerWarningBanner(),
-
-          // ── Customer / Salesman / Printer / Bank ─────────────────────
-          const _InvoiceMetaRow(),
-
-          const SizedBox(height: 8),
-          const SaleProductSelector(),
-          const SizedBox(height: 8),
-
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
+                  ),
+            const SizedBox(width: 8),
+            InkWell(
+              borderRadius: BorderRadius.circular(4),
+              onTap: () =>
+                  ref.read(saleInvoiceProvider.notifier).resetInvoice(),
+              child: const AppIcon(
+                AppIcons.refresh,
+                size: 17,
+                color: Colors.red,
               ),
-              child: const SaleCartTable(),
             ),
-          ),
+          ],
+        ),
+      ],
+    );
 
-          const SizedBox(height: 12),
-          const _InvoiceFooter(),
-        ],
+    final dateBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          'Date',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _formatDate(DateTime.now()),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+
+    final typeToggle = _SaleTypeToggle(
+      value: state.paymentType,
+      stretch: isMobile,
+      onChanged: (t) =>
+          ref.read(saleInvoiceProvider.notifier).selectPaymentType(t),
+    );
+
+    return InvoicePageBody(
+      top: [
+        // ── Invoice header card ───────────────────────────────────────
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(children: [invoiceNo, const Spacer(), dateBlock]),
+                    const SizedBox(height: 12),
+                    typeToggle,
+                  ],
+                )
+              : Row(
+                  children: [
+                    invoiceNo,
+                    const SizedBox(width: 20),
+                    typeToggle,
+                    const Spacer(),
+                    dateBlock,
+                  ],
+                ),
+        ),
+
+        const SizedBox(height: 12),
+
+        // ── Manager missing warning ──────────────────────────────────
+        const _ManagerWarningBanner(),
+
+        // ── Customer / Salesman / Printer / Bank ─────────────────────
+        const _InvoiceMetaRow(),
+
+        const SizedBox(height: 8),
+        const SaleProductSelector(),
+        const SizedBox(height: 8),
+      ],
+      cart: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: const SaleCartTable(),
       ),
+      bottom: const [SizedBox(height: 12), _InvoiceFooter()],
     );
   }
 
@@ -154,7 +152,14 @@ class SaleInvoiceScreen extends ConsumerWidget {
 class _SaleTypeToggle extends StatelessWidget {
   final String value;
   final void Function(String) onChanged;
-  const _SaleTypeToggle({required this.value, required this.onChanged});
+
+  /// Mobile: fill the row width, segments share it equally.
+  final bool stretch;
+  const _SaleTypeToggle({
+    required this.value,
+    required this.onChanged,
+    this.stretch = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +170,7 @@ class _SaleTypeToggle extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: stretch ? MainAxisSize.max : MainAxisSize.min,
         children: [
           _seg('Cash', 'cash', AppIcons.paymentsOutlined, primary),
           _seg('Card', 'card', AppIcons.creditCardOutlined, primary),
@@ -177,15 +182,21 @@ class _SaleTypeToggle extends StatelessWidget {
 
   Widget _seg(String label, String type, String icon, Color primary) {
     final selected = value == type;
-    return InkWell(
+    final seg = InkWell(
       onTap: () => onChanged(type),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: EdgeInsets.symmetric(
+          horizontal: stretch ? 6 : 16,
+          vertical: 12,
+        ),
         decoration: BoxDecoration(
           color: selected ? primary : Colors.transparent,
           borderRadius: BorderRadius.circular(7),
         ),
         child: Row(
+          mainAxisAlignment: stretch
+              ? MainAxisAlignment.center
+              : MainAxisAlignment.start,
           children: [
             AppIcon(
               icon,
@@ -193,18 +204,32 @@ class _SaleTypeToggle extends StatelessWidget {
               color: selected ? Colors.white : Colors.grey.shade600,
             ),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : Colors.grey.shade700,
-              ),
-            ),
+            stretch
+                ? Flexible(
+                    child: Text(
+                      label,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: stretch ? 12 : 13,
+                        fontWeight: FontWeight.w600,
+                        color: selected ? Colors.white : Colors.grey.shade700,
+                      ),
+                    ),
+                  )
+                : Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: stretch ? 12 : 13,
+                      fontWeight: FontWeight.w600,
+                      color: selected ? Colors.white : Colors.grey.shade700,
+                    ),
+                  ),
           ],
         ),
       ),
     );
+    return stretch ? Expanded(child: seg) : seg;
   }
 }
 
@@ -237,6 +262,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
     final salesmenAsync = ref.watch(salesmenProvider);
     final printersAsync = ref.watch(printersForSaleProvider);
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
+    final isMobile = Responsive(context).isMobile;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -248,72 +274,104 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
       child: Column(
         children: [
           // ── Row 1: Customer / Salesman / Printer ─────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          _adaptiveRow(isMobile, [
+            Expanded(
+              child: customersAsync.when(
+                loading: () => const _FieldLoading(),
+                error: (e, _) => Text(
+                  'Error: $e',
+                  style: const TextStyle(fontSize: 11, color: Colors.red),
+                ),
+                data: (list) {
+                  final active = list.where((c) => c.isActive).toList();
+                  return DropdownSearch<CustomerModel>(
+                    items: (f, _) => active
+                        .where(
+                          (c) => c.name.toLowerCase().contains(f.toLowerCase()),
+                        )
+                        .toList(),
+                    selectedItem: state.customer,
+                    itemAsString: (c) => c.name,
+                    compareFn: (a, b) => a.id == b.id,
+                    onSelected: notifier.selectCustomer,
+                    decoratorProps: DropDownDecoratorProps(
+                      decoration: _decor('Customer', required: true),
+                    ),
+                    popupProps: const PopupProps.menu(
+                      fit: FlexFit.loose,
+                      showSearchBox: true,
+                      constraints: BoxConstraints(maxHeight: 260),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _empDropdown(
+                label: 'Salesman',
+                required: true,
+                async: salesmenAsync,
+                selected: state.salesman,
+                onSelected: notifier.selectSalesman,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: printersAsync.when(
+                loading: () => const _FieldLoading(),
+                error: (e, _) => Text(
+                  'Error: $e',
+                  style: const TextStyle(fontSize: 11, color: Colors.red),
+                ),
+                data: (list) => DropdownSearch<PrinterLookupItem>(
+                  items: (f, _) => list
+                      .where(
+                        (e) => e.label.toLowerCase().contains(f.toLowerCase()),
+                      )
+                      .toList(),
+                  selectedItem: state.printer,
+                  itemAsString: (e) => e.label,
+                  compareFn: (a, b) => a.id == b.id,
+                  onSelected: notifier.selectPrinter,
+                  decoratorProps: DropDownDecoratorProps(
+                    decoration: _decor('Printer', required: true),
+                  ),
+                  popupProps: const PopupProps.menu(
+                    fit: FlexFit.loose,
+                    showSearchBox: true,
+                    constraints: BoxConstraints(maxHeight: 260),
+                  ),
+                ),
+              ),
+            ),
+          ]),
+
+          // ── Row 2: Bank / Cash Amount ──────────────────────────────
+          if (state.paymentType == 'card' ||
+              state.paymentType == 'cash_card') ...[
+            const SizedBox(height: 6),
+            _adaptiveRow(isMobile, [
               Expanded(
-                child: customersAsync.when(
+                child: bankAsync.when(
                   loading: () => const _FieldLoading(),
                   error: (e, _) => Text(
                     'Error: $e',
                     style: const TextStyle(fontSize: 11, color: Colors.red),
                   ),
-                  data: (list) {
-                    final active = list.where((c) => c.isActive).toList();
-                    return DropdownSearch<CustomerModel>(
-                      items: (f, _) => active
-                          .where(
-                            (c) =>
-                                c.name.toLowerCase().contains(f.toLowerCase()),
-                          )
-                          .toList(),
-                      selectedItem: state.customer,
-                      itemAsString: (c) => c.name,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: notifier.selectCustomer,
-                      decoratorProps: DropDownDecoratorProps(
-                        decoration: _decor('Customer', required: true),
-                      ),
-                      popupProps: const PopupProps.menu(
-                        fit: FlexFit.loose,
-                        showSearchBox: true,
-                        constraints: BoxConstraints(maxHeight: 260),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _empDropdown(
-                  label: 'Salesman',
-                  required: true,
-                  async: salesmenAsync,
-                  selected: state.salesman,
-                  onSelected: notifier.selectSalesman,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: printersAsync.when(
-                  loading: () => const _FieldLoading(),
-                  error: (e, _) => Text(
-                    'Error: $e',
-                    style: const TextStyle(fontSize: 11, color: Colors.red),
-                  ),
-                  data: (list) => DropdownSearch<PrinterLookupItem>(
+                  data: (list) => DropdownSearch<BankEntryLookupItem>(
                     items: (f, _) => list
                         .where(
                           (e) =>
                               e.label.toLowerCase().contains(f.toLowerCase()),
                         )
                         .toList(),
-                    selectedItem: state.printer,
+                    selectedItem: state.bankEntry,
                     itemAsString: (e) => e.label,
                     compareFn: (a, b) => a.id == b.id,
-                    onSelected: notifier.selectPrinter,
+                    onSelected: notifier.selectBankEntry,
                     decoratorProps: DropDownDecoratorProps(
-                      decoration: _decor('Printer', required: true),
+                      decoration: _decor('Bank Account', required: true),
                     ),
                     popupProps: const PopupProps.menu(
                       fit: FlexFit.loose,
@@ -323,72 +381,52 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                   ),
                 ),
               ),
-            ],
-          ),
-
-          // ── Row 2: Bank / Cash Amount ──────────────────────────────
-          if (state.paymentType == 'card' ||
-              state.paymentType == 'cash_card') ...[
-            const SizedBox(height: 6),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              if (state.paymentType == 'cash_card') ...[
+                const SizedBox(width: 16),
                 Expanded(
-                  child: bankAsync.when(
-                    loading: () => const _FieldLoading(),
-                    error: (e, _) => Text(
-                      'Error: $e',
-                      style: const TextStyle(fontSize: 11, color: Colors.red),
+                  child: TextField(
+                    controller: _cashAmountCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
                     ),
-                    data: (list) => DropdownSearch<BankEntryLookupItem>(
-                      items: (f, _) => list
-                          .where(
-                            (e) =>
-                                e.label.toLowerCase().contains(f.toLowerCase()),
-                          )
-                          .toList(),
-                      selectedItem: state.bankEntry,
-                      itemAsString: (e) => e.label,
-                      compareFn: (a, b) => a.id == b.id,
-                      onSelected: notifier.selectBankEntry,
-                      decoratorProps: DropDownDecoratorProps(
-                        decoration: _decor('Bank Account', required: true),
-                      ),
-                      popupProps: const PopupProps.menu(
-                        fit: FlexFit.loose,
-                        showSearchBox: true,
-                        constraints: BoxConstraints(maxHeight: 260),
-                      ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
+                    ],
+                    onChanged: (v) =>
+                        notifier.setCashAmount(double.tryParse(v.trim()) ?? 0),
+                    decoration: _decor('Cash Amount *').copyWith(
+                      helperText:
+                          'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
+                      helperStyle: const TextStyle(fontSize: 11),
                     ),
                   ),
                 ),
-                if (state.paymentType == 'cash_card') ...[
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: _cashAmountCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                      ],
-                      onChanged: (v) => notifier
-                          .setCashAmount(double.tryParse(v.trim()) ?? 0),
-                      decoration: _decor('Cash Amount *').copyWith(
-                        helperText:
-                            'Card: Rs. ${state.cardAmount.toStringAsFixed(0)}',
-                        helperStyle: const TextStyle(fontSize: 11),
-                      ),
-                    ),
-                  ),
-                ] else
-                  const Spacer(),
-              ],
-            ),
+              ] else
+                const Spacer(),
+            ]),
           ],
         ],
       ),
+    );
+  }
+
+  /// Desktop: fields side by side. Mobile: stacked full width (spacers and
+  /// gaps dropped, each Expanded unwrapped).
+  Widget _adaptiveRow(bool isMobile, List<Widget> items) {
+    if (!isMobile) {
+      return Row(crossAxisAlignment: CrossAxisAlignment.start, children: items);
+    }
+    final fields = [
+      for (final w in items)
+        if (w is Expanded) w.child,
+    ];
+    return Column(
+      children: [
+        for (var i = 0; i < fields.length; i++) ...[
+          if (i > 0) const SizedBox(height: 8),
+          fields[i],
+        ],
+      ],
     );
   }
 
@@ -473,22 +511,112 @@ class _InvoiceFooter extends ConsumerStatefulWidget {
 }
 
 class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
-  final _discountCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _discountCtrl.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(saleInvoiceProvider);
     final theme = Theme.of(context);
-    final maxDiscountPct =
+    final branchPct =
         ref.watch(currentBranchMaxInvoiceDiscountPctProvider).value ?? 0;
+    // Superadmin ne branch ka fixed % badla — cashier ko message dikhao.
+    ref.listen<AsyncValue<double>>(currentBranchMaxInvoiceDiscountPctProvider, (
+      prev,
+      next,
+    ) {
+      final old = prev?.value;
+      final now = next.value;
+      if (old == null || now == null || old == now) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.blueGrey.shade800,
+          content: Text(
+            now > 0
+                ? 'Admin changed this branch\'s invoice discount to ${_fmtPct(now)}% '
+                      '(was ${_fmtPct(old)}%).'
+                : 'Admin removed the extra invoice discount for this branch.',
+          ),
+        ),
+      );
+    });
     // B1G1 lagi invoice par koi aur discount nahi.
-    final allowDiscount = maxDiscountPct > 0 && !state.b1g1Applied;
+    final allowDiscount = branchPct > 0 && !state.b1g1Applied;
+    // Admin ka tier (bulk) discount lag gaya — branch % nahi lagta.
+    final tier = state.matchedDiscountTier;
+    final manualLocked = tier != null;
+
+    final isMobile = Responsive(context).isMobile;
+
+    final noteField = TextField(
+      onChanged: (v) => ref.read(saleInvoiceProvider.notifier).setNote(v),
+      decoration: InputDecoration(
+        hintText: 'Note (optional)',
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+      ),
+    );
+
+    final netBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const Text(
+          'Net Amount',
+          style: TextStyle(fontSize: 11, color: Colors.grey),
+        ),
+        Text(
+          state.totalAmount.toStringAsFixed(0),
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
+    );
+
+    final clearButton = OutlinedButton.icon(
+      icon: const AppIcon(AppIcons.clearAll, size: 18),
+      label: const Text('Clear'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.red,
+        side: const BorderSide(color: Colors.red),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      onPressed: state.cartItems.isEmpty
+          ? null
+          : () => ref.read(saleInvoiceProvider.notifier).clearCart(),
+    );
+
+    final saveButton = Tooltip(
+      message: state.manager == null
+          ? 'Select a manager first (branch manager missing — add under Employees)'
+          : '',
+      child: FilledButton.icon(
+        icon: state.isSaving
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+            : const AppIcon(AppIcons.receiptLong, size: 18),
+        label: const Text('Sale Invoice'),
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        onPressed:
+            state.isSaving || state.cartItems.isEmpty || state.manager == null
+            ? null
+            : () => _onSaveTap(context, ref),
+      ),
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -497,156 +625,155 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
-        children: [
-          _stat('Sub Total', state.subtotal.toStringAsFixed(0)),
-          const SizedBox(width: 28),
-          _stat(
-            'Discount',
-            '- ${state.itemDiscount.toStringAsFixed(0)}',
-            color: Colors.orange.shade700,
-          ),
-          if (state.b1g1Applied) ...[
-            const SizedBox(width: 28),
-            _stat(
-              'Buy 1 Get 1 Free',
-              '- ${state.b1g1Discount.toStringAsFixed(0)}',
-              color: Colors.green.shade700,
-            ),
-          ],
-          if (state.autoDiscount > 0) ...[
-            const SizedBox(width: 28),
-            _stat(
-              'Bulk Discount',
-              '- ${state.autoDiscount.toStringAsFixed(0)}',
-              color: Colors.green.shade700,
-            ),
-          ],
-          if (allowDiscount) ...[
-            const SizedBox(width: 20),
-            SizedBox(
-              width: 150,
-              child: TextField(
-                controller: _discountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
-                ],
-                onChanged: (v) => ref
-                    .read(saleInvoiceProvider.notifier)
-                    .setInvoiceDiscountPct(
-                      double.tryParse(v.trim()) ?? 0,
-                      maxPct: maxDiscountPct,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Wrap(
+                  spacing: 24,
+                  runSpacing: 10,
+                  crossAxisAlignment: WrapCrossAlignment.end,
+                  children: [
+                    _stat('Sub Total', state.subtotal.toStringAsFixed(0)),
+                    _stat(
+                      'Discount',
+                      '- ${state.itemDiscount.toStringAsFixed(0)}',
+                      color: Colors.orange.shade700,
                     ),
-                decoration: InputDecoration(
-                  labelText: 'Extra Discount %',
-                  suffixText: '%',
-                  helperText:
-                      'Max ${_fmtPct(maxDiscountPct)}%  •  - Rs. ${state.invoiceDiscount.toStringAsFixed(0)}',
-                  helperStyle: const TextStyle(fontSize: 10),
-                  isDense: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(width: 28),
-          Expanded(
-            child: TextField(
-              onChanged: (v) =>
-                  ref.read(saleInvoiceProvider.notifier).setNote(v),
-              decoration: InputDecoration(
-                hintText: 'Note (optional)',
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              const Text(
-                'Net Amount',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
-              Text(
-                state.totalAmount.toStringAsFixed(0),
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 20),
-          OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: state.cartItems.isEmpty
-                ? null
-                : () => ref.read(saleInvoiceProvider.notifier).clearCart(),
-          ),
-          const SizedBox(width: 10),
-          Tooltip(
-            message: state.manager == null
-                ? 'Select a manager first (branch manager missing — add under Employees)'
-                : '',
-            child: FilledButton.icon(
-              icon: state.isSaving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
+                    if (state.b1g1Applied) ...[
+                      _stat(
+                        'Buy 1 Get 1 Free',
+                        '- ${state.b1g1Discount.toStringAsFixed(0)}',
+                        color: Colors.green.shade700,
                       ),
-                    )
-                  : const AppIcon(AppIcons.receiptLong, size: 18),
-              label: const Text('Sale Invoice'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                    ],
+                    if (state.autoDiscount > 0) ...[
+                      _stat(
+                        'Bulk Discount (${_tierLabel(tier)})',
+                        '- ${state.autoDiscount.toStringAsFixed(0)}',
+                        color: Colors.green.shade700,
+                      ),
+                    ],
+                    if (allowDiscount) ...[
+                      SizedBox(
+                        width: 150,
+                        // Cashier edit nahi kar sakta — admin ka tay kiya % khud lagta hai.
+                        child: TextFormField(
+                          key: ValueKey(
+                            'branch-disc-${manualLocked ? 0 : branchPct}',
+                          ),
+                          initialValue: manualLocked ? '0' : _fmtPct(branchPct),
+                          enabled: false,
+                          decoration: InputDecoration(
+                            labelText: 'Extra Discount %',
+                            suffixText: '%',
+                            helperText: manualLocked
+                                ? 'Auto discount applied (${_tierLabel(tier)})'
+                                : 'Set by admin  •  - Rs. ${state.invoiceDiscount.toStringAsFixed(0)}',
+                            helperStyle: const TextStyle(fontSize: 10),
+                            isDense: true,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    netBlock,
+                  ],
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 12),
+                noteField,
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [const _HoldButtons(), clearButton],
                 ),
-              ),
-              onPressed:
-                  state.isSaving ||
-                      state.cartItems.isEmpty ||
-                      state.manager == null
-                  ? null
-                  : () => _onSaveTap(context, ref),
+                const SizedBox(height: 10),
+                saveButton,
+              ],
+            )
+          : Row(
+              children: [
+                _stat('Sub Total', state.subtotal.toStringAsFixed(0)),
+                const SizedBox(width: 28),
+                _stat(
+                  'Discount',
+                  '- ${state.itemDiscount.toStringAsFixed(0)}',
+                  color: Colors.orange.shade700,
+                ),
+                if (state.b1g1Applied) ...[
+                  const SizedBox(width: 28),
+                  _stat(
+                    'Buy 1 Get 1 Free',
+                    '- ${state.b1g1Discount.toStringAsFixed(0)}',
+                    color: Colors.green.shade700,
+                  ),
+                ],
+                if (state.autoDiscount > 0) ...[
+                  const SizedBox(width: 28),
+                  _stat(
+                    'Bulk Discount (${_tierLabel(tier)})',
+                    '- ${state.autoDiscount.toStringAsFixed(0)}',
+                    color: Colors.green.shade700,
+                  ),
+                ],
+                if (allowDiscount) ...[
+                  const SizedBox(width: 20),
+                  SizedBox(
+                    width: 150,
+                    // Cashier edit nahi kar sakta — admin ka tay kiya % khud lagta hai.
+                    child: TextFormField(
+                      key: ValueKey(
+                        'branch-disc-${manualLocked ? 0 : branchPct}',
+                      ),
+                      initialValue: manualLocked ? '0' : _fmtPct(branchPct),
+                      enabled: false,
+                      decoration: InputDecoration(
+                        labelText: 'Extra Discount %',
+                        suffixText: '%',
+                        helperText: manualLocked
+                            ? 'Auto discount applied (${_tierLabel(tier)})'
+                            : 'Set by admin  •  - Rs. ${state.invoiceDiscount.toStringAsFixed(0)}',
+                        helperStyle: const TextStyle(fontSize: 10),
+                        isDense: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 28),
+                Expanded(child: noteField),
+                const SizedBox(width: 20),
+                netBlock,
+                const SizedBox(width: 20),
+                const _HoldButtons(),
+                const SizedBox(width: 10),
+                clearButton,
+                const SizedBox(width: 10),
+                saveButton,
+              ],
             ),
-          ),
-        ],
-      ),
     );
+  }
+
+  String _tierLabel(SaleDiscountTierModel? t) {
+    if (t == null) return '';
+    return t.discountType == DiscountTierType.percent
+        ? '${_fmtPct(t.discountValue)}%'
+        : 'Rs. ${_fmtPct(t.discountValue)}';
   }
 
   String _fmtPct(double v) =>
@@ -852,6 +979,194 @@ class _ManagerWarningBanner extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ── Hold / Held invoices ──────────────────────────────────────────────────
+
+/// Customer abhi shopping kar raha ho to chalti invoice "Hold" karo, doosre
+/// customer ka invoice shuru karo, aur baad mein "Held" se wapas kholo.
+class _HoldButtons extends ConsumerWidget {
+  const _HoldButtons();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(saleInvoiceProvider);
+    final held = ref.watch(heldInvoicesProvider);
+    const pad = EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    );
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        OutlinedButton.icon(
+          icon: const AppIcon(AppIcons.accessTimeOutlined, size: 18),
+          label: const Text('Hold'),
+          style: OutlinedButton.styleFrom(padding: pad, shape: shape),
+          onPressed: state.cartItems.isEmpty || state.isSaving
+              ? null
+              : () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final ok = await ref
+                      .read(saleInvoiceProvider.notifier)
+                      .holdInvoice();
+                  if (!ok) return;
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      behavior: SnackBarBehavior.floating,
+                      content: Text(
+                        'Invoice put on hold — new invoice started. '
+                        'You can reopen it from "Held".',
+                      ),
+                    ),
+                  );
+                },
+        ),
+        const SizedBox(width: 10),
+        OutlinedButton.icon(
+          icon: const AppIcon(AppIcons.history, size: 18),
+          label: Text('Held (${held.length})'),
+          style: OutlinedButton.styleFrom(padding: pad, shape: shape),
+          onPressed: held.isEmpty
+              ? null
+              : () => showDialog<void>(
+                  context: context,
+                  builder: (_) => const _HeldInvoicesDialog(),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeldInvoicesDialog extends ConsumerWidget {
+  const _HeldInvoicesDialog();
+
+  String _time(DateTime t) =>
+      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final held = ref.watch(heldInvoicesProvider);
+    // Aakhri hold pehle.
+    final rows = held.reversed.toList();
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        'Held Invoices (${held.length})',
+        style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+      ),
+      content: SizedBox(
+        width: 460,
+        child: rows.isEmpty
+            ? const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text('No held invoices.'),
+              )
+            : ListView.separated(
+                shrinkWrap: true,
+                itemCount: rows.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final h = rows[i];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      h.customerName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Text(
+                      '${h.totalQuantity} pairs  •  Rs. ${h.totalAmount.toStringAsFixed(0)}'
+                      '  •  held at ${_time(h.heldAt)}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FilledButton(
+                          onPressed: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            Navigator.pop(context);
+                            final note = await ref
+                                .read(saleInvoiceProvider.notifier)
+                                .resumeHeld(h.id);
+                            messenger.showSnackBar(
+                              SnackBar(
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(
+                                  seconds: note == null ? 3 : 7,
+                                ),
+                                backgroundColor: note == null
+                                    ? null
+                                    : Colors.orange.shade800,
+                                content: Text(
+                                  note == null
+                                      ? 'Held invoice reopened.'
+                                      : 'Held invoice reopened, but:\n$note',
+                                ),
+                              ),
+                            );
+                          },
+                          child: const Text('Resume'),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete held invoice',
+                          icon: const AppIcon(
+                            AppIcons.deleteOutline,
+                            size: 19,
+                            color: Colors.red,
+                          ),
+                          onPressed: () async {
+                            final ok = await showDialog<bool>(
+                              context: context,
+                              builder: (dctx) => AlertDialog(
+                                title: const Text('Held invoice delete?'),
+                                content: Text(
+                                  'The held invoice of ${h.customerName} (${h.totalQuantity} pairs) '
+                                  'will be deleted permanently.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(dctx, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    onPressed: () => Navigator.pop(dctx, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (ok == true) {
+                              ref
+                                  .read(saleInvoiceProvider.notifier)
+                                  .discardHeld(h.id);
+                              if (ref.read(heldInvoicesProvider).isEmpty &&
+                                  context.mounted) {
+                                Navigator.pop(context);
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 }

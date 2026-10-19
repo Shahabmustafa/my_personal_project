@@ -6,6 +6,7 @@ import '../providers/assign_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+
 class AssignCartTable extends ConsumerWidget {
   const AssignCartTable({super.key});
 
@@ -18,28 +19,37 @@ class AssignCartTable extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(AppIcons.localShippingOutlined,
-                size: 64, color: Colors.grey.shade300),
+            AppIcon(
+              AppIcons.localShippingOutlined,
+              size: 64,
+              color: Colors.grey.shade300,
+            ),
             const SizedBox(height: 12),
-            Text('No Products Added',
-                style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              'No Products Added',
+              style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('Scan a barcode or select a product to assign',
-                style:
-                    TextStyle(color: Colors.grey.shade400, fontSize: 13)),
+            Text(
+              'Scan a barcode or select a product to assign',
+              style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            ),
           ],
         ),
       );
     }
 
-    return LayoutBuilder(builder: (ctx, constraints) {
-      return constraints.maxWidth > 700
-          ? _DesktopTable(items: items)
-          : _MobileList(items: items);
-    });
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        return constraints.maxWidth > 700
+            ? _DesktopTable(items: items)
+            : _MobileList(items: items);
+      },
+    );
   }
 }
 
@@ -50,7 +60,10 @@ class _DesktopTable extends ConsumerWidget {
   const _DesktopTable({required this.items});
 
   static const _hs = TextStyle(
-      fontWeight: FontWeight.w600, fontSize: 12, color: Colors.white);
+    fontWeight: FontWeight.w600,
+    fontSize: 12,
+    color: Colors.white,
+  );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -62,23 +75,24 @@ class _DesktopTable extends ConsumerWidget {
         Container(
           decoration: const BoxDecoration(
             color: headerColor,
-            borderRadius:
-                BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
           ),
-          child: Row(children: [
-            _h('#', flex: 1),
-            _h('Barcode', flex: 3),
-            _h('Article', flex: 3),
-            _h('Size', flex: 1),
-            _h('Color', flex: 2),
-            _h('Type', flex: 2),
-            _h('Category', flex: 2),
-            _h('Sale Price', flex: 2),
-            _h('Discount', flex: 2),
-            _h('In Stock', flex: 2),
-            _h('Qty to Send', flex: 3),
-            _h('', flex: 1),
-          ]),
+          child: Row(
+            children: [
+              _h('#', flex: 1),
+              _h('Barcode', flex: 3),
+              _h('Article', flex: 3),
+              _h('Size', flex: 1),
+              _h('Color', flex: 2),
+              _h('Type', flex: 2),
+              _h('Category', flex: 2),
+              _h('Sale Price', flex: 2),
+              _h('Discount', flex: 2),
+              _h('In Stock', flex: 2),
+              _h('Qty to Send', flex: 3),
+              _h('', flex: 1),
+            ],
+          ),
         ),
         // Rows
         Expanded(
@@ -94,13 +108,12 @@ class _DesktopTable extends ConsumerWidget {
   }
 
   Widget _h(String t, {int flex = 2}) => Expanded(
-        flex: flex,
-        child: Padding(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
-          child: Text(t, style: _hs),
-        ),
-      );
+    flex: flex,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+      child: Text(t, style: _hs),
+    ),
+  );
 }
 
 // ── Row ───────────────────────────────────────────────────────────────────
@@ -120,8 +133,7 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
   @override
   void initState() {
     super.initState();
-    _qtyCtrl =
-        TextEditingController(text: widget.item.quantity.toString());
+    _qtyCtrl = TextEditingController(text: widget.item.quantity.toString());
   }
 
   @override
@@ -148,40 +160,48 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
       color: widget.index.isEven ? Colors.grey.shade50 : Colors.white,
       child: Row(
         children: [
-          _c('${widget.index + 1}',
-              flex: 1,
-              style: const TextStyle(fontSize: 11, color: Colors.grey)),
-          _c(item.barcode,
-              flex: 3,
-              style:
-                  const TextStyle(fontSize: 11, fontFamily: 'monospace')),
+          _c(
+            '${widget.index + 1}',
+            flex: 1,
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+          _c(
+            item.barcode,
+            flex: 3,
+            style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+          ),
           _c(item.productName, flex: 3),
           _c(item.sizeName, flex: 1),
           _c(item.colorName, flex: 2),
           _c(item.typeName, flex: 2),
           _c(item.categoryName, flex: 2),
           // Sale Price
-          _c(item.salePrice.toStringAsFixed(0),
-              flex: 2,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.green.shade700)),
+          _c(
+            item.salePrice.toStringAsFixed(0),
+            flex: 2,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.green.shade700,
+            ),
+          ),
           // Discount
-          _c(item.discount > 0 ? '${item.discount.toStringAsFixed(0)}%' : '—',
-              flex: 2,
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.orange.shade800)),
+          _c(
+            item.discount > 0 ? '${item.discount.toStringAsFixed(0)}%' : '—',
+            flex: 2,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.orange.shade800,
+            ),
+          ),
           // In Stock (available)
           Expanded(
             flex: 2,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: item.warehouseStock > 0
                       ? Colors.green.shade50
@@ -197,11 +217,12 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
                   '${item.warehouseStock}',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: item.warehouseStock > 0
-                          ? Colors.green.shade700
-                          : Colors.red.shade700),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: item.warehouseStock > 0
+                        ? Colors.green.shade700
+                        : Colors.red.shade700,
+                  ),
                 ),
               ),
             ),
@@ -210,14 +231,12 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
           Expanded(
             flex: 3,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
               child: _QtyStepper(
                 value: item.quantity,
                 max: item.warehouseStock,
                 primaryColor: primary,
-                onChanged: (v) =>
-                    notifier.updateItemQuantity(item.stockId, v),
+                onChanged: (v) => notifier.updateItemQuantity(item.stockId, v),
               ),
             ),
           ),
@@ -225,8 +244,11 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
           Expanded(
             flex: 1,
             child: IconButton(
-              icon: const AppIcon(AppIcons.deleteOutline,
-                  color: Colors.red, size: 18),
+              icon: const AppIcon(
+                AppIcons.deleteOutline,
+                color: Colors.red,
+                size: 18,
+              ),
               onPressed: () => notifier.removeItem(item.stockId),
               padding: EdgeInsets.zero,
             ),
@@ -237,15 +259,16 @@ class _AssignRowState extends ConsumerState<_AssignRow> {
   }
 
   Widget _c(String text, {int flex = 2, TextStyle? style}) => Expanded(
-        flex: flex,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          child: Text(text,
-              style: style ??
-                  const TextStyle(fontSize: 12, color: Colors.black87),
-              overflow: TextOverflow.ellipsis),
-        ),
-      );
+    flex: flex,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: Text(
+        text,
+        style: style ?? const TextStyle(fontSize: 12, color: Colors.black87),
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+  );
 }
 
 // ── Qty Stepper ───────────────────────────────────────────────────────────
@@ -265,11 +288,11 @@ class _QtyStepper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => QtyStepper(
-        value: value,
-        max: max,
-        color: primaryColor,
-        onChanged: onChanged,
-      );
+    value: value,
+    max: max,
+    color: primaryColor,
+    onChanged: onChanged,
+  );
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────
@@ -286,17 +309,17 @@ class _Footer extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFFE3F2FD),
-        borderRadius:
-            BorderRadius.vertical(bottom: Radius.circular(10)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
         children: [
           const Expanded(
             flex: 17, // 1+3+3+1+2+2+2+2+ discount(2)
-            child: Text('TOTALS',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 12)),
+            child: Text(
+              'TOTALS',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+            ),
           ),
           // In Stock (skip)
           const Expanded(flex: 2, child: SizedBox()),
@@ -307,9 +330,10 @@ class _Footer extends StatelessWidget {
               '$totalQty pairs',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: primary),
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: primary,
+              ),
             ),
           ),
           const Expanded(flex: 1, child: SizedBox()),
@@ -339,7 +363,8 @@ class _MobileList extends ConsumerWidget {
         return Card(
           elevation: 1,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
+            borderRadius: BorderRadius.circular(10),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
@@ -348,14 +373,21 @@ class _MobileList extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                        child: Text(item.barcode,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
-                                fontFamily: 'monospace'))),
+                      child: Text(
+                        item.barcode,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ),
                     IconButton(
-                      icon: const AppIcon(AppIcons.deleteOutline,
-                          color: Colors.red, size: 18),
+                      icon: const AppIcon(
+                        AppIcons.deleteOutline,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                       onPressed: () => notifier.removeItem(item.stockId),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
@@ -364,22 +396,32 @@ class _MobileList extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                    '${item.productName} · ${item.sizeName} · ${item.colorName}',
-                    style: const TextStyle(fontSize: 12)),
+                  '${item.productName} · ${item.sizeName} · ${item.colorName}',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  children: [
+                    _lbl(
+                      'In Stock',
+                      '${item.warehouseStock}',
+                      color: Colors.green.shade700,
+                    ),
+                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
+                    _lbl(
+                      'Discount',
+                      item.discount > 0
+                          ? '${item.discount.toStringAsFixed(0)}%'
+                          : '—',
+                      color: Colors.orange.shade800,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    _lbl('In Stock', '${item.warehouseStock}',
-                        color: Colors.green.shade700),
-                    const SizedBox(width: 12),
-                    _lbl('S.Price',
-                        item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
-                    _lbl('Discount',
-                        item.discount > 0
-                            ? '${item.discount.toStringAsFixed(0)}%'
-                            : '—',
-                        color: Colors.orange.shade800),
                     const Spacer(),
                     _QtyStepper(
                       value: item.quantity,
@@ -399,16 +441,18 @@ class _MobileList extends ConsumerWidget {
   }
 
   Widget _lbl(String label, String value, {Color? color}) => RichText(
-        text: TextSpan(
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
-          children: [
-            TextSpan(text: '$label: '),
-            TextSpan(
-                text: value,
-                style: TextStyle(
-                    color: color ?? Colors.black87,
-                    fontWeight: FontWeight.w600)),
-          ],
+    text: TextSpan(
+      style: const TextStyle(fontSize: 12, color: Colors.grey),
+      children: [
+        TextSpan(text: '$label: '),
+        TextSpan(
+          text: value,
+          style: TextStyle(
+            color: color ?? Colors.black87,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-      );
+      ],
+    ),
+  );
 }

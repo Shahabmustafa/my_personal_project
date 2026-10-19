@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/sale_exchange_model.dart';
@@ -53,13 +54,91 @@ class _ReturnItemRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(saleExchangeProvider.notifier);
     final selected = item.quantity > 0;
+    final isMobile = Responsive(context).isMobile;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: Colors.grey.shade100)),
       ),
-      child: Row(
+      child: isMobile
+ ? Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Row(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Checkbox(
+            value: selected,
+            onChanged: item.maxQuantity > 0
+                ? (v) => notifier.toggleReturnItem(item.originalItemId, v ?? false)
+                : null,
+          ),
+ Expanded(
+ child: Padding(
+ padding: const EdgeInsets.only(top: 12),
+ child: Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Text(item.productName,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis),
+ const SizedBox(height: 2),
+ Text('${item.sizeName} · ${item.colorName}',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                overflow: TextOverflow.ellipsis),
+ const SizedBox(height: 2),
+ Text(
+                item.isB1g1
+                    ? 'Buy 1 Get 1 — not returnable'
+                    : item.alreadyReturned > 0
+                        ? 'Sold: ${item.soldQuantity} · Left: ${item.maxQuantity}'
+                        : 'Sold: ${item.soldQuantity}',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: item.maxQuantity == 0
+                        ? Colors.red.shade400
+                        : Colors.grey.shade600)),
+ ],
+ ),
+ ),
+ ),
+ const SizedBox(width: 8),
+ Padding(
+ padding: const EdgeInsets.only(top: 12),
+ child: Text('Rs. ${item.salePrice.toStringAsFixed(0)}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+ ),
+ ],
+ ),
+ if (selected)
+ Padding(
+ padding: const EdgeInsets.only(left: 48, bottom: 6),
+ child: Row(
+ children: [
+ SizedBox(width: 120, child: selected
+                ? _QtyStepper(
+                    value: item.quantity,
+                    maxValue: item.maxQuantity,
+                    primaryColor: primary,
+                    onChanged: (v) => notifier.setReturnQuantity(item.originalItemId, v),
+                  )
+                : const SizedBox()),
+ const Spacer(),
+ Text(
+              selected ? 'Rs. ${item.lineTotal.toStringAsFixed(0)}' : '—',
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: selected ? Colors.red.shade700 : Colors.grey.shade400),
+            ),
+ ],
+ ),
+ ),
+ ],
+ )
+ : Row(
         children: [
           Checkbox(
             value: selected,
@@ -83,7 +162,7 @@ class _ReturnItemRow extends ConsumerWidget {
             flex: 2,
             child: Text(
                 item.isB1g1
-                    ? 'Buy 1 Get 1 — return nahi'
+                    ? 'Buy 1 Get 1 — not returnable'
                     : item.alreadyReturned > 0
                         ? 'Sold: ${item.soldQuantity} · Left: ${item.maxQuantity}'
                         : 'Sold: ${item.soldQuantity}',

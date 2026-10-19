@@ -344,14 +344,19 @@ class _MobileList extends ConsumerWidget {
                     style: const TextStyle(fontSize: 12)),
                 if (free) const _B1g1Badge(),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
-                    _lbl('Stock', '${item.availableStock}',
-                        color: item.availableStock <= 0 ? Colors.red : Colors.grey.shade700),
-                    const Spacer(),
-                    if (free)
+                Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Wrap(
+ spacing: 12,
+ runSpacing: 4,
+ children: [_lbl('S.Price', item.salePrice.toStringAsFixed(0)), _lbl('Stock', '${item.availableStock}',
+                        color: item.availableStock <= 0 ? Colors.red : Colors.grey.shade700)],
+ ),
+ const SizedBox(height: 8),
+ Row(
+ children: [
+ if (free)
                       Text('Qty ${item.b1g1FreeQty}',
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.w700))
@@ -362,14 +367,16 @@ class _MobileList extends ConsumerWidget {
                         primaryColor: primary,
                         onChanged: (v) => _setPaidQty(notifier, item, v),
                       ),
-                    const SizedBox(width: 10),
-                    Text(free ? 'FREE' : item.lineTotal.toStringAsFixed(0),
+ const Spacer(),
+ Text(free ? 'FREE' : item.lineTotal.toStringAsFixed(0),
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: free ? const Color(0xFF2E7D32) : primary)),
-                  ],
-                ),
+                            color: free ? const Color(0xFF2E7D32) : primary))
+ ],
+ ),
+ ],
+ ),
               ],
             ),
           ),

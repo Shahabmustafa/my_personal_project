@@ -118,7 +118,9 @@ class _CartRow extends ConsumerWidget {
           _c(item.colorName, flex: 2),
           _c(item.categoryName, flex: 2),
           _c(item.salePrice.toStringAsFixed(0), flex: 2),
-          _c(item.discountPct > 0 ? '${item.discountPct.toStringAsFixed(0)}%' : '—',
+          _c(item.discountPct > 0
+              ? '${item.discountPct == item.discountPct.roundToDouble() ? item.discountPct.toStringAsFixed(0) : item.discountPct.toStringAsFixed(2)}%'
+              : '—',
               flex: 2, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
           _c(item.netPrice.toStringAsFixed(0),
               flex: 2,
@@ -211,7 +213,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
       height: 34,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(7),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: TextField(
         controller: _ctrl,
@@ -339,20 +341,29 @@ class _MobileList extends ConsumerWidget {
                 Text('${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
-                    const Spacer(),
-                    _QtyRowStepper(
+                Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Wrap(
+ spacing: 12,
+ runSpacing: 4,
+ children: [_lbl('S.Price', item.salePrice.toStringAsFixed(0))],
+ ),
+ const SizedBox(height: 8),
+ Row(
+ children: [
+ _QtyRowStepper(
                       value: item.quantity,
                       accentColor: accent,
                       onChanged: (v) => notifier.updateItemQuantity(item.branchStockId, v),
                     ),
-                    const SizedBox(width: 10),
-                    Text(item.lineTotal.toStringAsFixed(0),
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: accent)),
-                  ],
-                ),
+ const Spacer(),
+ Text(item.lineTotal.toStringAsFixed(0),
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: accent))
+ ],
+ ),
+ ],
+ ),
               ],
             ),
           ),

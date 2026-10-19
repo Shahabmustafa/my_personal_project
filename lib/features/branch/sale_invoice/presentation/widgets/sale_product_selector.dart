@@ -1,5 +1,6 @@
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
@@ -173,23 +174,9 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
             : allStock.firstWhere((s) => s.id == sel.id, orElse: () => sel);
         final totalQty = stock?.quantity ?? 0;
 
-        return Container(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              for (final w in widget.leading) ...[
-                Expanded(flex: 3, child: w),
-                const SizedBox(width: 10),
-              ],
-              Expanded(
-                flex: 3,
-                child: TextField(
+        final isMobile = Responsive(context).isMobile;
+
+        final barcodeField = TextField(
                   controller: _barcodeCtrl,
                   focusNode: _barcodeFocus,
                   autofocus: true,
@@ -207,12 +194,9 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                         const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                   ),
                   onSubmitted: (_) => _onBarcodeSubmit(allStock),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 5,
-                child: DropdownSearch<BranchStockModel>(
+                );
+
+        final articleField = DropdownSearch<BranchStockModel>(
                   items: (f, _) => _filterStock(allStock, f),
                   selectedItem: _selectedStock,
                   itemAsString: (s) {
@@ -261,20 +245,16 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                       );
                     },
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: _InfoBox(
+                );
+
+        final stockInfo = _InfoBox(
                   label: 'In Stock',
                   value: stock != null ? '$totalQty' : null,
                   valueColor:
                       (stock != null && totalQty == 0) ? Colors.red : Colors.green.shade700,
-                ),
-              ),
-              const SizedBox(width: 10),
-              _QtyStepperInput(
+                );
+
+        final qtyField = _QtyStepperInput(
                 controller: _qtyCtrl,
                 max: totalQty,
                 enabled: stock != null && totalQty > 0,
@@ -282,9 +262,9 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                 onSubmit: (_) {
             if (_qtyFits(totalQty)) _addToCart();
           },
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
+              );
+
+        final addButton = SizedBox(
                 height: 48,
                 child: FilledButton.icon(
                   icon: const AppIcon(AppIcons.addShoppingCart, size: 18),
@@ -298,9 +278,57 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                         ? _addToCart
                         : null,
                 ),
-              ),
-            ],
+              );
+
+        return Container(
+          padding: EdgeInsets.fromLTRB(isMobile ? 12 : 16, 8, isMobile ? 12 : 16, 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
           ),
+          child: isMobile
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final w in widget.leading) ...[
+                      w,
+                      const SizedBox(height: 10),
+                    ],
+                    barcodeField,
+                    const SizedBox(height: 10),
+                    articleField,
+                    const SizedBox(height: 10),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(child: stockInfo),
+                        const SizedBox(width: 10),
+                        qtyField,
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    addButton,
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (final w in widget.leading) ...[
+                      Expanded(flex: 3, child: w),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(flex: 3, child: barcodeField),
+                    const SizedBox(width: 10),
+                    Expanded(flex: 5, child: articleField),
+                    const SizedBox(width: 10),
+                    Expanded(flex: 2, child: stockInfo),
+                    const SizedBox(width: 10),
+                    qtyField,
+                    const SizedBox(width: 10),
+                    addButton,
+                  ],
+                ),
         );
       },
     );

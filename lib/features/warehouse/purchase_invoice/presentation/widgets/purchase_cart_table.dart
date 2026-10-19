@@ -483,27 +483,34 @@ class _MobileList extends ConsumerWidget {
                 Text('${item.productName} · ${item.sizeName} · ${item.colorName}',
                     style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _lbl('S.Price', item.salePrice.toStringAsFixed(0)),
-                    const SizedBox(width: 12),
-                    _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
-                        color: Colors.purple.shade600),
-                    const Spacer(),
-                    _QtyRowStepper(
+                Column(
+ crossAxisAlignment: CrossAxisAlignment.start,
+ children: [
+ Wrap(
+ spacing: 12,
+ runSpacing: 4,
+ children: [_lbl('S.Price', item.salePrice.toStringAsFixed(0)), _lbl('P.Price', item.purchasePrice.toStringAsFixed(0),
+                        color: Colors.purple.shade600)],
+ ),
+ const SizedBox(height: 8),
+ Row(
+ children: [
+ _QtyRowStepper(
                       value: item.quantity,
                       primaryColor: primary,
                       onChanged: (v) =>
                           notifier.updateItemQuantity(item.stockId, v),
                     ),
-                    const SizedBox(width: 10),
-                    Text(item.purchaseLineTotal.toStringAsFixed(0),
+ const Spacer(),
+ Text(item.purchaseLineTotal.toStringAsFixed(0),
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
-                            color: primary)),
-                  ],
-                ),
+                            color: primary))
+ ],
+ ),
+ ],
+ ),
               ],
             ),
           ),

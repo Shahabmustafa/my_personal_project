@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/model/branch_stock_return_model.dart';
 import '../providers/branch_stock_return_provider.dart';
@@ -6,6 +7,7 @@ import 'branch_stock_return_screen.dart' show StatusChip;
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+
 const _primary = Color(0xFF1565C0);
 
 /// Receiving branch's screen for accepting/rejecting stock returns sent by
@@ -35,14 +37,24 @@ class _IncomingStockReturnsScreenState
         children: [
           Row(
             children: [
-              const AppIcon(AppIcons.moveToInboxOutlined, color: _primary, size: 24),
+              const AppIcon(
+                AppIcons.moveToInboxOutlined,
+                color: _primary,
+                size: 24,
+              ),
               const SizedBox(width: 8),
-              const Text('Incoming Stock Returns',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const Text(
+                'Incoming Stock Returns',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
               const Spacer(),
               IconButton(
                 onPressed: () => ref.invalidate(incomingStockReturnsProvider),
-                icon: const AppIcon(AppIcons.refresh, size: 18, color: _primary),
+                icon: const AppIcon(
+                  AppIcons.refresh,
+                  size: 18,
+                  color: _primary,
+                ),
                 tooltip: 'Refresh',
               ),
             ],
@@ -51,88 +63,126 @@ class _IncomingStockReturnsScreenState
           returnsAsync.when(
             loading: () => const SizedBox.shrink(),
             error: (_, __) => const SizedBox.shrink(),
-            data: (returns) => Row(
-              children: [
-                _filterChip('All', 'all', returns.length),
-                const SizedBox(width: 8),
-                _filterChip('Pending', 'pending',
-                    returns.where((r) => r.status == 'pending').length),
-                const SizedBox(width: 8),
-                _filterChip('Accepted', 'accepted',
-                    returns.where((r) => r.status == 'accepted').length),
-                const SizedBox(width: 8),
-                _filterChip('Rejected', 'rejected',
-                    returns.where((r) => r.status == 'rejected').length),
-              ],
+            data: (returns) => SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterChip('All', 'all', returns.length),
+                  const SizedBox(width: 8),
+                  _filterChip(
+                    'Pending',
+                    'pending',
+                    returns.where((r) => r.status == 'pending').length,
+                  ),
+                  const SizedBox(width: 8),
+                  _filterChip(
+                    'Accepted',
+                    'accepted',
+                    returns.where((r) => r.status == 'accepted').length,
+                  ),
+                  const SizedBox(width: 8),
+                  _filterChip(
+                    'Rejected',
+                    'rejected',
+                    returns.where((r) => r.status == 'rejected').length,
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
           Expanded(
             child: returnsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              loading: () => const Center(
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
               error: (e, _) => Center(
-                  child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppIcon(AppIcons.errorOutline, color: Colors.red, size: 40),
-                  const SizedBox(height: 8),
-                  Text('Error: $e', style: const TextStyle(color: Colors.red)),
-                ],
-              )),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppIcon(
+                      AppIcons.errorOutline,
+                      color: Colors.red,
+                      size: 40,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Error: $e',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              ),
               data: (returns) {
                 final filtered = _filterStatus == 'all'
                     ? returns
                     : returns.where((r) => r.status == _filterStatus).toList();
 
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          color: _primary,
-                          child: const Row(children: [
-                            _Th('Return No', flex: 3),
-                            _Th('From Branch', flex: 4),
-                            _Th('Date', flex: 2),
-                            _Th('Items', flex: 1),
-                            _Th('Status', flex: 2),
-                            _Th('Actions', flex: 3),
-                          ]),
-                        ),
-                        Expanded(
-                          child: filtered.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      AppIcon(AppIcons.inboxOutlined,
-                                          size: 64, color: Colors.grey.shade300),
-                                      const SizedBox(height: 12),
-                                      Text(
+                return MinWidthScroll(
+                  minWidth: 760,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            color: _primary,
+                            child: const Row(
+                              children: [
+                                _Th('Return No', flex: 3),
+                                _Th('From Branch', flex: 4),
+                                _Th('Date', flex: 2),
+                                _Th('Items', flex: 1),
+                                _Th('Status', flex: 2),
+                                _Th('Actions', flex: 3),
+                              ],
+                            ),
+                          ),
+                          Expanded(
+                            child: filtered.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        AppIcon(
+                                          AppIcons.inboxOutlined,
+                                          size: 64,
+                                          color: Colors.grey.shade300,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Text(
                                           _filterStatus == 'all'
                                               ? 'No returns received yet'
                                               : 'No $_filterStatus returns',
                                           style: TextStyle(
-                                              color: Colors.grey.shade500, fontSize: 16)),
-                                    ],
+                                            color: Colors.grey.shade500,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.separated(
+                                    itemCount: filtered.length,
+                                    separatorBuilder: (_, __) => Divider(
+                                      height: 1,
+                                      color: Colors.grey.shade100,
+                                    ),
+                                    itemBuilder: (_, i) =>
+                                        _ListRow(item: filtered[i], index: i),
                                   ),
-                                )
-                              : ListView.separated(
-                                  itemCount: filtered.length,
-                                  separatorBuilder: (_, __) =>
-                                      Divider(height: 1, color: Colors.grey.shade100),
-                                  itemBuilder: (_, i) =>
-                                      _ListRow(item: filtered[i], index: i),
-                                ),
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -169,30 +219,38 @@ class _IncomingStockReturnsScreenState
         decoration: BoxDecoration(
           color: isSelected ? chipColor : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? chipColor : Colors.grey.shade300),
+          border: Border.all(
+            color: isSelected ? chipColor : Colors.grey.shade300,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                )),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+              ),
+            ),
             const SizedBox(width: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withOpacity(0.25) : Colors.grey.shade100,
+                color: isSelected
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text('$count',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: isSelected ? Colors.white : Colors.grey.shade600,
-                  )),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: isSelected ? Colors.white : Colors.grey.shade600,
+                ),
+              ),
             ),
           ],
         ),
@@ -208,10 +266,16 @@ class _Th extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Expanded(
-        flex: flex,
-        child: Text(text,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
-      );
+    flex: flex,
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: Colors.white,
+      ),
+    ),
+  );
 }
 
 class _ListRow extends ConsumerWidget {
@@ -228,36 +292,52 @@ class _ListRow extends ConsumerWidget {
         children: [
           Expanded(
             flex: 3,
-            child: Text(item.returnNumber,
-                style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: _primary)),
+            child: Text(
+              item.returnNumber,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: _primary,
+              ),
+            ),
           ),
           Expanded(
             flex: 4,
             child: Row(
               children: [
-                const AppIcon(AppIcons.storeOutlined, size: 14, color: Colors.grey),
+                const AppIcon(
+                  AppIcons.storeOutlined,
+                  size: 14,
+                  color: Colors.grey,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(item.fromBranchName ?? item.fromBranchId,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    item.fromBranchName ?? item.fromBranchId,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(_fmtDate(item.returnedAt),
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            child: Text(
+              _fmtDate(item.returnedAt),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
           ),
           Expanded(
             flex: 1,
-            child: Text('${item.items.fold<int>(0, (s, i) => s + i.quantity)}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+            child: Text(
+              '${item.items.fold<int>(0, (s, i) => s + i.quantity)}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+            ),
           ),
           Expanded(flex: 2, child: StatusChip(item.status)),
           Expanded(
@@ -272,11 +352,16 @@ class _ListRow extends ConsumerWidget {
                           style: FilledButton.styleFrom(
                             backgroundColor: Colors.green,
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Accept', style: TextStyle(fontSize: 12)),
+                          child: const Text(
+                            'Accept',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -288,11 +373,16 @@ class _ListRow extends ConsumerWidget {
                             foregroundColor: Colors.red,
                             side: const BorderSide(color: Colors.red),
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Reject', style: TextStyle(fontSize: 12)),
+                          child: const Text(
+                            'Reject',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                     ],
@@ -330,7 +420,10 @@ class _ListRow extends ConsumerWidget {
           'Stock will be added to your branch inventory.\n\nThis action cannot be undone.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.green),
@@ -342,7 +435,9 @@ class _ListRow extends ConsumerWidget {
 
     if (confirm == true) {
       try {
-        await ref.read(branchStockReturnRepositoryProvider).acceptReturn(item.id);
+        await ref
+            .read(branchStockReturnRepositoryProvider)
+            .acceptReturn(item.id);
         ref.invalidate(incomingStockReturnsProvider);
       } catch (e) {
         if (context.mounted) {
@@ -370,7 +465,10 @@ class _ListRow extends ConsumerWidget {
           'This return will be marked as rejected. Stock goes back to the sending branch.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
@@ -382,7 +480,9 @@ class _ListRow extends ConsumerWidget {
 
     if (confirm == true) {
       try {
-        await ref.read(branchStockReturnRepositoryProvider).rejectReturn(item.id);
+        await ref
+            .read(branchStockReturnRepositoryProvider)
+            .rejectReturn(item.id);
         ref.invalidate(incomingStockReturnsProvider);
       } catch (e) {
         if (context.mounted) {
