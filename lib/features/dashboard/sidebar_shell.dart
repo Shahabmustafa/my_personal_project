@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -9,17 +10,72 @@ class SidebarItem {
   final String label;
   final String? group;
 
+  /// Keyboard shortcut (Alt + ...) — "S" ya "Shift+S". Null = koi shortcut nahi.
+  final String? shortcut;
+
   /// Pending/unread count — 0 ho to badge nahi dikhta.
   final int badge;
   const SidebarItem({
     required this.icon,
     required this.label,
     this.group,
+    this.shortcut,
     this.badge = 0,
   });
 
-  SidebarItem withBadge(int count) =>
-      SidebarItem(icon: icon, label: label, group: group, badge: count);
+  SidebarItem withBadge(int count) => SidebarItem(
+    icon: icon,
+    label: label,
+    group: group,
+    shortcut: shortcut,
+    badge: count,
+  );
+
+  /// Sidebar mein dikhne wala text, jaise "Alt+Shift+S".
+  String? get shortcutLabel => shortcut == null ? null : 'Alt+$shortcut';
+
+  /// "S" / "Shift+S" / "0" -> Alt + key activator.
+  SingleActivator? get activator {
+    final spec = shortcut;
+    if (spec == null) return null;
+    final shift = spec.startsWith('Shift+');
+    final key = (shift ? spec.substring(6) : spec).toUpperCase();
+    final logical = _keys[key];
+    if (logical == null) return null;
+    return SingleActivator(logical, alt: true, shift: shift);
+  }
+
+  static final Map<String, LogicalKeyboardKey> _keys = {
+    '0': LogicalKeyboardKey.digit0,
+    '1': LogicalKeyboardKey.digit1,
+    '2': LogicalKeyboardKey.digit2,
+    '3': LogicalKeyboardKey.digit3,
+    '4': LogicalKeyboardKey.digit4,
+    '5': LogicalKeyboardKey.digit5,
+    'A': LogicalKeyboardKey.keyA,
+    'B': LogicalKeyboardKey.keyB,
+    'C': LogicalKeyboardKey.keyC,
+    'G': LogicalKeyboardKey.keyG,
+    'H': LogicalKeyboardKey.keyH,
+    'I': LogicalKeyboardKey.keyI,
+    'J': LogicalKeyboardKey.keyJ,
+    'K': LogicalKeyboardKey.keyK,
+    'L': LogicalKeyboardKey.keyL,
+    'M': LogicalKeyboardKey.keyM,
+    'N': LogicalKeyboardKey.keyN,
+    'O': LogicalKeyboardKey.keyO,
+    'P': LogicalKeyboardKey.keyP,
+    'Q': LogicalKeyboardKey.keyQ,
+    'R': LogicalKeyboardKey.keyR,
+    'S': LogicalKeyboardKey.keyS,
+    'T': LogicalKeyboardKey.keyT,
+    'U': LogicalKeyboardKey.keyU,
+    'V': LogicalKeyboardKey.keyV,
+    'W': LogicalKeyboardKey.keyW,
+    'X': LogicalKeyboardKey.keyX,
+    'Y': LogicalKeyboardKey.keyY,
+    'Z': LogicalKeyboardKey.keyZ,
+  };
 }
 
 /// Sidebar item ke sath chhota orange count pill.
@@ -87,6 +143,19 @@ class _SidebarShellState extends State<SidebarShell> {
 
   @override
   Widget build(BuildContext context) {
+    // Alt + key — sidebar ke har item ke liye (kisi bhi screen se).
+    final bindings = <ShortcutActivator, VoidCallback>{
+      for (var i = 0; i < widget.navItems.length; i++)
+        if (widget.navItems[i].activator != null)
+          widget.navItems[i].activator!: () => widget.onSelect(i),
+    };
+    return CallbackShortcuts(
+      bindings: bindings,
+      child: Focus(autofocus: true, child: _buildShell(context)),
+    );
+  }
+
+  Widget _buildShell(BuildContext context) {
     final safeIndex = widget.selectedIndex < widget.pages.length
         ? widget.selectedIndex
         : 0;
@@ -221,8 +290,12 @@ class _SidebarShellState extends State<SidebarShell> {
         Padding(
           // Collapsed rail sirf 76px hai — 20+20 padding + 40 logo overflow
           // karta tha, is liye wahan horizontal padding nahi.
-          padding: EdgeInsets.fromLTRB(collapsed ? 0 : 20, 24,
-              collapsed ? 0 : 20, 20),
+          padding: EdgeInsets.fromLTRB(
+            collapsed ? 0 : 20,
+            24,
+            collapsed ? 0 : 20,
+            20,
+          ),
           child: Row(
             mainAxisAlignment: collapsed
                 ? MainAxisAlignment.center
@@ -260,10 +333,7 @@ class _SidebarShellState extends State<SidebarShell> {
                       ),
                       Text(
                         'Admin Panel',
-                        style: TextStyle(
-                          color: _textDim,
-                          fontSize: 11,
-                        ),
+                        style: TextStyle(color: _textDim, fontSize: 11),
                       ),
                     ],
                   ),
@@ -333,9 +403,7 @@ class _SidebarShellState extends State<SidebarShell> {
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEECEC),
-                            borderRadius: BorderRadius.circular(
-                              8,
-                            ),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const AppIcon(
                             AppIcons.logout,
@@ -397,9 +465,7 @@ class _SidebarShellState extends State<SidebarShell> {
                           padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFEECEC),
-                            borderRadius: BorderRadius.circular(
-                              8,
-                            ),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: const AppIcon(
                             AppIcons.logout,
@@ -457,7 +523,9 @@ class _SidebarShellState extends State<SidebarShell> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Tooltip(
-        message: item.label,
+        message: item.shortcutLabel == null
+            ? item.label
+            : '${item.label} (${item.shortcutLabel})',
         child: Material(
           color: Colors.transparent,
           child: InkWell(
@@ -471,7 +539,7 @@ class _SidebarShellState extends State<SidebarShell> {
                 borderRadius: BorderRadius.circular(9),
                 border: Border.all(
                   color: active
-                      ? _accent.withOpacity(0.25)
+                      ? _accent.withValues(alpha: 0.25)
                       : Colors.transparent,
                 ),
               ),
@@ -509,7 +577,9 @@ class _SidebarShellState extends State<SidebarShell> {
               color: active ? _accentSoft : Colors.transparent,
               borderRadius: BorderRadius.circular(9),
               border: Border.all(
-                color: active ? _accent.withOpacity(0.25) : Colors.transparent,
+                color: active
+                    ? _accent.withValues(alpha: 0.25)
+                    : Colors.transparent,
               ),
             ),
             child: Row(
@@ -521,15 +591,29 @@ class _SidebarShellState extends State<SidebarShell> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: active ? _textDark : _textDim,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: active ? _textDark : _textDim,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      // Shortcut naam ke neeche (lambe naam ke sath bhi dikhe).
+                      if (item.shortcutLabel != null && !_isMobile(context))
+                        Text(
+                          item.shortcutLabel!,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            color: active ? _accent : const Color(0xFFB0B5C8),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 if (item.badge > 0) ...[
@@ -543,6 +627,9 @@ class _SidebarShellState extends State<SidebarShell> {
       ),
     );
   }
+
+  bool _isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < AppConstants.mobileMaxWidth;
 
   Widget _groupTile(
     String group,
@@ -574,8 +661,9 @@ class _SidebarShellState extends State<SidebarShell> {
               fontWeight: FontWeight.w500,
             ),
           ),
-          children:
-              indices.map((i) => _navTile(i, safeIndex, onSelect)).toList(),
+          children: indices
+              .map((i) => _navTile(i, safeIndex, onSelect))
+              .toList(),
         ),
       ),
     );

@@ -41,6 +41,17 @@ class ExpenseDatasource {
         .toList();
   }
 
+  /// Saari branches ka expense (superadmin "All Branches" view).
+  Future<List<ExpenseEntryModel>> getAllBranchEntries() async {
+    final data = await _client
+        .from('expense_entries')
+        .select('*, expense_heads(name), branches(branch_name)')
+        .order('created_at', ascending: false);
+    return (data as List)
+        .map((e) => ExpenseEntryModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
   /// Aaj ke din ka branch_cash_counter row (nightly cron se banta hai) —
   /// expense entry usi se link hoti hai.
   Future<String?> getTodaysCashCounterId(String branchId) async {

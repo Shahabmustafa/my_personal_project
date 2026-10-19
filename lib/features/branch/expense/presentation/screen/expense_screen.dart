@@ -5,6 +5,8 @@ import '../../../../../core/widget/app_dropdown.dart';
 import '../../data/model/expense_entry_model.dart';
 import '../../data/model/expense_head_model.dart';
 import '../provider/expense_provider.dart';
+import '../../../../superadmin/report/presentation/widgets/report_date_filter_dialog.dart';
+import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -47,12 +49,53 @@ class ExpenseScreen extends ConsumerStatefulWidget {
 }
 
 class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
+  DateTime? _startDate;
+  DateTime? _endDate;
+
+  bool get _hasDateFilter => _startDate != null || _endDate != null;
+
+  bool _inRange(ExpenseEntryModel e) {
+    final d = DateTime(e.createdAt.year, e.createdAt.month, e.createdAt.day);
+    if (_startDate != null &&
+        d.isBefore(
+            DateTime(_startDate!.year, _startDate!.month, _startDate!.day))) {
+      return false;
+    }
+    if (_endDate != null &&
+        d.isAfter(DateTime(_endDate!.year, _endDate!.month, _endDate!.day))) {
+      return false;
+    }
+    return true;
+  }
+
+  String _rangeLabel() {
+    final s = _startDate == null ? '…' : _fmtDate(_startDate!);
+    final e = _endDate == null ? '…' : _fmtDate(_endDate!);
+    return '$s – $e';
+  }
+
+  Future<void> _pickDates() async {
+    final result = await showDialog<(DateTime?, DateTime?)?>(
+      context: context,
+      builder: (_) => ReportDateFilterDialog(
+          initialStart: _startDate, initialEnd: _endDate),
+    );
+    if (result != null) {
+      setState(() {
+        _startDate = result.$1;
+        _endDate = result.$2;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ExpenseScope scope =
         widget.scope ?? ref.watch(currentBranchExpenseScopeProvider);
     final provider = expenseProvider(scope);
-    final state = ref.watch(provider);
+    final fullState = ref.watch(provider);
+    final entries = fullState.entries.where(_inRange).toList();
+    final state = fullState.copyWith(entries: entries);
     final isMobile = MediaQuery.of(context).size.width < 768;
 
     return Scaffold(
@@ -79,6 +122,26 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                     ],
                   ),
                 ),
+                if (_hasDateFilter)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: TextButton.icon(
+                      onPressed: () => setState(() {
+                        _startDate = null;
+                        _endDate = null;
+                      }),
+                      icon: const AppIcon(AppIcons.clear, size: 16),
+                      label: Text(_rangeLabel()),
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: OutlinedButton.icon(
+                    onPressed: _pickDates,
+                    icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
+                    label: const Text('Filter'),
+                  ),
+                ),
                 Tooltip(
                   message: 'Refresh',
                   child: InkWell(
@@ -98,7 +161,7 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                   ),
                 ),
                 FilledButton.icon(
-                  onPressed: scope.id.isEmpty
+                  onPressed: scope.id.isEmpty && !scope.isAllBranches
                       ? null
                       : () => _openAddExpenseDialog(context, scope),
                   icon: const AppIcon(AppIcons.addRounded, size: 18, color: Colors.white),
@@ -120,6 +183,26 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
               child: widget.scopePicker,
             ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            child: ReportSummaryCards(
+              children: [
+                ReportSummaryCard(
+                  label: 'Total Expense',
+                  value: 'Rs. ${_fmtAmt(state.totalExpense)}',
+                  icon: AppIcons.receiptLongOutlined,
+                  color: _primary,
+                ),
+                ReportSummaryCard(
+                  label: 'Total Entries',
+                  value: '${state.entries.length}',
+                  icon: AppIcons.listOutlined,
+                  color: const Color(0xFF3E63DD),
+                ),
+              ],
+            ),
+          ),
 
           // ── Content ───────────────────────────────────────────────────
           Expanded(
@@ -511,13 +594,14 @@ class _DesktopTable extends ConsumerWidget {
                   color: Color(0xFFF7F8FC),
                   border: Border(bottom: BorderSide(color: Color(0xFFE7E9F0))),
                 ),
-                child: const Row(children: [
-                  _TH('#', flex: 1),
-                  _TH('Date', flex: 2),
-                  _TH('Expense Head', flex: 3),
-                  _TH('Note', flex: 4),
-                  _TH('Amount', flex: 2, alignEnd: true),
-                  _TH('', flex: 2),
+                child: Row(children: [
+                  const _TH('#', flex: 1),
+                  const _TH('Date', flex: 2),
+                  if (scope.isAllBranches) const _TH('Branch', flex: 3),
+                  const _TH('Expense Head', flex: 3),
+                  const _TH('Note', flex: 4),
+                  const _TH('Amount', flex: 2, alignEnd: true),
+                  const _TH('', flex: 2),
                 ]),
               ),
               // Rows
@@ -549,6 +633,17 @@ class _DesktopTable extends ConsumerWidget {
                                       fontSize: 12, color: Color(0xFF8A8FA3))),
                             ),
                           ),
+                          if (scope.isAllBranches)
+                            Expanded(
+                              flex: 3,
+                              child: _TD(
+                                child: Text(e.branchName ?? '—',
+                                    style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600),
+                                    overflow: TextOverflow.ellipsis),
+                              ),
+                            ),
                           Expanded(
                             flex: 3,
                             child: _TD(
@@ -698,7 +793,7 @@ class _IconBtn extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-                color: color.withOpacity(0.08),
+                color: color.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(6)),
             child: AppIcon(icon, size: 16, color: color),
           ),
@@ -738,7 +833,10 @@ class _MobileList extends ConsumerWidget {
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 14)),
                     const SizedBox(height: 4),
-                    Text(_fmtDate(e.createdAt),
+                    Text(
+                        scope.isAllBranches && e.branchName != null
+                            ? '${e.branchName} · ${_fmtDate(e.createdAt)}'
+                            : _fmtDate(e.createdAt),
                         style: const TextStyle(
                             fontSize: 12, color: Color(0xFF8A8FA3))),
                     if (e.note != null && e.note!.isNotEmpty) ...[

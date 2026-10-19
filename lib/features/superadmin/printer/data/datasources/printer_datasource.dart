@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:safishoe_app/core/service/print/receipt_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/printer_head_model.dart';
 import '../models/assign_printer_model.dart';
@@ -50,6 +51,25 @@ class PrinterDatasource {
     });
   }
 
+  Future<void> updatePrinterDesign({
+    required String id,
+    required String logoPosition,
+    required bool showLogo,
+    required bool showName,
+    required bool showPhone,
+    required bool showAddress,
+    required ReceiptOptions options,
+  }) async {
+    await _client.from('printer_heads').update({
+      'logo_position': logoPosition,
+      'show_logo':     showLogo,
+      'show_name':     showName,
+      'show_phone':    showPhone,
+      'show_address':  showAddress,
+      'receipt_options': options.toMap(),
+    }).eq('id', id);
+  }
+
   Future<void> deletePrinterHead(String id) async {
     await _client.from('printer_heads').delete().eq('id', id);
   }
@@ -60,7 +80,7 @@ class PrinterDatasource {
     final response = await _client
         .from('assign_printer')
         .select(
-          '*, branches(branch_name, address, city), printer_heads(name, image_url, address, phone_number)',
+          '*, branches(branch_name, address, city), printer_heads(*)',
         )
         .order('created_at', ascending: false);
 

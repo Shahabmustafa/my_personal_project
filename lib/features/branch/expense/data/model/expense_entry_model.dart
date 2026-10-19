@@ -1,6 +1,7 @@
 class ExpenseEntryModel {
   final String id;
   final String branchId;
+  final String? branchName;
   final String branchCashCounterId;
   final String expenseHeadId;
   final String expenseHeadName;
@@ -11,6 +12,7 @@ class ExpenseEntryModel {
   const ExpenseEntryModel({
     required this.id,
     required this.branchId,
+    this.branchName,
     required this.branchCashCounterId,
     required this.expenseHeadId,
     required this.expenseHeadName,
@@ -35,6 +37,8 @@ class ExpenseEntryModel {
                   json['head_office_cash_counter_id'])
               ?.toString() ??
           '',
+      branchName:
+          (json['branches'] as Map<String, dynamic>?)?['branch_name']?.toString(),
       expenseHeadId: json['expense_head_id']?.toString() ?? '',
       expenseHeadName: head?['name']?.toString() ?? '—',
       amount: _toDouble(json['amount']),

@@ -36,6 +36,12 @@ final hoPrintersProvider = FutureProvider<List<PrinterLookupItem>>((ref) async {
             address: h.address,
             phoneNumber: h.phoneNumber,
             imageUrl: h.imageUrl,
+            logoPosition: h.logoPosition,
+            showLogo: h.showLogo,
+            showName: h.showName,
+            showPhone: h.showPhone,
+            showAddress: h.showAddress,
+            options: h.receiptOptions,
           ))
       .toList();
 });
@@ -330,7 +336,7 @@ class HoAssignStockNotifier extends StateNotifier<HoAssignStockState> {
     if (state.cartItems.isEmpty) return 'Cart is empty';
     if (state.selectedBranch == null) return 'Please select a branch';
     if (_headOfficeId.isEmpty) {
-      return 'Head office set nahi hai. Pehle Head Office add karein.';
+      return 'Head office is not set up. Add a Head Office first.';
     }
 
     state = state.copyWith(isSaving: true, clearError: true);

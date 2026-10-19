@@ -58,17 +58,29 @@ class ExpenseState {
 class ExpenseScope {
   final String id;
   final bool isHeadOffice;
-  const ExpenseScope.branch(this.id) : isHeadOffice = false;
-  const ExpenseScope.headOffice(this.id) : isHeadOffice = true;
+
+  /// Superadmin ka "All Branches" view — saari branches ki entries.
+  final bool isAllBranches;
+  const ExpenseScope.branch(this.id)
+      : isHeadOffice = false,
+        isAllBranches = false;
+  const ExpenseScope.headOffice(this.id)
+      : isHeadOffice = true,
+        isAllBranches = false;
+  const ExpenseScope.allBranches()
+      : id = '',
+        isHeadOffice = false,
+        isAllBranches = true;
 
   @override
   bool operator ==(Object other) =>
       other is ExpenseScope &&
       other.id == id &&
-      other.isHeadOffice == isHeadOffice;
+      other.isHeadOffice == isHeadOffice &&
+      other.isAllBranches == isAllBranches;
 
   @override
-  int get hashCode => Object.hash(id, isHeadOffice);
+  int get hashCode => Object.hash(id, isHeadOffice, isAllBranches);
 }
 
 class ExpenseNotifier extends StateNotifier<ExpenseState> {
@@ -76,7 +88,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
   final ExpenseScope _scope;
 
   ExpenseNotifier(this._repo, this._scope) : super(const ExpenseState()) {
-    if (_scope.id.isNotEmpty) load();
+    if (_scope.id.isNotEmpty || _scope.isAllBranches) load();
   }
 
   String get _branchId => _scope.id;
@@ -85,7 +97,9 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final results = await Future.wait([
-        _scope.isHeadOffice
+        _scope.isAllBranches
+            ? _repo.getAllBranchEntries()
+            : _scope.isHeadOffice
             ? _repo.getEntriesByHeadOffice(_scope.id)
             : _repo.getEntriesByBranch(_branchId),
         _repo.getHeads(),
@@ -98,7 +112,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceAll('Exception: ', ''),
+        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
       );
     }
   }
@@ -137,7 +151,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       state = state.copyWith(isSaving: false);
       return null;
     } catch (e) {
-      final message = e.toString().replaceAll('Exception: ', '');
+      final message = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
       state = state.copyWith(isSaving: false, error: message);
       return message;
     }
@@ -170,7 +184,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       state = state.copyWith(isSaving: false);
       return null;
     } catch (e) {
-      final message = e.toString().replaceAll('Exception: ', '');
+      final message = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
       state = state.copyWith(isSaving: false, error: message);
       return message;
     }
@@ -182,7 +196,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       state = state.copyWith(heads: [...state.heads, head]);
       return null;
     } catch (e) {
-      return e.toString().replaceAll('Exception: ', '');
+      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
     }
   }
 
@@ -196,7 +210,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       await load();
       return null;
     } catch (e) {
-      return e.toString().replaceAll('Exception: ', '');
+      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
     }
   }
 }

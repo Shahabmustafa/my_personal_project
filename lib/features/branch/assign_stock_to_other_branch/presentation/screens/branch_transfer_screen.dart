@@ -8,10 +8,6 @@ import '../../../../superadmin/report/presentation/widgets/report_table_shell.da
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
-import '../../../sale_invoice/data/model/sale_invoice_model.dart'
-    show PrinterLookupItem;
-import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
-    show printersForSaleProvider;
 import '../../../shared/current_branch_provider.dart';
 import '../providers/branch_transfer_provider.dart';
 import '../widgets/branch_transfer_cart_table.dart';
@@ -21,7 +17,6 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
-import 'package:safishoe_app/core/widget/printer_picker_field.dart';
 
 const _primary = Color(0xFF1565C0);
 
@@ -50,8 +45,6 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
   bool _loadingDetail = false;
 
   Future<void> _printSlip(AssignStockModel a) async {
-    final choice = await pickPrinterForSlip(context, printersForSaleProvider);
-    if (choice == null || !mounted) return;
     try {
       // The list rows only carry totals — load the items for the slip.
       final detail = await ref
@@ -84,7 +77,6 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
               ),
             )
             .toList(),
-        printer: choice.printer,
         footerNote: switch (a.status) {
           'accepted' => 'Accepted by the receiving branch.',
           'rejected' => 'Rejected by the receiving branch.',
@@ -763,7 +755,7 @@ class _TransferFooter extends ConsumerWidget {
       return;
     }
 
-    final choice = await showDialog<_SendChoice>(
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => _ConfirmSendDialog(
         branchName: state.destinationBranch!.branchName,
@@ -771,7 +763,7 @@ class _TransferFooter extends ConsumerWidget {
         totalItems: state.cartItems.length,
       ),
     );
-    if (choice == null) return;
+    if (confirmed != true) return;
 
     final branchName = state.destinationBranch?.branchName ?? 'branch';
     // Cart is cleared right after saving — keep what the slip needs.
@@ -831,7 +823,6 @@ class _TransferFooter extends ConsumerWidget {
           fromName: fromName,
           toName: branchName,
           lines: slipLines,
-          printer: choice.printer,
         );
       } catch (e) {
         if (context.mounted) {
@@ -853,12 +844,6 @@ class _TransferFooter extends ConsumerWidget {
 
 // ── Confirm send dialog ───────────────────────────────────────────────────
 
-/// What the confirm dialog hands back (null = cancelled).
-class _SendChoice {
-  final PrinterLookupItem? printer;
-  const _SendChoice(this.printer);
-}
-
 class _ConfirmSendDialog extends StatefulWidget {
   final String branchName;
   final int totalQty;
@@ -875,8 +860,6 @@ class _ConfirmSendDialog extends StatefulWidget {
 }
 
 class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
-  PrinterLookupItem? _printer;
-
   String get branchName => widget.branchName;
   int get totalQty => widget.totalQty;
   int get totalItems => widget.totalItems;
@@ -942,14 +925,6 @@ class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
             'Stock is deducted from your branch now; the destination branch must accept it before it lands in their inventory.',
             style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: 360,
-            child: PrinterPickerField(
-              provider: printersForSaleProvider,
-              onChanged: (p) => _printer = p,
-            ),
-          ),
         ],
       ),
       actions: [
@@ -958,7 +933,7 @@ class _ConfirmSendDialogState extends State<_ConfirmSendDialog> {
           child: const Text('Cancel'),
         ),
         FilledButton(
-          onPressed: () => Navigator.pop(context, _SendChoice(_printer)),
+          onPressed: () => Navigator.pop(context, true),
           style: FilledButton.styleFrom(
             backgroundColor: _primary,
             shape: RoundedRectangleBorder(

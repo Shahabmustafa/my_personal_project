@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/features/dashboard/shortcuts_screen.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_entries_screen.dart';
 import 'package:safishoe_app/features/superadmin/bank/presentation/screens/bank_heads_screen.dart';
@@ -58,155 +59,233 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
   int _index = 0;
 
   static const _navItems = [
-    SidebarItem(icon: AppIcons.dashboardOutlined, label: 'Dashboard'),
-    SidebarItem(icon: AppIcons.businessOutlined, label: 'Head Office'),
-    SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Branches'),
-    SidebarItem(icon: AppIcons.warehouseOutlined, label: 'Warehouse'),
-    SidebarItem(icon: AppIcons.peopleOutline, label: 'Users'),
+    SidebarItem(
+      icon: AppIcons.dashboardOutlined,
+      label: 'Dashboard',
+      shortcut: '0',
+    ),
+    SidebarItem(
+      icon: AppIcons.businessOutlined,
+      label: 'Head Office',
+      shortcut: 'H',
+    ),
+    SidebarItem(
+      icon: AppIcons.apartmentOutlined,
+      label: 'Branches',
+      shortcut: 'B',
+    ),
+    SidebarItem(
+      icon: AppIcons.warehouseOutlined,
+      label: 'Warehouse',
+      shortcut: 'W',
+    ),
+    SidebarItem(icon: AppIcons.peopleOutline, label: 'Users', shortcut: 'U'),
     SidebarItem(
       icon: AppIcons.inventory2Outlined,
       label: 'Products',
+      shortcut: 'P',
       group: 'Catalog',
     ),
     SidebarItem(
       icon: AppIcons.formatSizeOutlined,
       label: 'Sizes',
+      shortcut: 'Z',
       group: 'Catalog',
     ),
     SidebarItem(
       icon: AppIcons.colorLensOutlined,
       label: 'Colors',
+      shortcut: 'C',
       group: 'Catalog',
     ),
     SidebarItem(
       icon: AppIcons.brandingWatermarkOutlined,
       label: 'Brands',
+      shortcut: 'Shift+B',
       group: 'Catalog',
     ),
     SidebarItem(
       icon: AppIcons.categoryOutlined,
       label: 'Categories',
+      shortcut: 'G',
       group: 'Catalog',
     ),
-    SidebarItem(icon: AppIcons.styleOutlined, label: 'Types', group: 'Catalog'),
-    SidebarItem(icon: AppIcons.warehouseOutlined, label: 'Stock Inventory'),
+    SidebarItem(
+      icon: AppIcons.styleOutlined,
+      label: 'Types',
+      shortcut: 'Y',
+      group: 'Catalog',
+    ),
+    SidebarItem(
+      icon: AppIcons.warehouseOutlined,
+      label: 'Stock Inventory',
+      shortcut: 'V',
+    ),
     SidebarItem(
       icon: AppIcons.receiptLongOutlined,
       label: 'Purchase Invoice',
+      shortcut: 'I',
       group: 'Purchase',
     ),
     SidebarItem(
       icon: AppIcons.assignmentReturnOutlined,
       label: 'Purchase Return',
+      shortcut: 'R',
       group: 'Purchase',
     ),
-    SidebarItem(icon: AppIcons.storefrontOutlined, label: 'Company'),
     SidebarItem(
-        icon: AppIcons.savingsOutlined, label: 'Head Office Cash Counter'),
+      icon: AppIcons.storefrontOutlined,
+      label: 'Company',
+      shortcut: 'O',
+    ),
+    SidebarItem(
+      icon: AppIcons.savingsOutlined,
+      label: 'Head Office Cash Counter',
+      shortcut: 'K',
+    ),
     SidebarItem(
       icon: AppIcons.businessOutlined,
       label: 'Head Office Expense',
+      shortcut: 'X',
       group: 'Expense',
     ),
     SidebarItem(
       icon: AppIcons.apartmentOutlined,
       label: 'Branch Expense',
+      shortcut: 'Shift+X',
       group: 'Expense',
     ),
-    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
+    SidebarItem(
+      icon: AppIcons.paymentsOutlined,
+      label: 'Branch Payments',
+      shortcut: 'Shift+P',
+    ),
     SidebarItem(
       icon: AppIcons.localShippingOutlined,
       label: 'Assign Stock To Branch',
+      shortcut: 'A',
       group: 'Assign Stock',
     ),
     SidebarItem(
       icon: AppIcons.history,
       label: 'Assign Stock by Admin',
+      shortcut: 'Shift+A',
       group: 'Assign Stock',
     ),
     SidebarItem(
       icon: AppIcons.history,
       label: 'Assign Stock by Branch',
+      shortcut: 'T',
       group: 'Assign Stock',
     ),
     SidebarItem(
       icon: AppIcons.moveToInboxOutlined,
       label: 'Incoming Branch Returns',
+      shortcut: 'Shift+I',
       group: 'Returns & Claims',
     ),
     SidebarItem(
       icon: AppIcons.warningAmberOutlined,
       label: 'Branch Sale Claims',
+      shortcut: 'L',
       group: 'Returns & Claims',
     ),
     SidebarItem(
       icon: AppIcons.percentOutlined,
       label: 'Branch Invoice Discount',
+      shortcut: 'J',
       group: 'Discount',
     ),
     SidebarItem(
       icon: AppIcons.sellOutlined,
       label: 'Sale Discount Tiers',
+      shortcut: 'Shift+J',
       group: 'Discount',
     ),
     SidebarItem(
       icon: AppIcons.sellOutlined,
       label: 'Buy 1 Get 1',
+      shortcut: '1',
       group: 'Discount',
     ),
     SidebarItem(
       icon: AppIcons.flagOutlined,
       label: 'Branch Target',
+      shortcut: 'Q',
       group: 'Target',
     ),
     SidebarItem(
       icon: AppIcons.accountBalanceOutlined,
       label: 'Bank Head',
+      shortcut: '2',
       group: 'Bank',
     ),
     SidebarItem(
       icon: AppIcons.accountBalanceWalletOutlined,
       label: 'Bank Entry',
+      shortcut: '3',
       group: 'Bank',
     ),
-    SidebarItem(icon: AppIcons.printOutlined, label: 'Print', group: 'Printer'),
+    SidebarItem(
+      icon: AppIcons.printOutlined,
+      label: 'Print',
+      shortcut: '4',
+      group: 'Printer',
+    ),
     SidebarItem(
       icon: AppIcons.localPrintshopOutlined,
       label: 'Assign Print',
+      shortcut: '5',
       group: 'Printer',
     ),
-    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Employee Salary'),
+    SidebarItem(
+      icon: AppIcons.paymentsOutlined,
+      label: 'Employee Salary',
+      shortcut: 'M',
+    ),
     SidebarItem(
       icon: AppIcons.listAlt,
       label: 'Sale Summary',
+      shortcut: 'S',
       group: 'Reports',
     ),
     SidebarItem(
       icon: AppIcons.shoppingCartCheckoutOutlined,
       label: 'Purchase Summary',
+      shortcut: 'Shift+S',
       group: 'Reports',
     ),
     SidebarItem(
       icon: AppIcons.trendingUpOutlined,
       label: 'Branch Target',
+      shortcut: 'Shift+Q',
       group: 'Reports',
     ),
     SidebarItem(
       icon: AppIcons.paymentsOutlined,
       label: 'Employee Salary Report',
+      shortcut: 'Shift+M',
       group: 'Reports',
     ),
     SidebarItem(
       icon: AppIcons.accessTimeOutlined,
       label: 'Staff Attendance',
+      shortcut: 'N',
       group: 'Attendance',
     ),
     SidebarItem(
       icon: AppIcons.fingerprint,
       label: 'Attendance Machines',
+      shortcut: 'Shift+N',
       group: 'Attendance',
     ),
   ];
+
+  static const _shortcutsItem = SidebarItem(
+    icon: AppIcons.infoOutline,
+    label: 'Keyboard Shortcuts',
+    shortcut: 'Shift+H',
+  );
 
   static const _pages = [
     OverviewScreen(),
@@ -216,7 +295,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     UsersScreen(),
     // Edit/delete allowed; delete is refused while stock still uses the row.
     ProductsScreen(),
-    SizesScreen(),
+    SizesScreen(showSizeGroups: true),
     ColorsScreen(),
     BrandsScreen(),
     CategorysScreen(),
@@ -268,20 +347,25 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final pendingClaims = ref
+    final pendingClaims =
+        ref
             .watch(incomingSaleClaimsProvider)
             .value
             ?.where((c) => c.isPending)
             .length ??
         0;
+    final navItems = [
+      for (final item in _navItems)
+        item.label == 'Branch Sale Claims'
+            ? item.withBadge(pendingClaims)
+            : item,
+    ];
     return SidebarShell(
-      navItems: [
-        for (final item in _navItems)
-          item.label == 'Branch Sale Claims'
-              ? item.withBadge(pendingClaims)
-              : item,
+      navItems: [...navItems, _shortcutsItem],
+      pages: [
+        ..._pages,
+        ShortcutsScreen(items: navItems),
       ],
-      pages: _pages,
       selectedIndex: _index,
       userName: user?.username ?? '',
       userRole: user?.roleDisplayName ?? '',

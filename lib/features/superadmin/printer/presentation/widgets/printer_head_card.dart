@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/models/printer_head_model.dart';
+import '../screens/printer_design_screen.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -72,6 +73,33 @@ class PrinterHeadCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
 
+          // View (print design)
+          InkWell(
+            onTap: () => openPrinterDesign(context, printer),
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3E63DD).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AppIcon(AppIcons.visibilityOutlined,
+                      size: 16, color: Color(0xFF3E63DD)),
+                  SizedBox(width: 4),
+                  Text('View',
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF3E63DD))),
+                ],
+              ),
+            ),
+          ),
+
           // Delete
           InkWell(
             onTap: onDelete,
@@ -79,7 +107,7 @@ class PrinterHeadCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.08),
+                color: Colors.redAccent.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const AppIcon(AppIcons.deleteOutline,

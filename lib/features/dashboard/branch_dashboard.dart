@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/features/dashboard/shortcuts_screen.dart';
 import 'package:safishoe_app/features/dashboard/sidebar_shell.dart';
 import '../auth/presentation/providers/auth_provider.dart';
 import '../auth/presentation/screens/login_screen.dart';
@@ -40,131 +41,207 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
   int _index = 0;
 
   static const _navItems = [
-    SidebarItem(icon: AppIcons.dashboardOutlined, label: 'Dashboard'),
-    SidebarItem(icon: AppIcons.badgeOutlined, label: 'Employees'),
-    SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Customers'),
     SidebarItem(
-        icon: AppIcons.apartmentOutlined,
-        label: 'Assign Stock My Branch',
-        group: 'Assign Stock'),
+      icon: AppIcons.dashboardOutlined,
+      label: 'Dashboard',
+      shortcut: '0',
+    ),
     SidebarItem(
-        icon: AppIcons.compareArrowsOutlined,
-        label: 'Assign Stock to Other Branch',
-        group: 'Assign Stock'),
+      icon: AppIcons.badgeOutlined,
+      label: 'Employees',
+      shortcut: 'M',
+    ),
     SidebarItem(
-        icon: AppIcons.assignmentReturnOutlined,
-        label: 'Return to Other Branch',
-        group: 'Stock Returns'),
+      icon: AppIcons.apartmentOutlined,
+      label: 'Customers',
+      shortcut: 'C',
+    ),
     SidebarItem(
-        icon: AppIcons.moveToInboxOutlined,
-        label: 'Incoming Stock Returns',
-        group: 'Stock Returns'),
+      icon: AppIcons.shoppingCartCheckoutOutlined,
+      label: 'Sale Invoice',
+      shortcut: 'S',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.warehouseOutlined,
-        label: 'Return to Admin',
-        group: 'Stock Returns'),
-    SidebarItem(icon: AppIcons.apartmentOutlined, label: 'Stock Inventory'),
-    SidebarItem(icon: AppIcons.pointOfSaleOutlined, label: 'Cash Counter'),
-    SidebarItem(icon: AppIcons.paymentsOutlined, label: 'Branch Payments'),
-    SidebarItem(icon: AppIcons.receiptLongOutlined, label: 'Expense'),
+      icon: AppIcons.assignmentReturnOutlined,
+      label: 'Sale Return',
+      shortcut: 'R',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.shoppingCartCheckoutOutlined,
-        label: 'Sale Invoice',
-        group: 'Sales'),
+      icon: AppIcons.swapHorizOutlined,
+      label: 'Sale Exchange',
+      shortcut: 'X',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.assignmentReturnOutlined,
-        label: 'Sale Return',
-        group: 'Sales'),
+      icon: AppIcons.warningAmberOutlined,
+      label: 'Sale Claim',
+      shortcut: 'L',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.swapHorizOutlined,
-        label: 'Sale Exchange',
-        group: 'Sales'),
+      icon: AppIcons.pointOfSaleOutlined,
+      label: 'Cash Counter',
+      shortcut: 'K',
+    ),
     SidebarItem(
-        icon: AppIcons.warningAmberOutlined,
-        label: 'Sale Claim',
-        group: 'Sales'),
+      icon: AppIcons.apartmentOutlined,
+      label: 'Assign Stock My Branch',
+      shortcut: 'A',
+      group: 'Assign Stock',
+    ),
     SidebarItem(
-        icon: AppIcons.listAlt,
-        label: 'Sale Summary',
-        group: 'Reports'),
+      icon: AppIcons.compareArrowsOutlined,
+      label: 'Assign Stock to Other Branch',
+      shortcut: 'T',
+      group: 'Assign Stock',
+    ),
     SidebarItem(
-        icon: AppIcons.trendingUpOutlined,
-        label: 'My Target',
-        group: 'Reports'),
+      icon: AppIcons.assignmentReturnOutlined,
+      label: 'Return to Other Branch',
+      shortcut: 'O',
+      group: 'Stock Returns',
+    ),
     SidebarItem(
-        icon: AppIcons.accessTimeOutlined,
-        label: 'My Attendance',
-        group: 'Attendance'),
+      icon: AppIcons.moveToInboxOutlined,
+      label: 'Incoming Stock Returns',
+      shortcut: 'I',
+      group: 'Stock Returns',
+    ),
     SidebarItem(
-        icon: AppIcons.peopleOutline,
-        label: 'Staff Attendance',
-        group: 'Attendance'),
+      icon: AppIcons.warehouseOutlined,
+      label: 'Return to Admin',
+      shortcut: 'U',
+      group: 'Stock Returns',
+    ),
+    SidebarItem(
+      icon: AppIcons.apartmentOutlined,
+      label: 'Stock Inventory',
+      shortcut: 'V',
+    ),
+    SidebarItem(
+      icon: AppIcons.paymentsOutlined,
+      label: 'Branch Payments',
+      shortcut: 'P',
+    ),
+    SidebarItem(
+      icon: AppIcons.receiptLongOutlined,
+      label: 'Expense',
+      shortcut: 'N',
+    ),
+    SidebarItem(
+      icon: AppIcons.listAlt,
+      label: 'Sale Summary',
+      shortcut: 'Y',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.trendingUpOutlined,
+      label: 'My Target',
+      shortcut: 'G',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.accessTimeOutlined,
+      label: 'My Attendance',
+      shortcut: 'W',
+      group: 'Attendance',
+    ),
+    SidebarItem(
+      icon: AppIcons.peopleOutline,
+      label: 'Staff Attendance',
+      shortcut: 'Shift+W',
+      group: 'Attendance',
+    ),
   ];
 
   static const _assignLabel = 'Assign Stock My Branch';
 
   void _showAssignmentNotification(
-      BuildContext context, String number, int assignIndex) {
+    BuildContext context,
+    String number,
+    int assignIndex,
+  ) {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(
-      behavior: SnackBarBehavior.floating,
-      width: 420,
-      duration: const Duration(seconds: 8),
-      backgroundColor: const Color(0xFF1F2333),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      content: Row(
-        children: [
-          const Icon(Icons.local_shipping_outlined,
-              color: Color(0xFF8ED4AA), size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Naya stock assign hua',
+    messenger.showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        width: 420,
+        duration: const Duration(seconds: 8),
+        backgroundColor: const Color(0xFF1F2333),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        content: Row(
+          children: [
+            const Icon(
+              Icons.local_shipping_outlined,
+              color: Color(0xFF8ED4AA),
+              size: 22,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'New stock assigned',
                     style: TextStyle(
-                        fontWeight: FontWeight.w700, color: Colors.white)),
-                if (number.isNotEmpty)
-                  Text('Assignment $number — accept ya reject karein',
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (number.isNotEmpty)
+                    Text(
+                      'Assignment $number — accept or reject',
                       style: const TextStyle(
-                          fontSize: 12, color: Color(0xFFB8BDD0))),
-              ],
+                        fontSize: 12,
+                        color: Color(0xFFB8BDD0),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
+        action: assignIndex < 0
+            ? null
+            : SnackBarAction(
+                label: 'View',
+                textColor: const Color(0xFF8ED4AA),
+                onPressed: () => setState(() => _index = assignIndex),
+              ),
       ),
-      action: assignIndex < 0
-          ? null
-          : SnackBarAction(
-              label: 'View',
-              textColor: const Color(0xFF8ED4AA),
-              onPressed: () => setState(() => _index = assignIndex),
-            ),
-    ));
+    );
   }
 
   /// Sirf manager (aur supervisor) poori branch ki attendance dekhta hai.
   static const _managerOnly = {'Staff Attendance'};
 
+  static const _shortcutsItem = SidebarItem(
+    icon: AppIcons.infoOutline,
+    label: 'Keyboard Shortcuts',
+    shortcut: 'Shift+H',
+  );
+
   static const _pages = [
     BranchOverviewScreen(),
     BranchEmployeeScreen(),
     CustomersScreen(),
+    SaleInvoiceScreen(),
+    SaleReturnScreen(),
+    SaleExchangeInvoicePickerScreen(),
+    SaleClaimsScreen(),
+    BranchCashCounterScreen(),
     BranchAssignListScreen(),
     BranchTransferScreen(),
     BranchStockReturnScreen(),
     IncomingStockReturnsScreen(),
     BranchWarehouseReturnScreen(),
     BranchStockScreen(),
-    BranchCashCounterScreen(),
     BranchPaymentsHistoryScreen(),
     ExpenseScreen(),
-    SaleInvoiceScreen(),
-    SaleReturnScreen(),
-    SaleExchangeInvoicePickerScreen(),
-    SaleClaimsScreen(),
     SaleSummaryReportScreen(restrictToOwnBranch: true),
     BranchTargetReportScreen(restrictToOwnBranch: true),
     MyAttendanceScreen(),
@@ -174,14 +251,14 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
-    final canSeeStaff =
-        user != null && (user.isManager || user.isSupervisor);
+    final canSeeStaff = user != null && (user.isManager || user.isSupervisor);
     final visible = [
       for (var i = 0; i < _navItems.length; i++)
         if (canSeeStaff || !_managerOnly.contains(_navItems[i].label)) i,
     ];
-    final assignIndex =
-        visible.indexWhere((i) => _navItems[i].label == _assignLabel);
+    final assignIndex = visible.indexWhere(
+      (i) => _navItems[i].label == _assignLabel,
+    );
 
     // Realtime — naya stock assign hote hi notification.
     ref.listen(incomingAssignmentProvider, (_, next) {
@@ -197,25 +274,29 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         .where((a) => a.status == 'pending')
         .length;
 
+    final navItems = [
+      for (final i in visible)
+        _navItems[i].label == _assignLabel
+            ? _navItems[i].withBadge(pendingAssignments)
+            : _navItems[i],
+    ];
     return SidebarShell(
-      navItems: [
-        for (final i in visible)
-          _navItems[i].label == _assignLabel
-              ? _navItems[i].withBadge(pendingAssignments)
-              : _navItems[i],
+      navItems: [...navItems, _shortcutsItem],
+      pages: [
+        for (final i in visible) _pages[i],
+        ShortcutsScreen(items: navItems),
       ],
-      pages: [for (final i in visible) _pages[i]],
       selectedIndex: _index,
       userName: user?.username ?? '',
       userRole: user?.roleDisplayName ?? '',
       onSelect: (i) => setState(() => _index = i),
-      onLogout: () async{
+      onLogout: () async {
         await ref.read(authProvider.notifier).logout();
-          if (context.mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-            );
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          );
         }
       },
     );

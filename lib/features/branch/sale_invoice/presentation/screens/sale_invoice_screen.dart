@@ -8,6 +8,8 @@ import '../../../customer/data/model/customer_model.dart';
 import '../../data/model/sale_invoice_model.dart';
 import '../../../../superadmin/discount/data/model/sale_discount_tier_model.dart';
 import '../provider/sale_invoice_provider.dart';
+import '../shortcuts/sale_invoice_shortcuts.dart';
+import 'package:safishoe_app/core/widget/keyboard_dropdown.dart';
 import '../widgets/sale_cart_table.dart';
 import '../widgets/sale_product_selector.dart';
 
@@ -89,57 +91,59 @@ class SaleInvoiceScreen extends ConsumerWidget {
           ref.read(saleInvoiceProvider.notifier).selectPaymentType(t),
     );
 
-    return InvoicePageBody(
-      top: [
-        // ── Invoice header card ───────────────────────────────────────
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return SaleInvoiceShortcuts(
+      child: InvoicePageBody(
+        top: [
+          // ── Invoice header card ───────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: isMobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(children: [invoiceNo, const Spacer(), dateBlock]),
+                      const SizedBox(height: 12),
+                      typeToggle,
+                    ],
+                  )
+                : Row(
+                    children: [
+                      invoiceNo,
+                      const SizedBox(width: 20),
+                      typeToggle,
+                      const Spacer(),
+                      dateBlock,
+                    ],
+                  ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ── Manager missing warning ──────────────────────────────────
+          const _ManagerWarningBanner(),
+
+          // ── Customer / Salesman / Printer / Bank ─────────────────────
+          const _InvoiceMetaRow(),
+
+          const SizedBox(height: 8),
+          const SaleProductSelector(showShortcutHints: true),
+          const SizedBox(height: 8),
+        ],
+        cart: Container(
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.grey.shade200),
           ),
-          child: isMobile
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(children: [invoiceNo, const Spacer(), dateBlock]),
-                    const SizedBox(height: 12),
-                    typeToggle,
-                  ],
-                )
-              : Row(
-                  children: [
-                    invoiceNo,
-                    const SizedBox(width: 20),
-                    typeToggle,
-                    const Spacer(),
-                    dateBlock,
-                  ],
-                ),
+          child: const SaleCartTable(),
         ),
-
-        const SizedBox(height: 12),
-
-        // ── Manager missing warning ──────────────────────────────────
-        const _ManagerWarningBanner(),
-
-        // ── Customer / Salesman / Printer / Bank ─────────────────────
-        const _InvoiceMetaRow(),
-
-        const SizedBox(height: 8),
-        const SaleProductSelector(),
-        const SizedBox(height: 8),
-      ],
-      cart: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: const SaleCartTable(),
+        bottom: const [SizedBox(height: 12), _InvoiceFooter()],
       ),
-      bottom: const [SizedBox(height: 12), _InvoiceFooter()],
     );
   }
 
@@ -247,6 +251,9 @@ class _InvoiceMetaRow extends ConsumerStatefulWidget {
 
 class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
   final _cashAmountCtrl = TextEditingController();
+  final _customerKey = GlobalKey<KeyboardDropdownState<CustomerModel>>();
+  final _printerKey = GlobalKey<KeyboardDropdownState<PrinterLookupItem>>();
+  final _salesmanKey = GlobalKey<KeyboardDropdownState<EmployeeLookupItem>>();
 
   @override
   void dispose() {
@@ -263,6 +270,17 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
     final printersAsync = ref.watch(printersForSaleProvider);
     final bankAsync = ref.watch(bankEntriesForSaleProvider);
     final isMobile = Responsive(context).isMobile;
+
+    // Ctrl+C / Ctrl+P — dropdown kholo (↑↓ + Enter se select).
+    ref.listen(saleShortcutProvider, (_, e) {
+      if (e?.action == SaleShortcut.customer) {
+        _customerKey.currentState?.open();
+      } else if (e?.action == SaleShortcut.salesman) {
+        _salesmanKey.currentState?.open();
+      } else if (e?.action == SaleShortcut.printer) {
+        _printerKey.currentState?.open();
+      }
+    });
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -284,8 +302,9 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                 ),
                 data: (list) {
                   final active = list.where((c) => c.isActive).toList();
-                  return DropdownSearch<CustomerModel>(
-                    items: (f, _) => active
+                  return KeyboardDropdown<CustomerModel>(
+                    key: _customerKey,
+                    filter: (f) => active
                         .where(
                           (c) => c.name.toLowerCase().contains(f.toLowerCase()),
                         )
@@ -294,14 +313,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                     itemAsString: (c) => c.name,
                     compareFn: (a, b) => a.id == b.id,
                     onSelected: notifier.selectCustomer,
-                    decoratorProps: DropDownDecoratorProps(
-                      decoration: _decor('Customer', required: true),
-                    ),
-                    popupProps: const PopupProps.menu(
-                      fit: FlexFit.loose,
-                      showSearchBox: true,
-                      constraints: BoxConstraints(maxHeight: 260),
-                    ),
+                    decoration: _decor('Customer', required: true, hint: 'Ctrl + C'),
                   );
                 },
               ),
@@ -311,6 +323,8 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
               child: _empDropdown(
                 label: 'Salesman',
                 required: true,
+                hint: 'Ctrl + M',
+                dropdownKey: _salesmanKey,
                 async: salesmenAsync,
                 selected: state.salesman,
                 onSelected: notifier.selectSalesman,
@@ -324,8 +338,9 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                   'Error: $e',
                   style: const TextStyle(fontSize: 11, color: Colors.red),
                 ),
-                data: (list) => DropdownSearch<PrinterLookupItem>(
-                  items: (f, _) => list
+                data: (list) => KeyboardDropdown<PrinterLookupItem>(
+                  key: _printerKey,
+                  filter: (f) => list
                       .where(
                         (e) => e.label.toLowerCase().contains(f.toLowerCase()),
                       )
@@ -334,14 +349,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
                   itemAsString: (e) => e.label,
                   compareFn: (a, b) => a.id == b.id,
                   onSelected: notifier.selectPrinter,
-                  decoratorProps: DropDownDecoratorProps(
-                    decoration: _decor('Printer', required: true),
-                  ),
-                  popupProps: const PopupProps.menu(
-                    fit: FlexFit.loose,
-                    showSearchBox: true,
-                    constraints: BoxConstraints(maxHeight: 260),
-                  ),
+                  decoration: _decor('Printer', required: true, hint: 'Ctrl + P'),
                 ),
               ),
             ),
@@ -438,6 +446,8 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
     required EmployeeLookupItem? selected,
     required void Function(EmployeeLookupItem?) onSelected,
     bool required = false,
+    String? hint,
+    GlobalKey<KeyboardDropdownState<EmployeeLookupItem>>? dropdownKey,
   }) {
     return async.when(
       loading: () => const _FieldLoading(),
@@ -448,37 +458,34 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
       data: (list) {
         if (list.isEmpty) {
           return InputDecorator(
-            decoration: _decor(label, required: required),
+            decoration: _decor(label, required: required, hint: hint),
             child: Text(
               '—',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
             ),
           );
         }
-        return DropdownSearch<EmployeeLookupItem>(
-          items: (f, _) => list
+        return KeyboardDropdown<EmployeeLookupItem>(
+          key: dropdownKey,
+          filter: (f) => list
               .where((e) => e.name.toLowerCase().contains(f.toLowerCase()))
               .toList(),
           selectedItem: selected,
           itemAsString: (e) => e.name,
           compareFn: (a, b) => a.id == b.id,
           onSelected: onSelected,
-          decoratorProps: DropDownDecoratorProps(
-            decoration: _decor(label, required: required),
-          ),
-          popupProps: const PopupProps.menu(
-            fit: FlexFit.loose,
-            showSearchBox: true,
-            constraints: BoxConstraints(maxHeight: 260),
-          ),
+          decoration: _decor(label, required: required, hint: hint),
         );
       },
     );
   }
 
-  InputDecoration _decor(String label, {bool required = false}) =>
+  InputDecoration _decor(String label, {bool required = false, String? hint}) =>
       InputDecoration(
         labelText: required ? '$label *' : label,
+        // Keyboard shortcut ka hint field ke neeche.
+        helperText: hint == null ? null : 'Shortcut: $hint',
+        helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3)),
         isDense: true,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
@@ -515,6 +522,14 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
   Widget build(BuildContext context) {
     final state = ref.watch(saleInvoiceProvider);
     final theme = Theme.of(context);
+
+    // Ctrl+S — invoice save (Sale Invoice button ki tarah hi shartein).
+    ref.listen(saleShortcutProvider, (_, e) {
+      if (e?.action != SaleShortcut.save) return;
+      final s = ref.read(saleInvoiceProvider);
+      if (s.isSaving || s.cartItems.isEmpty || s.manager == null) return;
+      _onSaveTap(context, ref);
+    });
     final branchPct =
         ref.watch(currentBranchMaxInvoiceDiscountPctProvider).value ?? 0;
     // Superadmin ne branch ka fixed % badla — cashier ko message dikhao.
@@ -594,7 +609,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
     final saveButton = Tooltip(
       message: state.manager == null
           ? 'Select a manager first (branch manager missing — add under Employees)'
-          : '',
+          : 'Shortcut: Ctrl + S',
       child: FilledButton.icon(
         icon: state.isSaving
             ? const SizedBox(
@@ -864,6 +879,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
             child: const Text('Cancel'),
           ),
           FilledButton(
+            autofocus: true,
             onPressed: () => Navigator.pop(context, true),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.green.shade600,
@@ -926,6 +942,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
         content: const Text('Sale invoice saved successfully.'),
         actions: [
           FilledButton(
+            autofocus: true,
             onPressed: () {
               Navigator.pop(context);
               ref.read(saleInvoiceProvider.notifier).resetInvoice();

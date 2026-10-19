@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:safishoe_app/core/service/print/receipt_options.dart';
 import '../datasources/printer_datasource.dart';
 import '../models/printer_head_model.dart';
 import '../models/assign_printer_model.dart';
@@ -29,6 +30,25 @@ class PrinterRepository {
         imageUrl:    imageUrl,
         address:     address,
         phoneNumber: phoneNumber,
+      );
+
+  Future<void> savePrinterDesign({
+    required String id,
+    required String logoPosition,
+    required bool showLogo,
+    required bool showName,
+    required bool showPhone,
+    required bool showAddress,
+    required ReceiptOptions options,
+  }) =>
+      _datasource.updatePrinterDesign(
+        id:           id,
+        logoPosition: logoPosition,
+        showLogo:     showLogo,
+        showName:     showName,
+        showPhone:    showPhone,
+        showAddress:  showAddress,
+        options:      options,
       );
 
   Future<void> removePrinterHead(String id) =>

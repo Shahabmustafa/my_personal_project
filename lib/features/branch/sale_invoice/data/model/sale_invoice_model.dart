@@ -1,3 +1,5 @@
+import 'package:safishoe_app/core/service/print/receipt_options.dart';
+import 'package:safishoe_app/core/utils/money.dart';
 class SaleInvoiceModel {
   final String id;
   final String invoiceNumber;
@@ -66,6 +68,18 @@ class SaleInvoiceModel {
 
   /// Item-wise + invoice-wise dono discount.
   double get allDiscount => totalDiscount + invoiceDiscount;
+
+  /// Invoice-wise discount (branch %, bulk tier, extra) items ke net total ka
+  /// kitna hissa tha — return/exchange mein customer ko wahi raqam wapas
+  /// milni chahiye jo us ne asal mein di thi.
+  double get invoiceDiscountRate {
+    final itemsNet = totalAmount + invoiceDiscount;
+    return invoiceDiscount > 0 && itemsNet > 0 ? invoiceDiscount / itemsNet : 0;
+  }
+
+  /// Item ka apna discount % aur invoice-wise discount milakar asal % (2 decimals).
+  double effectiveDiscountPct(double itemPct) =>
+      roundMoney(100 - (100 - itemPct) * (1 - invoiceDiscountRate));
 
   /// Payments se resolve hone wala payment type (cash/card/cash+card) — display ke liye.
   String get paymentTypeLabel {
@@ -335,12 +349,12 @@ class SaleCartItem {
   });
 
   bool get isB1g1 => b1g1OfferId != null;
-  double get discountAmount => salePrice * discountPct / 100;
+  double get discountAmount => roundMoney(salePrice * discountPct / 100);
   double get netPrice => salePrice - discountAmount;
 
   /// Free units ki qeemat (poori sale price).
   double get b1g1Discount => b1g1FreeQty * salePrice;
-  double get lineTotal => netPrice * quantity - b1g1Discount;
+  double get lineTotal => roundMoney(netPrice * quantity - b1g1Discount);
 
   SaleCartItem copyWith({
     int? quantity,
@@ -349,6 +363,7 @@ class SaleCartItem {
     String? b1g1OfferId,
     bool clearB1g1 = false,
     int? b1g1FreeQty,
+    int? availableStock,
   }) {
     return SaleCartItem(
       branchStockId: branchStockId,
@@ -365,7 +380,7 @@ class SaleCartItem {
       categoryName: categoryName,
       typeId: typeId,
       typeName: typeName,
-      availableStock: availableStock,
+      availableStock: availableStock ?? this.availableStock,
       quantity: quantity ?? this.quantity,
       salePrice: salePrice ?? this.salePrice,
       purchasePrice: purchasePrice,
@@ -426,13 +441,48 @@ class PrinterLookupItem {
   final String phoneNumber;
   final String imageUrl;
 
+  /// Receipt header design (printer head ki settings) — left | center | right.
+  final String logoPosition;
+  final bool showLogo;
+  final bool showName;
+  final bool showPhone;
+  final bool showAddress;
+
+  /// Baqi receipt sections (customer, totals, payments, notes ...).
+  final ReceiptOptions options;
+
   const PrinterLookupItem({
     required this.id,
     required this.label,
     this.address = '',
     this.phoneNumber = '',
     this.imageUrl = '',
+    this.logoPosition = 'center',
+    this.showLogo = true,
+    this.showName = true,
+    this.showPhone = true,
+    this.showAddress = true,
+    this.options = const ReceiptOptions(),
   });
+
+  /// `printer_heads` row (select `*`) -> lookup item. [id] caller deta hai
+  /// (assign_printer id ya printer head id).
+  factory PrinterLookupItem.fromHead(String id, Map<String, dynamic>? head) =>
+      PrinterLookupItem(
+        id: id,
+        label: head?['name']?.toString() ?? 'Printer',
+        address: head?['address']?.toString() ?? '',
+        phoneNumber: head?['phone_number']?.toString() ?? '',
+        imageUrl: head?['image_url']?.toString() ?? '',
+        logoPosition: head?['logo_position']?.toString() ?? 'center',
+        showLogo: head?['show_logo'] as bool? ?? true,
+        showName: head?['show_name'] as bool? ?? true,
+        showPhone: head?['show_phone'] as bool? ?? true,
+        showAddress: head?['show_address'] as bool? ?? true,
+        options: ReceiptOptions.fromMap(
+          head?['receipt_options'] as Map<String, dynamic>?,
+        ),
+      );
 
   @override
   bool operator ==(Object other) =>

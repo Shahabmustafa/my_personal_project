@@ -1,10 +1,11 @@
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/qty_stepper.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch_stock_inventory/data/model/branch_stock_model.dart';
 import '../provider/sale_invoice_provider.dart';
+import '../shortcuts/sale_invoice_shortcuts.dart';
+import 'package:safishoe_app/core/widget/keyboard_dropdown.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -26,8 +27,12 @@ class SaleProductSelector extends ConsumerStatefulWidget {
   /// Salesman / Printer) — har ek ko Expanded(flex: 3) milta hai.
   final List<Widget> leading;
 
+  /// Sale Invoice screen par barcode/article ke neeche shortcut hint.
+  final bool showShortcutHints;
+
   const SaleProductSelector({
     super.key,
+    this.showShortcutHints = false,
     this.onAdd,
     this.buttonLabel = 'Add Product',
     this.leading = const [],
@@ -41,6 +46,9 @@ class SaleProductSelector extends ConsumerStatefulWidget {
 class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
   final _barcodeCtrl = TextEditingController();
   final _barcodeFocus = FocusNode();
+  final _qtyFocus = FocusNode();
+  final _articleKey = GlobalKey<KeyboardDropdownState<BranchStockModel>>();
+  bool _focusedOnce = false;
   final _qtyCtrl = TextEditingController(text: '1');
 
   @override
@@ -67,6 +75,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
   void dispose() {
     _barcodeCtrl.dispose();
     _barcodeFocus.dispose();
+    _qtyFocus.dispose();
     _qtyCtrl.dispose();
     super.dispose();
   }
@@ -118,6 +127,20 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
     }
   }
 
+  /// Article chunte hi cursor quantity mein, value select — Enter se cart mein.
+  void _focusQty() {
+    // Dropdown band hone / qty field enable hone ke baad (focus wapas
+    // dropdown par na chala jaye).
+    Future.delayed(const Duration(milliseconds: 150), () {
+      if (!mounted) return;
+      final stock = _selectedStock;
+      if (stock == null || stock.quantity <= 0) return;
+      _qtyFocus.requestFocus();
+      _qtyCtrl.selection =
+          TextSelection(baseOffset: 0, extentOffset: _qtyCtrl.text.length);
+    });
+  }
+
   void _addToCart() {
     final stock = _selectedStock;
     if (stock == null) return;
@@ -161,6 +184,15 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
     final stockAsync = ref.watch(branchStockCacheProvider);
     final primary = Theme.of(context).colorScheme.primary;
 
+    // Ctrl+B barcode / Ctrl+F article (sale invoice screen ke shortcuts).
+    ref.listen(saleShortcutProvider, (_, e) {
+      if (e?.action == SaleShortcut.barcode) {
+        _barcodeFocus.requestFocus();
+      } else if (e?.action == SaleShortcut.article) {
+        _articleKey.currentState?.open();
+      }
+    });
+
     return stockAsync.when(
       // Realtime reload par purani list dikhti rahe — spinner/focus loss nahi.
       skipLoadingOnReload: true,
@@ -174,6 +206,14 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
             : allStock.firstWhere((s) => s.id == sel.id, orElse: () => sel);
         final totalQty = stock?.quantity ?? 0;
 
+        // Pehli baar list aate hi barcode par cursor (scanner ke liye).
+        if (!_focusedOnce) {
+          _focusedOnce = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _barcodeFocus.requestFocus();
+          });
+        }
+
         final isMobile = Responsive(context).isMobile;
 
         final barcodeField = TextField(
@@ -183,6 +223,8 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                   decoration: InputDecoration(
                     labelText: 'Bar Code',
                     hintText: 'Scan barcode...',
+                    helperText: widget.showShortcutHints ? 'Shortcut: Ctrl + B' : null,
+                    helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3)),
                     prefixIcon: const TextFieldIcon(AppIcons.qrCodeScanner, size: 18),
                     errorText: _barcodeNotFound ? 'Not found' : null,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
@@ -196,8 +238,9 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                   onSubmitted: (_) => _onBarcodeSubmit(allStock),
                 );
 
-        final articleField = DropdownSearch<BranchStockModel>(
-                  items: (f, _) => _filterStock(allStock, f),
+        final articleField = KeyboardDropdown<BranchStockModel>(
+                  key: _articleKey,
+                  filter: (f) => _filterStock(allStock, f),
                   selectedItem: _selectedStock,
                   itemAsString: (s) {
                     final variant = _variantLine(s);
@@ -210,41 +253,37 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                       a.colorId == b.colorId &&
                       a.categoryId == b.categoryId &&
                       a.typeId == b.typeId,
-                  onSelected: (s) => setState(() {
-                    _selectedStock = s;
-                    _barcodeCtrl.clear();
-                    _barcodeNotFound = false;
-                  }),
-                  decoratorProps: DropDownDecoratorProps(decoration: _dropDecor('Article')),
-                  popupProps: PopupProps.menu(
-                    fit: FlexFit.loose,
-                    showSearchBox: true,
-                    constraints: const BoxConstraints(maxHeight: 320),
-                    searchFieldProps: const TextFieldProps(
-                      decoration: InputDecoration(
-                        hintText: 'Search article, color, size, category...',
-                        prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
-                        isDense: true,
-                      ),
-                    ),
-                    itemBuilder: (context, s, isSelected, isFocused) {
-                      final variant = _variantLine(s);
-                      return ListTile(
-                        dense: true,
-                        selected: isSelected,
-                        title: Text(s.productName ?? s.productId,
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                        subtitle: Text(
-                          variant.isEmpty ? 'Barcode: ${s.barcode}' : '$variant  •  Barcode: ${s.barcode}',
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
-                        ),
-                        trailing: Text('Qty ${s.quantity}',
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: s.quantity > 0 ? Colors.green.shade700 : Colors.red)),
-                      );
-                    },
+                  onSelected: (s) {
+                    setState(() {
+                      _selectedStock = s;
+                      _barcodeCtrl.clear();
+                      _barcodeNotFound = false;
+                    });
+                    _focusQty();
+                  },
+                  decoration: _dropDecor('Article').copyWith(
+                    helperText: widget.showShortcutHints ? 'Shortcut: Ctrl + F' : null,
+                    helperStyle: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3)),
                   ),
+                  maxHeight: 320,
+                  searchHint: 'Search article, color, size, category...',
+                  itemBuilder: (context, s, isSelected) {
+                    final variant = _variantLine(s);
+                    return ListTile(
+                      dense: true,
+                      selected: isSelected,
+                      title: Text(s.productName ?? s.productId,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      subtitle: Text(
+                        variant.isEmpty ? 'Barcode: ${s.barcode}' : '$variant  •  Barcode: ${s.barcode}',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                      trailing: Text('Qty ${s.quantity}',
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: s.quantity > 0 ? Colors.green.shade700 : Colors.red)),
+                    );
+                  },
                 );
 
         final stockInfo = _InfoBox(
@@ -256,6 +295,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
 
         final qtyField = _QtyStepperInput(
                 controller: _qtyCtrl,
+                focusNode: _qtyFocus,
                 max: totalQty,
                 enabled: stock != null && totalQty > 0,
                 primaryColor: primary,
@@ -312,7 +352,10 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                   ],
                 )
               : Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  // Hint ke sath fields lambe hote hain — baqi cheezein upar se.
+                  crossAxisAlignment: widget.showShortcutHints
+                      ? CrossAxisAlignment.start
+                      : CrossAxisAlignment.end,
                   children: [
                     for (final w in widget.leading) ...[
                       Expanded(flex: 3, child: w),
@@ -394,6 +437,7 @@ class _InfoBox extends StatelessWidget {
 
 class _QtyStepperInput extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode? focusNode;
   final bool enabled;
   final Color primaryColor;
   final void Function(String) onSubmit;
@@ -401,6 +445,7 @@ class _QtyStepperInput extends StatelessWidget {
 
   const _QtyStepperInput({
     required this.controller,
+    this.focusNode,
     required this.enabled,
     required this.primaryColor,
     required this.onSubmit,
@@ -419,6 +464,7 @@ class _QtyStepperInput extends StatelessWidget {
           width: 132,
           child: QtyStepperField(
             controller: controller,
+            focusNode: focusNode,
             enabled: enabled,
             color: primaryColor,
             height: 48,

@@ -17,6 +17,9 @@ class ExpenseRepository {
   Future<List<ExpenseEntryModel>> getEntriesByBranch(String branchId) =>
       _datasource.getEntriesByBranch(branchId);
 
+  Future<List<ExpenseEntryModel>> getAllBranchEntries() =>
+      _datasource.getAllBranchEntries();
+
   Future<String?> getTodaysCashCounterId(String branchId) =>
       _datasource.getTodaysCashCounterId(branchId);
 

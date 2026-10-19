@@ -13,14 +13,13 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
-import 'package:safishoe_app/core/widget/printer_picker_field.dart';
 /// Stock assignment history. Lays the data out the same way as the sale
 /// reports: summary cards, a scrollable [ReportTableShell] table, a right
 /// slide-in detail panel on "View", and a pagination bar.
 ///
 /// [byBranch] false → "Assign Stock by Admin" (head office → branch).
 /// [byBranch] true  → "Assign Stock by Branch" (branch → branch transfers);
-/// sirf View/Print — accept/reject receiving branch khud karti hai.
+/// dono mein sirf View/Print — accept/reject receiving branch khud karti hai.
 class HoAssignStockListScreen extends ConsumerStatefulWidget {
   final bool byBranch;
   const HoAssignStockListScreen({super.key, this.byBranch = false});
@@ -346,27 +345,11 @@ class _HoAssignStockListScreenState
           tooltip: 'Print slip',
           onPressed: () => _onPrint(a),
         ),
-        if (a.status == 'pending' && !widget.byBranch) ...[
-          IconButton(
-            icon: AppIcon(AppIcons.checkCircleOutline,
-                size: 19, color: Colors.green.shade600),
-            tooltip: 'Accept',
-            onPressed: () => _onAccept(a),
-          ),
-          IconButton(
-            icon: AppIcon(AppIcons.cancelOutlined,
-                size: 19, color: Colors.red.shade600),
-            tooltip: 'Reject',
-            onPressed: () => _onReject(a),
-          ),
-        ],
       ],
     );
   }
 
   Future<void> _onPrint(HoAssignStockModel a) async {
-    final choice = await pickPrinterForSlip(context, hoPrintersProvider);
-    if (choice == null || !mounted) return;
     try {
       // The list rows only carry totals — load the items for the slip.
       final detail =
@@ -386,7 +369,6 @@ class _HoAssignStockListScreenState
                   quantity: i.quantity,
                 ))
             .toList(),
-        printer: choice.printer,
         footerNote: switch (a.status) {
           'accepted' => 'Accepted by the receiving branch.',
           'rejected' => 'Rejected by the receiving branch.',
@@ -402,78 +384,6 @@ class _HoAssignStockListScreenState
         ),
       );
     }
-  }
-
-  Future<void> _onAccept(HoAssignStockModel a) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
-          children: [
-            AppIcon(AppIcons.checkCircleOutline, color: Colors.green, size: 22),
-            SizedBox(width: 8),
-            Text('Accept Assignment?'),
-          ],
-        ),
-        content: const Text(
-          'Stock branch inventory mein add ho jayega.\n\nYe action undo nahi ho sakta.',
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Accept'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    await ref.read(_listProvider.notifier).acceptAssignment(a.id);
-    if (!mounted) return;
-    ref.invalidate(hoAssignStockListProvider);
-    ref.invalidate(hoAssignmentDetailProvider(a.id));
-    setState(() => _selected = null);
-  }
-
-  Future<void> _onReject(HoAssignStockModel a) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Row(
-          children: [
-            AppIcon(AppIcons.cancelOutlined, color: Colors.red, size: 22),
-            SizedBox(width: 8),
-            Text('Reject Assignment?'),
-          ],
-        ),
-        content: const Text(
-          'Assignment rejected ho jayegi aur stock wapas head office mein aa jayega.',
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Reject'),
-          ),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-    await ref.read(_listProvider.notifier).rejectAssignment(a.id);
-    if (!mounted) return;
-    ref.invalidate(hoAssignStockListProvider);
-    ref.invalidate(hoAssignmentDetailProvider(a.id));
-    setState(() => _selected = null);
   }
 
   Widget _filterChip(String label, String value, int count) {

@@ -23,6 +23,7 @@ class QtyStepperField extends StatefulWidget {
   final double fontSize;
   final ValueChanged<String>? onSubmitted;
   final VoidCallback? onTapOutside;
+  final FocusNode? focusNode;
 
   /// Called on every keystroke (used by [QtyStepper.live]).
   final ValueChanged<String>? onChanged;
@@ -42,6 +43,7 @@ class QtyStepperField extends StatefulWidget {
     this.fontSize = 15,
     this.onSubmitted,
     this.onTapOutside,
+    this.focusNode,
     this.onChanged,
     this.onStep,
   });
@@ -119,6 +121,7 @@ class _QtyStepperFieldState extends State<QtyStepperField> {
           Expanded(
             child: TextField(
               controller: widget.controller,
+              focusNode: widget.focusNode,
               enabled: enabled,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,

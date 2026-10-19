@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../data/models/printer_head_model.dart';
 import '../providers/printer_providers.dart';
 import '../widgets/printer_head_card.dart';
+import 'printer_design_screen.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -313,7 +314,7 @@ class _PrinterHeadsScreenState extends ConsumerState<PrinterHeadsScreen> {
           );
         },
       ),
-    );
+    ).whenComplete(() => Future.delayed(const Duration(milliseconds: 500), () {nameCtrl.dispose();addressCtrl.dispose();phoneCtrl.dispose();}));
   }
 
   // ── Confirm Delete ─────────────────────────────────────────────────────────
@@ -437,7 +438,7 @@ class _DesktopTable extends StatelessWidget {
                   _TH('Address',       flex: 4),
                   _TH('Phone',         flex: 3),
                   _TH('Created At',    flex: 2),
-                  _TH('Action',        flex: 2),
+                  _TH('Action',        flex: 4),
                 ]),
               ),
               // Rows
@@ -447,7 +448,9 @@ class _DesktopTable extends StatelessWidget {
                   itemBuilder: (_, i) {
                     final p      = printers[i];
                     final isLast = i == printers.length - 1;
-                    return Container(
+                    return InkWell(
+                      onTap: () => openPrinterDesign(context, p),
+                      child: Container(
                       decoration: BoxDecoration(
                         color: i.isEven
                             ? Colors.white
@@ -552,19 +555,42 @@ class _DesktopTable extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // Delete
+                        // View (print design) / Delete
                         Expanded(
-                          flex: 2,
+                          flex: 4,
                           child: _TD(
-                            child: _IconBtn(
-                              icon: AppIcons.deleteOutline,
-                              color: Colors.redAccent,
-                              tooltip: 'Delete',
-                              onTap: () => onDelete(p),
-                            ),
+                            child: Row(children: [
+                              OutlinedButton.icon(
+                                onPressed: () => openPrinterDesign(context, p),
+                                icon: const AppIcon(AppIcons.visibilityOutlined,
+                                    size: 15, color: Color(0xFF3E63DD)),
+                                label: const Text('View'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF3E63DD),
+                                  side: const BorderSide(
+                                      color: Color(0xFF3E63DD)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10),
+                                  minimumSize: const Size(0, 30),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                  textStyle: const TextStyle(fontSize: 12),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(6)),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              _IconBtn(
+                                icon: AppIcons.deleteOutline,
+                                color: Colors.redAccent,
+                                tooltip: 'Delete',
+                                onTap: () => onDelete(p),
+                              ),
+                            ]),
                           ),
                         ),
                       ]),
+                    ),
                     );
                   },
                 ),
@@ -671,7 +697,7 @@ class _IconBtn extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(6)),
         child: AppIcon(icon, size: 16, color: color),
       ),

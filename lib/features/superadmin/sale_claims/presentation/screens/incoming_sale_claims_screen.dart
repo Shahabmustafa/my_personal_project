@@ -143,17 +143,10 @@ class _IncomingSaleClaimsScreenState
                             columns: const [
                               DataColumn(label: Text('Claim No')),
                               DataColumn(label: Text('Branch')),
-                              DataColumn(label: Text('Invoice')),
-                              DataColumn(label: Text('Customer')),
                               DataColumn(label: Text('Product')),
-                              DataColumn(label: Text('Size')),
-                              DataColumn(label: Text('Color')),
                               DataColumn(label: Text('Qty'), numeric: true),
-                              DataColumn(label: Text('Sale Date')),
                               DataColumn(label: Text('Claim Date')),
-                              DataColumn(label: Text('Reason')),
                               DataColumn(label: Text('Status')),
-                              DataColumn(label: Text('Remarks')),
                               DataColumn(label: Text('Actions')),
                             ],
                             rows: [
@@ -165,17 +158,10 @@ class _IncomingSaleClaimsScreenState
                                           fontFamily: 'monospace',
                                           color: _accent))),
                                   DataCell(Text(c.branchName ?? '—')),
-                                  DataCell(Text(c.invoiceNumber ?? '—')),
-                                  DataCell(Text(c.customerName ?? '—')),
                                   DataCell(Text(claimProductLabel(c))),
-                                  DataCell(Text(c.sizeName ?? '—')),
-                                  DataCell(Text(c.colorName ?? '—')),
                                   DataCell(Text('${c.quantity}')),
-                                  DataCell(Text(claimFmtDate(c.saleDate))),
                                   DataCell(Text(claimFmtDate(c.claimDate))),
-                                  DataCell(SaleClaimTextCell(c.reason)),
                                   DataCell(SaleClaimStatusChip(c.status)),
-                                  DataCell(SaleClaimTextCell(c.reviewRemarks)),
                                   DataCell(_actions(c)),
                                 ]),
                             ],
@@ -187,7 +173,21 @@ class _IncomingSaleClaimsScreenState
   }
 
   Widget _actions(SaleClaimModel c) {
-    if (!c.isPending) return const SizedBox.shrink();
+    final viewButton = OutlinedButton.icon(
+      onPressed: () => _showDetail(c),
+      icon: const AppIcon(AppIcons.visibilityOutlined, size: 15),
+      label: const Text('View'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF1565C0),
+        side: const BorderSide(color: Color(0xFF1565C0)),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        minimumSize: const Size(0, 30),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: const TextStyle(fontSize: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      ),
+    );
+    if (!c.isPending) return viewButton;
     if (_busyId == c.id) {
       return const SizedBox(
         width: 20,
@@ -198,6 +198,7 @@ class _IncomingSaleClaimsScreenState
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
+        viewButton,
         IconButton(
           icon: AppIcon(AppIcons.checkCircleOutline,
               size: 19, color: Colors.green.shade600),
@@ -211,6 +212,122 @@ class _IncomingSaleClaimsScreenState
           onPressed: () => _review(c, approve: false),
         ),
       ],
+    );
+  }
+
+  /// Claim ki poori detail — table mein sirf summary dikhti hai.
+  void _showDetail(SaleClaimModel c) {
+    Widget kv(String k, String? v) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 120,
+                child: Text(k,
+                    style: const TextStyle(
+                        fontSize: 13, color: Color(0xFF8A8FA3))),
+              ),
+              Expanded(
+                child: Text(
+                  (v == null || v.trim().isEmpty) ? '—' : v,
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        );
+    Widget section(String t) => Padding(
+          padding: const EdgeInsets.only(top: 12, bottom: 4),
+          child: Text(t,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF8A8FA3),
+                  letterSpacing: 0.5)),
+        );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const AppIcon(AppIcons.warningAmberOutlined,
+                color: _accent, size: 22),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(c.claimNumber,
+                  style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'monospace')),
+            ),
+            SaleClaimStatusChip(c.status),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                section('CLAIM'),
+                kv('Branch', c.branchName),
+                kv('Claim Date', claimFmtDate(c.claimDate)),
+                kv('Reason', c.reason),
+                section('SALE'),
+                kv('Invoice', c.invoiceNumber),
+                kv('Customer', c.customerName),
+                kv('Sale Date', claimFmtDate(c.saleDate)),
+                section('PRODUCT'),
+                kv('Product', c.productName),
+                kv('Brand', c.brandName),
+                kv('Category', c.categoryName),
+                kv('Type', c.typeName),
+                kv('Size', c.sizeName),
+                kv('Color', c.colorName),
+                kv('Barcode', c.barcode),
+                section('AMOUNT'),
+                kv('Quantity', '${c.quantity}'),
+                kv('Sale Price', 'Rs. ${c.salePrice.toStringAsFixed(0)}'),
+                kv('Total', 'Rs. ${c.totalPrice.toStringAsFixed(0)}'),
+                if (c.status != 'pending') ...[
+                  section('REVIEW'),
+                  kv('Reviewed At',
+                      c.reviewedAt == null ? null : claimFmtDate(c.reviewedAt!)),
+                  kv('Remarks', c.reviewRemarks),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          if (c.isPending) ...[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _review(c, approve: false);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Reject'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _review(c, approve: true);
+              },
+              style: FilledButton.styleFrom(backgroundColor: Colors.green),
+              child: const Text('Approve'),
+            ),
+          ] else
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+        ],
+      ),
     );
   }
 

@@ -32,31 +32,37 @@ class _SalesmanDashboardState extends ConsumerState<SalesmanDashboard> {
   static const _navItems = [
     SidebarItem(icon: AppIcons.dashboardOutlined, label: 'Dashboard'),
     SidebarItem(
-        icon: AppIcons.shoppingCartCheckoutOutlined,
-        label: 'New Sale',
-        group: 'Sales'),
+      icon: AppIcons.shoppingCartCheckoutOutlined,
+      label: 'New Sale',
+      shortcut: 'S',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.assignmentReturnOutlined,
-        label: 'Sale Return',
-        group: 'Sales'),
+      icon: AppIcons.assignmentReturnOutlined,
+      label: 'Sale Return',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.swapHorizOutlined,
-        label: 'Sale Exchange',
-        group: 'Sales'),
+      icon: AppIcons.swapHorizOutlined,
+      label: 'Sale Exchange',
+      group: 'Sales',
+    ),
     SidebarItem(
-        icon: AppIcons.receiptLongOutlined,
-        label: 'My Sales',
-        group: 'My Activity'),
+      icon: AppIcons.receiptLongOutlined,
+      label: 'My Sales',
+      group: 'My Activity',
+    ),
     SidebarItem(
-        icon: AppIcons.assignmentReturnOutlined,
-        label: 'My Returns',
-        group: 'My Activity'),
+      icon: AppIcons.assignmentReturnOutlined,
+      label: 'My Returns',
+      group: 'My Activity',
+    ),
     SidebarItem(
-        icon: AppIcons.swapHorizOutlined,
-        label: 'My Exchanges',
-        group: 'My Activity'),
-    SidebarItem(
-        icon: AppIcons.accessTimeOutlined, label: 'My Attendance'),
+      icon: AppIcons.swapHorizOutlined,
+      label: 'My Exchanges',
+      group: 'My Activity',
+    ),
+    SidebarItem(icon: AppIcons.accessTimeOutlined, label: 'My Attendance'),
     SidebarItem(icon: AppIcons.personOutline, label: 'My Profile'),
   ];
 

@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import 'receipt_options.dart';
 import '../../../features/branch/sale_exchange/data/model/sale_exchange_model.dart';
 import '../../../features/branch/sale_invoice/data/model/sale_invoice_model.dart';
 import '../../../features/branch/sale_return/data/model/sale_return_model.dart';
@@ -22,6 +23,9 @@ class ThermalPrintService {
   ThermalPrintService._();
 
   static const String _defaultShopName = 'Safi Shoe';
+
+  /// Receipt header ka naam — printer design preview isi ko dikhata hai.
+  static const String defaultShopName = _defaultShopName;
 
   static final _boldFont = pw.Font.helveticaBold();
   static final _regularFont = pw.Font.helvetica();
@@ -295,6 +299,7 @@ class ThermalPrintService {
     final hasCustomer = (exchange.customerName ?? '').isNotEmpty;
     final hasSalesman = (exchange.salesmanName ?? '').isNotEmpty;
     final logo = await _fetchLogo(printer?.imageUrl);
+    final o = printer?.options ?? const ReceiptOptions();
 
     final returnLines = exchange.returnItems
         .map((i) => _ReceiptLine(
@@ -331,31 +336,7 @@ class ThermalPrintService {
         build: (pw.Context ctx) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
-            if (logo != null)
-              pw.Center(
-                child: pw.Container(
-                  width: 55,
-                  height: 55,
-                  margin: const pw.EdgeInsets.only(bottom: 8),
-                  child: pw.Image(logo, fit: pw.BoxFit.contain),
-                ),
-              ),
-            pw.Center(
-              child: pw.Text(
-                shopName.toUpperCase(),
-                style: pw.TextStyle(font: _boldFont, fontSize: 14, letterSpacing: 1.5),
-              ),
-            ),
-            if (printer != null && printer.address.isNotEmpty)
-              pw.Center(
-                child: pw.Text(printer.address,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
-              ),
-            if (printer != null && printer.phoneNumber.isNotEmpty)
-              pw.Center(
-                child: pw.Text(printer.phoneNumber,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
-              ),
+            ..._header(logo, shopName, printer),
             pw.SizedBox(height: 10),
             pw.Center(
               child: pw.Text('SALE EXCHANGE',
@@ -365,12 +346,15 @@ class ThermalPrintService {
             _dashedDivider(),
             pw.SizedBox(height: 4),
 
-            _kv('Exchange #', exchange.exchangeNumber),
-            if ((exchange.originalInvoiceNumber ?? '').isNotEmpty)
+            if (o.showDocNumber) _kv('Exchange #', exchange.exchangeNumber),
+            if (o.showDocNumber &&
+                (exchange.originalInvoiceNumber ?? '').isNotEmpty)
               _kv('Against Invoice', exchange.originalInvoiceNumber!),
-            _kv('Date', _formatDateTime(exchange.createdAt)),
-            if (hasCustomer) _kv('Customer', exchange.customerName!),
-            if (hasSalesman) _kv('Salesman', exchange.salesmanName!),
+            if (o.showDate) _kv('Date', _formatDateTime(exchange.createdAt)),
+            if (o.showCustomer && hasCustomer)
+              _kv('Customer', exchange.customerName!),
+            if (o.showSalesman && hasSalesman)
+              _kv('Salesman', exchange.salesmanName!),
 
             if (returnLines.isNotEmpty) ...[
               pw.SizedBox(height: 4),
@@ -379,13 +363,15 @@ class ThermalPrintService {
               pw.Text('RETURNED ITEMS',
                   style: pw.TextStyle(font: _boldFont, fontSize: 8, color: PdfColors.grey700)),
               pw.SizedBox(height: 4),
-              _itemsHeader(),
+              _itemsHeader(o),
               _dashedDivider(),
               pw.SizedBox(height: 2),
-              for (final line in returnLines) _itemRow(line),
+              for (final line in returnLines) _itemRow(line, o),
               pw.SizedBox(height: 4),
-              _kv('Return Sub Total', _fmt(exchange.returnSubtotal)),
-              if (exchange.returnDiscount > 0) _kv('Return Discount', '-${_fmt(exchange.returnDiscount)}'),
+              if (o.showSubTotal)
+                _kv('Return Sub Total', _fmt(exchange.returnSubtotal)),
+              if (o.showDiscount && exchange.returnDiscount > 0)
+                _kv('Return Discount', '-${_fmt(exchange.returnDiscount)}'),
               _kv('Return Total', _fmt(exchange.returnTotal)),
             ],
 
@@ -395,13 +381,15 @@ class ThermalPrintService {
             pw.Text('NEW ITEMS',
                 style: pw.TextStyle(font: _boldFont, fontSize: 7.5, color: PdfColors.grey700)),
             pw.SizedBox(height: 2),
-            _itemsHeader(),
+            _itemsHeader(o),
             _dashedDivider(),
             pw.SizedBox(height: 2),
-            for (final line in newLines) _itemRow(line),
+            for (final line in newLines) _itemRow(line, o),
             pw.SizedBox(height: 4),
-            _kv('New Sub Total', _fmt(exchange.newSubtotal)),
-            if (exchange.newDiscount > 0) _kv('New Discount', '-${_fmt(exchange.newDiscount)}'),
+            if (o.showSubTotal)
+              _kv('New Sub Total', _fmt(exchange.newSubtotal)),
+            if (o.showDiscount && exchange.newDiscount > 0)
+              _kv('New Discount', '-${_fmt(exchange.newDiscount)}'),
             _kv('New Total', _fmt(exchange.newTotal)),
 
             pw.SizedBox(height: 4),
@@ -414,7 +402,8 @@ class ThermalPrintService {
               ],
             ),
 
-            if (exchange.payments.any((p) => p.amount > 0.01)) ...[
+            if (o.showPayments &&
+                exchange.payments.any((p) => p.amount > 0.01)) ...[
               pw.SizedBox(height: 6),
               _dashedDivider(),
               pw.SizedBox(height: 4),
@@ -431,16 +420,10 @@ class ThermalPrintService {
             _dashedDivider(),
             pw.SizedBox(height: 6),
 
-            pw.Text('Exchanged pairs are subject to inspection before acceptance.',
-                style: pw.TextStyle(font: _regularFont, fontSize: 6.5, color: PdfColors.grey700)),
-
-            pw.SizedBox(height: 12),
-            pw.Center(
-              child: pw.Text(
-                'Thank you for shopping with us!',
-                style: pw.TextStyle(font: _regularFont, fontSize: 9, color: PdfColors.grey700),
-              ),
-            ),
+            if (o.showNotes)
+              pw.Text('Exchanged pairs are subject to inspection before acceptance.',
+                  style: pw.TextStyle(font: _regularFont, fontSize: 6.5, color: PdfColors.grey700)),
+            ..._footerLines(o),
           ],
         ),
       ),
@@ -477,6 +460,7 @@ class ThermalPrintService {
     final hasCustomer = customerName != null && customerName.isNotEmpty;
     final hasSalesman = salesmanName != null && salesmanName.isNotEmpty;
     final logo = await _fetchLogo(printer?.imageUrl);
+    final o = printer?.options ?? const ReceiptOptions();
 
     doc.addPage(
       pw.Page(
@@ -484,31 +468,7 @@ class ThermalPrintService {
         build: (pw.Context ctx) => pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.stretch,
           children: [
-            if (logo != null)
-              pw.Center(
-                child: pw.Container(
-                  width: 55,
-                  height: 55,
-                  margin: const pw.EdgeInsets.only(bottom: 8),
-                  child: pw.Image(logo, fit: pw.BoxFit.contain),
-                ),
-              ),
-            pw.Center(
-              child: pw.Text(
-                shopName.toUpperCase(),
-                style: pw.TextStyle(font: _boldFont, fontSize: 14, letterSpacing: 1.5),
-              ),
-            ),
-            if (printer != null && printer.address.isNotEmpty)
-              pw.Center(
-                child: pw.Text(printer.address,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
-              ),
-            if (printer != null && printer.phoneNumber.isNotEmpty)
-              pw.Center(
-                child: pw.Text(printer.phoneNumber,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700)),
-              ),
+            ..._header(logo, shopName, printer),
             pw.SizedBox(height: 10),
             pw.Center(
               child: pw.Text(title,
@@ -518,26 +478,28 @@ class ThermalPrintService {
             _dashedDivider(),
             pw.SizedBox(height: 4),
 
-            _kv(documentNumberLabel, documentNumber),
-            _kv('Date', _formatDateTime(date)),
-            if (hasCustomer) _kv('Customer', customerName),
-            if (hasSalesman) _kv('Salesman', salesmanName),
+            if (o.showDocNumber) _kv(documentNumberLabel, documentNumber),
+            if (o.showDate) _kv('Date', _formatDateTime(date)),
+            if (o.showCustomer && hasCustomer) _kv('Customer', customerName),
+            if (o.showSalesman && hasSalesman) _kv('Salesman', salesmanName),
 
             pw.SizedBox(height: 4),
             _dashedDivider(),
             pw.SizedBox(height: 4),
 
-            _itemsHeader(),
+            _itemsHeader(o),
             _dashedDivider(),
             pw.SizedBox(height: 2),
-            for (final line in lines) _itemRow(line),
+            for (final line in lines) _itemRow(line, o),
 
             _dashedDivider(),
             pw.SizedBox(height: 4),
 
-            _kv('Sub Total', _fmt(subtotal)),
-            if (totalDiscount > 0) _kv('Discount', '-${_fmt(totalDiscount)}'),
-            if (extraDiscount > 0) _kv(extraDiscountLabel, '-${_fmt(extraDiscount)}'),
+            if (o.showSubTotal) _kv('Sub Total', _fmt(subtotal)),
+            if (o.showDiscount && totalDiscount > 0)
+              _kv('Discount', '-${_fmt(totalDiscount)}'),
+            if (o.showDiscount && extraDiscount > 0)
+              _kv(extraDiscountLabel, '-${_fmt(extraDiscount)}'),
 
             pw.SizedBox(height: 4),
             pw.Row(
@@ -548,7 +510,7 @@ class ThermalPrintService {
               ],
             ),
 
-            if (payments.any((p) => p.amount > 0.01)) ...[
+            if (o.showPayments && payments.any((p) => p.amount > 0.01)) ...[
               pw.SizedBox(height: 6),
               _dashedDivider(),
               pw.SizedBox(height: 4),
@@ -562,19 +524,13 @@ class ThermalPrintService {
             _dashedDivider(),
             pw.SizedBox(height: 6),
 
-            for (final note in footerNotes)
-              pw.Padding(
-                padding: const pw.EdgeInsets.only(bottom: 3),
-                child: pw.Text(note, style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
-              ),
-
-            pw.SizedBox(height: 12),
-            pw.Center(
-              child: pw.Text(
-                'Thank you for shopping with us!',
-                style: pw.TextStyle(font: _regularFont, fontSize: 9, color: PdfColors.grey700),
-              ),
-            ),
+            if (o.showNotes)
+              for (final note in footerNotes)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 3),
+                  child: pw.Text(note, style: pw.TextStyle(font: _regularFont, fontSize: 7.5, color: PdfColors.grey700)),
+                ),
+            ..._footerLines(o),
           ],
         ),
       ),
@@ -583,75 +539,125 @@ class ThermalPrintService {
     return doc;
   }
 
-  static pw.Widget _itemsHeader() => pw.Row(children: [
-        pw.Expanded(
-            flex: 3,
-            child: pw.Text('ITEM',
-                style: pw.TextStyle(font: _boldFont, fontSize: 8))),
-        pw.Expanded(
-            flex: 2,
-            child: pw.Text('COLOR',
-                style: pw.TextStyle(font: _boldFont, fontSize: 8),
-                textAlign: pw.TextAlign.center)),
-        pw.Expanded(
-            flex: 2,
-            child: pw.Text('SIZE',
-                style: pw.TextStyle(font: _boldFont, fontSize: 8),
-                textAlign: pw.TextAlign.center)),
-        pw.Expanded(
-            flex: 1,
-            child: pw.Text('QTY',
-                style: pw.TextStyle(font: _boldFont, fontSize: 8),
-                textAlign: pw.TextAlign.center)),
-        pw.Expanded(
-            flex: 2,
-            child: pw.Text('DIS',
-                style: pw.TextStyle(font: _boldFont, fontSize: 8),
-                textAlign: pw.TextAlign.center)),
-        pw.Expanded(
-            flex: 2,
-            child: pw.Text('TOTAL',
-                style: pw.TextStyle(font: _boldFont, fontSize: 8),
-                textAlign: pw.TextAlign.right)),
-      ]);
+  /// Receipt header — logo, uske neeche name, phone, address. Position
+  /// (left/center/right) aur on/off printer head ki design settings se aati
+  /// hai; printer na ho to default (center, sab on).
+  static List<pw.Widget> _header(
+    pw.ImageProvider? logo,
+    String shopName,
+    PrinterLookupItem? printer,
+  ) {
+    final position = printer?.logoPosition ?? 'center';
+    final align = switch (position) {
+      'left' => pw.Alignment.centerLeft,
+      'right' => pw.Alignment.centerRight,
+      _ => pw.Alignment.center,
+    };
+    final textAlign = switch (position) {
+      'left' => pw.TextAlign.left,
+      'right' => pw.TextAlign.right,
+      _ => pw.TextAlign.center,
+    };
+    pw.Widget line(String text, pw.TextStyle style) => pw.Align(
+          alignment: align,
+          child: pw.Text(text, style: style, textAlign: textAlign),
+        );
+    final smallStyle =
+        pw.TextStyle(font: _regularFont, fontSize: 8.5, color: PdfColors.grey700);
 
-  static pw.Widget _itemRow(_ReceiptLine line) => pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 6),
-        child: pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Expanded(
-                flex: 3,
-                child: pw.Text(line.name,
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8), maxLines: 2)),
-            pw.Expanded(
-                flex: 2,
-                child: pw.Text(line.colorName ?? '-',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
-                    textAlign: pw.TextAlign.center)),
-            pw.Expanded(
-                flex: 2,
-                child: pw.Text(line.sizeName ?? '-',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
-                    textAlign: pw.TextAlign.center)),
-            pw.Expanded(
-                flex: 1,
-                child: pw.Text('${line.quantity}',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
-                    textAlign: pw.TextAlign.center)),
-            pw.Expanded(
-                flex: 2,
-                child: pw.Text(line.discount > 0 ? line.discount.toStringAsFixed(0) : '-',
-                    style: pw.TextStyle(font: _regularFont, fontSize: 8),
-                    textAlign: pw.TextAlign.center)),
-            pw.Expanded(
-                flex: 2,
-                child: pw.Text(line.total.toStringAsFixed(0),
-                    style: pw.TextStyle(font: _boldFont, fontSize: 8),
-                    textAlign: pw.TextAlign.right)),
-          ],
+    return [
+      if (logo != null && (printer?.showLogo ?? true))
+        pw.Align(
+          alignment: align,
+          child: pw.Container(
+            width: 55,
+            height: 55,
+            margin: const pw.EdgeInsets.only(bottom: 8),
+            child: pw.Image(logo, fit: pw.BoxFit.contain),
+          ),
         ),
-      );
+      if (printer?.showName ?? true)
+        line(shopName.toUpperCase(),
+            pw.TextStyle(font: _boldFont, fontSize: 14, letterSpacing: 1.5)),
+      if (printer != null &&
+          printer.showPhone &&
+          printer.phoneNumber.isNotEmpty)
+        line(printer.phoneNumber, smallStyle),
+      if (printer != null &&
+          printer.showAddress &&
+          printer.address.isNotEmpty)
+        line(printer.address, smallStyle),
+    ];
+  }
+
+  /// Extra note + thank-you line (printer design se on/off aur text).
+  static List<pw.Widget> _footerLines(ReceiptOptions o) => [
+        if (o.extraNote.isNotEmpty) ...[
+          pw.SizedBox(height: 6),
+          pw.Center(
+            child: pw.Text(o.extraNote,
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(
+                    font: _regularFont, fontSize: 8, color: PdfColors.grey700)),
+          ),
+        ],
+        if (o.showThankYou) ...[
+          pw.SizedBox(height: 12),
+          pw.Center(
+            child: pw.Text(o.thankYouText,
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(
+                    font: _regularFont, fontSize: 9, color: PdfColors.grey700)),
+          ),
+        ],
+      ];
+
+  static pw.Widget _itemsHeader([ReceiptOptions o = const ReceiptOptions()]) {
+    pw.Widget h(String t, int flex, pw.TextAlign align) => pw.Expanded(
+        flex: flex,
+        child: pw.Text(t,
+            style: pw.TextStyle(font: _boldFont, fontSize: 8),
+            textAlign: align));
+    return pw.Row(children: [
+      h('ITEM', 3, pw.TextAlign.left),
+      if (o.showColorColumn) h('COLOR', 2, pw.TextAlign.center),
+      if (o.showSizeColumn) h('SIZE', 2, pw.TextAlign.center),
+      h('QTY', 1, pw.TextAlign.center),
+      if (o.showDiscountColumn) h('DIS', 2, pw.TextAlign.center),
+      h('TOTAL', 2, pw.TextAlign.right),
+    ]);
+  }
+
+  static pw.Widget _itemRow(_ReceiptLine line,
+      [ReceiptOptions o = const ReceiptOptions()]) {
+    pw.Widget c(String t, int flex, pw.TextAlign align,
+            {pw.Font? font, int? maxLines}) =>
+        pw.Expanded(
+            flex: flex,
+            child: pw.Text(t,
+                style: pw.TextStyle(font: font ?? _regularFont, fontSize: 8),
+                textAlign: align,
+                maxLines: maxLines));
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 6),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          c(line.name, 3, pw.TextAlign.left, maxLines: 2),
+          if (o.showColorColumn)
+            c(line.colorName ?? '-', 2, pw.TextAlign.center),
+          if (o.showSizeColumn)
+            c(line.sizeName ?? '-', 2, pw.TextAlign.center),
+          c('${line.quantity}', 1, pw.TextAlign.center),
+          if (o.showDiscountColumn)
+            c(line.discount > 0 ? line.discount.toStringAsFixed(0) : '-', 2,
+                pw.TextAlign.center),
+          c(line.total.toStringAsFixed(0), 2, pw.TextAlign.right,
+              font: _boldFont),
+        ],
+      ),
+    );
+  }
 
   static pw.Widget _kv(String label, String value) => pw.Padding(
         padding: const pw.EdgeInsets.only(bottom: 4),

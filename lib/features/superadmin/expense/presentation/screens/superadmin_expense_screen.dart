@@ -33,37 +33,46 @@ class BranchExpenseScreen extends ConsumerStatefulWidget {
 }
 
 class _BranchExpenseScreenState extends ConsumerState<BranchExpenseScreen> {
+  static const _allOption = ExpenseBranchOption('', 'All Branches');
+
+  /// Null = All Branches (default).
   String? _branchId;
 
   @override
   Widget build(BuildContext context) {
     final branches =
         ref.watch(hoAssignBranchesProvider).value ?? const <HoBranchModel>[];
-    HoBranchModel? selected;
-    for (final b in branches) {
-      if (b.id == _branchId) selected = b;
+    final options = [
+      _allOption,
+      for (final b in branches) ExpenseBranchOption(b.id, b.branchName),
+    ];
+    var selected = _allOption;
+    for (final o in options) {
+      if (o.id == _branchId) selected = o;
     }
-    selected ??= branches.isEmpty ? null : branches.first;
-    final branchId = selected?.id ?? '';
+    final isAll = selected == _allOption;
 
     return ExpenseScreen(
-      key: ValueKey('branch-$branchId'),
+      key: ValueKey('branch-${selected.id}'),
       title: 'Branch Expense',
-      scope: ExpenseScope.branch(branchId),
-      branchOptions: [
-        for (final b in branches) ExpenseBranchOption(b.id, b.branchName),
-      ],
-      // Jis branch mein expense add hua, list wahi dikhaye.
-      onBranchSaved: (id) => setState(() => _branchId = id),
+      scope: isAll
+          ? const ExpenseScope.allBranches()
+          : ExpenseScope.branch(selected.id),
+      branchOptions: options.sublist(1),
+      // Specific branch dekh rahe ho to jis branch mein expense add hua wahi
+      // dikhao; All Branches mein sab dikhta hi hai.
+      onBranchSaved: (id) {
+        if (!isAll) setState(() => _branchId = id);
+      },
       scopePicker: SizedBox(
         width: 320,
-        child: AppSearchDropdown<HoBranchModel>(
+        child: AppSearchDropdown<ExpenseBranchOption>(
           label: 'Branch',
-          items: branches,
+          items: options,
           selectedItem: selected,
-          itemLabel: (b) => b.branchName,
+          itemLabel: (b) => b.name,
           onChanged: (b) {
-            if (b != null) setState(() => _branchId = b.id);
+            if (b != null) setState(() => _branchId = b.id.isEmpty ? null : b.id);
           },
         ),
       ),

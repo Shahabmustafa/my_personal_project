@@ -15,6 +15,7 @@ import '../providers/incoming_branch_return_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/service/print/print_service.dart';
 
 /// Admin's screen for accepting/rejecting stock returns sent by branches —
 /// same accept/reject pattern as the head-office->branch assignment history,
@@ -278,6 +279,7 @@ class _IncomingBranchReturnsScreenState
                         '${_selected!.branchName ?? '—'} · ${_fmtDate(_selected!.returnedAt)}',
                     accent: _accent,
                     onClose: () => setState(() => _selected = null),
+                    onPrint: () => _onPrint(_selected!),
                     child: _ReturnDetailBody(returnId: _selected!.id),
                   ),
               ],
@@ -305,6 +307,11 @@ class _IncomingBranchReturnsScreenState
           tooltip: 'View',
           onPressed: () => setState(() => _selected = r),
         ),
+        IconButton(
+          icon: const AppIcon(AppIcons.printOutlined, size: 19),
+          tooltip: 'Print slip',
+          onPressed: () => _onPrint(r),
+        ),
         if (r.status == 'pending') ...[
           IconButton(
             icon: AppIcon(AppIcons.checkCircleOutline,
@@ -321,6 +328,43 @@ class _IncomingBranchReturnsScreenState
         ],
       ],
     );
+  }
+
+  Future<void> _onPrint(BranchWarehouseReturnModel r) async {
+    try {
+      // The list rows only carry raw item ids — load names for the slip.
+      final detail =
+          await ref.read(incomingBranchReturnDetailProvider(r.id).future);
+      await ThermalPrintService.printStockSlip(
+        title: 'STOCK RETURN',
+        documentNumberLabel: 'Return #',
+        documentNumber: r.returnNumber,
+        date: r.returnedAt,
+        fromName: r.branchName,
+        toName: detail.headOfficeName ?? 'Head Office',
+        lines: detail.items
+            .map((i) => StockSlipLine(
+                  name: i.productName ?? '-',
+                  sizeName: i.sizeName,
+                  colorName: i.colorName,
+                  quantity: i.quantity,
+                ))
+            .toList(),
+        footerNote: switch (r.status) {
+          'accepted' => 'Accepted by Head Office.',
+          'rejected' => 'Rejected by Head Office.',
+          _ => 'Stock stays pending until Head Office accepts it.',
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Print failed: $e'),
+          backgroundColor: Colors.orange.shade700,
+        ),
+      );
+    }
   }
 
   Future<void> _onAccept(BranchWarehouseReturnModel r) async {

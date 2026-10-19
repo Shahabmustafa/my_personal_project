@@ -53,16 +53,12 @@ class SaleInvoiceDatasource {
   Future<List<PrinterLookupItem>> fetchPrinters(String branchId) async {
     final res = await _client
         .from('assign_printer')
-        .select('id, printer_heads(name, address, phone_number, image_url)')
+        .select('id, printer_heads(*)')
         .eq('branch_id', branchId);
     return (res as List).map((e) {
-      final printer = e['printer_heads'] as Map<String, dynamic>?;
-      return PrinterLookupItem(
-        id: e['id'].toString(),
-        label: printer?['name']?.toString() ?? 'Printer',
-        address: printer?['address']?.toString() ?? '',
-        phoneNumber: printer?['phone_number']?.toString() ?? '',
-        imageUrl: printer?['image_url']?.toString() ?? '',
+      return PrinterLookupItem.fromHead(
+        e['id'].toString(),
+        e['printer_heads'] as Map<String, dynamic>?,
       );
     }).toList();
   }
@@ -97,35 +93,9 @@ class SaleInvoiceDatasource {
     required List<SaleCartItem> cartItems,
     required List<PaymentInput> payments,
   }) async {
-    final invoiceRes = await _client
-        .from('sale_invoices')
-        .insert({
-          'invoice_number': invoiceNumber,
-          'branch_id': branchId,
-          'printer_id': printerId,
-          'cashier_id': cashierId,
-          'customer_id': customerId,
-          'salesman_id': salesmanId,
-          'manager_id': managerId,
-          'subtotal': subtotal,
-          'total_discount': totalDiscount,
-          'invoice_discount': invoiceDiscount,
-          'total_amount': totalAmount,
-          'salesman_commission_percent': salesmanCommissionPercent,
-          'salesman_commission_amount': salesmanCommissionAmount,
-          'manager_commission_percent': managerCommissionPercent,
-          'manager_commission_amount': managerCommissionAmount,
-          'note': note,
-        })
-        .select()
-        .single();
-
-    final invoice = SaleInvoiceModel.fromJson(invoiceRes as Map<String, dynamic>);
-
     final hasB1g1 = cartItems.any((i) => i.isB1g1);
     final itemsPayload = cartItems
         .map((item) => {
-              'sale_invoice_id': invoice.id,
               'branch_id': branchId,
               'branch_stock_id': item.branchStockId,
               'product_id': item.productId,
@@ -141,8 +111,6 @@ class SaleInvoiceDatasource {
               'discount_pct': item.discountPct,
               'discount': item.discountAmount * item.quantity + item.b1g1Discount,
               'total_price': item.lineTotal,
-              // B1G1 columns sirf tab bhejte hain jab invoice mein offer laga
-              // ho (bulk insert mein sab rows ke keys ek jaise hone chahiye).
               if (hasB1g1) ...{
                 'is_b1g1': item.isB1g1,
                 'b1g1_free_qty': item.b1g1FreeQty,
@@ -151,19 +119,40 @@ class SaleInvoiceDatasource {
             })
         .toList();
 
-    await _client.from('sale_invoice_items').insert(itemsPayload);
+    // Invoice + items + payments ek hi DB transaction mein (RPC) — kuch bhi
+    // fail ho to poora rollback, bina items wala invoice nahi bachta.
+    final invoiceRes = await _client.rpc('save_sale_invoice', params: {
+      'p_invoice': {
+        'invoice_number': invoiceNumber,
+        'branch_id': branchId,
+        'printer_id': printerId,
+        'cashier_id': cashierId,
+        'customer_id': customerId,
+        'salesman_id': salesmanId,
+        'manager_id': managerId,
+        'subtotal': subtotal,
+        'total_discount': totalDiscount,
+        'invoice_discount': invoiceDiscount,
+        'total_amount': totalAmount,
+        'salesman_commission_percent': salesmanCommissionPercent,
+        'salesman_commission_amount': salesmanCommissionAmount,
+        'manager_commission_percent': managerCommissionPercent,
+        'manager_commission_amount': managerCommissionAmount,
+        'note': note,
+      },
+      'p_items': itemsPayload,
+      'p_payments': payments
+          .map((p) => {
+                'branch_id': branchId,
+                'bank_entry_id': p.bankEntryId,
+                'payment_type': p.type,
+                'amount': p.amount,
+              })
+          .toList(),
+    });
 
-    await _client.from('sale_invoice_payments').insert(
-          payments
-              .map((p) => {
-                    'sale_invoice_id': invoice.id,
-                    'branch_id': branchId,
-                    'bank_entry_id': p.bankEntryId,
-                    'payment_type': p.type,
-                    'amount': p.amount,
-                  })
-              .toList(),
-        );
+    final invoice =
+        SaleInvoiceModel.fromJson(Map<String, dynamic>.from(invoiceRes as Map));
 
     return invoice;
   }
@@ -180,6 +169,33 @@ class SaleInvoiceDatasource {
         .select(_invoiceSelect)
         .eq('branch_id', branchId)
         .order('created_at', ascending: false);
+
+    return (res as List)
+        .map((e) => SaleInvoiceModel.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// Sab branches ki ek din ki invoices (poore detail ke sath: payments,
+  /// returns, exchanges, branch ka naam) — Sale Exchange ki list ke liye.
+  /// [from] .. [to) device ke local din ki hadd hai, jo list mein date ke
+  /// roop mein dikhti hai. [search] ho to invoice number se (ilike) kisi bhi
+  /// din ki invoices — date ignore, naye pehle, 50 tak.
+  Future<List<SaleInvoiceModel>> fetchAllBranchInvoicesByDate(
+      DateTime from, DateTime to,
+      {String search = ''}) async {
+    var query = _client
+        .from('sale_invoices')
+        .select('$_invoiceSelect, branches(branch_name)');
+    final q = search.replaceAll(RegExp(r'[,()%*"\\]'), ' ').trim();
+    final res = q.isEmpty
+        ? await query
+            .gte('created_at', from.toUtc().toIso8601String())
+            .lt('created_at', to.toUtc().toIso8601String())
+            .order('created_at', ascending: false)
+        : await query
+            .ilike('invoice_number', '%$q%')
+            .order('created_at', ascending: false)
+            .limit(50);
 
     return (res as List)
         .map((e) => SaleInvoiceModel.fromJson(e as Map<String, dynamic>))
@@ -257,7 +273,7 @@ class SaleInvoiceDatasource {
         .toList();
 
     return SaleInvoiceModel.fromJson(
-      invoiceRes as Map<String, dynamic>,
+      invoiceRes,
       items: items,
     );
   }

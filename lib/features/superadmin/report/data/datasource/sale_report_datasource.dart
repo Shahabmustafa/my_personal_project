@@ -47,19 +47,15 @@ class SaleReportDatasource {
   Future<PrinterLookupItem?> fetchBranchPrinter(String branchId) async {
     final res = await _client
         .from('assign_printer')
-        .select('id, printer_heads(name, address, phone_number, image_url)')
+        .select('id, printer_heads(*)')
         .eq('branch_id', branchId)
         .limit(1);
     final rows = res as List;
     if (rows.isEmpty) return null;
     final row = rows.first as Map<String, dynamic>;
-    final printer = row['printer_heads'] as Map<String, dynamic>?;
-    return PrinterLookupItem(
-      id: row['id'].toString(),
-      label: printer?['name']?.toString() ?? 'Printer',
-      address: printer?['address']?.toString() ?? '',
-      phoneNumber: printer?['phone_number']?.toString() ?? '',
-      imageUrl: printer?['image_url']?.toString() ?? '',
+    return PrinterLookupItem.fromHead(
+      row['id'].toString(),
+      row['printer_heads'] as Map<String, dynamic>?,
     );
   }
 
