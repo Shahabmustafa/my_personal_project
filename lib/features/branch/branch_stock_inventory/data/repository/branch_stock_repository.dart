@@ -15,4 +15,27 @@ class BranchStockRepository {
     required String branchId,
   }) =>
       _datasource.fetchPage(request, branchId: branchId);
+
+  /// Har page ko loop kar ke filter/search ke saare rows (print ke liye).
+  Future<List<BranchStockModel>> fetchAllStock({
+    required String branchId,
+    String search = '',
+    Map<String, Object?> filters = const {},
+  }) async {
+    const size = 1000;
+    final all = <BranchStockModel>[];
+    for (var page = 1;; page++) {
+      final res = await _datasource.fetchPage(
+        PageRequest(
+            page: page,
+            pageSize: size,
+            search: sanitizeSearch(search),
+            filters: filters,
+            withCount: false),
+        branchId: branchId,
+      );
+      all.addAll(res.rows);
+      if (res.rows.length < size) return all;
+    }
+  }
 }

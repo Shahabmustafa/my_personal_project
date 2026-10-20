@@ -68,11 +68,17 @@ final branchStockStatsProvider =
   ref.watch(tableChangesProvider('branch_stock_inventory'));
   final bid = ref.watch(currentBranchIdProvider);
   if (bid.isEmpty) return const BranchStockStats();
-  // Low / Out of Stock button lage to cards bhi usi filter ke totals.
-  final level =
-      ref.watch(branchStockProvider.select((s) => s.filters['stock_level']));
-  final res = await Supabase.instance.client.rpc('branch_stock_stats',
-      params: {'p_branch_id': bid, 'p_level': level});
+  // Low / Out of Stock button aur dropdown filters lagein to cards bhi unhi
+  // filters ke totals.
+  final f = ref.watch(branchStockProvider.select((s) => s.filters));
+  final res = await Supabase.instance.client.rpc('branch_stock_stats', params: {
+    'p_branch_id': bid,
+    'p_level': f['stock_level'],
+    'p_category_id': f['category_id'],
+    'p_type_id': f['type_id'],
+    'p_brand_id': f['brand_id'],
+    'p_size_id': f['size_id'],
+  });
   final j = (res as Map).cast<String, dynamic>();
   return BranchStockStats(
     totalProducts: (j['total_skus'] as num?)?.toInt() ?? 0,

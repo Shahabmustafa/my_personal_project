@@ -128,12 +128,13 @@ class SidebarShell extends StatefulWidget {
 }
 
 class _SidebarShellState extends State<SidebarShell> {
-  static const _bg = Color(0xFFFFFFFF);
-  static const _line = Color(0xFFE7E9F0);
-  static const _accent = Color(0xFF3E63DD);
-  static const _accentSoft = Color(0xFFEAEFFD);
-  static const _textDark = Color(0xFF1B1F3B);
-  static const _textDim = Color(0xFF8A8FA3);
+  // Dark blue sidebar — _textDark ab "active/primary" (safed) text hai.
+  static const _bg = Color(0xFF061A3D);
+  static const _line = Color(0x1FFFFFFF);
+  static const _accent = Color(0xFF7FA2FF);
+  static const _accentSoft = Color(0x24FFFFFF);
+  static const _textDark = Color(0xFFFFFFFF);
+  static const _textDim = Color(0xFFFFFFFF);
 
   static const double _expandedWidth = 250;
   static const double _collapsedWidth = 76;
@@ -303,18 +304,25 @@ class _SidebarShellState extends State<SidebarShell> {
             children: [
               // Login screen jaisa filter — logo ka off-white background
               // white ho jata hai (black/red waise hi rehte hain).
-              ColorFiltered(
-                colorFilter: const ColorFilter.matrix(<double>[
-                  1.0494, 0, 0, 0, 0, //
-                  0, 1.0494, 0, 0, 0, //
-                  0, 0, 1.0494, 0, 0, //
-                  0, 0, 0, 1, 0,
-                ]),
-                child: Image.asset(
-                  'assets/images/safi.png',
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.contain,
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: ColorFiltered(
+                  colorFilter: const ColorFilter.matrix(<double>[
+                    1.0494, 0, 0, 0, 0, //
+                    0, 1.0494, 0, 0, 0, //
+                    0, 0, 1.0494, 0, 0, //
+                    0, 0, 0, 1, 0,
+                  ]),
+                  child: Image.asset(
+                    'assets/images/safi.png',
+                    width: 34,
+                    height: 34,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
               if (!collapsed) ...[
@@ -551,7 +559,7 @@ class _SidebarShellState extends State<SidebarShell> {
                 child: AppIcon(
                   item.icon,
                   size: 19,
-                  color: active ? _accent : _textDim,
+                  color: _textDark,
                 ),
               ),
             ),
@@ -587,7 +595,7 @@ class _SidebarShellState extends State<SidebarShell> {
                 AppIcon(
                   item.icon,
                   size: 19,
-                  color: active ? _accent : _textDim,
+                  color: _textDark,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -610,7 +618,7 @@ class _SidebarShellState extends State<SidebarShell> {
                           item.shortcutLabel!,
                           style: TextStyle(
                             fontSize: 10.5,
-                            color: active ? _accent : const Color(0xFFB0B5C8),
+                            color: Colors.white70,
                           ),
                         ),
                     ],
@@ -648,10 +656,12 @@ class _SidebarShellState extends State<SidebarShell> {
           childrenPadding: const EdgeInsets.only(left: 8),
           shape: const Border(),
           collapsedShape: const Border(),
+          iconColor: _textDark,
+          collapsedIconColor: _textDim,
           leading: AppIcon(
             widget.navItems[indices.first].icon,
             size: 19,
-            color: containsActive ? _accent : _textDim,
+            color: _textDark,
           ),
           title: Text(
             group,

@@ -56,6 +56,10 @@ class BranchStockDatasource {
     if (request.filters['low_stock'] == true) {
       query = query.lte('quantity', 5);
     }
+    for (final key in const ['category_id', 'type_id', 'brand_id', 'size_id']) {
+      final v = request.filters[key];
+      if (v is String && v.isNotEmpty) query = query.eq(key, v);
+    }
     switch (request.filters['stock_level']) {
       case 'low':
         query = query.gte('quantity', 1).lt('quantity', 5);

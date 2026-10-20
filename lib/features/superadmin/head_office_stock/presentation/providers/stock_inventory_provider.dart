@@ -121,11 +121,17 @@ final headOfficeStockStatsProvider =
     FutureProvider.autoDispose<HeadOfficeStockStats>((ref) async {
   // Realtime — stock badalte hi cards ke totals bhi dobara.
   ref.watch(tableChangesProvider('stock_inventory'));
-  // Low / Out of Stock button lage to cards bhi usi filter ke totals.
-  final level = ref.watch(
-      headOfficeStockProvider.select((s) => s.filters['stock_level']));
-  final res = await Supabase.instance.client
-      .rpc('head_office_stock_stats', params: {'p_level': level});
+  // Low / Out of Stock button aur dropdown filters lagein to cards bhi unhi
+  // filters ke totals.
+  final f = ref.watch(headOfficeStockProvider.select((s) => s.filters));
+  final res =
+      await Supabase.instance.client.rpc('head_office_stock_stats', params: {
+    'p_level': f['stock_level'],
+    'p_category_id': f['category_id'],
+    'p_type_id': f['type_id'],
+    'p_brand_id': f['brand_id'],
+    'p_size_id': f['size_id'],
+  });
   final j = (res as Map).cast<String, dynamic>();
   return HeadOfficeStockStats(
     totalSkus: (j['total_skus'] as num?)?.toInt() ?? 0,

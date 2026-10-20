@@ -52,6 +52,9 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
 
+  /// Null = All Heads.
+  String? _headId;
+
   bool get _hasDateFilter => _startDate != null || _endDate != null;
 
   bool _inRange(ExpenseEntryModel e) {
@@ -94,7 +97,9 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
         widget.scope ?? ref.watch(currentBranchExpenseScopeProvider);
     final provider = expenseProvider(scope);
     final fullState = ref.watch(provider);
-    final entries = fullState.entries.where(_inRange).toList();
+    final entries = fullState.entries
+        .where((e) => _inRange(e) && (_headId == null || e.expenseHeadId == _headId))
+        .toList();
     final state = fullState.copyWith(entries: entries);
     final isMobile = MediaQuery.of(context).size.width < 768;
 
@@ -178,11 +183,40 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
             ),
           ),
 
-          if (widget.scopePicker != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-              child: widget.scopePicker,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (widget.scopePicker != null) widget.scopePicker!,
+                SizedBox(
+                  width: 320,
+                  child: AppSearchDropdown<ExpenseHeadModel>(
+                    label: 'Expense Head',
+                    items: [
+                      const ExpenseHeadModel(id: '', name: 'All Heads'),
+                      ...fullState.heads,
+                    ],
+                    selectedItem: fullState.heads
+                            .where((h) => h.id == _headId)
+                            .firstOrNull ??
+                        const ExpenseHeadModel(id: '', name: 'All Heads'),
+                    itemLabel: (h) => h.name,
+                    onChanged: (h) => setState(
+                        () => _headId = (h == null || h.id.isEmpty) ? null : h.id),
+                  ),
+                ),
+                if (_headId != null)
+                  TextButton.icon(
+                    onPressed: () => setState(() => _headId = null),
+                    icon: const AppIcon(AppIcons.clear, size: 16),
+                    label: const Text('Clear'),
+                  ),
+              ],
             ),
+          ),
 
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),

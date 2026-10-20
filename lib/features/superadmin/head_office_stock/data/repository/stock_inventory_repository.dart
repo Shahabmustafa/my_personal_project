@@ -12,6 +12,25 @@ class StockInventoryRepository {
   Future<PageResult<StockInventoryModel>> fetchStockPage(PageRequest request) =>
       _datasource.fetchPage(request);
 
+  /// Har page ko loop kar ke filter/search ke saare rows (print ke liye).
+  Future<List<StockInventoryModel>> fetchAllStock({
+    String search = '',
+    Map<String, Object?> filters = const {},
+  }) async {
+    const size = 1000;
+    final all = <StockInventoryModel>[];
+    for (var page = 1;; page++) {
+      final res = await _datasource.fetchPage(PageRequest(
+          page: page,
+          pageSize: size,
+          search: sanitizeSearch(search),
+          filters: filters,
+          withCount: false));
+      all.addAll(res.rows);
+      if (res.rows.length < size) return all;
+    }
+  }
+
   Future<bool> barcodeExists(String barcode) =>
       _datasource.barcodeExists(barcode);
 

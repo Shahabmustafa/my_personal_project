@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/pagination/pagination.dart';
 import '../../data/model/branch_stock_model.dart';
 import '../povider/branch_stock_provider.dart';
+import 'package:safishoe_app/core/service/print/stock_report_printer.dart';
+import 'package:safishoe_app/core/widget/stock_filter_dropdown.dart';
+import '../../../shared/current_branch_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -32,12 +35,81 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
     ref.invalidate(branchStockStatsProvider);
   }
 
+  bool _printing = false;
+
+  Future<void> _print(StockFilterOptions options) async {
+    final state = ref.read(branchStockProvider);
+    String? name(List<StockFilterOption> l, String key) {
+      final id = state.filters[key];
+      for (final o in l) {
+        if (o.id == id) return o.label;
+      }
+      return null;
+    }
+
+    final labels = <String>[
+      if (name(options.categories, 'category_id') case final v?) 'Category: $v',
+      if (name(options.types, 'type_id') case final v?) 'Type: $v',
+      if (name(options.brands, 'brand_id') case final v?) 'Brand: $v',
+      if (name(options.sizes, 'size_id') case final v?) 'Size: $v',
+      if (state.filters['stock_level'] == 'low') 'Low Stock',
+      if (state.filters['stock_level'] == 'out') 'Out of Stock',
+      if (state.search.isNotEmpty) 'Search: ${state.search}',
+    ];
+    setState(() => _printing = true);
+    try {
+      final rows = await ref.read(branchStockRepositoryProvider).fetchAllStock(
+            branchId: ref.read(currentBranchIdProvider),
+            search: state.search,
+            filters: state.filters,
+          );
+      await StockReportPrinter.print(
+        title: 'Branch Stock Inventory',
+        rows: [
+          for (final r in rows)
+            StockReportRow(
+              barcode: r.barcode,
+              article: r.productName,
+              brand: r.brandName,
+              size: r.sizeName,
+              color: r.colorName,
+              category: r.categoryName,
+              type: r.typeName,
+              quantity: r.quantity,
+              salePrice: r.salePrice,
+            ),
+        ],
+        filterLabels: labels,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Print failed: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _printing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(branchStockProvider);
     final notifier = ref.read(branchStockProvider.notifier);
     final stats = ref.watch(branchStockStatsProvider).asData?.value ??
         const BranchStockStats();
+
+    final options = ref.watch(stockFilterOptionsProvider).asData?.value ??
+        const StockFilterOptions();
+    const filterKeys = [
+      'category_id',
+      'type_id',
+      'brand_id',
+      'size_id',
+      'stock_level'
+    ];
+    final hasFilters =
+        filterKeys.any((k) => state.filters[k] != null) ||
+            state.search.isNotEmpty;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
@@ -189,6 +261,76 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
                     outCount: stats.outCount,
                     onChanged: (v) => notifier.setFilters({'stock_level': v}),
                   ),
+                  StockFilterDropdown(
+                    label: 'Category',
+                    options: options.categories,
+                    value: state.filters['category_id'] as String?,
+                    onChanged: (v) => notifier.setFilters({'category_id': v}),
+                  ),
+                  StockFilterDropdown(
+                    label: 'Type',
+                    options: options.types,
+                    value: state.filters['type_id'] as String?,
+                    onChanged: (v) => notifier.setFilters({'type_id': v}),
+                  ),
+                  StockFilterDropdown(
+                    label: 'Brand',
+                    options: options.brands,
+                    value: state.filters['brand_id'] as String?,
+                    onChanged: (v) => notifier.setFilters({'brand_id': v}),
+                  ),
+                  StockFilterDropdown(
+                    label: 'Size',
+                    options: options.sizes,
+                    value: state.filters['size_id'] as String?,
+                    onChanged: (v) => notifier.setFilters({'size_id': v}),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _printing ? null : () => _print(options),
+                    icon: _printing
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2))
+                        : const AppIcon(AppIcons.printOutlined,
+                            size: 18, color: _primary),
+                    label: const Text('Print'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: _primary,
+                      side: const BorderSide(color: Color(0xFFE7E9F0)),
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  if (hasFilters)
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        _searchCtrl.clear();
+                        notifier.setSearch('');
+                        notifier.setFilters({
+                          'category_id': null,
+                          'type_id': null,
+                          'brand_id': null,
+                          'size_id': null,
+                          'stock_level': null,
+                        });
+                      },
+                      icon: const AppIcon(AppIcons.clear,
+                          size: 18, color: Colors.red),
+                      label: const Text('Clear'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade600,
+                        side: BorderSide(color: Colors.red.shade200),
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
                 ],
               ),
 
