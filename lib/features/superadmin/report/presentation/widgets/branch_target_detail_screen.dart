@@ -227,6 +227,7 @@ class _BranchTargetDetailScreenState
         DataColumn(label: Text('Date')),
         DataColumn(label: Text('Sale Target'), numeric: true),
         DataColumn(label: Text('Total Sale'), numeric: true),
+        DataColumn(label: Text('Achieved %'), numeric: true),
         DataColumn(label: Text('Status')),
       ],
       rows: [for (final l in _lines) _row(l)],
@@ -249,6 +250,8 @@ class _BranchTargetDetailScreenState
       status = 'Not Achieved';
       color = Colors.red;
     }
+    final showPct = !l.isFuture && l.target > 0;
+    final pct = showPct ? l.sale / l.target * 100 : 0.0;
     return DataRow(
       cells: [
         DataCell(
@@ -264,6 +267,15 @@ class _BranchTargetDetailScreenState
           Text(
             l.isFuture ? '—' : _amt(l.sale),
             style: TextStyle(color: l.sale < 0 ? Colors.red : null),
+          ),
+        ),
+        DataCell(
+          Text(
+            showPct ? '${pct.toStringAsFixed(1)}%' : '—',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: showPct ? color : null,
+            ),
           ),
         ),
         DataCell(
