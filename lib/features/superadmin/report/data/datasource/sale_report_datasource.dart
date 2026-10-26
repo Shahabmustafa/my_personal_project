@@ -255,6 +255,14 @@ class SaleReportDatasource {
       totalSale: sumField(invoicesRes, 'total_amount'),
       totalReturn: sumField(returnsRes, 'total_amount'),
       exchangeChange: sumField(exchangesRes, 'difference_amount'),
+      exchangeReceived: exchangesRes.fold<double>(0.0, (sum, row) {
+        final d = ((row as Map<String, dynamic>)['difference_amount'] as num? ?? 0).toDouble();
+        return d > 0 ? sum + d : sum;
+      }),
+      exchangeRefunded: exchangesRes.fold<double>(0.0, (sum, row) {
+        final d = ((row as Map<String, dynamic>)['difference_amount'] as num? ?? 0).toDouble();
+        return d < 0 ? sum - d : sum;
+      }),
       invoiceCount: invoicesRes.length,
       returnCount: returnsRes.length,
       exchangeCount: exchangesRes.length,

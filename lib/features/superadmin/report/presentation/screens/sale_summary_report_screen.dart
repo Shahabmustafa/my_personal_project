@@ -213,10 +213,17 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
                   SizedBox(
                     width: cardW,
                     child: ReportSummaryCard(
-                      label: totals.exchangeChange < 0
-                          ? 'Exchange (Refunded)'
-                          : 'Exchange (Collected)',
-                      value: 'Rs. ${totals.exchangeChange.abs().toStringAsFixed(0)}',
+                      label: 'Exchange (Received)',
+                      value: 'Rs. ${totals.exchangeReceived.toStringAsFixed(0)}',
+                      icon: AppIcons.swapHorizOutlined,
+                      color: _exchangeColor,
+                    ),
+                  ),
+                  SizedBox(
+                    width: cardW,
+                    child: ReportSummaryCard(
+                      label: 'Exchange (Refunded)',
+                      value: 'Rs. ${totals.exchangeRefunded.toStringAsFixed(0)}',
                       icon: AppIcons.swapHorizOutlined,
                       color: _exchangeColor,
                     ),
@@ -255,9 +262,17 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
             const SizedBox(width: 14),
             Expanded(
               child: ReportSummaryCard(
-                label:
-                    totals.exchangeChange < 0 ? 'Exchange (Refunded)' : 'Exchange (Collected)',
-                value: 'Rs. ${totals.exchangeChange.abs().toStringAsFixed(0)}',
+                label: 'Exchange (Received)',
+                value: 'Rs. ${totals.exchangeReceived.toStringAsFixed(0)}',
+                icon: AppIcons.swapHorizOutlined,
+                color: _exchangeColor,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: ReportSummaryCard(
+                label: 'Exchange (Refunded)',
+                value: 'Rs. ${totals.exchangeRefunded.toStringAsFixed(0)}',
                 icon: AppIcons.swapHorizOutlined,
                 color: _exchangeColor,
               ),
