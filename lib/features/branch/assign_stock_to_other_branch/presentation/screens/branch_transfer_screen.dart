@@ -14,6 +14,7 @@ import '../widgets/branch_transfer_cart_table.dart';
 import '../widgets/branch_transfer_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
@@ -39,6 +40,7 @@ class BranchTransferScreen extends ConsumerStatefulWidget {
 
 class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
   String _filterStatus = 'all';
+  String? _filterBranch; // destination branch id
 
   AssignStockModel? _selected; // list row (brief)
   AssignStockModel? _detail; // loaded detail (items with names)
@@ -203,10 +205,20 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
             error: (e, _) => const SizedBox.shrink(),
             data: (transfers) {
               final filtered = transfers.where((t) {
+                if (_filterBranch != null && t.branchId != _filterBranch) {
+                  return false;
+                }
                 if (_filterStatus == 'all') return true;
                 return t.status == _filterStatus;
               }).toList();
               final filteredItems = filtered.expand((t) => t.items);
+              final branches = <String, String>{
+                for (final t in transfers) t.branchId: t.branchName ?? '—',
+              };
+              final totalArticles = filteredItems
+                  .map((i) => i.productId)
+                  .toSet()
+                  .length;
               final totalQuantity = filteredItems.fold<int>(
                 0,
                 (s, i) => s + i.quantity,
@@ -229,6 +241,12 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                         color: _primary,
                       ),
                       ReportSummaryCard(
+                        label: 'Total Articles',
+                        value: '$totalArticles',
+                        icon: AppIcons.inventory2Outlined,
+                        color: const Color(0xFF6C4DE0),
+                      ),
+                      ReportSummaryCard(
                         label: 'Total Quantity',
                         value: '$totalQuantity',
                         icon: AppIcons.inventory2Outlined,
@@ -243,6 +261,20 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+
+                  // ── Destination branch filter ────────────────────────
+                  BranchFilterDropdown(
+                    label: 'Sent To Branch',
+                    allLabel: 'All branches',
+                    options: branches,
+                    value: _filterBranch,
+                    onChanged: (v) => setState(() {
+                      _filterBranch = v;
+                      _selected = null;
+                      _detail = null;
+                    }),
+                  ),
+                  const SizedBox(height: 12),
 
                   // ── Status filter chips ──────────────────────────────
                   SingleChildScrollView(
@@ -294,6 +326,10 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                     ),
                     data: (transfers) {
                       final filtered = transfers.where((t) {
+                        if (_filterBranch != null &&
+                            t.branchId != _filterBranch) {
+                          return false;
+                        }
                         if (_filterStatus == 'all') return true;
                         return t.status == _filterStatus;
                       }).toList();

@@ -13,6 +13,7 @@ import '../widgets/branch_return_cart_table.dart';
 import '../widgets/branch_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 
@@ -37,6 +38,7 @@ class BranchStockReturnScreen extends ConsumerStatefulWidget {
 class _BranchStockReturnScreenState
     extends ConsumerState<BranchStockReturnScreen> {
   String _filterStatus = 'all';
+  String? _filterBranch; // destination branch id
 
   BranchStockReturnModel? _selected; // list row (brief)
   BranchStockReturnModel? _detail; // loaded detail (items with names)
@@ -204,10 +206,20 @@ class _BranchStockReturnScreenState
             error: (e, _) => const SizedBox.shrink(),
             data: (returns) {
               final filtered = returns.where((t) {
+                if (_filterBranch != null && t.toBranchId != _filterBranch) {
+                  return false;
+                }
                 if (_filterStatus == 'all') return true;
                 return t.status == _filterStatus;
               }).toList();
               final filteredItems = filtered.expand((t) => t.items);
+              final branches = <String, String>{
+                for (final t in returns) t.toBranchId: t.toBranchName ?? '—',
+              };
+              final totalArticles = filteredItems
+                  .map((i) => i.productId)
+                  .toSet()
+                  .length;
               final totalQuantity = filteredItems.fold<int>(
                 0,
                 (s, i) => s + i.quantity,
@@ -230,6 +242,12 @@ class _BranchStockReturnScreenState
                         color: _primary,
                       ),
                       ReportSummaryCard(
+                        label: 'Total Articles',
+                        value: '$totalArticles',
+                        icon: AppIcons.inventory2Outlined,
+                        color: const Color(0xFF6C4DE0),
+                      ),
+                      ReportSummaryCard(
                         label: 'Total Quantity',
                         value: '$totalQuantity',
                         icon: AppIcons.inventory2Outlined,
@@ -244,6 +262,20 @@ class _BranchStockReturnScreenState
                     ],
                   ),
                   const SizedBox(height: 16),
+
+                  // ── Destination branch filter ────────────────────────
+                  BranchFilterDropdown(
+                    label: 'Returned To Branch',
+                    allLabel: 'All branches',
+                    options: branches,
+                    value: _filterBranch,
+                    onChanged: (v) => setState(() {
+                      _filterBranch = v;
+                      _selected = null;
+                      _detail = null;
+                    }),
+                  ),
+                  const SizedBox(height: 12),
 
                   // ── Status filter chips ──────────────────────────────
                   SingleChildScrollView(
@@ -295,6 +327,10 @@ class _BranchStockReturnScreenState
                     ),
                     data: (returns) {
                       final filtered = returns.where((t) {
+                        if (_filterBranch != null &&
+                            t.toBranchId != _filterBranch) {
+                          return false;
+                        }
                         if (_filterStatus == 'all') return true;
                         return t.status == _filterStatus;
                       }).toList();

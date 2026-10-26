@@ -9,6 +9,7 @@ import '../../../../superadmin/report/presentation/widgets/report_summary_card.d
 import '../provider/branch_assign_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 
 class BranchAssignListScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class BranchAssignListScreen extends ConsumerStatefulWidget {
 class _BranchAssignListScreenState
     extends ConsumerState<BranchAssignListScreen> {
   String _filterStatus = 'all';
+  String? _filterSource; // assigned-by (branch / warehouse) id
   static const _primary = Color(0xFF3E63DD);
 
   AssignStockModel? _selected; // list row (brief)
@@ -73,7 +75,16 @@ class _BranchAssignListScreenState
   Widget build(BuildContext context) {
     final listState = ref.watch(branchAssignProvider);
 
+    final sources = <String, String>{};
+    for (final a in listState.assignments) {
+      final id = a.warehouseId;
+      if (id != null) sources[id] = a.sourceLabel;
+    }
+
     final filtered = listState.assignments.where((a) {
+      if (_filterSource != null && a.warehouseId != _filterSource) {
+        return false;
+      }
       if (_filterStatus == 'all') return true;
       return a.status == _filterStatus;
     }).toList();
@@ -83,6 +94,7 @@ class _BranchAssignListScreenState
         .length;
     final filteredItems = filtered.expand((a) => a.items);
     final totalQuantity = filteredItems.fold<int>(0, (s, i) => s + i.quantity);
+    final totalArticles = filteredItems.map((i) => i.productId).toSet().length;
     final totalSalePrice = filteredItems.fold<double>(
       0,
       (s, i) => s + (i.salePrice * i.quantity),
@@ -153,6 +165,12 @@ class _BranchAssignListScreenState
                 color: _primary,
               ),
               ReportSummaryCard(
+                label: 'Total Articles',
+                value: '$totalArticles',
+                icon: AppIcons.inventory2Outlined,
+                color: const Color(0xFF6C4DE0),
+              ),
+              ReportSummaryCard(
                 label: 'Total Quantity',
                 value: '$totalQuantity',
                 icon: AppIcons.inventory2Outlined,
@@ -167,6 +185,20 @@ class _BranchAssignListScreenState
             ],
           ),
           const SizedBox(height: 16),
+
+          // ── Assigned-by filter ──────────────────────────────────────
+          BranchFilterDropdown(
+            label: 'Assigned By',
+            allLabel: 'All sources',
+            options: sources,
+            value: _filterSource,
+            onChanged: (v) => setState(() {
+              _filterSource = v;
+              _selected = null;
+              _detail = null;
+            }),
+          ),
+          const SizedBox(height: 12),
 
           // ── Status filter chips ─────────────────────────────────────
           SingleChildScrollView(
