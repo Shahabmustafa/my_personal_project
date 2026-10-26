@@ -26,9 +26,23 @@ class CashCounterSearch {
   static DateTime _pktMidnight(int y, int m, int d) =>
       DateTime.utc(y, m, d).subtract(_pkt);
 
+  /// Search khali ho to sirf maujooda mahina (Pakistan time) dikhta hai;
+  /// search likhne par us ki apni hadd lagti hai (purane mahine bhi).
+  factory CashCounterSearch.defaultMonth() {
+    final now = DateTime.now().toUtc().add(_pkt);
+    return CashCounterSearch._(
+      from: _pktMidnight(now.year, now.month, 1),
+      to: _pktMidnight(
+        now.month == 12 ? now.year + 1 : now.year,
+        now.month == 12 ? 1 : now.month + 1,
+        1,
+      ),
+    );
+  }
+
   factory CashCounterSearch.parse(String raw) {
     final q = raw.trim();
-    if (q.isEmpty) return none;
+    if (q.isEmpty) return CashCounterSearch.defaultMonth();
 
     final day = RegExp(r'^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4})$').firstMatch(q);
     if (day != null) {
