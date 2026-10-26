@@ -12,6 +12,9 @@ class StockInventoryRepository {
   Future<PageResult<StockInventoryModel>> fetchStockPage(PageRequest request) =>
       _datasource.fetchPage(request);
 
+  Future<List<StockInventoryModel>> fetchVariants(StockInventoryModel s) =>
+      _datasource.fetchVariants(s);
+
   /// Har page ko loop kar ke filter/search ke saare rows (print ke liye).
   Future<List<StockInventoryModel>> fetchAllStock({
     String search = '',
@@ -19,13 +22,16 @@ class StockInventoryRepository {
   }) async {
     const size = 1000;
     final all = <StockInventoryModel>[];
-    for (var page = 1;; page++) {
-      final res = await _datasource.fetchPage(PageRequest(
+    for (var page = 1; ; page++) {
+      final res = await _datasource.fetchPage(
+        PageRequest(
           page: page,
           pageSize: size,
           search: sanitizeSearch(search),
           filters: filters,
-          withCount: false));
+          withCount: false,
+        ),
+      );
       all.addAll(res.rows);
       if (res.rows.length < size) return all;
     }
@@ -42,20 +48,19 @@ class StockInventoryRepository {
     required String colorId,
     required String categoryId,
     required String typeId,
-  }) =>
-      _datasource.skuExists(
-        productId: productId,
-        sizeId: sizeId,
-        brandId: brandId,
-        companyId: companyId,
-        colorId: colorId,
-        categoryId: categoryId,
-        typeId: typeId,
-      );
+  }) => _datasource.skuExists(
+    productId: productId,
+    sizeId: sizeId,
+    brandId: brandId,
+    companyId: companyId,
+    colorId: colorId,
+    categoryId: categoryId,
+    typeId: typeId,
+  );
 
   Future<List<StockInventoryModel>> addBatchStock(
-          List<StockInventoryModel> stocks) =>
-      _datasource.insertBatch(stocks);
+    List<StockInventoryModel> stocks,
+  ) => _datasource.insertBatch(stocks);
 
   Future<StockInventoryModel> updateQuantity(String stockId, int quantity) =>
       _datasource.updateQuantity(stockId, quantity);

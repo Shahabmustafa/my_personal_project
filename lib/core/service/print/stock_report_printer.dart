@@ -22,6 +22,49 @@ class StockReportRow {
   });
 }
 
+/// Same article (article, color, brand, category, type) with all its sizes
+/// rolled into one printed line.
+class _PrintGroup {
+  final List<StockReportRow> items;
+  _PrintGroup(this.items);
+
+  StockReportRow get first => items.first;
+  int get qty => items.fold(0, (a, r) => a + r.quantity);
+
+  String get barcode =>
+      items.length == 1 ? first.barcode : '${items.length} barcodes';
+
+  /// "7 (3), 8 (5), 9 (2)" — size with its pairs, smallest size first.
+  String get sizes {
+    final sorted = [...items]
+      ..sort((a, b) {
+        final x = double.tryParse(a.size ?? '');
+        final y = double.tryParse(b.size ?? '');
+        if (x != null && y != null) return x.compareTo(y);
+        return (a.size ?? '').compareTo(b.size ?? '');
+      });
+    return sorted.map((r) => '${r.size ?? '-'} (${r.quantity})').join(', ');
+  }
+
+  String get price {
+    final prices = items.map((r) => r.salePrice);
+    final lo = prices.reduce((a, b) => a < b ? a : b);
+    final hi = prices.reduce((a, b) => a > b ? a : b);
+    return lo == hi
+        ? lo.toStringAsFixed(0)
+        : '${lo.toStringAsFixed(0)} - ${hi.toStringAsFixed(0)}';
+  }
+}
+
+List<_PrintGroup> _groupRows(List<StockReportRow> rows) {
+  final map = <String, List<StockReportRow>>{};
+  for (final r in rows) {
+    final key = [r.article, r.color, r.brand, r.category, r.type].join('|');
+    map.putIfAbsent(key, () => []).add(r);
+  }
+  return [for (final items in map.values) _PrintGroup(items)];
+}
+
 /// A4 stock report (current filters ke rows) — browser/OS print dialog kholta hai.
 class StockReportPrinter {
   StockReportPrinter._();
@@ -36,6 +79,7 @@ class StockReportPrinter {
     final totalQty = rows.fold<int>(0, (a, r) => a + r.quantity);
     final totalValue =
         rows.fold<double>(0, (a, r) => a + r.quantity * r.salePrice);
+    final groups = _groupRows(rows);
     final now = DateTime.now();
     final stamp = '${now.day.toString().padLeft(2, '0')}-'
         '${now.month.toString().padLeft(2, '0')}-${now.year}';
@@ -82,26 +126,32 @@ class StockReportPrinter {
           oddRowDecoration:
               const pw.BoxDecoration(color: PdfColor.fromInt(0xFFF5F7FC)),
           headers: const [
-            '#', 'Barcode', 'Article', 'Brand', 'Size', 'Color', 'Category',
-            'Type', 'Qty', 'Sale Price'
+            '#', 'Barcode', 'Article', 'Brand', 'Sizes (pairs)', 'Color',
+            'Category', 'Type', 'Qty', 'Sale Price'
           ],
+          columnWidths: {
+            0: const pw.FixedColumnWidth(22),
+            1: const pw.FlexColumnWidth(2),
+            2: const pw.FlexColumnWidth(2),
+            4: const pw.FlexColumnWidth(3.2),
+          },
           cellAlignments: {
             8: pw.Alignment.centerRight,
             9: pw.Alignment.centerRight,
           },
           data: [
-            for (var i = 0; i < rows.length; i++)
+            for (var i = 0; i < groups.length; i++)
               [
                 '${i + 1}',
-                rows[i].barcode,
-                rows[i].article ?? '-',
-                rows[i].brand ?? '-',
-                rows[i].size ?? '-',
-                rows[i].color ?? '-',
-                rows[i].category ?? '-',
-                rows[i].type ?? '-',
-                '${rows[i].quantity}',
-                rows[i].salePrice.toStringAsFixed(0),
+                groups[i].barcode,
+                groups[i].first.article ?? '-',
+                groups[i].first.brand ?? '-',
+                groups[i].sizes,
+                groups[i].first.color ?? '-',
+                groups[i].first.category ?? '-',
+                groups[i].first.type ?? '-',
+                '${groups[i].qty}',
+                groups[i].price,
               ],
           ],
         ),
@@ -109,7 +159,7 @@ class StockReportPrinter {
         pw.Align(
           alignment: pw.Alignment.centerRight,
           child: pw.Text(
-            'Products: ${rows.length}    Total Pairs: $totalQty    '
+            'Articles: ${groups.length}    Products: ${rows.length}    Total Pairs: $totalQty    '
             'Total Sale Price: Rs. ${totalValue.round()}',
             style: pw.TextStyle(font: bold, fontSize: 10),
           ),

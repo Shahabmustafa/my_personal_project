@@ -43,14 +43,34 @@ class StockInventoryDatasource {
     }
     final result = await runSupabasePage(
       query
-          // Sab se zyada quantity wala stock pehle; barabar ho to naam se.
-          .order('quantity', ascending: false)
+          // Same article (product + color + brand + category + type) sits
+          // together so its sizes group into one row.
           .order('product_name', ascending: true)
+          .order('color_name', ascending: true)
+          .order('brand_name', ascending: true)
+          .order('category_name', ascending: true)
+          .order('type_name', ascending: true)
           .order('id', ascending: true),
       request: request,
     );
     return result.map(_fromViewRow);
   }
+
+  /// Every size of one article in head-office stock (for the sizes panel).
+  Future<List<StockInventoryModel>> fetchVariants(StockInventoryModel s) async {
+    final res = await _client
+        .from('v_head_office_stock')
+        .select()
+        .eq('product_id', s.productId)
+        .eq('color_id', s.colorId)
+        .eq('brand_id', s.brandId)
+        .eq('category_id', s.categoryId)
+        .eq('type_id', s.typeId);
+    return (res as List)
+        .map((e) => _fromViewRow(e as Map<String, dynamic>))
+        .toList();
+  }
+
   static const _joins = '''
     *,
     products(article_name, sale_price, purchase_price),
@@ -69,9 +89,9 @@ class StockInventoryDatasource {
         .toList();
 
     list.sort((a, b) {
-      final nameCompare = (a.productName ?? '')
-          .toLowerCase()
-          .compareTo((b.productName ?? '').toLowerCase());
+      final nameCompare = (a.productName ?? '').toLowerCase().compareTo(
+        (b.productName ?? '').toLowerCase(),
+      );
       if (nameCompare != 0) return nameCompare;
       return b.quantity.compareTo(a.quantity);
     });
@@ -111,7 +131,8 @@ class StockInventoryDatasource {
   }
 
   Future<List<StockInventoryModel>> insertBatch(
-      List<StockInventoryModel> stocks) async {
+    List<StockInventoryModel> stocks,
+  ) async {
     final payload = stocks.map((s) => s.toInsertJson()).toList();
     final response = await _client.from(_table).insert(payload).select(_joins);
     return (response as List)
@@ -120,7 +141,9 @@ class StockInventoryDatasource {
   }
 
   Future<StockInventoryModel> updateQuantity(
-      String stockId, int quantity) async {
+    String stockId,
+    int quantity,
+  ) async {
     final response = await _client
         .from(_table)
         .update({'quantity': quantity})
@@ -131,7 +154,9 @@ class StockInventoryDatasource {
   }
 
   Future<StockInventoryModel> updateDiscount(
-      String stockId, double discount) async {
+    String stockId,
+    double discount,
+  ) async {
     final response = await _client
         .from(_table)
         .update({'discount': discount})

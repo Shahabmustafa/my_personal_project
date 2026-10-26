@@ -13,8 +13,10 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/widget/stock_level_filter.dart';
+import 'package:safishoe_app/core/widget/stock_size_variants.dart';
 import 'package:safishoe_app/core/widget/stock_filter_dropdown.dart';
 import 'package:safishoe_app/core/service/print/stock_report_printer.dart';
+
 /// Superadmin stock view — head office ka stock (`stock_inventory` table).
 /// Warehouse se koi taalluq nahi. Add / Edit / Delete + barcode print/copy.
 class HeadOfficeStockScreen extends ConsumerStatefulWidget {
@@ -28,6 +30,47 @@ class HeadOfficeStockScreen extends ConsumerStatefulWidget {
 class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
   final _searchCtrl = TextEditingController();
   bool _printing = false;
+
+  /// Article whose sizes are open in the right-side slider (null = closed).
+  StockInventoryModel? _selected;
+
+  static String _key(StockInventoryModel s) =>
+      '${s.productId}|${s.colorId}|${s.brandId}|${s.categoryId}|${s.typeId}';
+
+  static String _subtitle(StockInventoryModel s) => [
+    s.colorName,
+    s.brandName,
+    s.categoryName,
+    s.typeName,
+  ].whereType<String>().where((e) => e.isNotEmpty).join(' · ');
+
+  StockSizesBody<StockInventoryModel> _sizesBody(
+    StockInventoryModel s,
+    Object? refreshToken,
+  ) => StockSizesBody<StockInventoryModel>(
+    key: ValueKey(_key(s)),
+    loader: () => ref.read(stockInventoryRepositoryProvider).fetchVariants(s),
+    refreshToken: refreshToken,
+    sizeOf: (i) => i.sizeName ?? '—',
+    barcodeOf: (i) => i.barcode,
+    qtyOf: (i) => i.quantity,
+    salePriceOf: (i) => i.salePrice,
+    discountOf: (i) => i.discount,
+    actionsOf: (i) => _RowActions(stock: i),
+  );
+
+  void _open(StockInventoryModel s, bool isMobile, Object? refreshToken) {
+    if (isMobile) {
+      showStockSizesSheet<StockInventoryModel>(
+        context,
+        title: s.productName ?? '—',
+        subtitle: _subtitle(s),
+        body: _sizesBody(s, refreshToken),
+      );
+    } else {
+      setState(() => _selected = s);
+    }
+  }
 
   @override
   void dispose() {
@@ -79,8 +122,9 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Print failed: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _printing = false);
@@ -103,195 +147,260 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
     final notifier = ref.read(headOfficeStockProvider.notifier);
     final stats = ref.watch(headOfficeStockStatsProvider);
     final isMobile = MediaQuery.of(context).size.width < 768;
-    final options = ref.watch(stockFilterOptionsProvider).asData?.value ??
+    final options =
+        ref.watch(stockFilterOptionsProvider).asData?.value ??
         const StockFilterOptions();
     const filterKeys = [
       'category_id',
       'type_id',
       'brand_id',
       'size_id',
-      'stock_level'
+      'stock_level',
     ];
-    final hasFilters = filterKeys.any((k) => state.filters[k] != null) ||
+    final hasFilters =
+        filterKeys.any((k) => state.filters[k] != null) ||
         state.search.isNotEmpty;
+
+    final top = <Widget>[
+      Padding(
+        padding: EdgeInsets.fromLTRB(
+          isMobile ? 16 : 24,
+          isMobile ? 16 : 28,
+          isMobile ? 16 : 24,
+          isMobile ? 12 : 20,
+        ),
+        child: Row(
+          children: [
+            const Text(
+              'Stock Inventory',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            IconButton(
+              onPressed: () {
+                notifier.refresh();
+                ref.invalidate(headOfficeStockStatsProvider);
+              },
+              icon: const AppIcon(AppIcons.refresh, size: 18),
+              tooltip: 'Refresh',
+              color: const Color(0xFF3E63DD),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: _openAddStock,
+              icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
+              label: const Text('Add Stock'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3E63DD),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: _StatsCards(
+          stats: stats.value ?? const HeadOfficeStockStats(),
+          isMobile: isMobile,
+        ),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(
+              width: isMobile ? double.infinity : 360,
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: notifier.setSearch,
+                decoration: InputDecoration(
+                  hintText: 'Search by barcode, article, brand...',
+                  hintStyle: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF8A8FA3),
+                  ),
+                  prefixIcon: const TextFieldIcon(
+                    AppIcons.search,
+                    size: 24,
+                    color: Color(0xFF8A8FA3),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFE7E9F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: Color(0xFFE7E9F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF3E63DD),
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            StockLevelFilter(
+              level: state.filters['stock_level'] as String?,
+              lowCount: stats.value?.lowCount ?? 0,
+              outCount: stats.value?.outCount ?? 0,
+              onChanged: (v) => notifier.setFilters({'stock_level': v}),
+            ),
+            StockFilterDropdown(
+              label: 'Category',
+              options: options.categories,
+              value: state.filters['category_id'] as String?,
+              onChanged: (v) => notifier.setFilters({'category_id': v}),
+            ),
+            StockFilterDropdown(
+              label: 'Type',
+              options: options.types,
+              value: state.filters['type_id'] as String?,
+              onChanged: (v) => notifier.setFilters({'type_id': v}),
+            ),
+            StockFilterDropdown(
+              label: 'Brand',
+              options: options.brands,
+              value: state.filters['brand_id'] as String?,
+              onChanged: (v) => notifier.setFilters({'brand_id': v}),
+            ),
+            StockFilterDropdown(
+              label: 'Size',
+              options: options.sizes,
+              value: state.filters['size_id'] as String?,
+              onChanged: (v) => notifier.setFilters({'size_id': v}),
+            ),
+            OutlinedButton.icon(
+              onPressed: _printing ? null : () => _print(options),
+              icon: _printing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const AppIcon(
+                      AppIcons.printOutlined,
+                      size: 18,
+                      color: Color(0xFF3E63DD),
+                    ),
+              label: const Text('Print'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF3E63DD),
+                side: const BorderSide(color: Color(0xFFE7E9F0)),
+                backgroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 16,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            if (hasFilters)
+              OutlinedButton.icon(
+                onPressed: () {
+                  _searchCtrl.clear();
+                  notifier.setSearch('');
+                  notifier.setFilters({
+                    'category_id': null,
+                    'type_id': null,
+                    'brand_id': null,
+                    'size_id': null,
+                    'stock_level': null,
+                  });
+                },
+                icon: const AppIcon(
+                  AppIcons.clear,
+                  size: 18,
+                  color: Colors.red,
+                ),
+                label: const Text('Clear'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red.shade600,
+                  side: BorderSide(color: Colors.red.shade200),
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ];
+
+    final pagination = state.totalCount > 0 && state.error == null
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: ReportPaginationBar(
+              page: state.page,
+              totalPages: notifier.totalPages,
+              totalCount: state.totalCount,
+              pageSize: state.pageSize,
+              onPageChange: notifier.goToPage,
+            ),
+          )
+        : null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-            child: Row(
+      // Phone: header, cards, filters and rows scroll together so the rows
+      // are not squeezed out by the fixed top section.
+      body: isMobile
+          ? _MobileBody(
+              top: top,
+              state: state,
+              notifier: notifier,
+              pagination: pagination,
+              onOpen: (s) => _open(s, true, state.rows),
+            )
+          : Stack(
               children: [
-                const Text('Stock Inventory',
-                    style: TextStyle(
-                        fontSize: 22, fontWeight: FontWeight.bold)),
-                const Spacer(),
-                IconButton(
-                  onPressed: () {
-                    notifier.refresh();
-                    ref.invalidate(headOfficeStockStatsProvider);
-                  },
-                  icon: const AppIcon(AppIcons.refresh, size: 18),
-                  tooltip: 'Refresh',
-                  color: const Color(0xFF3E63DD),
-                ),
-                const SizedBox(width: 8),
-                ElevatedButton.icon(
-                  onPressed: _openAddStock,
-                  icon: const AppIcon(AppIcons.add, size: 18, color: Colors.white),
-                  label: const Text('Add Stock'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF3E63DD),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: _StatsCards(
-              stats: stats.value ?? const HeadOfficeStockStats(),
-              isMobile: isMobile,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: isMobile ? double.infinity : 360,
-                  child: TextField(
-                    controller: _searchCtrl,
-                    onChanged: notifier.setSearch,
-                    decoration: InputDecoration(
-                      hintText: 'Search by barcode, article, brand...',
-                      hintStyle:
-                          const TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
-                      prefixIcon: const TextFieldIcon(AppIcons.search, size: 24, color: Color(0xFF8A8FA3)),
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
-                      enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(color: Color(0xFFE7E9F0))),
-                      focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF3E63DD), width: 1.5)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...top,
+                    Expanded(
+                      child: _DesktopTable(
+                        state: state,
+                        notifier: notifier,
+                        onOpen: (s) => _open(s, false, state.rows),
+                      ),
                     ),
-                  ),
+                    if (pagination != null) pagination,
+                  ],
                 ),
-                StockLevelFilter(
-                  level: state.filters['stock_level'] as String?,
-                  lowCount: stats.value?.lowCount ?? 0,
-                  outCount: stats.value?.outCount ?? 0,
-                  onChanged: (v) => notifier.setFilters({'stock_level': v}),
-                ),
-                StockFilterDropdown(
-                  label: 'Category',
-                  options: options.categories,
-                  value: state.filters['category_id'] as String?,
-                  onChanged: (v) => notifier.setFilters({'category_id': v}),
-                ),
-                StockFilterDropdown(
-                  label: 'Type',
-                  options: options.types,
-                  value: state.filters['type_id'] as String?,
-                  onChanged: (v) => notifier.setFilters({'type_id': v}),
-                ),
-                StockFilterDropdown(
-                  label: 'Brand',
-                  options: options.brands,
-                  value: state.filters['brand_id'] as String?,
-                  onChanged: (v) => notifier.setFilters({'brand_id': v}),
-                ),
-                StockFilterDropdown(
-                  label: 'Size',
-                  options: options.sizes,
-                  value: state.filters['size_id'] as String?,
-                  onChanged: (v) => notifier.setFilters({'size_id': v}),
-                ),
-                OutlinedButton.icon(
-                  onPressed: _printing ? null : () => _print(options),
-                  icon: _printing
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2))
-                      : const AppIcon(AppIcons.printOutlined,
-                          size: 18, color: Color(0xFF3E63DD)),
-                  label: const Text('Print'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF3E63DD),
-                    side: const BorderSide(color: Color(0xFFE7E9F0)),
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-                if (hasFilters)
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      _searchCtrl.clear();
-                      notifier.setSearch('');
-                      notifier.setFilters({
-                        'category_id': null,
-                        'type_id': null,
-                        'brand_id': null,
-                        'size_id': null,
-                        'stock_level': null,
-                      });
-                    },
-                    icon: const AppIcon(AppIcons.clear,
-                        size: 18, color: Colors.red),
-                    label: const Text('Clear'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade600,
-                      side: BorderSide(color: Colors.red.shade200),
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
+                if (_selected != null)
+                  StockSizesOverlay<StockInventoryModel>(
+                    title: _selected!.productName ?? '—',
+                    subtitle: _subtitle(_selected!),
+                    onClose: () => setState(() => _selected = null),
+                    body: _sizesBody(_selected!, state.rows),
                   ),
               ],
             ),
-          ),
-          Expanded(
-            child: isMobile
-                ? _MobileList(state: state, notifier: notifier)
-                : _DesktopTable(state: state, notifier: notifier),
-          ),
-          if (state.totalCount > 0 && state.error == null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-              child: ReportPaginationBar(
-                page: state.page,
-                totalPages: notifier.totalPages,
-                totalCount: state.totalCount,
-                pageSize: state.pageSize,
-                onPageChange: notifier.goToPage,
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
@@ -334,22 +443,28 @@ class _StatsCards extends StatelessWidget {
       ),
     ];
     if (isMobile) {
-      return LayoutBuilder(builder: (context, c) {
-        const gap = 12.0;
-        final w = (c.maxWidth - gap) / 2;
-        return Wrap(
-          spacing: gap,
-          runSpacing: gap,
-          children: [for (final card in cards) SizedBox(width: w, child: card)],
-        );
-      });
+      return LayoutBuilder(
+        builder: (context, c) {
+          const gap = 12.0;
+          final w = (c.maxWidth - gap) / 2;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final card in cards) SizedBox(width: w, child: card),
+            ],
+          );
+        },
+      );
     }
-    return Row(children: [
-      for (var i = 0; i < cards.length; i++) ...[
-        if (i > 0) const SizedBox(width: 14),
-        Expanded(child: cards[i]),
+    return Row(
+      children: [
+        for (var i = 0; i < cards.length; i++) ...[
+          if (i > 0) const SizedBox(width: 14),
+          Expanded(child: cards[i]),
+        ],
       ],
-    ]);
+    );
   }
 }
 
@@ -374,7 +489,10 @@ void _copyBarcode(BuildContext context, String barcode) {
 }
 
 void _confirmDelete(
-    BuildContext context, WidgetRef ref, StockInventoryModel s) {
+  BuildContext context,
+  WidgetRef ref,
+  StockInventoryModel s,
+) {
   showDialog(
     context: context,
     builder: (_) => AlertDialog(
@@ -383,8 +501,9 @@ void _confirmDelete(
       content: Text('Delete barcode "${s.barcode}"?'),
       actions: [
         TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel')),
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
         FilledButton(
           style: FilledButton.styleFrom(backgroundColor: Colors.red),
           onPressed: () async {
@@ -396,8 +515,9 @@ void _confirmDelete(
             if (err != null && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                    content: Text('Error: $err'),
-                    backgroundColor: Colors.red),
+                  content: Text('Error: $err'),
+                  backgroundColor: Colors.red,
+                ),
               );
             }
           },
@@ -409,10 +529,14 @@ void _confirmDelete(
 }
 
 void _showEditDialog(
-    BuildContext context, WidgetRef ref, StockInventoryModel s) {
+  BuildContext context,
+  WidgetRef ref,
+  StockInventoryModel s,
+) {
   final qtyCtrl = TextEditingController(text: s.quantity.toString());
-  final discountCtrl =
-      TextEditingController(text: s.discount.toStringAsFixed(0));
+  final discountCtrl = TextEditingController(
+    text: s.discount.toStringAsFixed(0),
+  );
   final formKey = GlobalKey<FormState>();
   bool saving = false;
 
@@ -421,8 +545,10 @@ void _showEditDialog(
     builder: (dialogCtx) => StatefulBuilder(
       builder: (dialogCtx, setDialogState) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Edit Stock',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Edit Stock',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         content: SizedBox(
           width: 360,
           child: Form(
@@ -430,11 +556,14 @@ void _showEditDialog(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(s.productName ?? s.barcode,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey)),
+                Text(
+                  s.productName ?? s.barcode,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: qtyCtrl,
@@ -442,12 +571,18 @@ void _showEditDialog(
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   decoration: InputDecoration(
                     labelText: 'Quantity *',
-                    prefixIcon: const TextFieldIcon(AppIcons.numbersOutlined, size: 24),
+                    prefixIcon: const TextFieldIcon(
+                      AppIcons.numbersOutlined,
+                      size: 24,
+                    ),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   validator: (v) {
                     final n = int.tryParse((v ?? '').trim());
@@ -458,19 +593,26 @@ void _showEditDialog(
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: discountCtrl,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*$')),
                   ],
                   decoration: InputDecoration(
                     labelText: 'Discount %',
-                    prefixIcon: const TextFieldIcon(AppIcons.percentOutlined, size: 24),
+                    prefixIcon: const TextFieldIcon(
+                      AppIcons.percentOutlined,
+                      size: 24,
+                    ),
                     isDense: true,
                     contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   validator: (v) {
                     final n = double.tryParse((v ?? '').trim());
@@ -493,30 +635,39 @@ void _showEditDialog(
               foregroundColor: Colors.white,
               elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: saving
                 ? null
                 : () async {
                     if (!formKey.currentState!.validate()) return;
                     setDialogState(() => saving = true);
-                    final actions =
-                        ref.read(headOfficeStockActionsProvider);
+                    final actions = ref.read(headOfficeStockActionsProvider);
                     final qtyErr = await actions.updateQuantity(
-                        s.id, int.parse(qtyCtrl.text.trim()));
+                      s.id,
+                      int.parse(qtyCtrl.text.trim()),
+                    );
                     final discErr = await actions.updateDiscount(
-                        s.id, double.parse(discountCtrl.text.trim()));
+                      s.id,
+                      double.parse(discountCtrl.text.trim()),
+                    );
                     final err = qtyErr ?? discErr;
                     await _refresh(ref);
                     if (dialogCtx.mounted) Navigator.pop(dialogCtx);
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(err == null
-                            ? 'Stock updated successfully!'
-                            : 'Error: $err'),
-                        backgroundColor:
-                            err == null ? Colors.green : Colors.red,
-                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            err == null
+                                ? 'Stock updated successfully!'
+                                : 'Error: $err',
+                          ),
+                          backgroundColor: err == null
+                              ? Colors.green
+                              : Colors.red,
+                        ),
+                      );
                     }
                   },
             child: saving
@@ -524,7 +675,10 @@ void _showEditDialog(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
                 : const Text('Save'),
           ),
         ],
@@ -534,7 +688,10 @@ void _showEditDialog(
 }
 
 void _showPrintDialog(BuildContext context, StockInventoryModel s) {
-  showDialog(context: context, builder: (_) => _BarcodeLabel(stock: s));
+  showDialog(
+    context: context,
+    builder: (_) => _BarcodeLabel(stock: s),
+  );
 }
 
 class _RowActions extends ConsumerWidget {
@@ -611,13 +768,22 @@ const _kTableMinWidth = 1450; // sum(_kColWidths) 1410 + row padding 32 + slack
 class _DesktopTable extends StatefulWidget {
   final PaginatedListState<StockInventoryModel> state;
   final HeadOfficeStockNotifier notifier;
-  const _DesktopTable({required this.state, required this.notifier});
+  final void Function(StockInventoryModel) onOpen;
+  const _DesktopTable({
+    required this.state,
+    required this.notifier,
+    required this.onOpen,
+  });
 
   @override
   State<_DesktopTable> createState() => _DesktopTableState();
 }
 
 class _DesktopTableState extends State<_DesktopTable> {
+  PaginatedListState<_Grp> _groupedState(
+    PaginatedListState<StockInventoryModel> st,
+  ) => _groupState(st);
+
   final _hScroll = ScrollController();
 
   @override
@@ -629,10 +795,11 @@ class _DesktopTableState extends State<_DesktopTable> {
   @override
   Widget build(BuildContext context) {
     const headerStyle = TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF8A8FA3),
-        letterSpacing: 0.3);
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: Color(0xFF8A8FA3),
+      letterSpacing: 0.3,
+    );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
@@ -646,10 +813,9 @@ class _DesktopTableState extends State<_DesktopTable> {
           borderRadius: BorderRadius.circular(12),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final tableWidth =
-                  constraints.maxWidth > _kTableMinWidth
-                      ? constraints.maxWidth
-                      : _kTableMinWidth.toDouble();
+              final tableWidth = constraints.maxWidth > _kTableMinWidth
+                  ? constraints.maxWidth
+                  : _kTableMinWidth.toDouble();
               return Scrollbar(
                 controller: _hScroll,
                 thumbVisibility: true,
@@ -664,57 +830,81 @@ class _DesktopTableState extends State<_DesktopTable> {
                           decoration: const BoxDecoration(
                             color: Color(0xFFF7F8FC),
                             border: Border(
-                                bottom:
-                                    BorderSide(color: Color(0xFFE7E9F0))),
+                              bottom: BorderSide(color: Color(0xFFE7E9F0)),
+                            ),
                           ),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          child: const Row(children: [
-                            _TH('#', w: 0, style: headerStyle),
-                            _TH('Barcode', w: 1, style: headerStyle),
-                            _TH('Article', w: 2, style: headerStyle),
-                            _TH('Purchase Price', w: 3, style: headerStyle),
-                            _TH('Sale Price', w: 4, style: headerStyle),
-                            _TH('Qty', w: 5, style: headerStyle),
-                            _TH('Discount', w: 6, style: headerStyle),
-                            _TH('Actions', w: 7, style: headerStyle),
-                            Expanded(child: SizedBox()),
-                          ]),
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          child: const Row(
+                            children: [
+                              _TH('#', w: 0, style: headerStyle),
+                              _TH('Barcode', w: 1, style: headerStyle),
+                              _TH('Article', w: 2, style: headerStyle),
+                              _TH('Purchase Price', w: 3, style: headerStyle),
+                              _TH('Sale Price', w: 4, style: headerStyle),
+                              _TH('Qty', w: 5, style: headerStyle),
+                              _TH('Discount', w: 6, style: headerStyle),
+                              _TH('Actions', w: 7, style: headerStyle),
+                              Expanded(child: SizedBox()),
+                            ],
+                          ),
                         ),
                         Expanded(
-                          child: PaginatedListView<StockInventoryModel>(
-                            state: widget.state,
+                          child: PaginatedListView<_Grp>(
+                            state: _groupedState(widget.state),
                             padding: EdgeInsets.zero,
                             // Page-by-page — scroll par aur rows load nahi hoti.
                             onLoadMore: () async {},
                             onRefresh: widget.notifier.refresh,
                             emptyText: 'No stock entries found',
                             separatorBuilder: (_, __) => const Divider(
-                                height: 1, color: Color(0xFFE7E9F0)),
-                            itemBuilder: (_, s, index) {
-                              final serial = (widget.state.page - 1) *
+                              height: 1,
+                              color: Color(0xFFE7E9F0),
+                            ),
+                            itemBuilder: (_, g, index) {
+                              final serial =
+                                  (widget.state.page - 1) *
                                       widget.state.pageSize +
                                   index +
                                   1;
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 10),
-                                child: Row(children: [
-                                  _cell('$serial', i: 0),
-                                  _cell(s.barcode, i: 1, mono: true),
-                                  _articleCell(s, i: 2),
-                                  _cell('Rs ${s.purchasePrice.toStringAsFixed(0)}',
-                                      i: 3),
-                                  _cell('Rs ${s.salePrice.toStringAsFixed(0)}',
-                                      i: 4, bold: true),
-                                  _cell('${s.quantity}', i: 5),
-                                  _cell('${s.discount.toStringAsFixed(0)}%',
-                                      i: 6),
-                                  SizedBox(
-                                      width: _kColWidths[7],
-                                      child: _RowActions(stock: s)),
-                                  const Expanded(child: SizedBox()),
-                                ]),
+                              return InkWell(
+                                onTap: () => widget.onOpen(g.first),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      _cell('$serial', i: 0),
+                                      _cell(g.barcodeLabel, i: 1, mono: true),
+                                      _articleCell(g, i: 2),
+                                      _cell('Rs ${g.purchaseText}', i: 3),
+                                      _cell(
+                                        'Rs ${g.saleText}',
+                                        i: 4,
+                                        bold: true,
+                                      ),
+                                      _cell('${g.qty}', i: 5),
+                                      _cell(g.discountText, i: 6),
+                                      SizedBox(
+                                        width: _kColWidths[7],
+                                        child: TextButton.icon(
+                                          onPressed: () =>
+                                              widget.onOpen(g.first),
+                                          icon: const AppIcon(
+                                            AppIcons.visibilityOutlined,
+                                            size: 16,
+                                          ),
+                                          label: Text(g.sizesLabel),
+                                        ),
+                                      ),
+                                      const Expanded(child: SizedBox()),
+                                    ],
+                                  ),
+                                ),
                               );
                             },
                           ),
@@ -732,45 +922,55 @@ class _DesktopTableState extends State<_DesktopTable> {
   }
 
   /// Sale Invoice ke Article dropdown jaisa — naam, neeche variant ki detail.
-  Widget _articleCell(StockInventoryModel s, {required int i}) => SizedBox(
-        width: _kColWidths[i],
-        child: Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(s.productName ?? '—',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF1A1D2E),
-                      fontWeight: FontWeight.w600)),
-              if (s.variantLine.isNotEmpty)
-                Text(s.variantLine,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 11, color: Color(0xFF8A8FA3))),
-            ],
+  Widget _articleCell(_Grp g, {required int i}) => SizedBox(
+    width: _kColWidths[i],
+    child: Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            g.first.productName ?? '—',
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF1A1D2E),
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-      );
-
-  Widget _cell(String text,
-          {required int i, bool bold = false, bool mono = false}) =>
-      SizedBox(
-        width: _kColWidths[i],
-        child: Padding(
-          padding: const EdgeInsets.only(right: 12),
-          child: Text(text,
+          if (g.articleLine.isNotEmpty)
+            Text(
+              g.articleLine,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                  fontSize: 13,
-                  color: const Color(0xFF1A1D2E),
-                  fontFamily: mono ? 'monospace' : null,
-                  fontWeight: bold ? FontWeight.w600 : FontWeight.normal)),
+              style: const TextStyle(fontSize: 11, color: Color(0xFF8A8FA3)),
+            ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _cell(
+    String text, {
+    required int i,
+    bool bold = false,
+    bool mono = false,
+  }) => SizedBox(
+    width: _kColWidths[i],
+    child: Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Text(
+        text,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 13,
+          color: const Color(0xFF1A1D2E),
+          fontFamily: mono ? 'monospace' : null,
+          fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _TH extends StatelessWidget {
@@ -791,97 +991,185 @@ class _TH extends StatelessWidget {
   }
 }
 
-class _MobileList extends StatelessWidget {
+class _MobileBody extends StatelessWidget {
+  final List<Widget> top;
   final PaginatedListState<StockInventoryModel> state;
   final HeadOfficeStockNotifier notifier;
-  const _MobileList({required this.state, required this.notifier});
+  final Widget? pagination;
+  final void Function(StockInventoryModel) onOpen;
+  const _MobileBody({
+    required this.top,
+    required this.state,
+    required this.notifier,
+    required this.pagination,
+    required this.onOpen,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return PaginatedListView<StockInventoryModel>(
-      state: state,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      onLoadMore: () async {},
-      onRefresh: notifier.refresh,
-      emptyText: 'No stock entries found',
-      itemBuilder: (_, s, index) {
-        final serial = (state.page - 1) * state.pageSize + index + 1;
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE7E9F0)),
-          ),
+    Widget? status;
+    if (state.showInitialLoader) {
+      status = const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    } else if (state.showFirstError) {
+      status = Padding(
+        padding: const EdgeInsets.all(32),
+        child: Center(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('$serial. ${s.productName ?? s.barcode}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14)),
-                  ),
-                  _RowActions(stock: s),
-                ],
-              ),
-              if (s.variantLine.isNotEmpty)
-                Text(s.variantLine,
-                    style: const TextStyle(
-                        fontSize: 12, color: Color(0xFF5A5F73))),
-              Text(s.barcode,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF8A8FA3),
-                      fontFamily: 'monospace')),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  _chip('Purchase',
-                      'Rs ${s.purchasePrice.toStringAsFixed(0)}'),
-                  _chip('Sale', 'Rs ${s.salePrice.toStringAsFixed(0)}',
-                      color: const Color(0xFF3E63DD)),
-                  _chip('Qty', '${s.quantity}',
-                      color: const Color(0xFF2E7D32)),
-                  _chip('Discount', '${s.discount.toStringAsFixed(0)}%',
-                      color: Colors.orange.shade800),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _chip(String label, String value, {Color? color}) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F8FC),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE7E9F0)),
-        ),
-        child: RichText(
-          text: TextSpan(
-            style: const TextStyle(fontSize: 11),
-            children: [
-              TextSpan(
-                  text: '$label: ',
-                  style: const TextStyle(color: Color(0xFF8A8FA3))),
-              TextSpan(
-                text: value,
-                style: TextStyle(
-                    color: color ?? const Color(0xFF1A1D2E),
-                    fontWeight: FontWeight.w500),
+              Text('${state.error}', textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: notifier.refresh,
+                child: const Text('Retry'),
               ),
             ],
           ),
         ),
       );
+    } else if (state.showEmpty) {
+      status = const Padding(
+        padding: EdgeInsets.symmetric(vertical: 40),
+        child: Center(child: Text('No stock entries found')),
+      );
+    }
+    final rows = _groupState(state).rows;
+    return RefreshIndicator(
+      onRefresh: notifier.refresh,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 24),
+        children: [
+          ...top,
+          if (status != null)
+            status
+          else
+            for (var index = 0; index < rows.length; index++)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _MobileCard(
+                  g: rows[index],
+                  serial: (state.page - 1) * state.pageSize + index + 1,
+                  onTap: () => onOpen(rows[index].first),
+                ),
+              ),
+          if (pagination != null) pagination!,
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileCard extends StatelessWidget {
+  final _Grp g;
+  final int serial;
+  final VoidCallback onTap;
+  const _MobileCard({
+    required this.g,
+    required this.serial,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE7E9F0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$serial. ${g.first.productName ?? g.first.barcode}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                Text(
+                  g.sizesLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3E63DD),
+                  ),
+                ),
+                const AppIcon(
+                  AppIcons.chevronRight,
+                  size: 18,
+                  color: Color(0xFF8A8FA3),
+                ),
+              ],
+            ),
+            if (g.articleLine.isNotEmpty)
+              Text(
+                g.articleLine,
+                style: const TextStyle(fontSize: 12, color: Color(0xFF5A5F73)),
+              ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: [
+                _chip('Purchase', 'Rs ${g.purchaseText}'),
+                _chip(
+                  'Sale',
+                  'Rs ${g.saleText}',
+                  color: const Color(0xFF3E63DD),
+                ),
+                _chip('Qty', '${g.qty}', color: const Color(0xFF2E7D32)),
+                _chip(
+                  'Discount',
+                  g.discountText,
+                  color: Colors.orange.shade800,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, String value, {Color? color}) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF7F8FC),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: const Color(0xFFE7E9F0)),
+    ),
+    child: RichText(
+      text: TextSpan(
+        style: const TextStyle(fontSize: 11),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: const TextStyle(color: Color(0xFF8A8FA3)),
+          ),
+          TextSpan(
+            text: value,
+            style: TextStyle(
+              color: color ?? const Color(0xFF1A1D2E),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ── Barcode label dialog ─────────────────────────────────────────────────
@@ -907,9 +1195,10 @@ class _BarcodeLabel extends StatelessWidget {
                 children: [
                   const AppIcon(AppIcons.printOutlined, color: primary),
                   const SizedBox(width: 8),
-                  const Text('Barcode Label',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.w700)),
+                  const Text(
+                    'Barcode Label',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
                   const Spacer(),
                   IconButton(
                     icon: const AppIcon(AppIcons.close),
@@ -923,11 +1212,12 @@ class _BarcodeLabel extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 18),
+                  horizontal: 20,
+                  vertical: 18,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border:
-                      Border.all(color: Colors.grey.shade300, width: 1.5),
+                  border: Border.all(color: Colors.grey.shade300, width: 1.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -957,24 +1247,28 @@ class _BarcodeLabel extends StatelessWidget {
                     Divider(color: Colors.grey.shade200, height: 1),
                     const SizedBox(height: 12),
                     _LabelDetail(
-                        icon: AppIcons.formatSizeOutlined,
-                        label: 'Size',
-                        value: stock.sizeName ?? '—'),
+                      icon: AppIcons.formatSizeOutlined,
+                      label: 'Size',
+                      value: stock.sizeName ?? '—',
+                    ),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: AppIcons.colorLensOutlined,
-                        label: 'Color',
-                        value: stock.colorName ?? '—'),
+                      icon: AppIcons.colorLensOutlined,
+                      label: 'Color',
+                      value: stock.colorName ?? '—',
+                    ),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: AppIcons.categoryOutlined,
-                        label: 'Category',
-                        value: stock.categoryName ?? '—'),
+                      icon: AppIcons.categoryOutlined,
+                      label: 'Category',
+                      value: stock.categoryName ?? '—',
+                    ),
                     const SizedBox(height: 6),
                     _LabelDetail(
-                        icon: AppIcons.styleOutlined,
-                        label: 'Type',
-                        value: stock.typeName ?? '—'),
+                      icon: AppIcons.styleOutlined,
+                      label: 'Type',
+                      value: stock.typeName ?? '—',
+                    ),
                   ],
                 ),
               ),
@@ -987,11 +1281,11 @@ class _BarcodeLabel extends StatelessWidget {
                       label: const Text('Copy'),
                       style: OutlinedButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: () {
-                        Clipboard.setData(
-                            ClipboardData(text: stock.barcode));
+                        Clipboard.setData(ClipboardData(text: stock.barcode));
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Barcode copied!'),
@@ -1008,7 +1302,8 @@ class _BarcodeLabel extends StatelessWidget {
                       label: const Text('Print'),
                       style: FilledButton.styleFrom(
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       onPressed: () async {
                         Navigator.pop(context);
@@ -1079,8 +1374,11 @@ class _LabelDetail extends StatelessWidget {
   final String label;
   final String value;
 
-  const _LabelDetail(
-      {required this.icon, required this.label, required this.value});
+  const _LabelDetail({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1088,19 +1386,79 @@ class _LabelDetail extends StatelessWidget {
       children: [
         AppIcon(icon, size: 14, color: Colors.grey.shade500),
         const SizedBox(width: 6),
-        Text('$label:',
-            style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.w500)),
+        Text(
+          '$label:',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(width: 6),
         Expanded(
-          child: Text(value,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis),
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
       ],
     );
   }
 }
+
+/// One list row = every size of an article (same product, color, brand,
+/// category and type) rolled together.
+class _Grp {
+  final StockGroup<StockInventoryModel> group;
+  const _Grp(this.group);
+
+  List<StockInventoryModel> get _items => group.items;
+  StockInventoryModel get first => group.first;
+
+  int get qty => _items.fold(0, (s, i) => s + i.quantity);
+  String get sizesLabel => _items.length == 1
+      ? 'Size ${first.sizeName ?? '—'}'
+      : '${_items.length} sizes';
+  String get barcodeLabel =>
+      _items.length == 1 ? first.barcode : '${_items.length} barcodes';
+  String get articleLine => [
+    first.colorName,
+    first.brandName,
+    first.categoryName,
+    first.typeName,
+  ].whereType<String>().where((e) => e.isNotEmpty).join(' • ');
+  String get purchaseText => sameOrRange(
+    _items.map((i) => i.purchasePrice),
+    (v) => v.toStringAsFixed(0),
+  );
+  String get saleText =>
+      sameOrRange(_items.map((i) => i.salePrice), (v) => v.toStringAsFixed(0));
+  String get discountText => sameOrRange(
+    _items.map((i) => i.discount),
+    (v) => '${v.toStringAsFixed(0)}%',
+  );
+}
+
+String _groupKey(StockInventoryModel s) =>
+    '${s.productId}|${s.colorId}|${s.brandId}|${s.categoryId}|${s.typeId}';
+
+/// Same state with the loaded rows rolled up into one entry per article.
+PaginatedListState<_Grp> _groupState(
+  PaginatedListState<StockInventoryModel> st,
+) => PaginatedListState<_Grp>(
+  rows: groupStock<StockInventoryModel>(
+    st.rows,
+    _groupKey,
+  ).map(_Grp.new).toList(),
+  totalCount: st.totalCount,
+  page: st.page,
+  pageSize: st.pageSize,
+  isFirstLoad: st.isFirstLoad,
+  isLoadingMore: st.isLoadingMore,
+  isRefreshing: st.isRefreshing,
+  error: st.error,
+  loadMoreError: st.loadMoreError,
+  search: st.search,
+  filters: st.filters,
+);
