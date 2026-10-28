@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../../superadmin/report/presentation/widgets/report_detail_panel.dart';
+import '../../../../superadmin/report/presentation/widgets/report_pagination_bar.dart';
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 import '../../../../superadmin/report/presentation/widgets/report_table_shell.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
@@ -41,6 +42,8 @@ class BranchTransferScreen extends ConsumerStatefulWidget {
 class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
   String _filterStatus = 'all';
   String? _filterBranch; // destination branch id
+  static const _pageSize = 50;
+  int _page = 1;
 
   AssignStockModel? _selected; // list row (brief)
   AssignStockModel? _detail; // loaded detail (items with names)
@@ -270,6 +273,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                     value: _filterBranch,
                     onChanged: (v) => setState(() {
                       _filterBranch = v;
+                      _page = 1;
                       _selected = null;
                       _detail = null;
                     }),
@@ -367,11 +371,36 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                           ),
                         );
                       }
-                      return _TransferTable(
-                        rows: filtered,
-                        selectedId: _selected?.id,
-                        onView: _openDetail,
-                        onPrint: _printSlip,
+                      final totalPages =
+                          ((filtered.length - 1) ~/ _pageSize) + 1;
+                      final page = _page.clamp(1, totalPages);
+                      final pageRows = filtered
+                          .skip((page - 1) * _pageSize)
+                          .take(_pageSize)
+                          .toList();
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: _TransferTable(
+                              rows: pageRows,
+                              selectedId: _selected?.id,
+                              onView: _openDetail,
+                              onPrint: _printSlip,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ReportPaginationBar(
+                            page: page,
+                            totalPages: totalPages,
+                            totalCount: filtered.length,
+                            pageSize: _pageSize,
+                            onPageChange: (p) => setState(() {
+                              _page = p;
+                              _selected = null;
+                              _detail = null;
+                            }),
+                          ),
+                        ],
                       );
                     },
                   ),
@@ -422,7 +451,10 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
         chipIcon = AppIcons.listOutlined;
     }
     return GestureDetector(
-      onTap: () => setState(() => _filterStatus = value),
+      onTap: () => setState(() {
+        _filterStatus = value;
+        _page = 1;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),

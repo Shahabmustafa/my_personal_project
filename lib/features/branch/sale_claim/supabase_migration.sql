@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS public.sale_claims (
     purchase_price       NUMERIC(15,2)   NOT NULL DEFAULT 0,
     total_price          NUMERIC(15,2)   NOT NULL DEFAULT 0,
     reason               TEXT            NOT NULL,
+    shoe_condition       TEXT            NOT NULL DEFAULT 'old'
+                                         CHECK (shoe_condition IN ('old', 'damaged')),
     sale_date            TIMESTAMPTZ     NOT NULL,
     claim_date           TIMESTAMPTZ     NOT NULL DEFAULT now(),
     status               TEXT            NOT NULL DEFAULT 'pending'
@@ -44,6 +46,15 @@ CREATE TABLE IF NOT EXISTS public.sale_claims (
     created_at           TIMESTAMPTZ     DEFAULT now(),
     updated_at           TIMESTAMPTZ     DEFAULT now()
 );
+
+-- Already-created table ke liye (shoe old hai ya kharab/damaged):
+ALTER TABLE public.sale_claims
+    ADD COLUMN IF NOT EXISTS shoe_condition TEXT NOT NULL DEFAULT 'old';
+ALTER TABLE public.sale_claims
+    DROP CONSTRAINT IF EXISTS sale_claims_shoe_condition_check;
+ALTER TABLE public.sale_claims
+    ADD CONSTRAINT sale_claims_shoe_condition_check
+    CHECK (shoe_condition IN ('old', 'damaged'));
 
 CREATE INDEX IF NOT EXISTS idx_sale_claims_branch ON public.sale_claims (branch_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sale_claims_head_office ON public.sale_claims (head_office_id, status, created_at DESC);

@@ -13,6 +13,7 @@ class SaleClaimRepository {
     required SaleInvoiceItemModel item,
     required int quantity,
     required String reason,
+    required String shoeCondition,
     String? claimedBy,
   }) =>
       _datasource.createClaim(
@@ -22,6 +23,7 @@ class SaleClaimRepository {
         item: item,
         quantity: quantity,
         reason: reason,
+        shoeCondition: shoeCondition,
         claimedBy: claimedBy,
       );
 

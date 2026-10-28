@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/constants/app_icons.dart';
 import '../../../../../core/widget/app_dropdown.dart';
 import '../../../../../core/widget/app_icon.dart';
+import '../../../../../core/widget/text_field_icon.dart';
 import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../superadmin/shared/current_head_office_provider.dart';
 import '../../../sale_invoice/data/model/sale_invoice_model.dart';
@@ -32,6 +33,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
   SaleInvoiceModel? _invoice; // items ke sath (detail)
   Map<String, int> _claimed = {};
   SaleInvoiceItemModel? _item;
+  String? _shoeCondition; // 'old' | 'damaged'
   bool _detailLoading = false;
   bool _saving = false;
   String? _error;
@@ -63,6 +65,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
       _picked = listInvoice;
       _invoice = null;
       _item = null;
+      _shoeCondition = null;
       _qtyCtrl.clear();
       _detailLoading = true;
       _error = null;
@@ -102,6 +105,10 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
       setState(() => _error = 'Quantity must be between 1 and $remaining');
       return;
     }
+    if (_shoeCondition == null) {
+      setState(() => _error = 'Select shoe condition (Old or Damaged)');
+      return;
+    }
     final reason = _reasonCtrl.text.trim();
     if (reason.isEmpty) {
       setState(() => _error = 'Reason is required');
@@ -124,6 +131,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
             item: item,
             quantity: qty,
             reason: reason,
+            shoeCondition: _shoeCondition!,
             claimedBy: ref.read(authProvider).user?.id,
           );
       if (mounted) Navigator.pop(context, true);
@@ -181,8 +189,8 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
                             '${i.invoiceNumber}  •  ${i.customerName ?? 'Walk-in'}'
                             '  •  ${claimFmtDate(i.createdAt)}',
                         isRequired: true,
-                        prefixIcon: const AppIcon(AppIcons.receiptLongOutlined,
-                            size: 18),
+                        prefixIcon: const TextFieldIcon(AppIcons.receiptLongOutlined,
+                            size: 18, color: Color(0xFF8A8FA3)),
                         onChanged: _onInvoiceSelected,
                       ),
                       if (_detailLoading)
@@ -242,6 +250,19 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
                                 ),
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 12),
+                          AppSearchDropdown<String>(
+                            label: 'Shoe Condition',
+                            items: const ['old', 'damaged'],
+                            selectedItem: _shoeCondition,
+                            itemLabel: (v) => v == 'damaged' ? 'Damaged' : 'Old',
+                            isRequired: true,
+                            showSearchBox: false,
+                            onChanged: (v) => setState(() {
+                              _shoeCondition = v;
+                              _error = null;
+                            }),
                           ),
                           const SizedBox(height: 12),
                           TextFormField(

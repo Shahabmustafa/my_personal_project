@@ -276,6 +276,7 @@ class _IncomingSaleClaimsScreenState
                 section('CLAIM'),
                 kv('Branch', c.branchName),
                 kv('Claim Date', claimFmtDate(c.claimDate)),
+                kv('Shoe Condition', c.shoeConditionLabel),
                 kv('Reason', c.reason),
                 section('SALE'),
                 kv('Invoice', c.invoiceNumber),

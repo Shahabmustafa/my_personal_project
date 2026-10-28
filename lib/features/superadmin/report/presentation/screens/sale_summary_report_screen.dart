@@ -6,6 +6,7 @@ import '../providers/sale_summary_provider.dart';
 import '../widgets/report_branch_filter_dropdown.dart';
 import '../widgets/report_date_filter_dialog.dart';
 import '../widgets/report_detail_panel.dart';
+import '../widgets/report_pagination_bar.dart';
 import '../widgets/report_summary_card.dart';
 import '../widgets/report_table_shell.dart';
 import '../../../../branch/shared/current_branch_provider.dart';
@@ -391,6 +392,22 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
             ),
           const SizedBox(height: 16),
           Expanded(child: content),
+          if (state.totalCount > 0) ...[
+            const SizedBox(height: 12),
+            ReportPaginationBar(
+              page: state.page,
+              totalPages: state.totalPages,
+              totalCount: state.totalCount,
+              pageSize: SaleSummaryState.pageSize,
+              onPageChange: (p) {
+                setState(() {
+                  _selectedRow = null;
+                  _selectedBody = null;
+                });
+                notifier.goToPage(p);
+              },
+            ),
+          ],
         ],
       ),
     );

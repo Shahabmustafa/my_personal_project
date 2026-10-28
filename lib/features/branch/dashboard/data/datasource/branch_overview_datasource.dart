@@ -45,6 +45,7 @@ class BranchOverviewDatasource {
       String branchId) async {
     if (branchId.isEmpty) return (todaySale: 0.0, todayExpense: 0.0);
     final todayUtc = _startOfTodayUtc();
+    final tomorrowUtc = _startOfTomorrowUtc();
     final results = await Future.wait<dynamic>([
       _client
           .from('branch_cash_counter')
@@ -57,12 +58,14 @@ class BranchOverviewDatasource {
           .from('sale_returns')
           .select('total_amount')
           .eq('branch_id', branchId)
-          .gte('created_at', todayUtc),
+          .gte('created_at', todayUtc)
+          .lt('created_at', tomorrowUtc),
       _client
           .from('sale_exchanges')
           .select('difference_amount')
           .eq('branch_id', branchId)
-          .gte('created_at', todayUtc),
+          .gte('created_at', todayUtc)
+          .lt('created_at', tomorrowUtc),
     ]);
 
     final res = results[0] as Map<String, dynamic>?;
@@ -84,6 +87,14 @@ class BranchOverviewDatasource {
   static String _startOfTodayUtc() {
     final now = DateTime.now();
     return DateTime.utc(now.year, now.month, now.day)
+        .subtract(const Duration(hours: 5))
+        .toIso8601String();
+  }
+
+  /// Agle din ki shuruat (UTC mein) — "aaj" ki upper bound.
+  static String _startOfTomorrowUtc() {
+    final now = DateTime.now();
+    return DateTime.utc(now.year, now.month, now.day + 1)
         .subtract(const Duration(hours: 5))
         .toIso8601String();
   }

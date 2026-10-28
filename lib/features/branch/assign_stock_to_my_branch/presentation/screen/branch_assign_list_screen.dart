@@ -3,14 +3,18 @@ import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../superadmin/branch/presentation/providers/branch_provider.dart';
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
+import '../../../shared/current_branch_provider.dart';
 import '../../../../superadmin/report/presentation/widgets/report_detail_panel.dart';
+import '../../../../superadmin/report/presentation/widgets/report_pagination_bar.dart';
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 import '../provider/branch_assign_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/service/print/print_service.dart';
 
 class BranchAssignListScreen extends ConsumerStatefulWidget {
   const BranchAssignListScreen({super.key});
@@ -24,6 +28,8 @@ class _BranchAssignListScreenState
     extends ConsumerState<BranchAssignListScreen> {
   String _filterStatus = 'all';
   String? _filterSource; // assigned-by (branch / warehouse) id
+  static const _pageSize = 50;
+  int _page = 1;
   static const _primary = Color(0xFF3E63DD);
 
   AssignStockModel? _selected; // list row (brief)
@@ -71,6 +77,53 @@ class _BranchAssignListScreenState
     }
   }
 
+  Future<void> _printSlip(AssignStockModel a) async {
+    try {
+      // The list rows only carry totals — load the items for the slip.
+      final detail =
+          await ref.read(branchAssignProvider.notifier).loadDetail(a.id);
+      if (detail == null) throw Exception('Could not load items');
+      String? toName;
+      try {
+        toName = (await ref
+                .read(branchRepositoryProvider)
+                .getBranchById(ref.read(currentBranchIdProvider)))
+            .branchName;
+      } catch (_) {
+        // Slip still prints without the receiving branch name.
+      }
+      await ThermalPrintService.printStockSlip(
+        title: 'STOCK ASSIGNMENT',
+        documentNumberLabel: 'Assignment #',
+        documentNumber: a.assignmentNumber,
+        date: a.assignedAt,
+        fromName: a.sourceLabel,
+        toName: toName ?? '-',
+        lines: detail.items
+            .map((i) => StockSlipLine(
+                  name: i.productName ?? '-',
+                  sizeName: i.sizeName,
+                  colorName: i.colorName,
+                  quantity: i.quantity,
+                ))
+            .toList(),
+        footerNote: switch (a.status) {
+          'accepted' => 'Accepted by the receiving branch.',
+          'rejected' => 'Rejected by the receiving branch.',
+          _ => 'Stock stays pending until the receiving branch accepts it.',
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Print failed: $e'),
+          backgroundColor: Colors.orange.shade700,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final listState = ref.watch(branchAssignProvider);
@@ -88,6 +141,12 @@ class _BranchAssignListScreenState
       if (_filterStatus == 'all') return true;
       return a.status == _filterStatus;
     }).toList();
+
+    final totalPages =
+        filtered.isEmpty ? 1 : ((filtered.length - 1) ~/ _pageSize) + 1;
+    final page = _page.clamp(1, totalPages);
+    final pageRows =
+        filtered.skip((page - 1) * _pageSize).take(_pageSize).toList();
 
     final pendingCount = listState.assignments
         .where((a) => a.status == 'pending')
@@ -194,6 +253,7 @@ class _BranchAssignListScreenState
             value: _filterSource,
             onChanged: (v) => setState(() {
               _filterSource = v;
+              _page = 1;
               _selected = null;
               _detail = null;
             }),
@@ -252,9 +312,10 @@ class _BranchAssignListScreenState
                       : filtered.isEmpty
                       ? _EmptyView(status: _filterStatus)
                       : _AssignTable(
-                          rows: filtered,
+                          rows: pageRows,
                           selectedId: _selected?.id,
                           onView: _openDetail,
+                          onPrint: _printSlip,
                           onActionDone: _closePanel,
                         ),
                 ),
@@ -278,6 +339,20 @@ class _BranchAssignListScreenState
               ],
             ),
           ),
+          if (filtered.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ReportPaginationBar(
+              page: page,
+              totalPages: totalPages,
+              totalCount: filtered.length,
+              pageSize: _pageSize,
+              onPageChange: (p) => setState(() {
+                _page = p;
+                _selected = null;
+                _detail = null;
+              }),
+            ),
+          ],
         ],
       ),
     );
@@ -305,7 +380,10 @@ class _BranchAssignListScreenState
         chipIcon = AppIcons.listOutlined;
     }
     return GestureDetector(
-      onTap: () => setState(() => _filterStatus = value),
+      onTap: () => setState(() {
+        _filterStatus = value;
+        _page = 1;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -382,12 +460,14 @@ class _AssignTable extends ConsumerWidget {
   final List<AssignStockModel> rows;
   final String? selectedId;
   final void Function(AssignStockModel) onView;
+  final void Function(AssignStockModel) onPrint;
   final void Function(String id) onActionDone;
 
   const _AssignTable({
     required this.rows,
     required this.selectedId,
     required this.onView,
+    required this.onPrint,
     required this.onActionDone,
   });
 
@@ -524,6 +604,13 @@ class _AssignTable extends ConsumerWidget {
                       tooltip: 'View',
                       color: const Color(0xFF3E63DD),
                       onTap: () => onView(a),
+                    ),
+                    const SizedBox(width: 4),
+                    _ActionIcon(
+                      icon: AppIcons.printOutlined,
+                      tooltip: 'Print slip',
+                      color: const Color(0xFF3E63DD),
+                      onTap: () => onPrint(a),
                     ),
                     if (a.status == 'pending') ...[
                       const SizedBox(width: 4),

@@ -3,6 +3,7 @@ import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/assign_stock_model.dart';
 import '../providers/assign_stock_provider.dart';
+import '../../../../superadmin/report/presentation/widgets/report_pagination_bar.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -17,6 +18,8 @@ class AssignStockListScreen extends ConsumerStatefulWidget {
 
 class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
   String _filterStatus = 'all'; // all | pending | accepted | rejected
+  static const _pageSize = 50;
+  int _page = 1;
 
   @override
   void initState() {
@@ -36,6 +39,12 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
       if (_filterStatus == 'all') return true;
       return a.status == _filterStatus;
     }).toList();
+
+    final totalPages =
+        filtered.isEmpty ? 1 : ((filtered.length - 1) ~/ _pageSize) + 1;
+    final page = _page.clamp(1, totalPages);
+    final pageRows =
+        filtered.skip((page - 1) * _pageSize).take(_pageSize).toList();
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -203,13 +212,13 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
                               ),
                             )
                           : ListView.separated(
-                              itemCount: filtered.length,
+                              itemCount: pageRows.length,
                               separatorBuilder: (_, __) => Divider(
                                 height: 1,
                                 color: Colors.grey.shade100,
                               ),
                               itemBuilder: (_, i) =>
-                                  _ListRow(assignment: filtered[i], index: i),
+                                  _ListRow(assignment: pageRows[i], index: i),
                             ),
                     ),
                   ),
@@ -217,6 +226,16 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
               ),
             ),
           ),
+          if (filtered.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ReportPaginationBar(
+              page: page,
+              totalPages: totalPages,
+              totalCount: filtered.length,
+              pageSize: _pageSize,
+              onPageChange: (p) => setState(() => _page = p),
+            ),
+          ],
         ],
       ),
     );
@@ -240,7 +259,10 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
     }
 
     return GestureDetector(
-      onTap: () => setState(() => _filterStatus = value),
+      onTap: () => setState(() {
+        _filterStatus = value;
+        _page = 1;
+      }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

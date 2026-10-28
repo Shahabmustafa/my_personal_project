@@ -87,8 +87,20 @@ class OverviewDatasource {
     ).subtract(const Duration(hours: 5)).toIso8601String();
   }
 
+  /// Agle din ki shuruat — "aaj" ki upper bound, taake aane wale dino ke
+  /// records aaj ki sale mein na jud jayen (Sale Summary ke barabar).
+  static String _startOfTomorrowUtc() {
+    final now = DateTime.now();
+    return DateTime.utc(
+      now.year,
+      now.month,
+      now.day + 1,
+    ).subtract(const Duration(hours: 5)).toIso8601String();
+  }
+
   Future<OverviewStats> fetchStats() async {
     final todayUtc = _startOfTodayUtc();
+    final tomorrowUtc = _startOfTomorrowUtc();
 
     // Counts, sums, profit, weekly series, top article — sab ek RPC call
     // mein server-side aggregate hote hain (indexes ke sath), poori tables
@@ -98,7 +110,8 @@ class OverviewDatasource {
       _client
           .from('sale_invoices')
           .select('total_amount, branch_id, branches(branch_name)')
-          .gte('created_at', todayUtc),
+          .gte('created_at', todayUtc)
+          .lt('created_at', tomorrowUtc),
       _client
           .from('branches')
           .select('id, branch_name')
@@ -107,15 +120,18 @@ class OverviewDatasource {
       _client
           .from('expense_entries')
           .select('amount')
-          .gte('created_at', todayUtc),
+          .gte('created_at', todayUtc)
+          .lt('created_at', tomorrowUtc),
       _client
           .from('sale_returns')
           .select('total_amount, branch_id')
-          .gte('created_at', todayUtc),
+          .gte('created_at', todayUtc)
+          .lt('created_at', tomorrowUtc),
       _client
           .from('sale_exchanges')
           .select('difference_amount, branch_id')
-          .gte('created_at', todayUtc),
+          .gte('created_at', todayUtc)
+          .lt('created_at', tomorrowUtc),
     ]);
 
     final extras = results[0] as Map<String, dynamic>? ?? const {};

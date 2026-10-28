@@ -13,6 +13,7 @@ import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../providers/incoming_branch_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
@@ -36,6 +37,7 @@ class _IncomingBranchReturnsScreenState
   static const _pageSize = 20;
 
   String _filterStatus = 'all'; // all | pending | accepted | rejected
+  String? _filterBranch; // returning branch id
   DateTime? _startDate;
   DateTime? _endDate;
   int _page = 1;
@@ -51,6 +53,7 @@ class _IncomingBranchReturnsScreenState
     final to = _endDate == null ? null : dayOf(_endDate!);
     return all.where((r) {
       if (_filterStatus != 'all' && r.status != _filterStatus) return false;
+      if (_filterBranch != null && r.branchId != _filterBranch) return false;
       final d = dayOf(r.returnedAt);
       if (from != null && d.isBefore(from)) return false;
       if (to != null && d.isAfter(to)) return false;
@@ -63,6 +66,10 @@ class _IncomingBranchReturnsScreenState
     final returnsAsync = ref.watch(incomingBranchReturnsProvider);
     final all = returnsAsync.value ?? const <BranchWarehouseReturnModel>[];
     final isMobile = Responsive(context).isMobile;
+
+    final branchOptions = <String, String>{
+      for (final r in all) r.branchId: r.branchName ?? r.branchId,
+    };
 
     final filtered = _applyFilters(all);
     final totalCount = filtered.length;
@@ -195,6 +202,18 @@ class _IncomingBranchReturnsScreenState
             },
           ),
           const SizedBox(height: 16),
+          BranchFilterDropdown(
+            label: 'From Branch',
+            allLabel: 'All branches',
+            options: branchOptions,
+            value: _filterBranch,
+            onChanged: (v) => setState(() {
+              _filterBranch = v;
+              _page = 1;
+              _selected = null;
+            }),
+          ),
+          const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -228,7 +247,9 @@ class _IncomingBranchReturnsScreenState
                           : pageRows.isEmpty
                               ? Center(
                                   child: Text(
-                                    _filterStatus == 'all' && !_hasDateFilter
+                                    _filterStatus == 'all' &&
+                                            !_hasDateFilter &&
+                                            _filterBranch == null
                                         ? 'No returns received yet'
                                         : 'No returns match this filter',
                                     style: TextStyle(

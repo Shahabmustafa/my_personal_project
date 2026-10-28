@@ -9,22 +9,34 @@ import 'package:flutter_svg/flutter_svg.dart';
 /// app-wide icon scale factor, so field icons stay a fixed, predictable
 /// size regardless of that global setting.
 class TextFieldIcon extends StatelessWidget {
-  const TextFieldIcon(this.assetPath, {super.key, this.size = 24, this.color});
+  const TextFieldIcon(
+    this.assetPath, {
+    super.key,
+    this.size = 24,
+    this.color,
+    this.onPressed,
+  });
 
   final String assetPath;
   final double size;
   final Color? color;
 
+  /// When set, the icon becomes tappable (e.g. clear / toggle buttons).
+  /// When null it is a plain, non-interactive icon so taps pass through to
+  /// any wrapping [IconButton] / [InkWell] / the text field itself.
+  final VoidCallback? onPressed;
+
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: (){},
-      icon: SvgPicture.asset(
-        assetPath,
-        width: size,
-        height: size,
-        colorFilter: color == null ? null : ColorFilter.mode(color!, BlendMode.srcIn),
-      ),
+    final icon = SvgPicture.asset(
+      assetPath,
+      width: size,
+      height: size,
+      colorFilter: color == null ? null : ColorFilter.mode(color!, BlendMode.srcIn),
     );
+    if (onPressed == null) {
+      return Padding(padding: const EdgeInsets.all(12), child: icon);
+    }
+    return IconButton(onPressed: onPressed, icon: icon);
   }
 }

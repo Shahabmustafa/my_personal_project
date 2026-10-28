@@ -10,6 +10,7 @@ import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
@@ -32,9 +33,11 @@ class HoAssignStockListScreen extends ConsumerStatefulWidget {
 class _HoAssignStockListScreenState
     extends ConsumerState<HoAssignStockListScreen> {
   static const _accent = Color(0xFF1565C0);
-  static const _pageSize = 20;
+  static const _pageSize = 50;
 
   String _filterStatus = 'all';
+  String? _filterTo; // receiving branch id
+  String? _filterFrom; // sending branch name (branch-to-branch only)
   DateTime? _startDate;
   DateTime? _endDate;
   int _page = 1;
@@ -65,6 +68,8 @@ class _HoAssignStockListScreenState
     final to = _endDate == null ? null : dayOf(_endDate!);
     return all.where((a) {
       if (_filterStatus != 'all' && a.status != _filterStatus) return false;
+      if (_filterTo != null && a.branchId != _filterTo) return false;
+      if (_filterFrom != null && a.assignedByName != _filterFrom) return false;
       final d = dayOf(a.assignedAt);
       if (from != null && d.isBefore(from)) return false;
       if (to != null && d.isAfter(to)) return false;
@@ -76,6 +81,14 @@ class _HoAssignStockListScreenState
   Widget build(BuildContext context) {
     final listState = ref.watch(_listProvider);
     final notifier = ref.read(_listProvider.notifier);
+
+    final toOptions = <String, String>{};
+    final fromOptions = <String, String>{};
+    for (final a in listState.assignments) {
+      toOptions[a.branchId] = a.branchName ?? a.branchId;
+      final by = a.assignedByName;
+      if (by != null && by.isNotEmpty) fromOptions[by] = by;
+    }
 
     final filtered = _applyFilters(listState.assignments);
     final totalCount = filtered.length;
@@ -214,6 +227,36 @@ class _HoAssignStockListScreenState
             },
           ),
           const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              if (widget.byBranch)
+                BranchFilterDropdown(
+                  label: 'Assigned By',
+                  allLabel: 'All branches',
+                  options: fromOptions,
+                  value: _filterFrom,
+                  onChanged: (v) => setState(() {
+                    _filterFrom = v;
+                    _page = 1;
+                    _selected = null;
+                  }),
+                ),
+              BranchFilterDropdown(
+                label: 'Assigned To',
+                allLabel: 'All branches',
+                options: toOptions,
+                value: _filterTo,
+                onChanged: (v) => setState(() {
+                  _filterTo = v;
+                  _page = 1;
+                  _selected = null;
+                }),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -258,7 +301,10 @@ class _HoAssignStockListScreenState
                           : pageRows.isEmpty
                               ? Center(
                                   child: Text(
-                                    _filterStatus == 'all' && !_hasDateFilter
+                                    _filterStatus == 'all' &&
+                                            !_hasDateFilter &&
+                                            _filterTo == null &&
+                                            _filterFrom == null
                                         ? 'No assignments yet'
                                         : 'No assignments match this filter',
                                     style: TextStyle(

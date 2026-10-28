@@ -34,6 +34,7 @@ class SaleClaimDatasource {
     required SaleInvoiceItemModel item,
     required int quantity,
     required String reason,
+    required String shoeCondition,
     String? claimedBy,
   }) async {
     final claimNumber = await generateClaimNumber();
@@ -61,6 +62,7 @@ class SaleClaimDatasource {
       'purchase_price': item.purchasePrice,
       'total_price': totalPrice,
       'reason': reason,
+      'shoe_condition': shoeCondition,
       'sale_date': invoice.createdAt.toUtc().toIso8601String(),
       'claim_date': DateTime.now().toUtc().toIso8601String(),
       'claimed_by': claimedBy,

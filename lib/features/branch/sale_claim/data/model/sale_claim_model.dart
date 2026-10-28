@@ -23,6 +23,7 @@ class SaleClaimModel {
   final double purchasePrice;
   final double totalPrice;
   final String reason;
+  final String shoeCondition; // old | damaged
   final DateTime saleDate;
   final DateTime claimDate;
   final String status; // pending | approved | rejected
@@ -54,6 +55,7 @@ class SaleClaimModel {
     required this.purchasePrice,
     required this.totalPrice,
     required this.reason,
+    this.shoeCondition = 'old',
     required this.saleDate,
     required this.claimDate,
     required this.status,
@@ -62,6 +64,9 @@ class SaleClaimModel {
   });
 
   bool get isPending => status == 'pending';
+
+  String get shoeConditionLabel =>
+      shoeCondition == 'damaged' ? 'Damaged' : 'Old';
 
   static double _toDouble(dynamic v) {
     if (v == null) return 0.0;
@@ -101,6 +106,7 @@ class SaleClaimModel {
       purchasePrice: _toDouble(json['purchase_price']),
       totalPrice: _toDouble(json['total_price']),
       reason: json['reason']?.toString() ?? '',
+      shoeCondition: json['shoe_condition']?.toString() ?? 'old',
       saleDate: _date(json['sale_date']),
       claimDate: _date(json['claim_date']),
       status: json['status']?.toString() ?? 'pending',

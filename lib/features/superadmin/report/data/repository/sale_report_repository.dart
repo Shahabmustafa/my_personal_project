@@ -68,13 +68,19 @@ class SaleReportRepository {
   }) =>
       _datasource.fetchSummaryTotals(startDate: startDate, endDate: endDate, branchId: branchId);
 
-  Future<List<SaleTransactionRow>> getCombinedTransactions({
+  Future<List<SaleTransactionRow>> getTransactionsPage({
     DateTime? startDate,
     DateTime? endDate,
     String? branchId,
+    required int page,
+    required int pageSize,
   }) =>
-      _datasource.fetchCombinedTransactions(
-          startDate: startDate, endDate: endDate, branchId: branchId);
+      _datasource.fetchTransactionsPage(
+          startDate: startDate,
+          endDate: endDate,
+          branchId: branchId,
+          page: page,
+          pageSize: pageSize);
 
   Future<Map<String, double>> getNetSaleByBranch({DateTime? date, DateTime? to}) =>
       _datasource.fetchNetSaleByBranch(date: date, to: to);

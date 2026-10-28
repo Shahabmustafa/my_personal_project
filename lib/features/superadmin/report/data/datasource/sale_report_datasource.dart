@@ -227,111 +227,71 @@ class SaleReportDatasource {
   }
 
   // ── Combined summary (Sale + Return + Exchange cards) ───────────────────
-  // Har table se sirf jitna column chahiye utna fetch karta hai — teeno
-  // reports ki totals ek hi jagah, sale summary screen ke top cards ke liye.
+  // Server-side aggregate (RPC `sale_summary_totals`) — rows client tak fetch
+  // nahi hoti, is liye bade date range mein bhi tez rehta hai.
+
+  Map<String, dynamic> _summaryParams(
+          DateTime? startDate, DateTime? endDate, String? branchId) =>
+      {
+        'p_start': startDate == null ? null : _startOfDayUtc(startDate).toIso8601String(),
+        'p_end': endDate == null ? null : _startOfNextDayUtc(endDate).toIso8601String(),
+        'p_branch': (branchId == null || branchId.isEmpty) ? null : branchId,
+      };
 
   Future<SaleSummaryTotals> fetchSummaryTotals({
     DateTime? startDate,
     DateTime? endDate,
     String? branchId,
   }) async {
-    double sumField(List rows, String field) => rows.fold<double>(
-        0.0, (sum, row) => sum + ((row as Map<String, dynamic>)[field] as num? ?? 0).toDouble());
-
-    var invoiceQuery = _client.from('sale_invoices').select('total_amount');
-    var returnQuery = _client.from('sale_returns').select('total_amount');
-    var exchangeQuery = _client.from('sale_exchanges').select('difference_amount');
-    if (branchId != null && branchId.isNotEmpty) {
-      invoiceQuery = invoiceQuery.eq('branch_id', branchId);
-      returnQuery = returnQuery.eq('branch_id', branchId);
-      exchangeQuery = exchangeQuery.eq('branch_id', branchId);
-    }
-
-    final invoicesRes = await _applyDateRange(invoiceQuery, startDate, endDate) as List;
-    final returnsRes = await _applyDateRange(returnQuery, startDate, endDate) as List;
-    final exchangesRes = await _applyDateRange(exchangeQuery, startDate, endDate) as List;
+    final res = await _client.rpc('sale_summary_totals',
+        params: _summaryParams(startDate, endDate, branchId));
+    final m = (res as Map).cast<String, dynamic>();
+    double d(String k) => (m[k] as num? ?? 0).toDouble();
+    int i(String k) => (m[k] as num? ?? 0).toInt();
 
     return SaleSummaryTotals(
-      totalSale: sumField(invoicesRes, 'total_amount'),
-      totalReturn: sumField(returnsRes, 'total_amount'),
-      exchangeChange: sumField(exchangesRes, 'difference_amount'),
-      exchangeReceived: exchangesRes.fold<double>(0.0, (sum, row) {
-        final d = ((row as Map<String, dynamic>)['difference_amount'] as num? ?? 0).toDouble();
-        return d > 0 ? sum + d : sum;
-      }),
-      exchangeRefunded: exchangesRes.fold<double>(0.0, (sum, row) {
-        final d = ((row as Map<String, dynamic>)['difference_amount'] as num? ?? 0).toDouble();
-        return d < 0 ? sum - d : sum;
-      }),
-      invoiceCount: invoicesRes.length,
-      returnCount: returnsRes.length,
-      exchangeCount: exchangesRes.length,
+      totalSale: d('total_sale'),
+      totalReturn: d('total_return'),
+      exchangeChange: d('exchange_change'),
+      exchangeReceived: d('exchange_received'),
+      exchangeRefunded: d('exchange_refunded'),
+      invoiceCount: i('invoice_count'),
+      returnCount: i('return_count'),
+      exchangeCount: i('exchange_count'),
     );
   }
 
   // ── Combined transaction list (Sale + Return + Exchange in one feed) ────
+  // Server-side pagination (RPC `sale_summary_page`) — sirf ek page aata hai.
 
-  Future<List<SaleTransactionRow>> fetchCombinedTransactions({
+  Future<List<SaleTransactionRow>> fetchTransactionsPage({
     DateTime? startDate,
     DateTime? endDate,
     String? branchId,
+    required int page,
+    required int pageSize,
   }) async {
-    var invoiceQuery = _client
-        .from('sale_invoices')
-        .select('id, invoice_number, created_at, total_amount, branches(branch_name), customers(name)');
-    var returnQuery = _client
-        .from('sale_returns')
-        .select('id, return_number, created_at, total_amount, branches(branch_name), customers(name)');
-    var exchangeQuery = _client.from('sale_exchanges').select(
-        'id, exchange_number, created_at, difference_amount, branches(branch_name), customers(name)');
-    if (branchId != null && branchId.isNotEmpty) {
-      invoiceQuery = invoiceQuery.eq('branch_id', branchId);
-      returnQuery = returnQuery.eq('branch_id', branchId);
-      exchangeQuery = exchangeQuery.eq('branch_id', branchId);
-    }
-
-    final invoicesRes = await _applyDateRange(invoiceQuery, startDate, endDate) as List;
-    final returnsRes = await _applyDateRange(returnQuery, startDate, endDate) as List;
-    final exchangesRes = await _applyDateRange(exchangeQuery, startDate, endDate) as List;
-
-    String? relatedName(Map<String, dynamic> row, String key, String field) =>
-        (row[key] as Map<String, dynamic>?)?[field]?.toString();
-
-    final rows = <SaleTransactionRow>[
-      for (final row in invoicesRes.cast<Map<String, dynamic>>())
+    final res = await _client.rpc('sale_summary_page', params: {
+      ..._summaryParams(startDate, endDate, branchId),
+      'p_limit': pageSize,
+      'p_offset': (page - 1) * pageSize,
+    });
+    return [
+      for (final row in (res as List).cast<Map<String, dynamic>>())
         SaleTransactionRow(
           id: row['id'].toString(),
-          type: SaleTransactionType.sale,
-          number: row['invoice_number']?.toString() ?? '',
-          branchName: relatedName(row, 'branches', 'branch_name'),
-          customerName: relatedName(row, 'customers', 'name'),
+          type: switch (row['type']) {
+            'return' => SaleTransactionType.saleReturn,
+            'exchange' => SaleTransactionType.exchange,
+            _ => SaleTransactionType.sale,
+          },
+          number: row['number']?.toString() ?? '',
+          branchName: row['branch_name']?.toString(),
+          customerName: row['customer_name']?.toString(),
           createdAt: DateTime.parse(row['created_at'].toString()),
-          amount: (row['total_amount'] as num? ?? 0).toDouble(),
-        ),
-      for (final row in returnsRes.cast<Map<String, dynamic>>())
-        SaleTransactionRow(
-          id: row['id'].toString(),
-          type: SaleTransactionType.saleReturn,
-          number: row['return_number']?.toString() ?? '',
-          branchName: relatedName(row, 'branches', 'branch_name'),
-          customerName: relatedName(row, 'customers', 'name'),
-          createdAt: DateTime.parse(row['created_at'].toString()),
-          amount: -(row['total_amount'] as num? ?? 0).toDouble(),
-        ),
-      for (final row in exchangesRes.cast<Map<String, dynamic>>())
-        SaleTransactionRow(
-          id: row['id'].toString(),
-          type: SaleTransactionType.exchange,
-          number: row['exchange_number']?.toString() ?? '',
-          branchName: relatedName(row, 'branches', 'branch_name'),
-          customerName: relatedName(row, 'customers', 'name'),
-          createdAt: DateTime.parse(row['created_at'].toString()),
-          amount: (row['difference_amount'] as num? ?? 0).toDouble(),
+          amount: (row['amount'] as num? ?? 0).toDouble(),
         ),
     ];
-
-    rows.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return rows;
   }
 
   // ── Branch Target report ─────────────────────────────────────────────────
