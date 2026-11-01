@@ -553,13 +553,10 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
   void setNote(String note) => state = state.copyWith(note: note);
 
   /// Requested quantity ko available stock (minus jo already cart mein hai)
-  /// tak clamp karta hai — return value actual quantity jo add hui. Offer
-  /// wala article ho to us ka free partner bhi khud cart mein aa jata hai.
-  int addCartItem(BranchStockModel stock, {int quantity = 1}) {
-    final added = _addStock(stock, quantity);
-    if (added > 0) _addB1g1FreeUnit(stock.id);
-    return added;
-  }
+  /// tak clamp karta hai — return value actual quantity jo add hui. B1G1
+  /// ka free partner cashier khud add karta hai — koi auto add nahi.
+  int addCartItem(BranchStockModel stock, {int quantity = 1}) =>
+      _addStock(stock, quantity);
 
   int _addStock(BranchStockModel stock, int quantity) {
     final existing = state.cartItems.indexWhere(
@@ -611,123 +608,6 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     return cappedQty;
   }
 
-  /// Variant kis chalte B1G1 offer mein hai — [computeB1g1] jaisa pehla match.
-  B1g1OfferModel? _b1g1OfferForIds({
-    required String productId,
-    required String sizeId,
-    required String colorId,
-    required String brandId,
-    required String categoryId,
-    required String typeId,
-  }) {
-    final key = b1g1VariantKey(
-      productId: productId,
-      sizeId: sizeId,
-      colorId: colorId,
-      brandId: brandId,
-      categoryId: categoryId,
-      typeId: typeId,
-    );
-    for (final o in state.b1g1Offers) {
-      if (o.matches(
-        productId: productId,
-        variantKey: key,
-        brandId: brandId,
-        categoryId: categoryId,
-      )) {
-        return o;
-      }
-    }
-    return null;
-  }
-
-  B1g1OfferModel? _b1g1OfferFor(SaleCartItem i) => _b1g1OfferForIds(
-    productId: i.productId,
-    sizeId: i.sizeId,
-    colorId: i.colorId,
-    brandId: i.brandId,
-    categoryId: i.categoryId,
-    typeId: i.typeId,
-  );
-
-  /// [offer] ke cart mein kitne units hain.
-  int _b1g1Units(B1g1OfferModel offer) => state.cartItems
-      .where((c) => _b1g1OfferFor(c)?.id == offer.id)
-      .fold(0, (sum, c) => sum + c.quantity);
-
-  /// Offer wala article add hua aur us offer ke units taaq (odd) hain — jodi
-  /// poori karne ke liye admin ke usi offer ka doosra, kam (ya barabar) qeemat
-  /// wala article (stock mein ho to) free mein cart mein. Aisa koi na mile to
-  /// usi variant ka ek aur unit. Cart mein is offer ka koi article pehle se
-  /// free ho to usi ka ek aur unit — paid 2 to wahi free article bhi 2.
-  void _addB1g1FreeUnit(String branchStockId) {
-    final idx = state.cartItems.indexWhere(
-      (c) => c.branchStockId == branchStockId,
-    );
-    if (idx == -1) return;
-    final item = state.cartItems[idx];
-    final offer = _b1g1OfferFor(item);
-    if (offer == null || _b1g1Units(offer).isEven) return;
-
-    SaleCartItem? freeLine;
-    for (final c in state.cartItems) {
-      if (c.b1g1FreeQty <= 0 || c.salePrice > item.salePrice) continue;
-      if (c.availableStock > 0 && c.quantity >= c.availableStock) continue;
-      if (_b1g1OfferFor(c)?.id != offer.id) continue;
-      if (freeLine == null || c.salePrice < freeLine.salePrice) freeLine = c;
-    }
-    if (freeLine != null) {
-      _setQty(freeLine.branchStockId, freeLine.quantity + 1);
-      return;
-    }
-
-    final inCart = {
-      for (final c in state.cartItems) c.branchStockId: c.quantity,
-    };
-    BranchStockModel? partner;
-    for (final s in _ref.read(branchStockCacheProvider).value ?? const []) {
-      if (s.id == item.branchStockId || s.salePrice > item.salePrice) continue;
-      if (s.quantity - (inCart[s.id] ?? 0) <= 0) continue;
-      final o = _b1g1OfferForIds(
-        productId: s.productId,
-        sizeId: s.sizeId,
-        colorId: s.colorId,
-        brandId: s.brandId,
-        categoryId: s.categoryId,
-        typeId: s.typeId,
-      );
-      if (o?.id != offer.id) continue;
-      if (partner == null || s.salePrice < partner.salePrice) partner = s;
-    }
-    if (partner != null) {
-      _addStock(partner, 1);
-      return;
-    }
-
-    if (item.availableStock > 0 && item.quantity >= item.availableStock) return;
-    final updated = List<SaleCartItem>.from(state.cartItems);
-    updated[idx] = item.copyWith(quantity: item.quantity + 1);
-    _setCart(updated);
-  }
-
-  /// Offer wala unit kam hua aur jodi toot gayi — jo unit pehle free tha wo
-  /// bhi cart se nikal do (warna wo paid ban kar bill mein reh jata).
-  /// Sab se sasta free article pehle kam hota hai.
-  void _dropB1g1FreeUnit(B1g1OfferModel? offer, List<SaleCartItem> before) {
-    if (offer == null || _b1g1Units(offer).isEven) return;
-    final sorted = [...before]
-      ..sort((a, b) => a.salePrice.compareTo(b.salePrice));
-    for (final b in sorted) {
-      if (b.b1g1FreeQty <= 0 || _b1g1OfferFor(b)?.id != offer.id) continue;
-      final now = state.cartItems.where(
-        (c) => c.branchStockId == b.branchStockId,
-      );
-      if (now.isEmpty) continue;
-      _setQty(b.branchStockId, now.first.quantity - 1);
-      return;
-    }
-  }
-
   /// Seedha quantity set — koi B1G1 auto add/remove nahi.
   void _setQty(String branchStockId, int quantity) {
     if (quantity <= 0) {
@@ -747,16 +627,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
   }
 
   void updateItemQuantity(String branchStockId, int quantity) {
-    final before = state.cartItems;
-    final current = before.where((c) => c.branchStockId == branchStockId);
-    if (current.isEmpty) return;
-    final item = current.first;
     _setQty(branchStockId, quantity);
-    if (quantity > item.quantity) {
-      _addB1g1FreeUnit(branchStockId);
-    } else if (quantity < item.quantity) {
-      _dropB1g1FreeUnit(_b1g1OfferFor(item), before);
-    }
   }
 
   void removeItem(String branchStockId) =>
@@ -869,6 +740,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
     try {
       final saved = await attemptSave(state.invoiceNumber);
       _ref.invalidate(branchStockCacheProvider);
+      _refreshCustomers();
       if (mounted) {
         state = state.copyWith(
           isSaving: false,
@@ -883,6 +755,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
           final retryNumber = await _repo.generateInvoiceNumber();
           final saved = await attemptSave(retryNumber);
           _ref.invalidate(branchStockCacheProvider);
+          _refreshCustomers();
           if (mounted) {
             state = state.copyWith(
               isSaving: false,
@@ -900,6 +773,14 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       if (mounted) state = state.copyWith(isSaving: false, error: errMsg);
       return errMsg;
     }
+  }
+
+  /// Sale ke baad DB customer ke loyalty points badal deta hai — customers
+  /// list aur sale-screen ki customer list dobara load karwao taake naye
+  /// points foran nazar aayein.
+  void _refreshCustomers() {
+    _ref.invalidate(customerProvider);
+    _ref.invalidate(customersForSaleProvider);
   }
 
   /// [saved] header ko (items ke bagair) cart items + payment se enrich

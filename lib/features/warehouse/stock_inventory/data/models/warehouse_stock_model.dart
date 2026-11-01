@@ -11,6 +11,8 @@ class WarehouseStockModel {
   final String typeId;
   final int quantity;
   final double discount;
+  final double salePrice;
+  final double purchasePrice;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -37,6 +39,8 @@ class WarehouseStockModel {
     required this.typeId,
     required this.quantity,
     this.discount = 0,
+    this.salePrice = 0,
+    this.purchasePrice = 0,
     required this.createdAt,
     required this.updatedAt,
     this.productName,
@@ -70,6 +74,8 @@ class WarehouseStockModel {
       typeId: json['type_id'] as String,
       quantity: json['quantity'] as int,
       discount: _toDouble(json['discount']),
+      salePrice: _toDouble(json['sale_price']),
+      purchasePrice: _toDouble(json['purchase_price']),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       // Joined fields

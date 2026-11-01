@@ -13,7 +13,13 @@ class BranchStockRepository {
   Future<PageResult<BranchStockModel>> fetchStockPage(
     PageRequest request, {
     required String branchId,
-  }) => _datasource.fetchPage(request, branchId: branchId);
+    BranchStockView view = BranchStockView.all,
+  }) => _datasource.fetchPage(request, branchId: branchId, view: view);
+
+  Future<List<({int quantity, double salePrice})>> fetchQtyPrice(
+    String branchId,
+    BranchStockView view,
+  ) => _datasource.fetchQtyPrice(branchId, view);
 
   Future<List<BranchStockModel>> fetchVariants(
     BranchStockModel s, {
@@ -30,6 +36,7 @@ class BranchStockRepository {
   /// Har page ko loop kar ke filter/search ke saare rows (print ke liye).
   Future<List<BranchStockModel>> fetchAllStock({
     required String branchId,
+    BranchStockView view = BranchStockView.all,
     String search = '',
     Map<String, Object?> filters = const {},
   }) async {
@@ -45,6 +52,7 @@ class BranchStockRepository {
           withCount: false,
         ),
         branchId: branchId,
+        view: view,
       );
       all.addAll(res.rows);
       if (res.rows.length < size) return all;

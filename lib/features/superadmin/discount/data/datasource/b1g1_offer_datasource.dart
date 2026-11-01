@@ -106,6 +106,8 @@ class B1g1OfferDatasource {
         .toList();
   }
 
+  Future<List<B1g1Lookup>> getBranches() => _lookup('branches', 'branch_name');
+
   Future<List<B1g1Lookup>> getProducts() => _lookup('products', 'article_name');
 
   Future<List<B1g1Variant>> getVariants() async {

@@ -18,6 +18,9 @@ class StockRepository {
   }) =>
       _datasource.fetchPage(request, warehouseId: warehouseId);
 
+  Future<List<WarehouseStockModel>> fetchVariants(WarehouseStockModel s) =>
+      _datasource.fetchVariants(s);
+
   Future<bool> barcodeExists(String barcode) =>
       _datasource.barcodeExists(barcode);
 

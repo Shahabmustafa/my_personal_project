@@ -44,11 +44,35 @@ class StockDatasource {
     }
     final result = await runSupabasePage(
       query
+          // Same article (warehouse + product + color + brand + category +
+          // type) sits together so its sizes group into one row.
+          .order('warehouse_name', ascending: true)
           .order('product_name', ascending: true)
-          .order('quantity', ascending: false),
+          .order('color_name', ascending: true)
+          .order('brand_name', ascending: true)
+          .order('category_name', ascending: true)
+          .order('type_name', ascending: true)
+          .order('id', ascending: true),
       request: request,
     );
     return result.map(_fromViewRow);
+  }
+
+  /// Every size of one article in one warehouse (for the sizes panel).
+  Future<List<WarehouseStockModel>> fetchVariants(
+      WarehouseStockModel s) async {
+    final res = await _client
+        .from('v_warehouse_stock')
+        .select()
+        .eq('warehouse_id', s.warehouseId)
+        .eq('product_id', s.productId)
+        .eq('color_id', s.colorId)
+        .eq('brand_id', s.brandId)
+        .eq('category_id', s.categoryId)
+        .eq('type_id', s.typeId);
+    return (res as List)
+        .map((e) => _fromViewRow(e as Map<String, dynamic>))
+        .toList();
   }
 
   // ── Fetch all stock for a given warehouse — sorted A-Z by product, then qty desc

@@ -21,28 +21,44 @@ final branchStockRepositoryProvider = Provider<BranchStockRepository>(
 class BranchStockNotifier extends PaginatedListNotifier<BranchStockModel> {
   final BranchStockRepository _repo;
   final String _branchId;
+  final BranchStockView _view;
 
-  BranchStockNotifier(this._repo, this._branchId);
+  BranchStockNotifier(this._repo, this._branchId,
+      [this._view = BranchStockView.all]);
 
   @override
   Future<PageResult<BranchStockModel>> fetchPage(PageRequest request) =>
-      _repo.fetchStockPage(request, branchId: _branchId);
+      _repo.fetchStockPage(request, branchId: _branchId, view: _view);
 }
 
-final branchStockProvider = StateNotifierProvider<BranchStockNotifier,
-    PaginatedListState<BranchStockModel>>(
-  (ref) {
-    final notifier = BranchStockNotifier(
-      ref.read(branchStockRepositoryProvider),
-      ref.watch(currentBranchIdProvider),
-    );
-    // Realtime — sale, return, exchange, claim, transfer ya assign accept se
-    // quantity badalte hi list update (bina Refresh).
-    ref.listen(tableChangesProvider('branch_stock_inventory'),
-        (_, _) => notifier.reloadLoaded());
-    return notifier;
-  },
-);
+StateNotifierProvider<BranchStockNotifier, PaginatedListState<BranchStockModel>>
+    _stockProviderFor(BranchStockView view) => StateNotifierProvider<
+            BranchStockNotifier, PaginatedListState<BranchStockModel>>(
+          (ref) {
+            final notifier = BranchStockNotifier(
+              ref.read(branchStockRepositoryProvider),
+              ref.watch(currentBranchIdProvider),
+              view,
+            );
+            // Realtime — sale, return, exchange, claim, transfer ya assign
+            // accept se quantity badalte hi list update (bina Refresh).
+            ref.listen(tableChangesProvider('branch_stock_inventory'),
+                (_, _) => notifier.reloadLoaded());
+            return notifier;
+          },
+        );
+
+final branchStockProvider = _stockProviderFor(BranchStockView.all);
+final branchB1g1StockProvider = _stockProviderFor(BranchStockView.b1g1);
+final branchDiscountStockProvider =
+    _stockProviderFor(BranchStockView.discount);
+
+StateNotifierProvider<BranchStockNotifier, PaginatedListState<BranchStockModel>>
+    branchStockProviderFor(BranchStockView view) => switch (view) {
+          BranchStockView.all => branchStockProvider,
+          BranchStockView.b1g1 => branchB1g1StockProvider,
+          BranchStockView.discount => branchDiscountStockProvider,
+        };
 
 // ── Aggregate stats (server-side RPC) ─────────────────────────────────────
 class BranchStockStats {
@@ -87,5 +103,34 @@ final branchStockStatsProvider =
     lowStockCount: (j['low_stock_count'] as num?)?.toInt() ?? 0,
     lowCount: (j['low_count'] as num?)?.toInt() ?? 0,
     outCount: (j['out_count'] as num?)?.toInt() ?? 0,
+  );
+});
+
+/// Buy 1 Get 1 / Discount screen ke cards — us view ke saare stock ka total.
+final branchViewStatsProvider = FutureProvider.autoDispose
+    .family<BranchStockStats, BranchStockView>((ref, view) async {
+  ref.watch(tableChangesProvider('branch_stock_inventory'));
+  final bid = ref.watch(currentBranchIdProvider);
+  if (bid.isEmpty) return const BranchStockStats();
+  final rows =
+      await ref.read(branchStockRepositoryProvider).fetchQtyPrice(bid, view);
+  var qty = 0, low = 0, out = 0;
+  var value = 0.0;
+  for (final r in rows) {
+    qty += r.quantity;
+    value += r.quantity * r.salePrice;
+    if (r.quantity <= 0) {
+      out++;
+    } else if (r.quantity < 5) {
+      low++;
+    }
+  }
+  return BranchStockStats(
+    totalProducts: rows.length,
+    totalQuantity: qty,
+    totalSalePrice: value,
+    lowStockCount: low + out,
+    lowCount: low,
+    outCount: out,
   );
 });

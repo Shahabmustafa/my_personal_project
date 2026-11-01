@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/pagination/pagination.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import '../../data/datasource/branch_stock_datasource.dart' show BranchStockView;
 import '../../data/model/branch_stock_model.dart';
 import '../povider/branch_stock_provider.dart';
 import 'package:safishoe_app/core/service/print/stock_report_printer.dart';
@@ -14,15 +15,20 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/widget/stock_level_filter.dart';
 import 'package:safishoe_app/core/widget/stock_size_variants.dart';
+import 'package:safishoe_app/core/widget/b1g1_stock_badge.dart';
 
 class BranchStockScreen extends ConsumerStatefulWidget {
-  const BranchStockScreen({super.key});
+  /// Poora stock (default), sirf Buy 1 Get 1 stock, ya sirf discount stock.
+  final BranchStockView view;
+  const BranchStockScreen({super.key, this.view = BranchStockView.all});
 
   @override
   ConsumerState<BranchStockScreen> createState() => _BranchStockScreenState();
 }
 
 class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
+  late final _provider = branchStockProviderFor(widget.view);
+
   final _searchCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   static const _primary = Color(0xFF1565C0);
@@ -34,7 +40,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
       if (!_scrollCtrl.hasClients) return;
       final pos = _scrollCtrl.position;
       if (pos.pixels >= pos.maxScrollExtent - 400) {
-        ref.read(branchStockProvider.notifier).loadMore();
+        ref.read(_provider.notifier).loadMore();
       }
     });
   }
@@ -47,8 +53,9 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
   }
 
   void _refresh() {
-    ref.read(branchStockProvider.notifier).refresh();
+    ref.read(_provider.notifier).refresh();
     ref.invalidate(branchStockStatsProvider);
+    ref.invalidate(branchViewStatsProvider);
   }
 
   bool _printing = false;
@@ -80,6 +87,18 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
     qtyOf: (i) => i.quantity,
     salePriceOf: (i) => i.salePrice,
     discountOf: (i) => i.discount,
+    badgeOf: (i) => B1g1StockBadge(
+      variants: [
+        (
+          productId: i.productId,
+          sizeId: i.sizeId,
+          colorId: i.colorId,
+          brandId: i.brandId,
+          categoryId: i.categoryId,
+          typeId: i.typeId,
+        ),
+      ],
+    ),
   );
 
   PaginatedListState<_Grp> _groupedState(
@@ -112,7 +131,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
   }
 
   Future<void> _print(StockFilterOptions options) async {
-    final state = ref.read(branchStockProvider);
+    final state = ref.read(_provider);
     String? name(List<StockFilterOption> l, String key) {
       final id = state.filters[key];
       for (final o in l) {
@@ -138,9 +157,10 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
             branchId: ref.read(currentBranchIdProvider),
             search: state.search,
             filters: state.filters,
+            view: widget.view,
           );
       await StockReportPrinter.print(
-        title: 'Branch Stock Inventory',
+        title: widget.view.title,
         rows: [
           for (final r in rows)
             StockReportRow(
@@ -257,10 +277,14 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(branchStockProvider);
-    final notifier = ref.read(branchStockProvider.notifier);
+    final state = ref.watch(_provider);
+    final notifier = ref.read(_provider.notifier);
     final stats =
-        ref.watch(branchStockStatsProvider).asData?.value ??
+        (widget.view == BranchStockView.all
+                ? ref.watch(branchStockStatsProvider)
+                : ref.watch(branchViewStatsProvider(widget.view)))
+            .asData
+            ?.value ??
         const BranchStockStats();
 
     final options =
@@ -301,9 +325,9 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Branch Stock Inventory',
-                  style: TextStyle(
+                Text(
+                  widget.view.title,
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1A2E),
@@ -743,14 +767,22 @@ class _StockRow extends StatelessWidget {
             // Article
             Expanded(
               flex: 3,
-              child: Text(
-                item.first.productName ?? '—',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF1A1A2E),
-                ),
-                overflow: TextOverflow.ellipsis,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      item.first.productName ?? '—',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A2E),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  B1g1StockBadge(variants: item.variants),
+                ],
               ),
             ),
             // Brand
@@ -878,13 +910,21 @@ class _StockCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    item.first.productName ?? '—',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1A1A2E),
-                    ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          item.first.productName ?? '—',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF1A1A2E),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      B1g1StockBadge(variants: item.variants),
+                    ],
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -977,6 +1017,16 @@ class _Grp {
 
   List<BranchStockModel> get _items => group.items;
   BranchStockModel get first => group.first;
+  Iterable<StockVariantIds> get variants => _items.map(
+    (i) => (
+      productId: i.productId,
+      sizeId: i.sizeId,
+      colorId: i.colorId,
+      brandId: i.brandId,
+      categoryId: i.categoryId,
+      typeId: i.typeId,
+    ),
+  );
 
   int get qty => _items.fold(0, (s, i) => s + i.quantity);
   String get sizesLabel =>

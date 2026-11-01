@@ -21,6 +21,9 @@ class B1g1OfferModel {
   final List<String> variantKeys;
   final List<String> brandIds;
   final List<String> categoryIds;
+
+  /// Kin branches par offer lagta hai. Khali = sab branches.
+  final List<String> branchIds;
   final DateTime? startDate;
   final DateTime? endDate;
   final bool isActive;
@@ -32,10 +35,15 @@ class B1g1OfferModel {
     this.variantKeys = const [],
     this.brandIds = const [],
     this.categoryIds = const [],
+    this.branchIds = const [],
     this.startDate,
     this.endDate,
     this.isActive = true,
   });
+
+  /// [branchId] khali ho (head office) to offer dikhta hai.
+  bool appliesToBranch(String branchId) =>
+      branchIds.isEmpty || branchId.isEmpty || branchIds.contains(branchId);
 
   bool matches({
     required String productId,
@@ -70,6 +78,7 @@ class B1g1OfferModel {
         variantKeys: _ids(json['variant_keys']),
         brandIds: _ids(json['brand_ids']),
         categoryIds: _ids(json['category_ids']),
+        branchIds: _ids(json['branch_ids']),
         startDate: _date(json['start_date']),
         endDate: _date(json['end_date']),
         isActive: json['is_active'] as bool? ?? true,
@@ -85,6 +94,7 @@ class B1g1OfferModel {
         'variant_keys': variantKeys,
         'brand_ids': brandIds,
         'category_ids': categoryIds,
+        'branch_ids': branchIds,
         'start_date': _dateStr(startDate),
         'end_date': _dateStr(endDate),
         'is_active': isActive,

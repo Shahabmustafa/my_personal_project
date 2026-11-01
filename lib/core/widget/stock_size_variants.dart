@@ -114,6 +114,7 @@ class StockSizesBody<T> extends StatefulWidget {
   final double Function(T) salePriceOf;
   final double Function(T) discountOf;
   final Widget Function(T)? actionsOf;
+  final Widget Function(T)? badgeOf;
 
   const StockSizesBody({
     super.key,
@@ -125,6 +126,7 @@ class StockSizesBody<T> extends StatefulWidget {
     required this.discountOf,
     this.refreshToken,
     this.actionsOf,
+    this.badgeOf,
   });
 
   @override
@@ -236,6 +238,7 @@ class _StockSizesBodyState<T> extends State<StockSizesBody<T>> {
     final qty = widget.qtyOf(i);
     final discount = widget.discountOf(i);
     final actions = widget.actionsOf?.call(i);
+    final badge = widget.badgeOf?.call(i);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -256,6 +259,7 @@ class _StockSizesBodyState<T> extends State<StockSizesBody<T>> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+              if (badge != null) ...[const SizedBox(width: 8), badge],
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(

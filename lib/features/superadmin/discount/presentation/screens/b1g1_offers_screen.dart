@@ -24,6 +24,7 @@ class B1g1OffersScreen extends ConsumerWidget {
     final products = ref.watch(b1g1ProductsProvider).value ?? const [];
     final variants = ref.watch(b1g1VariantsProvider).value ?? const [];
     final variantByKey = {for (final v in variants) v.key: v};
+    final branches = ref.watch(b1g1BranchesProvider).value ?? const [];
 
     String names(List<String> ids, List<B1g1Lookup> all) {
       final byId = {for (final l in all) l.id: l.name};
@@ -37,7 +38,7 @@ class B1g1OffersScreen extends ConsumerWidget {
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         SizedBox(height: 4),
         Text(
-          'On the selected articles, the cheaper of every 2 pairs is free — for all branches. Items in this offer cannot be returned.',
+          'On the selected articles, the cheaper of every 2 pairs is free — for the selected branches. Items in this offer cannot be returned.',
           style: TextStyle(fontSize: 13, color: Color(0xFF8A8FA3)),
         ),
       ],
@@ -92,6 +93,7 @@ class B1g1OffersScreen extends ConsumerWidget {
                         return _OfferCard(
                           offer: o,
                           targets: [
+                            'Branches: ${o.branchIds.isEmpty ? 'All branches' : names(o.branchIds, branches)}',
                             if (o.variantKeys.isNotEmpty)
                               'Articles: ${o.variantKeys.map((k) => variantByKey[k]?.label ?? '…').join(', ')}',
                             if (o.productIds.isNotEmpty)
@@ -274,6 +276,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
   late final TextEditingController _nameCtrl;
   late Set<String> _productIds;
   late Set<String> _variantKeys;
+  late Set<String> _branchIds;
   DateTime? _start;
   DateTime? _end;
   String? _error;
@@ -286,6 +289,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
     _nameCtrl = TextEditingController(text: o?.name ?? '');
     _productIds = {...?o?.productIds};
     _variantKeys = {...?o?.variantKeys};
+    _branchIds = {...?o?.branchIds};
     _start = o?.startDate;
     _end = o?.endDate;
   }
@@ -332,6 +336,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
             name: name,
             productIds: _productIds.toList(),
             variantKeys: _variantKeys.toList(),
+            branchIds: _branchIds.toList(),
             startDate: _start,
             endDate: _end,
             isActive: widget.offer?.isActive ?? true,
@@ -373,6 +378,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
   Widget build(BuildContext context) {
     final products = ref.watch(b1g1ProductsProvider).value ?? const [];
     final variants = ref.watch(b1g1VariantsProvider).value ?? const [];
+    final branches = ref.watch(b1g1BranchesProvider).value ?? const [];
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -391,6 +397,9 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 14),
+              _multi('Branches (empty = all branches)', branches, _branchIds,
+                  (v) => _branchIds = v),
               const SizedBox(height: 14),
               _VariantField(
                 all: variants,
@@ -479,7 +488,7 @@ class _VariantField extends StatelessWidget {
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          suffixIcon: const AppIcon(AppIcons.arrowDropDown, size: 24),
+          suffixIcon: const TextFieldIcon(AppIcons.arrowDropDown, size: 24),
         ),
         child: selected.isEmpty
             ? Text('Select Articles',

@@ -14,6 +14,7 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/widget/stock_level_filter.dart';
 import 'package:safishoe_app/core/widget/stock_size_variants.dart';
+import 'package:safishoe_app/core/widget/b1g1_stock_badge.dart';
 import 'package:safishoe_app/core/widget/stock_filter_dropdown.dart';
 import 'package:safishoe_app/core/service/print/stock_report_printer.dart';
 
@@ -57,6 +58,18 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
     salePriceOf: (i) => i.salePrice,
     discountOf: (i) => i.discount,
     actionsOf: (i) => _RowActions(stock: i),
+    badgeOf: (i) => B1g1StockBadge(
+      variants: [
+        (
+          productId: i.productId,
+          sizeId: i.sizeId,
+          colorId: i.colorId,
+          brandId: i.brandId,
+          categoryId: i.categoryId,
+          typeId: i.typeId,
+        ),
+      ],
+    ),
   );
 
   void _open(StockInventoryModel s, bool isMobile, Object? refreshToken) {
@@ -91,8 +104,6 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
     final labels = <String>[
       if (name(options.categories, 'category_id') case final v?) 'Category: $v',
       if (name(options.types, 'type_id') case final v?) 'Type: $v',
-      if (name(options.brands, 'brand_id') case final v?) 'Brand: $v',
-      if (name(options.sizes, 'size_id') case final v?) 'Size: $v',
       if (state.filters['stock_level'] == 'low') 'Low Stock',
       if (state.filters['stock_level'] == 'out') 'Out of Stock',
       if (state.search.isNotEmpty) 'Search: ${state.search}',
@@ -150,13 +161,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
     final options =
         ref.watch(stockFilterOptionsProvider).asData?.value ??
         const StockFilterOptions();
-    const filterKeys = [
-      'category_id',
-      'type_id',
-      'brand_id',
-      'size_id',
-      'stock_level',
-    ];
+    const filterKeys = ['category_id', 'type_id', 'stock_level'];
     final hasFilters =
         filterKeys.any((k) => state.filters[k] != null) ||
         state.search.isNotEmpty;
@@ -275,18 +280,6 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
               value: state.filters['type_id'] as String?,
               onChanged: (v) => notifier.setFilters({'type_id': v}),
             ),
-            StockFilterDropdown(
-              label: 'Brand',
-              options: options.brands,
-              value: state.filters['brand_id'] as String?,
-              onChanged: (v) => notifier.setFilters({'brand_id': v}),
-            ),
-            StockFilterDropdown(
-              label: 'Size',
-              options: options.sizes,
-              value: state.filters['size_id'] as String?,
-              onChanged: (v) => notifier.setFilters({'size_id': v}),
-            ),
             OutlinedButton.icon(
               onPressed: _printing ? null : () => _print(options),
               icon: _printing
@@ -322,8 +315,6 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
                   notifier.setFilters({
                     'category_id': null,
                     'type_id': null,
-                    'brand_id': null,
-                    'size_id': null,
                     'stock_level': null,
                   });
                 },
@@ -930,14 +921,22 @@ class _DesktopTableState extends State<_DesktopTable> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            g.first.productName ?? '—',
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Color(0xFF1A1D2E),
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  g.first.productName ?? '—',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1A1D2E),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              B1g1StockBadge(variants: g.variants),
+            ],
           ),
           if (g.articleLine.isNotEmpty)
             Text(
@@ -1099,6 +1098,8 @@ class _MobileCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                B1g1StockBadge(variants: g.variants),
+                const SizedBox(width: 8),
                 Text(
                   g.sizesLabel,
                   style: const TextStyle(
@@ -1415,6 +1416,16 @@ class _Grp {
 
   List<StockInventoryModel> get _items => group.items;
   StockInventoryModel get first => group.first;
+  Iterable<StockVariantIds> get variants => _items.map(
+    (i) => (
+      productId: i.productId,
+      sizeId: i.sizeId,
+      colorId: i.colorId,
+      brandId: i.brandId,
+      categoryId: i.categoryId,
+      typeId: i.typeId,
+    ),
+  );
 
   int get qty => _items.fold(0, (s, i) => s + i.quantity);
   String get sizesLabel => _items.length == 1

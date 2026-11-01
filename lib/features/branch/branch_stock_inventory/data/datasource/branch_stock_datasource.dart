@@ -2,6 +2,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../../core/pagination/pagination.dart';
 import '../model/branch_stock_model.dart';
 
+/// Branch stock ke alag alag screens: poora stock, sirf chalte Buy 1 Get 1
+/// offer wala stock, ya sirf discount wala stock.
+enum BranchStockView {
+  all('Branch Stock Inventory'),
+  b1g1('Buy 1 Get 1 Stock'),
+  discount('Discount Stock');
+
+  final String title;
+  const BranchStockView(this.title);
+
+  /// Is view ka data kis table/view se aata hai.
+  String get source =>
+      this == b1g1 ? 'v_branch_stock_b1g1' : 'v_branch_stock';
+}
+
 class BranchStockDatasource {
   final SupabaseClient _client;
 
@@ -44,14 +59,16 @@ class BranchStockDatasource {
   Future<PageResult<BranchStockModel>> fetchPage(
     PageRequest request, {
     required String branchId,
+    BranchStockView view = BranchStockView.all,
   }) async {
     if (branchId.isEmpty) {
       return const PageResult(rows: [], totalCount: 0);
     }
     var query = _client
-        .from('v_branch_stock')
+        .from(view.source)
         .select()
         .eq('branch_id', branchId);
+    if (view == BranchStockView.discount) query = query.gt('discount', 0);
     if (request.search.isNotEmpty) {
       query = query.ilike('search_text', '%${request.search.toLowerCase()}%');
     }
@@ -81,6 +98,30 @@ class BranchStockDatasource {
       request: request,
     );
     return result.map(_fromViewRow);
+  }
+
+  /// [view] ke saare rows ki sirf quantity + qeemat — cards ke totals ke liye.
+  Future<List<({int quantity, double salePrice})>> fetchQtyPrice(
+    String branchId,
+    BranchStockView view,
+  ) async {
+    const size = 1000;
+    final out = <({int quantity, double salePrice})>[];
+    for (var from = 0; ; from += size) {
+      var q = _client
+          .from(view.source)
+          .select('quantity, sale_price')
+          .eq('branch_id', branchId);
+      if (view == BranchStockView.discount) q = q.gt('discount', 0);
+      final page = await q.order('id').range(from, from + size - 1);
+      for (final r in page) {
+        out.add((
+          quantity: (r['quantity'] as num?)?.toInt() ?? 0,
+          salePrice: (r['sale_price'] as num?)?.toDouble() ?? 0,
+        ));
+      }
+      if (page.length < size) return out;
+    }
   }
 
   /// Every size of one article in this branch's stock (for the sizes panel).
