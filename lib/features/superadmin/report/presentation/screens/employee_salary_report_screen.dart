@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../branch/shared/current_branch_provider.dart';
 import '../../data/model/employee_salary_report_row.dart';
 import '../providers/employee_salary_report_provider.dart';
 import '../widgets/employee_salary_detail_screen.dart';
@@ -15,7 +16,11 @@ import 'package:safishoe_app/core/utils/responsive.dart';
 /// commission aur net salary. Current mahina live, pichle mahine history se.
 /// Row par click → us employee ki saare mahinon ki detail.
 class EmployeeSalaryReportScreen extends ConsumerStatefulWidget {
-  const EmployeeSalaryReportScreen({super.key});
+  /// Branch manager ke liye: sirf apni branch ke employees (branch filter aur
+  /// "Branch" column nahi).
+  final bool restrictToOwnBranch;
+
+  const EmployeeSalaryReportScreen({super.key, this.restrictToOwnBranch = false});
 
   @override
   ConsumerState<EmployeeSalaryReportScreen> createState() =>
@@ -31,6 +36,27 @@ class _EmployeeSalaryReportScreenState
 
   /// Set hone par report ki jagah us employee ki detail screen dikhti hai.
   EmployeeSalaryReportRow? _selected;
+
+  late final EmployeeSalaryReportNotifier _notifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifier = ref.read(employeeSalaryReportProvider.notifier);
+    if (widget.restrictToOwnBranch) {
+      final branchId = ref.read(currentBranchIdProvider);
+      Future.microtask(() => _notifier.setBranch(branchId));
+    }
+  }
+
+  @override
+  void dispose() {
+    // Provider sab screens mein shared hai — admin ke liye filter wapas khali.
+    if (widget.restrictToOwnBranch) {
+      Future.microtask(() => _notifier.setBranch(null));
+    }
+    super.dispose();
+  }
 
   static String _amt(double v) => 'Rs. ${v.toStringAsFixed(0)}';
 
@@ -125,10 +151,11 @@ class _EmployeeSalaryReportScreenState
                   ),
                 ],
               ),
-              ReportBranchFilterDropdown(
-                value: state.branchId,
-                onChanged: notifier.setBranch,
-              ),
+              if (!widget.restrictToOwnBranch)
+                ReportBranchFilterDropdown(
+                  value: state.branchId,
+                  onChanged: notifier.setBranch,
+                ),
               if (state.isCurrentMonth)
                 const Text('Current month — numbers update with every sale',
                     style: TextStyle(fontSize: 12, color: _grey)),
@@ -166,10 +193,11 @@ class _EmployeeSalaryReportScreenState
                         ? _MobileList(rows: state.rows, onOpen: _open)
                         : SingleChildScrollView(
                             child: ReportTableShell(
-                              columns: const [
-                                DataColumn(label: Text('#')),
-                                DataColumn(label: Text('Employee')),
-                                DataColumn(label: Text('Branch')),
+                              columns: [
+                                const DataColumn(label: Text('#')),
+                                const DataColumn(label: Text('Employee')),
+                                if (!widget.restrictToOwnBranch)
+                                  const DataColumn(label: Text('Branch')),
                                 DataColumn(
                                     label: Text('Salary'), numeric: true),
                                 DataColumn(
@@ -203,7 +231,8 @@ class _EmployeeSalaryReportScreenState
         DataCell(Text('$serial', style: const TextStyle(color: _grey))),
         DataCell(Text(r.userName,
             style: const TextStyle(fontWeight: FontWeight.w600))),
-        DataCell(Text(r.branchName, style: const TextStyle(color: _grey))),
+        if (!widget.restrictToOwnBranch)
+          DataCell(Text(r.branchName, style: const TextStyle(color: _grey))),
         DataCell(Text(_amt(r.salary))),
         DataCell(Text('${r.commissionPercent.toStringAsFixed(1)}%')),
         DataCell(Text(_amt(r.totalSales))),

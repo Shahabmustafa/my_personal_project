@@ -13,6 +13,7 @@ import '../branch/assign_stock_to_other_branch/presentation/screens/branch_trans
 import '../branch/branch_cash_counter/presentation/screens/branch_cash_counter_screen.dart';
 import '../branch/branch_payment/presentation/screens/branch_payments_history_screen.dart';
 import '../branch/branch_stock_inventory/presentation/screen/branch_stock_screen.dart';
+import '../branch/branch_stock_inventory/data/datasource/branch_stock_datasource.dart' show BranchStockView;
 import '../branch/customer/presentation/screens/customers_screen.dart';
 import '../branch/dashboard/presentation/screen/branch_overview_screen.dart';
 import '../branch/employee/presentation/screens/branch_employee_screen.dart';
@@ -25,6 +26,9 @@ import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picke
 import '../branch/sale_invoice/presentation/screens/sale_invoice_screen.dart';
 import '../branch/sale_return/presentation/screens/sale_return_screen.dart';
 import '../superadmin/report/presentation/screens/branch_target_report_screen.dart';
+import '../superadmin/report/presentation/screens/employee_salary_report_screen.dart';
+import '../superadmin/report/presentation/screens/branch_reports_screens.dart';
+import '../superadmin/report/presentation/screens/pair_incentive_report_screen.dart';
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -119,6 +123,19 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
       icon: AppIcons.apartmentOutlined,
       label: 'Stock Inventory',
       shortcut: 'V',
+      group: 'Branch Stock',
+    ),
+    SidebarItem(
+      icon: AppIcons.sellOutlined,
+      label: 'Buy 1 Get 1 Stock',
+      shortcut: 'Shift+V',
+      group: 'Branch Stock',
+    ),
+    SidebarItem(
+      icon: AppIcons.percentOutlined,
+      label: 'Discount Stock',
+      shortcut: 'Shift+D',
+      group: 'Branch Stock',
     ),
     SidebarItem(
       icon: AppIcons.paymentsOutlined,
@@ -143,6 +160,52 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
       group: 'Reports',
     ),
     SidebarItem(
+      icon: AppIcons.paymentsOutlined,
+      label: 'Employee Salary Report',
+      shortcut: 'Shift+M',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.paymentsOutlined,
+      label: 'Cash Counter Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.shoppingCartCheckoutOutlined,
+      label: 'Expense Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.peopleOutline,
+      label: 'Customer Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.errorOutline,
+      label: 'Sale Claim Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.apartmentOutlined,
+      label: 'Stock Assign Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.inventory2Outlined,
+      label: 'Stock Return Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.listAlt,
+      label: 'Stock Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.accountBalanceWalletOutlined,
+      label: 'Branch Payments Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
       icon: AppIcons.accessTimeOutlined,
       label: 'My Attendance',
       shortcut: 'W',
@@ -153,6 +216,12 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
       label: 'Staff Attendance',
       shortcut: 'Shift+W',
       group: 'Attendance',
+    ),
+    SidebarItem(
+      icon: AppIcons.currencyRupeeOutlined,
+      label: 'Pair Incentive',
+      shortcut: 'Shift+N',
+      group: 'Target',
     ),
   ];
 
@@ -217,7 +286,11 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
   }
 
   /// Sirf manager (aur supervisor) poori branch ki attendance dekhta hai.
-  static const _managerOnly = {'Staff Attendance'};
+  static const _managerOnly = {
+    'Staff Attendance',
+    'Pair Incentive',
+    'Employee Salary Report',
+  };
 
   static const _shortcutsItem = SidebarItem(
     icon: AppIcons.infoOutline,
@@ -239,13 +312,25 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
     BranchStockReturnScreen(),
     IncomingStockReturnsScreen(),
     BranchWarehouseReturnScreen(),
-    BranchStockScreen(),
+    BranchStockScreen(key: ValueKey('stock-all')),
+    BranchStockScreen(key: ValueKey('stock-b1g1'), view: BranchStockView.b1g1),
+    BranchStockScreen(key: ValueKey('stock-discount'), view: BranchStockView.discount),
     BranchPaymentsHistoryScreen(),
     ExpenseScreen(),
     SaleSummaryReportScreen(restrictToOwnBranch: true),
     BranchTargetReportScreen(restrictToOwnBranch: true),
+    EmployeeSalaryReportScreen(restrictToOwnBranch: true),
+    CashCounterReportScreen(restrictToOwnBranch: true),
+    ExpenseReportScreen(restrictToOwnBranch: true),
+    CustomerReportScreen(restrictToOwnBranch: true),
+    SaleClaimReportScreen(restrictToOwnBranch: true),
+    StockAssignReportScreen(restrictToOwnBranch: true),
+    StockReturnReportScreen(restrictToOwnBranch: true),
+    StockReportScreen(restrictToOwnBranch: true),
+    BranchPaymentReportScreen(restrictToOwnBranch: true),
     MyAttendanceScreen(),
     StaffAttendanceScreen(),
+    PairIncentiveReportScreen(),
   ];
 
   @override
@@ -274,17 +359,35 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         .where((a) => a.status == 'pending')
         .length;
 
-    final navItems = [
+    final withBadge = {
       for (final i in visible)
-        _navItems[i].label == _assignLabel
+        i: _navItems[i].label == _assignLabel
             ? _navItems[i].withBadge(pendingAssignments)
             : _navItems[i],
+    };
+    // "Reports" group Keyboard Shortcuts ke neeche, sidebar ke aakhir mein.
+    final mainIdx = [
+      for (final i in visible)
+        if (_navItems[i].group != 'Reports') i,
+    ];
+    final reportIdx = [
+      for (final i in visible)
+        if (_navItems[i].group == 'Reports') i,
     ];
     return SidebarShell(
-      navItems: [...navItems, _shortcutsItem],
+      navItems: [
+        for (final i in mainIdx) withBadge[i]!,
+        _shortcutsItem,
+        for (final i in reportIdx) withBadge[i]!,
+      ],
       pages: [
-        for (final i in visible) _pages[i],
-        ShortcutsScreen(items: navItems),
+        for (final i in mainIdx) _pages[i],
+        ShortcutsScreen(
+          items: [
+            for (final i in [...mainIdx, ...reportIdx]) withBadge[i]!,
+          ],
+        ),
+        for (final i in reportIdx) _pages[i],
       ],
       selectedIndex: _index,
       userName: user?.username ?? '',

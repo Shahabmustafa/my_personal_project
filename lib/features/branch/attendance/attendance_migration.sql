@@ -106,13 +106,15 @@ STABLE
 SET search_path TO 'public'
 AS $$
     SELECT u.id, u.username, u.role, a.check_in_at, a.check_out_at
-    FROM public.user_branches ub
-    JOIN public.users u ON u.id = ub.user_id
+    -- Employees screen jaisi list: jin ka Employee Salary record is branch mein
+    -- ho (2026-11-02 se; pehle user_branches thi).
+    FROM public.employee_salary es
+    JOIN public.users u ON u.id = es.user_id
     LEFT JOIN public.branch_attendance a
            ON a.user_id = u.id
           AND a.branch_id = p_branch_id
           AND a.attendance_date = p_date
-    WHERE ub.branch_id = p_branch_id
+    WHERE es.branch_id = p_branch_id
       AND u.role IN ('manager', 'cashier', 'salesman')
       AND COALESCE(u.is_active, true)
     ORDER BY CASE u.role WHEN 'manager' THEN 0 WHEN 'cashier' THEN 1 ELSE 2 END,

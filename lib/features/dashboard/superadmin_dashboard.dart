@@ -23,8 +23,9 @@ import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
 import '../superadmin/employee_salary/presentation/screens/employee_salary_screen.dart';
 import '../superadmin/report/presentation/screens/branch_target_report_screen.dart';
+import '../superadmin/report/presentation/screens/branch_reports_screens.dart';
+import '../superadmin/report/presentation/screens/pair_incentive_report_screen.dart';
 import '../superadmin/report/presentation/screens/employee_salary_report_screen.dart';
-import '../branch/attendance/presentation/screens/attendance_machines_screen.dart';
 import '../branch/attendance/presentation/screens/staff_attendance_screen.dart';
 import '../superadmin/report/presentation/screens/sale_summary_report_screen.dart';
 import '../superadmin/warehouse/presentation/screens/warehouse_screen.dart';
@@ -215,6 +216,12 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Target',
     ),
     SidebarItem(
+      icon: AppIcons.currencyRupeeOutlined,
+      label: 'Pair Incentive',
+      shortcut: 'Shift+N',
+      group: 'Target',
+    ),
+    SidebarItem(
       icon: AppIcons.accountBalanceOutlined,
       label: 'Bank Head',
       shortcut: '2',
@@ -268,15 +275,49 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
       group: 'Reports',
     ),
     SidebarItem(
+      icon: AppIcons.paymentsOutlined,
+      label: 'Cash Counter Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.shoppingCartCheckoutOutlined,
+      label: 'Expense Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.peopleOutline,
+      label: 'Customer Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.errorOutline,
+      label: 'Sale Claim Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.apartmentOutlined,
+      label: 'Stock Assign Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.inventory2Outlined,
+      label: 'Stock Return Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.listAlt,
+      label: 'Stock Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
+      icon: AppIcons.accountBalanceWalletOutlined,
+      label: 'Branch Payments Report',
+      group: 'Reports',
+    ),
+    SidebarItem(
       icon: AppIcons.accessTimeOutlined,
       label: 'Staff Attendance',
       shortcut: 'N',
-      group: 'Attendance',
-    ),
-    SidebarItem(
-      icon: AppIcons.fingerprint,
-      label: 'Attendance Machines',
-      shortcut: 'Shift+N',
       group: 'Attendance',
     ),
   ];
@@ -331,6 +372,7 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     SaleDiscountTiersScreen(),
     B1g1OffersScreen(),
     BranchTargetScreen(),
+    PairIncentiveReportScreen(),
     BankHeadsScreen(),
     BankEntriesScreen(),
     PrinterHeadsScreen(),
@@ -340,8 +382,15 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
     PurchaseSummaryReportScreen(),
     BranchTargetReportScreen(),
     EmployeeSalaryReportScreen(),
+    CashCounterReportScreen(),
+    ExpenseReportScreen(),
+    CustomerReportScreen(),
+    SaleClaimReportScreen(),
+    StockAssignReportScreen(),
+    StockReturnReportScreen(),
+    StockReportScreen(),
+    BranchPaymentReportScreen(),
     StaffAttendanceScreen(allBranches: true),
-    AttendanceMachinesScreen(),
   ];
 
   @override
@@ -354,17 +403,32 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
             ?.where((c) => c.isPending)
             .length ??
         0;
-    final navItems = [
+    final withBadge = [
       for (final item in _navItems)
         item.label == 'Branch Sale Claims'
             ? item.withBadge(pendingClaims)
             : item,
     ];
+    // "Reports" group Keyboard Shortcuts ke neeche, sidebar ke aakhir mein.
+    final mainIdx = [
+      for (var i = 0; i < _navItems.length; i++)
+        if (_navItems[i].group != 'Reports') i,
+    ];
+    final reportIdx = [
+      for (var i = 0; i < _navItems.length; i++)
+        if (_navItems[i].group == 'Reports') i,
+    ];
+    final order = [...mainIdx, ...reportIdx];
     return SidebarShell(
-      navItems: [...navItems, _shortcutsItem],
+      navItems: [
+        for (final i in mainIdx) withBadge[i],
+        _shortcutsItem,
+        for (final i in reportIdx) withBadge[i],
+      ],
       pages: [
-        ..._pages,
-        ShortcutsScreen(items: navItems),
+        for (final i in mainIdx) _pages[i],
+        ShortcutsScreen(items: [for (final i in order) withBadge[i]]),
+        for (final i in reportIdx) _pages[i],
       ],
       selectedIndex: _index,
       userName: user?.username ?? '',
