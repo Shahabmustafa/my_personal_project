@@ -169,7 +169,7 @@ class _AddUserDialogState extends ConsumerState<AddUserDialog> {
                 const SizedBox(height: 14),
 
                 // Password
-                TextFormField(
+                TextFormField(cursorHeight: 16, 
                   controller: _passwordCtrl,
                   obscureText: _obscurePassword,
                   decoration: _decor('Password *', AppIcons.lockOutline).copyWith(
@@ -300,7 +300,7 @@ class _FormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return TextFormField(cursorHeight: 16, 
       controller: controller,
       keyboardType: keyboardType,
       decoration: _decor(label, icon).copyWith(hintText: hint),

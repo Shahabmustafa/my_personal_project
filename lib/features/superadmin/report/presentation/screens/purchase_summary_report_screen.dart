@@ -13,6 +13,8 @@ import '../widgets/report_table_shell.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Purchase Invoice aur Purchase Return dono — ek hi combined history list
 /// mein (newest first), top par Total Purchase / Total Return / Net Purchase /
@@ -80,7 +82,7 @@ class _PurchaseSummaryReportScreenState
       setState(() => _loadingId = null);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load detail: $e')));
+      ).showSnackBar(SnackBar(content: Text(friendlyError(e, prefix: 'Failed to load detail: '))));
     }
   }
 
@@ -346,10 +348,7 @@ class _PurchaseSummaryReportScreenState
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'Error: ${state.error}',
-                style: const TextStyle(color: Colors.red),
-              ),
+              child: ErrorView(error: state.error, onRetry: notifier.load),
             ),
           const SizedBox(height: 16),
           Expanded(child: content),

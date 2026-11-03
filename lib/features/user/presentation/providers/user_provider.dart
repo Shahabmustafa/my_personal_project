@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../data/datasource/user_remote_datasource.dart';
 import '../../data/repository/user_repository.dart';
 import 'user_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final userRemoteDatasourceProvider =
     Provider<UserRemoteDatasource>((_) => UserRemoteDatasource());
@@ -24,7 +25,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -36,7 +37,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -67,7 +68,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
       return false;
     }
   }
@@ -85,7 +86,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -103,7 +104,20 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
+    }
+  }
+
+  /// Returns null on success, else an error message.
+  Future<String?> changeUserPassword({
+    required String userId,
+    required String newPassword,
+  }) async {
+    try {
+      await _repo.changeUserPassword(userId: userId, newPassword: newPassword);
+      return null;
+    } catch (e) {
+      return friendlyError(e);
     }
   }
 
@@ -120,7 +134,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -138,7 +152,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -156,7 +170,7 @@ class UserNotifier extends StateNotifier<UserState> {
     } catch (e) {
       state = state.copyWith(
           status: UserStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

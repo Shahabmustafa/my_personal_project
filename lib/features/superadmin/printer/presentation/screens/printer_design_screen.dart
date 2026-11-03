@@ -4,6 +4,7 @@ import 'package:safishoe_app/core/service/print/print_service.dart';
 import 'package:safishoe_app/core/service/print/receipt_options.dart';
 import '../../data/models/printer_head_model.dart';
 import '../providers/printer_providers.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 const _primary = Color(0xFF3E63DD);
 
@@ -90,7 +91,7 @@ class _PrinterDesignScreenState extends ConsumerState<PrinterDesignScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }
@@ -333,7 +334,7 @@ class _Controls extends StatelessWidget {
           (v) => onOpts(opts.copyWith(showThankYou: v)),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextField(cursorHeight: 16, 
           controller: thanksCtrl,
           onChanged: (v) => onOpts(opts.copyWith(thankYouText: v)),
           decoration: const InputDecoration(
@@ -343,7 +344,7 @@ class _Controls extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        TextField(
+        TextField(cursorHeight: 16, 
           controller: noteCtrl,
           onChanged: (v) => onOpts(opts.copyWith(extraNote: v)),
           maxLines: 2,

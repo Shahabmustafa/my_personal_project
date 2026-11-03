@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/error_text.dart';
 class UserModel {
   final String id;
   final String username;
@@ -26,7 +27,7 @@ class UserModel {
       if (raw == null) return [];
       if (raw is List) {
         return raw
-            .map((e) => e is Map ? e['branch_id']?.toString() ?? '' : e.toString())
+            .map((e) => e is Map ? e['branch_id']?.toString() ?? '' : friendlyError(e))
             .where((id) => id.isNotEmpty)
             .toList();
       }
@@ -37,7 +38,7 @@ class UserModel {
       if (raw == null) return [];
       if (raw is List) {
         return raw
-            .map((e) => e is Map ? e['warehouse_id']?.toString() ?? '' : e.toString())
+            .map((e) => e is Map ? e['warehouse_id']?.toString() ?? '' : friendlyError(e))
             .where((id) => id.isNotEmpty)
             .toList();
       }
@@ -48,7 +49,7 @@ class UserModel {
       if (raw == null) return [];
       if (raw is List) {
         return raw
-            .map((e) => e is Map ? e['head_office_id']?.toString() ?? '' : e.toString())
+            .map((e) => e is Map ? e['head_office_id']?.toString() ?? '' : friendlyError(e))
             .where((id) => id.isNotEmpty)
             .toList();
       }

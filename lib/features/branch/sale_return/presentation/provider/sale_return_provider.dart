@@ -16,6 +16,7 @@ import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
 import '../../data/datasource/sale_return_datasource.dart';
 import '../../data/model/sale_return_model.dart';
 import '../../data/repository/sale_return_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -76,7 +77,7 @@ class SaleReturnListNotifier extends StateNotifier<SaleReturnListState> {
       state = state.copyWith(returns: list, isLoading: false);
     } catch (e) {
       state = state.copyWith(
-          isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          isLoading: false, error: friendlyError(e));
     }
   }
 }
@@ -332,7 +333,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       if (mounted) {
         state = state.copyWith(
           originalInvoiceLoading: false,
-          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+          error: friendlyError(e),
         );
       }
     }
@@ -580,7 +581,7 @@ class SaleReturnNotifier extends StateNotifier<SaleReturnState> {
       }
       return null;
     } catch (e) {
-      final errMsg = e.toString();
+      final errMsg = friendlyError(e);
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {
         try {
           final retryNumber = await _repo.generateReturnNumber();

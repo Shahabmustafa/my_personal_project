@@ -112,7 +112,7 @@ class _HeadOfficeFormDialogState extends State<HeadOfficeFormDialog> {
     bool required = false,
     TextInputType keyboardType = TextInputType.text,
   }) {
-    return TextFormField(
+    return TextFormField(cursorHeight: 16, 
       controller: controller,
       keyboardType: keyboardType,
       decoration: _decor(label),

@@ -8,6 +8,7 @@ import 'report_table_shell.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Employee Salary report mein employee par click karne par khulne wali
 /// screen — us employee ka har mahine ka salary, sale, commission aur net
@@ -67,8 +68,7 @@ class EmployeeSalaryDetailScreen extends ConsumerWidget {
             child: async.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                  child: Text('Error: $e',
-                      style: const TextStyle(color: Colors.red))),
+                  child: ErrorView(error: e, onRetry: () => ref.invalidate(employeeSalaryMonthsProvider))),
               data: (months) {
                 final totalSalary = months.fold(0.0, (s, m) => s + m.salary);
                 final totalCommission =

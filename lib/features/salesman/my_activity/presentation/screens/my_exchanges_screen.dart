@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../branch/sale_exchange/data/model/sale_exchange_model.dart';
@@ -5,6 +6,7 @@ import '../providers/my_activity_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Logged-in salesman ke apne sale exchanges — read-only history.
 class MyExchangesScreen extends ConsumerWidget {
@@ -29,8 +31,7 @@ class MyExchangesScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 80),
                 child: Center(
-                  child: Text('Error: $e',
-                      style: const TextStyle(color: Colors.red)),
+                  child: ErrorView(error: e, onRetry: () => ref.invalidate(myExchangesProvider)),
                 ),
               ),
             ],
@@ -246,5 +247,4 @@ class _MobileList extends StatelessWidget {
   }
 }
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);

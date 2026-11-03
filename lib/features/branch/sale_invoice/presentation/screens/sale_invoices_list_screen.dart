@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,8 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
 import 'package:safishoe_app/core/widget/printer_picker_field.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 class SaleInvoicesListScreen extends ConsumerStatefulWidget {
   final bool showNewInvoiceButton;
@@ -103,7 +106,7 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Print failed: $e'),
+          content: Text(friendlyError(e, prefix: 'Print failed: ')),
           backgroundColor: Colors.orange.shade700,
         ),
       );
@@ -178,7 +181,7 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
           ),
           if (widget.allBranchesByDate) ...[
             const SizedBox(height: 12),
-            TextField(
+            TextField(cursorHeight: 16, 
               onChanged: _onSearch,
               decoration: InputDecoration(
                 hintText: 'Search by invoice number (all branches, any date)...',
@@ -196,7 +199,7 @@ class _SaleInvoicesListScreenState extends ConsumerState<SaleInvoicesListScreen>
           else if (state.error != null)
             Expanded(
               child: Center(
-                  child: Text('Error: ${state.error}', style: const TextStyle(color: Colors.red))),
+                  child: ErrorView(error: state.error, onRetry: _load)),
             )
           else if (state.invoices.isEmpty)
             Expanded(
@@ -393,8 +396,7 @@ class _DesktopInvoiceTable extends StatelessWidget {
         ),
       );
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 String _formatDateStatic(DateTime dt) =>
@@ -522,8 +524,7 @@ class _MobileInvoiceList extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Status badges (Returned / Exchanged) ────────────────────────────────────

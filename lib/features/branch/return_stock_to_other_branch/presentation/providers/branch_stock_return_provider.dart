@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safishoe_app/core/service/realtime/insert_notification_stream.dart';
 import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -11,6 +12,7 @@ import '../../data/datasource/branch_return_cart_item.dart';
 import '../../data/datasource/branch_stock_return_datasource.dart';
 import '../../data/model/branch_stock_return_model.dart';
 import '../../data/repository/branch_stock_return_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -44,6 +46,20 @@ final sentStockReturnsProvider = FutureProvider<List<BranchStockReturnModel>>((
   return ref
       .watch(branchStockReturnRepositoryProvider)
       .getSentReturns(ref.watch(currentBranchIdProvider));
+});
+
+/// Doosri branch se naya return aate hi return number emit karta hai —
+/// dashboard isay notification ki tarah dikhata hai.
+final incomingStockReturnNotifyProvider = StreamProvider<String>((ref) {
+  final branchId = ref.watch(currentBranchIdProvider);
+  return insertNotificationStream(
+    ref,
+    channelName: 'incoming-branch-return:$branchId',
+    table: 'branch_stock_returns',
+    column: 'to_branch_id',
+    value: branchId,
+    numberField: 'return_number',
+  );
 });
 
 final incomingStockReturnsProvider =
@@ -239,7 +255,7 @@ class BranchStockReturnNotifier extends StateNotifier<BranchStockReturnState> {
       // create_branch_stock_return raises a plain exception (e.g.
       // "Insufficient stock for BC-102: requested 5, available 2") which
       // Postgrest surfaces via PostgrestException.message.
-      final message = e is PostgrestException ? e.message : e.toString();
+      final message = e is PostgrestException ? e.message : friendlyError(e);
       if (mounted) {
         state = state.copyWith(isSaving: false, error: message);
       }

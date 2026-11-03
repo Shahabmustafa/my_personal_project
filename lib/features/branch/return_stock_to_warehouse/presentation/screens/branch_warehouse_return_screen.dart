@@ -1,5 +1,7 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 
@@ -15,6 +17,8 @@ import '../widgets/branch_warehouse_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 const _primary = Color(0xFF1565C0);
 
@@ -37,6 +41,9 @@ class BranchWarehouseReturnScreen extends ConsumerStatefulWidget {
 class _BranchWarehouseReturnScreenState
     extends ConsumerState<BranchWarehouseReturnScreen> {
   String _filterStatus = 'all';
+  String? _filterBranch; // destination (Admin / warehouse) id
+  DateTime? _fromDate; // returned-on range (inclusive)
+  DateTime? _toDate;
 
   BranchWarehouseReturnModel? _selected; // list row (brief)
   BranchWarehouseReturnModel? _detail; // loaded detail (items with names)
@@ -72,9 +79,62 @@ class _BranchWarehouseReturnScreenState
     }
   }
 
+  int get _activeFilterCount =>
+      (_filterBranch != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  bool _matchesFilters(BranchWarehouseReturnModel t) {
+    if (_filterBranch != null && (t.headOfficeId ?? t.warehouseId) != _filterBranch) return false;
+    final d = t.returnedAt.toLocal();
+    final day = DateTime(d.year, d.month, d.day);
+    if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+    if (_toDate != null && day.isAfter(_toDate!)) return false;
+    return true;
+  }
+
+  Future<void> _openFilterDialog(Map<String, String> branches) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Returned To',
+      allLabel: 'All destinations',
+      branches: branches,
+      current: (
+        branch: _filterBranch,
+        branch2: null,
+        from: _fromDate,
+        to: _toDate,
+      ),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterBranch = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+      _selected = null;
+      _detail = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final returnsAsync = ref.watch(sentWarehouseReturnsProvider);
+    final branchOptions = <String, String>{
+      for (final t in returnsAsync.value ??
+          const <BranchWarehouseReturnModel>[])
+        if ((t.headOfficeId ?? t.warehouseId) != null)
+          (t.headOfficeId ?? t.warehouseId)!: t.destinationLabel,
+    };
+    final filterButton = Badge(
+      isLabelVisible: _activeFilterCount > 0,
+      label: Text('$_activeFilterCount'),
+      child: OutlinedButton.icon(
+        onPressed: () => _openFilterDialog(branchOptions),
+        icon: const Icon(Icons.filter_list, size: 18),
+        label: const Text('Filter'),
+      ),
+    );
+
 
     final isMobile = Responsive(context).isMobile;
 
@@ -135,6 +195,8 @@ class _BranchWarehouseReturnScreenState
                             },
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        filterButton,
                         Tooltip(
                           message: 'Refresh',
                           child: IconButton(
@@ -168,6 +230,8 @@ class _BranchWarehouseReturnScreenState
                         ],
                       ),
                     ),
+                    filterButton,
+                    const SizedBox(width: 4),
                     Tooltip(
                       message: 'Refresh',
                       child: IconButton(
@@ -203,9 +267,10 @@ class _BranchWarehouseReturnScreenState
           const SizedBox(height: 16),
           returnsAsync.when(
             loading: () => const SizedBox.shrink(),
-            error: (e, _) => const SizedBox.shrink(),
+            error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(sentWarehouseReturnsProvider)),
             data: (returns) {
               final filtered = returns.where((t) {
+                if (!_matchesFilters(t)) return false;
                 if (_filterStatus == 'all') return true;
                 return t.status == _filterStatus;
               }).toList();
@@ -290,13 +355,11 @@ class _BranchWarehouseReturnScreenState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                     error: (e, _) => Center(
-                      child: Text(
-                        'Error: $e',
-                        style: const TextStyle(color: Colors.red),
-                      ),
+                      child: ErrorView(error: e, onRetry: () => ref.invalidate(sentWarehouseReturnsProvider)),
                     ),
                     data: (returns) {
                       final filtered = returns.where((t) {
+                        if (!_matchesFilters(t)) return false;
                         if (_filterStatus == 'all') return true;
                         return t.status == _filterStatus;
                       }).toList();
@@ -423,8 +486,7 @@ class _BranchWarehouseReturnScreenState
   }
 }
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 Color _statusColor(String status) {
   switch (status) {
@@ -937,8 +999,7 @@ class _NewReturnForm extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────
@@ -1217,7 +1278,7 @@ class _ReturnFooter extends ConsumerWidget {
       ref.invalidate(sentWarehouseReturnsProvider);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(error, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }

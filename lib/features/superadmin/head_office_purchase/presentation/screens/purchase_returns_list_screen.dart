@@ -5,6 +5,7 @@ import '../providers/purchase_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 class PurchaseReturnsListScreen extends ConsumerStatefulWidget {
   const PurchaseReturnsListScreen({super.key});
 
@@ -81,8 +82,9 @@ class _PurchaseReturnsListScreenState
           else if (state.error != null)
             Expanded(
               child: Center(
-                  child: Text('Error: ${state.error}',
-                      style: const TextStyle(color: Colors.red))),
+                  child: ErrorView(
+                    error: state.error,
+                    onRetry: () => ref.read(returnListProvider.notifier).loadReturns())),
             )
           else if (state.returns.isEmpty)
             const Expanded(

@@ -5,6 +5,7 @@ import '../../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/datasource/customer_remote_datasource.dart';
 import '../../data/model/customer_model.dart';
 import '../../data/repository/customer_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final customerRemoteDatasourceProvider =
     Provider<CustomerRemoteDatasource>((_) => CustomerRemoteDatasource());
@@ -28,7 +29,7 @@ class CustomerNotifier extends PaginatedListNotifier<CustomerModel> {
   Future<PageResult<CustomerModel>> fetchPage(PageRequest request) =>
       _repo.fetchPage(request, branchIds: _scopeBranchIds);
 
-  static String _msg(Object e) => e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+  static String _msg(Object e) => friendlyError(e);
 
   Future<String?> createCustomer(CustomerModel customer) async {
     try {

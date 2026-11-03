@@ -15,6 +15,11 @@ class SaleExchangeReturnItemsPicker extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(saleExchangeProvider).returnCartItems;
     final primary = Theme.of(context).colorScheme.primary;
+    final isMobile = Responsive(context).isMobile;
+    final returnable = items.where((i) => i.maxQuantity > 0).toList();
+    final selectedCount = items.where((i) => i.quantity > 0).length;
+    final allSelected =
+        returnable.isNotEmpty && returnable.every((i) => i.quantity > 0);
 
     if (items.isEmpty) {
       return Container(
@@ -34,16 +39,86 @@ class SaleExchangeReturnItemsPicker extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 6),
-            child: Text('Items being returned',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Colors.grey.shade700)),
+            padding: const EdgeInsets.fromLTRB(14, 10, 8, 6),
+            child: Row(
+              children: [
+                Icon(Icons.undo, size: 15, color: Colors.grey.shade600),
+                const SizedBox(width: 6),
+                Text('Items being returned',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: Colors.grey.shade700)),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: selectedCount > 0
+                        ? primary.withValues(alpha: 0.12)
+                        : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text('$selectedCount selected',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: selectedCount > 0
+                              ? primary
+                              : Colors.grey.shade600)),
+                ),
+                const Spacer(),
+                if (returnable.isNotEmpty)
+                  TextButton(
+                    onPressed: () {
+                      final notifier = ref.read(saleExchangeProvider.notifier);
+                      for (final i in returnable) {
+                        // Select all par pehle se selected lines ki qty na badlo.
+                        if (!allSelected && i.quantity > 0) continue;
+                        notifier.toggleReturnItem(
+                            i.originalItemId, !allSelected);
+                      }
+                    },
+                    child: Text(allSelected ? 'Clear all' : 'Select all',
+                        style: const TextStyle(fontSize: 12)),
+                  ),
+              ],
+            ),
           ),
+          if (!isMobile)
+            Container(
+              color: const Color(0xFFF7F8FC),
+              padding: const EdgeInsets.fromLTRB(10, 6, 10, 6),
+              child: Row(
+                children: [
+                  const SizedBox(width: 36),
+                  Expanded(flex: 3, child: _th('Product')),
+                  Expanded(flex: 2, child: _th('Size · Color')),
+                  Expanded(flex: 2, child: _th('Sold')),
+                  Expanded(flex: 2, child: _th('Price')),
+                  SizedBox(width: 120, child: _th('Return Qty')),
+                  SizedBox(
+                      width: 80,
+                      child: _th('Amount', align: TextAlign.end)),
+                ],
+              ),
+            ),
           ...items.map((item) => _ReturnItemRow(item: item, primary: primary)),
         ],
       ),
     );
   }
 }
+
+Widget _th(String t, {TextAlign align = TextAlign.start}) => Text(
+      t,
+      textAlign: align,
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w600,
+        color: Colors.grey.shade600,
+      ),
+    );
 
 class _ReturnItemRow extends ConsumerWidget {
   final ReturnCartItem item;
@@ -59,6 +134,7 @@ class _ReturnItemRow extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
+        color: selected ? primary.withValues(alpha: 0.05) : null,
         border: Border(top: BorderSide(color: Colors.grey.shade100)),
       ),
       child: isMobile

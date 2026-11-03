@@ -7,7 +7,11 @@ import '../../../../branch/sale_claim/data/model/sale_claim_model.dart';
 import '../../../../branch/sale_claim/presentation/providers/sale_claim_provider.dart';
 import '../../../../branch/sale_claim/presentation/widgets/sale_claim_common.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
+import '../../../../../core/utils/responsive.dart';
+import '../../../../../core/widget/assign_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_table_shell.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Head Office ki screen: branches ke sale claims approve/reject karna.
 /// Approve par branch stock se claim ki quantity minus ho jati hai
@@ -22,28 +26,74 @@ class IncomingSaleClaimsScreen extends ConsumerStatefulWidget {
 
 class _IncomingSaleClaimsScreenState
     extends ConsumerState<IncomingSaleClaimsScreen> {
-  static const _accent = Color(0xFFE56A00);
+  static const _accent = saleClaimAccent;
 
   String _filterStatus = 'all'; // all | pending | approved | rejected
+  String _search = '';
+  String? _filterBranch;
+  DateTime? _fromDate; // claim-date range (inclusive)
+  DateTime? _toDate;
   String? _busyId;
+
+  int get _activeFilterCount =>
+      (_filterBranch != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  /// Search + branch + date scope. Status chips / cards count within this.
+  List<SaleClaimModel> _scope(List<SaleClaimModel> all) {
+    return all.where((c) {
+      if (!saleClaimMatchesSearch(c, _search)) return false;
+      if (_filterBranch != null && c.branchId != _filterBranch) return false;
+      final d = c.claimDate;
+      final day = DateTime(d.year, d.month, d.day);
+      if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+      if (_toDate != null && day.isAfter(_toDate!)) return false;
+      return true;
+    }).toList();
+  }
+
+  Future<void> _openFilterDialog(List<SaleClaimModel> all) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Branch',
+      allLabel: 'All branches',
+      branches: {for (final c in all) c.branchId: c.branchName ?? c.branchId},
+      current: (
+        branch: _filterBranch,
+        branch2: null,
+        from: _fromDate,
+        to: _toDate,
+      ),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterBranch = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final claimsAsync = ref.watch(incomingSaleClaimsProvider);
     final all = claimsAsync.value ?? const <SaleClaimModel>[];
-    final filtered = _filterStatus == 'all'
-        ? all
-        : all.where((c) => c.status == _filterStatus).toList();
+    final isMobile = Responsive(context).isMobile;
 
-    int count(String s) => all.where((c) => c.status == s).length;
-    final approvedPairs = all
+    final scoped = _scope(all);
+    final filtered = _filterStatus == 'all'
+        ? scoped
+        : scoped.where((c) => c.status == _filterStatus).toList();
+
+    int count(String s) => scoped.where((c) => c.status == s).length;
+    final approvedPairs = scoped
         .where((c) => c.status == 'approved')
         .fold<int>(0, (s, c) => s + c.quantity);
 
     final cards = [
       ReportSummaryCard(
         label: 'Total Claims',
-        value: '${all.length}',
+        value: '${scoped.length}',
         icon: AppIcons.warningAmberOutlined,
         color: const Color(0xFF1565C0),
       ),
@@ -68,7 +118,7 @@ class _IncomingSaleClaimsScreenState
     ];
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(isMobile ? 12 : 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -82,6 +132,22 @@ class _IncomingSaleClaimsScreenState
                     style:
                         TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
               ),
+              Badge(
+                isLabelVisible: _activeFilterCount > 0,
+                label: Text('$_activeFilterCount'),
+                child: OutlinedButton.icon(
+                  onPressed: () => _openFilterDialog(all),
+                  icon: const Icon(Icons.filter_list, size: 18),
+                  label: const Text('Filter'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 44),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
               IconButton(
                 icon: const AppIcon(AppIcons.refresh, size: 18),
                 tooltip: 'Refresh',
@@ -106,66 +172,91 @@ class _IncomingSaleClaimsScreenState
             },
           ),
           const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterChip('All', 'all', all.length),
-                const SizedBox(width: 8),
-                _filterChip('Pending', 'pending', count('pending')),
-                const SizedBox(width: 8),
-                _filterChip('Approved', 'approved', count('approved')),
-                const SizedBox(width: 8),
-                _filterChip('Rejected', 'rejected', count('rejected')),
-              ],
-            ),
+          SaleClaimSearchField(
+            hint: 'Search claim no, branch, invoice, customer, product...',
+            onChanged: (v) => setState(() => _search = v),
+          ),
+          const SizedBox(height: 12),
+          SaleClaimStatusFilterChips(
+            value: _filterStatus,
+            counts: {
+              'all': scoped.length,
+              'pending': count('pending'),
+              'approved': count('approved'),
+              'rejected': count('rejected'),
+            },
+            onChanged: (v) => setState(() => _filterStatus = v),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: claimsAsync.isLoading && !claimsAsync.hasValue
                 ? const Center(child: CircularProgressIndicator())
                 : claimsAsync.hasError && !claimsAsync.hasValue
-                    ? Center(
-                        child: Text('Error: ${claimsAsync.error}',
-                            style: const TextStyle(color: Colors.red)),
+                    ? ErrorView(
+                        error: claimsAsync.error,
+                        onRetry: () => ref.invalidate(incomingSaleClaimsProvider),
                       )
                     : filtered.isEmpty
                         ? Center(
                             child: Text(
-                              _filterStatus == 'all'
+                              all.isEmpty
                                   ? 'No claims received yet'
-                                  : 'No claims match this filter',
+                                  : 'No claims match the filters',
                               style: TextStyle(
                                   color: Colors.grey.shade500, fontSize: 15),
                             ),
                           )
-                        : ReportTableShell(
-                            columns: const [
-                              DataColumn(label: Text('Claim No')),
-                              DataColumn(label: Text('Branch')),
-                              DataColumn(label: Text('Product')),
-                              DataColumn(label: Text('Qty'), numeric: true),
-                              DataColumn(label: Text('Claim Date')),
-                              DataColumn(label: Text('Status')),
-                              DataColumn(label: Text('Actions')),
-                            ],
-                            rows: [
-                              for (final c in filtered)
-                                DataRow(cells: [
-                                  DataCell(Text(c.claimNumber,
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          fontFamily: 'monospace',
-                                          color: _accent))),
-                                  DataCell(Text(c.branchName ?? '—')),
-                                  DataCell(Text(claimProductLabel(c))),
-                                  DataCell(Text('${c.quantity}')),
-                                  DataCell(Text(claimFmtDate(c.claimDate))),
-                                  DataCell(SaleClaimStatusChip(c.status)),
-                                  DataCell(_actions(c)),
-                                ]),
-                            ],
-                          ),
+                        : isMobile
+                            ? ListView.builder(
+                                itemCount: filtered.length,
+                                itemBuilder: (_, i) => SaleClaimCard(
+                                  claim: filtered[i],
+                                  showBranch: true,
+                                  onTap: () => _showDetail(filtered[i]),
+                                  trailing: filtered[i].isPending
+                                      ? _actions(filtered[i])
+                                      : null,
+                                ),
+                              )
+                            : ReportTableShell(
+                                columns: const [
+                                  DataColumn(label: Text('Claim No')),
+                                  DataColumn(label: Text('Branch')),
+                                  DataColumn(label: Text('Customer')),
+                                  DataColumn(label: Text('Product')),
+                                  DataColumn(label: Text('Size')),
+                                  DataColumn(label: Text('Color')),
+                                  DataColumn(label: Text('Qty'), numeric: true),
+                                  DataColumn(label: Text('Claim Date')),
+                                  DataColumn(label: Text('Condition')),
+                                  DataColumn(label: Text('Status')),
+                                  DataColumn(label: Text('Actions')),
+                                ],
+                                rows: [
+                                  for (final c in filtered)
+                                    DataRow(
+                                      onSelectChanged: (_) => _showDetail(c),
+                                      cells: [
+                                        DataCell(Text(c.claimNumber,
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontFamily: 'monospace',
+                                                color: _accent))),
+                                        DataCell(Text(c.branchName ?? '—')),
+                                        DataCell(Text(c.customerName ?? '—')),
+                                        DataCell(Text(claimProductLabel(c))),
+                                        DataCell(Text(c.sizeName ?? '—')),
+                                        DataCell(Text(c.colorName ?? '—')),
+                                        DataCell(Text('${c.quantity}')),
+                                        DataCell(
+                                            Text(claimFmtDate(c.claimDate))),
+                                        DataCell(SaleClaimConditionChip(c)),
+                                        DataCell(SaleClaimStatusChip(c.status)),
+                                        DataCell(_actions(c)),
+                                      ],
+                                    ),
+                                ],
+                              ),
           ),
         ],
       ),
@@ -215,120 +306,35 @@ class _IncomingSaleClaimsScreenState
     );
   }
 
-  /// Claim ki poori detail — table mein sirf summary dikhti hai.
+  /// Claim ki poori detail — shared dialog, pending par approve/reject.
   void _showDetail(SaleClaimModel c) {
-    Widget kv(String k, String? v) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 120,
-                child: Text(k,
-                    style: const TextStyle(
-                        fontSize: 13, color: Color(0xFF8A8FA3))),
-              ),
-              Expanded(
-                child: Text(
-                  (v == null || v.trim().isEmpty) ? '—' : v,
-                  style: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+    showSaleClaimDetail(
+      context,
+      c,
+      actions: (ctx) => [
+        if (c.isPending) ...[
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _review(c, approve: false);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Reject'),
           ),
-        );
-    Widget section(String t) => Padding(
-          padding: const EdgeInsets.only(top: 12, bottom: 4),
-          child: Text(t,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF8A8FA3),
-                  letterSpacing: 0.5)),
-        );
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const AppIcon(AppIcons.warningAmberOutlined,
-                color: _accent, size: 22),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(c.claimNumber,
-                  style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'monospace')),
-            ),
-            SaleClaimStatusChip(c.status),
-          ],
-        ),
-        content: SizedBox(
-          width: 420,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                section('CLAIM'),
-                kv('Branch', c.branchName),
-                kv('Claim Date', claimFmtDate(c.claimDate)),
-                kv('Shoe Condition', c.shoeConditionLabel),
-                kv('Reason', c.reason),
-                section('SALE'),
-                kv('Invoice', c.invoiceNumber),
-                kv('Customer', c.customerName),
-                kv('Sale Date', claimFmtDate(c.saleDate)),
-                section('PRODUCT'),
-                kv('Product', c.productName),
-                kv('Brand', c.brandName),
-                kv('Category', c.categoryName),
-                kv('Type', c.typeName),
-                kv('Size', c.sizeName),
-                kv('Color', c.colorName),
-                kv('Barcode', c.barcode),
-                section('AMOUNT'),
-                kv('Quantity', '${c.quantity}'),
-                kv('Sale Price', 'Rs. ${c.salePrice.toStringAsFixed(0)}'),
-                kv('Total', 'Rs. ${c.totalPrice.toStringAsFixed(0)}'),
-                if (c.status != 'pending') ...[
-                  section('REVIEW'),
-                  kv('Reviewed At',
-                      c.reviewedAt == null ? null : claimFmtDate(c.reviewedAt!)),
-                  kv('Remarks', c.reviewRemarks),
-                ],
-              ],
-            ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _review(c, approve: true);
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Approve'),
           ),
-        ),
-        actions: [
-          if (c.isPending) ...[
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _review(c, approve: false);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Reject'),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _review(c, approve: true);
-              },
-              style: FilledButton.styleFrom(backgroundColor: Colors.green),
-              child: const Text('Approve'),
-            ),
-          ] else
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Close'),
-            ),
-        ],
-      ),
+        ] else
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+      ],
     );
   }
 
@@ -364,7 +370,7 @@ class _IncomingSaleClaimsScreenState
                     : 'This claim will be marked as rejected. Branch stock stays unchanged.',
               ),
               const SizedBox(height: 12),
-              TextField(
+              TextField(cursorHeight: 16, 
                 controller: remarksCtrl,
                 maxLines: 2,
                 decoration: InputDecoration(
@@ -409,65 +415,10 @@ class _IncomingSaleClaimsScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _busyId = null);
     }
-  }
-
-  Widget _filterChip(String label, String value, int count) {
-    final isSelected = _filterStatus == value;
-    final chipColor = switch (value) {
-      'pending' => Colors.orange,
-      'approved' => Colors.green,
-      'rejected' => Colors.red,
-      _ => const Color(0xFF1565C0),
-    };
-
-    return GestureDetector(
-      onTap: () => setState(() => _filterStatus = value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border:
-              Border.all(color: isSelected ? chipColor : Colors.grey.shade300),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withValues(alpha: 0.25)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

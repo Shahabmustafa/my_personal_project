@@ -20,6 +20,9 @@ import '../branch/employee/presentation/screens/branch_employee_screen.dart';
 import '../branch/expense/presentation/screen/expense_screen.dart';
 import '../branch/return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart';
 import '../branch/return_stock_to_other_branch/presentation/screens/incoming_stock_returns_screen.dart';
+import '../branch/return_stock_to_other_branch/presentation/providers/branch_stock_return_provider.dart'
+    show incomingStockReturnNotifyProvider, incomingStockReturnsProvider;
+import 'package:safishoe_app/core/widget/stock_notification.dart';
 import '../branch/return_stock_to_warehouse/presentation/screens/branch_warehouse_return_screen.dart';
 import '../branch/sale_claim/presentation/screens/sale_claims_screen.dart';
 import '../branch/sale_exchange/presentation/screens/sale_exchange_invoice_picker_screen.dart';
@@ -226,62 +229,18 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
   ];
 
   static const _assignLabel = 'Assign Stock My Branch';
+  static const _incomingReturnsLabel = 'Incoming Stock Returns';
 
   void _showAssignmentNotification(
     BuildContext context,
     String number,
     int assignIndex,
   ) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        width: 420,
-        duration: const Duration(seconds: 8),
-        backgroundColor: const Color(0xFF1F2333),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Row(
-          children: [
-            const Icon(
-              Icons.local_shipping_outlined,
-              color: Color(0xFF8ED4AA),
-              size: 22,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'New stock assigned',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  if (number.isNotEmpty)
-                    Text(
-                      'Assignment $number — accept or reject',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFFB8BDD0),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        action: assignIndex < 0
-            ? null
-            : SnackBarAction(
-                label: 'View',
-                textColor: const Color(0xFF8ED4AA),
-                onPressed: () => setState(() => _index = assignIndex),
-              ),
-      ),
+    showStockNotification(
+      context,
+      title: 'New stock assigned',
+      subtitle: number.isEmpty ? '' : 'Assignment $number — accept or reject',
+      onView: assignIndex < 0 ? null : () => setState(() => _index = assignIndex),
     );
   }
 
@@ -359,10 +318,39 @@ class _BranchDashboardState extends ConsumerState<BranchDashboard> {
         .where((a) => a.status == 'pending')
         .length;
 
+    // Doosri branch ke return — notification + sidebar badge.
+    final incomingIndex = visible.indexWhere(
+      (i) => _navItems[i].label == _incomingReturnsLabel,
+    );
+    ref.listen(incomingStockReturnNotifyProvider, (_, next) {
+      final number = next.value;
+      if (number == null) return;
+      showStockNotification(
+        context,
+        title: 'Stock returned to you',
+        subtitle: number.isEmpty
+            ? 'Accept or reject'
+            : 'Return $number — accept or reject',
+        icon: Icons.assignment_return_outlined,
+        onView: incomingIndex < 0
+            ? null
+            : () => setState(() => _index = incomingIndex),
+      );
+    });
+    final pendingReturns =
+        ref
+            .watch(incomingStockReturnsProvider)
+            .value
+            ?.where((r) => r.status == 'pending')
+            .length ??
+        0;
+
     final withBadge = {
       for (final i in visible)
         i: _navItems[i].label == _assignLabel
             ? _navItems[i].withBadge(pendingAssignments)
+            : _navItems[i].label == _incomingReturnsLabel
+            ? _navItems[i].withBadge(pendingReturns)
             : _navItems[i],
     };
     // "Reports" group Keyboard Shortcuts ke neeche, sidebar ke aakhir mein.

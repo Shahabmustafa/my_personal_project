@@ -159,13 +159,13 @@ class _CartScreenState extends ConsumerState<CartScreen> {
               onChanged: (v) => setState(() => _branchId = v ?? _branchId),
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            TextFormField(cursorHeight: 16, 
               controller: _name,
               decoration: const InputDecoration(labelText: 'Your name'),
               validator: (v) => (v ?? '').trim().isEmpty ? 'Please enter your name' : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(
+            TextFormField(cursorHeight: 16, 
               controller: _phone,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(labelText: 'Phone number', hintText: '03XX XXXXXXX'),
@@ -174,7 +174,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
             ),
             if (_fulfilment == _Fulfilment.delivery) ...[
               const SizedBox(height: 12),
-              TextFormField(
+              TextFormField(cursorHeight: 16, 
                 controller: _address,
                 maxLines: 2,
                 decoration: const InputDecoration(labelText: 'Delivery address'),
@@ -182,7 +182,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
               ),
             ],
             const SizedBox(height: 12),
-            TextFormField(
+            TextFormField(cursorHeight: 16, 
               controller: _note,
               decoration: const InputDecoration(labelText: 'Note (optional)'),
             ),

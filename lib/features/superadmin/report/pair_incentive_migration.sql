@@ -5,7 +5,10 @@
 --     hai (employee_salary.pair_rate).
 --   * Salesman: apne sale_invoices ke pairs − apne sale_returns ke pairs.
 --     Manager: apni branch ke (invoice.manager_id) pairs − unke returns.
---     Return ka pair dono se katta hai. Exchange ginti mein nahi.
+--     Return ka pair dono se katta hai. Exchange bhi: exchange ke NAYE pairs
+--     "sold" mein jur-te hain, WAPAS aaye pairs "returned" mein (salesman =
+--     exchange.salesman_id, manager = original invoice ka manager). Barabar
+--     pairs ka exchange net 0 rehta hai.
 --   * Mahina PKT (Asia/Karachi) ke hisaab se.
 --   * Paisa seedha nahi milta: branch ka mahine ka net sale (invoices − returns
 --     + exchange difference — Branch Target report jaisa) mahine ke target
@@ -174,33 +177,63 @@ AS $$
           AND public._pi_can_view(es.branch_id)
     ),
     -- kind: 'manager' (invoice.manager_id) ya 'salesman' (invoice.salesman_id)
+    -- sold = sale invoice pairs + exchange ke NAYE pairs
     sold AS (
-        SELECT k.kind,
-               CASE k.kind WHEN 'manager' THEN i.manager_id ELSE i.salesman_id END AS emp_id,
-               date_trunc('month', i.created_at AT TIME ZONE 'Asia/Karachi')::date AS month,
-               SUM(it.quantity)::int AS pairs
-        FROM public.sale_invoices i
-        JOIN public.sale_invoice_items it ON it.sale_invoice_id = i.id
-        CROSS JOIN rng
-        CROSS JOIN (VALUES ('manager'), ('salesman')) AS k(kind)
-        WHERE (i.created_at AT TIME ZONE 'Asia/Karachi') >= rng.m_from
-          AND (i.created_at AT TIME ZONE 'Asia/Karachi') <  rng.m_to
-        GROUP BY 1, 2, 3
+        SELECT u.kind, u.emp_id, u.month, SUM(u.pairs)::int AS pairs FROM (
+            SELECT k.kind,
+                   CASE k.kind WHEN 'manager' THEN i.manager_id ELSE i.salesman_id END AS emp_id,
+                   date_trunc('month', i.created_at AT TIME ZONE 'Asia/Karachi')::date AS month,
+                   it.quantity AS pairs
+            FROM public.sale_invoices i
+            JOIN public.sale_invoice_items it ON it.sale_invoice_id = i.id
+            CROSS JOIN rng
+            CROSS JOIN (VALUES ('manager'), ('salesman')) AS k(kind)
+            WHERE (i.created_at AT TIME ZONE 'Asia/Karachi') >= rng.m_from
+              AND (i.created_at AT TIME ZONE 'Asia/Karachi') <  rng.m_to
+            UNION ALL
+            SELECT k.kind,
+                   CASE k.kind
+                       WHEN 'manager' THEN public.return_manager_salary_id(x.original_invoice_id, x.branch_id)
+                       ELSE x.salesman_id END,
+                   date_trunc('month', x.created_at AT TIME ZONE 'Asia/Karachi')::date,
+                   it.quantity
+            FROM public.sale_exchanges x
+            JOIN public.sale_exchange_new_items it ON it.sale_exchange_id = x.id
+            CROSS JOIN rng
+            CROSS JOIN (VALUES ('manager'), ('salesman')) AS k(kind)
+            WHERE (x.created_at AT TIME ZONE 'Asia/Karachi') >= rng.m_from
+              AND (x.created_at AT TIME ZONE 'Asia/Karachi') <  rng.m_to
+        ) u GROUP BY 1, 2, 3
     ),
+    -- ret = sale return pairs + exchange ke WAPAS aaye pairs
     ret AS (
-        SELECT k.kind,
-               CASE k.kind
-                   WHEN 'manager' THEN public.return_manager_salary_id(r.original_invoice_id, r.branch_id)
-                   ELSE r.salesman_id END AS emp_id,
-               date_trunc('month', r.created_at AT TIME ZONE 'Asia/Karachi')::date AS month,
-               SUM(it.quantity)::int AS pairs
-        FROM public.sale_returns r
-        JOIN public.sale_return_items it ON it.sale_return_id = r.id
-        CROSS JOIN rng
-        CROSS JOIN (VALUES ('manager'), ('salesman')) AS k(kind)
-        WHERE (r.created_at AT TIME ZONE 'Asia/Karachi') >= rng.m_from
-          AND (r.created_at AT TIME ZONE 'Asia/Karachi') <  rng.m_to
-        GROUP BY 1, 2, 3
+        SELECT u.kind, u.emp_id, u.month, SUM(u.pairs)::int AS pairs FROM (
+            SELECT k.kind,
+                   CASE k.kind
+                       WHEN 'manager' THEN public.return_manager_salary_id(r.original_invoice_id, r.branch_id)
+                       ELSE r.salesman_id END AS emp_id,
+                   date_trunc('month', r.created_at AT TIME ZONE 'Asia/Karachi')::date AS month,
+                   it.quantity AS pairs
+            FROM public.sale_returns r
+            JOIN public.sale_return_items it ON it.sale_return_id = r.id
+            CROSS JOIN rng
+            CROSS JOIN (VALUES ('manager'), ('salesman')) AS k(kind)
+            WHERE (r.created_at AT TIME ZONE 'Asia/Karachi') >= rng.m_from
+              AND (r.created_at AT TIME ZONE 'Asia/Karachi') <  rng.m_to
+            UNION ALL
+            SELECT k.kind,
+                   CASE k.kind
+                       WHEN 'manager' THEN public.return_manager_salary_id(x.original_invoice_id, x.branch_id)
+                       ELSE x.salesman_id END,
+                   date_trunc('month', x.created_at AT TIME ZONE 'Asia/Karachi')::date,
+                   it.quantity
+            FROM public.sale_exchanges x
+            JOIN public.sale_exchange_return_items it ON it.sale_exchange_id = x.id
+            CROSS JOIN rng
+            CROSS JOIN (VALUES ('manager'), ('salesman')) AS k(kind)
+            WHERE (x.created_at AT TIME ZONE 'Asia/Karachi') >= rng.m_from
+              AND (x.created_at AT TIME ZONE 'Asia/Karachi') <  rng.m_to
+        ) u GROUP BY 1, 2, 3
     ),
     live AS (
         SELECT e.*, m.month,
@@ -303,26 +336,48 @@ AS $$
         SELECT generate_series(d_from, d_to - 1, INTERVAL '1 day')::date AS day FROM rng
     ),
     sold AS (
-        SELECT (i.created_at AT TIME ZONE 'Asia/Karachi')::date AS day,
-               SUM(it.quantity)::int AS pairs
-        FROM e, rng, public.sale_invoices i
-        JOIN public.sale_invoice_items it ON it.sale_invoice_id = i.id
-        WHERE (i.created_at AT TIME ZONE 'Asia/Karachi') >= rng.d_from
-          AND (i.created_at AT TIME ZONE 'Asia/Karachi') <  rng.d_to
-          AND CASE WHEN e.role = 'manager' THEN i.manager_id ELSE i.salesman_id END = e.id
-        GROUP BY 1
+        SELECT u.day, SUM(u.pairs)::int AS pairs FROM (
+            SELECT (i.created_at AT TIME ZONE 'Asia/Karachi')::date AS day,
+                   it.quantity AS pairs
+            FROM e, rng, public.sale_invoices i
+            JOIN public.sale_invoice_items it ON it.sale_invoice_id = i.id
+            WHERE (i.created_at AT TIME ZONE 'Asia/Karachi') >= rng.d_from
+              AND (i.created_at AT TIME ZONE 'Asia/Karachi') <  rng.d_to
+              AND CASE WHEN e.role = 'manager' THEN i.manager_id ELSE i.salesman_id END = e.id
+            UNION ALL
+            -- exchange ke NAYE pairs
+            SELECT (x.created_at AT TIME ZONE 'Asia/Karachi')::date, it.quantity
+            FROM e, rng, public.sale_exchanges x
+            JOIN public.sale_exchange_new_items it ON it.sale_exchange_id = x.id
+            WHERE (x.created_at AT TIME ZONE 'Asia/Karachi') >= rng.d_from
+              AND (x.created_at AT TIME ZONE 'Asia/Karachi') <  rng.d_to
+              AND CASE WHEN e.role = 'manager'
+                       THEN public.return_manager_salary_id(x.original_invoice_id, x.branch_id)
+                       ELSE x.salesman_id END = e.id
+        ) u GROUP BY 1
     ),
     ret AS (
-        SELECT (r.created_at AT TIME ZONE 'Asia/Karachi')::date AS day,
-               SUM(it.quantity)::int AS pairs
-        FROM e, rng, public.sale_returns r
-        JOIN public.sale_return_items it ON it.sale_return_id = r.id
-        WHERE (r.created_at AT TIME ZONE 'Asia/Karachi') >= rng.d_from
-          AND (r.created_at AT TIME ZONE 'Asia/Karachi') <  rng.d_to
-          AND CASE WHEN e.role = 'manager'
-                   THEN public.return_manager_salary_id(r.original_invoice_id, r.branch_id)
-                   ELSE r.salesman_id END = e.id
-        GROUP BY 1
+        SELECT u.day, SUM(u.pairs)::int AS pairs FROM (
+            SELECT (r.created_at AT TIME ZONE 'Asia/Karachi')::date AS day,
+                   it.quantity AS pairs
+            FROM e, rng, public.sale_returns r
+            JOIN public.sale_return_items it ON it.sale_return_id = r.id
+            WHERE (r.created_at AT TIME ZONE 'Asia/Karachi') >= rng.d_from
+              AND (r.created_at AT TIME ZONE 'Asia/Karachi') <  rng.d_to
+              AND CASE WHEN e.role = 'manager'
+                       THEN public.return_manager_salary_id(r.original_invoice_id, r.branch_id)
+                       ELSE r.salesman_id END = e.id
+            UNION ALL
+            -- exchange ke WAPAS aaye pairs
+            SELECT (x.created_at AT TIME ZONE 'Asia/Karachi')::date, it.quantity
+            FROM e, rng, public.sale_exchanges x
+            JOIN public.sale_exchange_return_items it ON it.sale_exchange_id = x.id
+            WHERE (x.created_at AT TIME ZONE 'Asia/Karachi') >= rng.d_from
+              AND (x.created_at AT TIME ZONE 'Asia/Karachi') <  rng.d_to
+              AND CASE WHEN e.role = 'manager'
+                       THEN public.return_manager_salary_id(x.original_invoice_id, x.branch_id)
+                       ELSE x.salesman_id END = e.id
+        ) u GROUP BY 1
     )
     SELECT d.day, COALESCE(s.pairs, 0), COALESCE(t.pairs, 0)
     FROM days d

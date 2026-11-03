@@ -15,6 +15,7 @@ import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/features/superadmin/branch/presentation/providers/branch_provider.dart';
 import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_summary_card.dart';
 import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_table_shell.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Branch ke saare manager / cashier / salesman ki ek din ki attendance —
 /// kaun aaya, kab aaya, kab gaya. Branch manager ko apni branch, superadmin
@@ -250,9 +251,9 @@ class _StaffAttendanceScreenState extends ConsumerState<StaffAttendanceScreen> {
                     loading: () =>
                         const Center(child: CircularProgressIndicator()),
                     error: (e, _) => Center(
-                      child: Text(
-                        'Error: $e',
-                        style: const TextStyle(color: _red),
+                      child: ErrorView(
+                        error: e,
+                        onRetry: () => ref.invalidate(staffAttendanceProvider),
                       ),
                     ),
                     data: (rows) => rows.isEmpty
@@ -317,8 +318,10 @@ class _StaffAttendanceScreenState extends ConsumerState<StaffAttendanceScreen> {
                   padding: EdgeInsets.all(16),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (e, _) =>
-                    Text('Error: $e', style: const TextStyle(color: _red)),
+                error: (e, _) => ErrorView(
+                  error: e,
+                  onRetry: () => ref.invalidate(staffAttendanceProvider),
+                ),
                 data: (rows) => rows.isEmpty
                     ? const Padding(
                         padding: EdgeInsets.only(bottom: 12),

@@ -68,7 +68,7 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           // Search
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: notifier.setSearch,
               decoration: _searchDecor(
                   'Search by name, phone, email or address...'),

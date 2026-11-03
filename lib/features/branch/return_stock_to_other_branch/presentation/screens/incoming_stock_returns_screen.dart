@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,9 @@ import 'branch_stock_return_screen.dart' show StatusChip;
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 
 const _primary = Color(0xFF3E63DD);
 
@@ -27,6 +31,9 @@ class IncomingStockReturnsScreen extends ConsumerStatefulWidget {
 class _IncomingStockReturnsScreenState
     extends ConsumerState<IncomingStockReturnsScreen> {
   String _filterStatus = 'all'; // all | pending | accepted | rejected
+  String? _filterBranch; // returning (from) branch id
+  DateTime? _fromDate; // returned-on range (inclusive)
+  DateTime? _toDate;
 
   BranchStockReturnModel? _selected; // list row (brief)
   BranchStockReturnModel? _detail; // loaded detail (items with names)
@@ -72,14 +79,66 @@ class _IncomingStockReturnsScreenState
     }
   }
 
+  int get _activeFilterCount =>
+      (_filterBranch != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  bool _matchesFilters(BranchStockReturnModel t) {
+    if (_filterBranch != null && t.fromBranchId != _filterBranch) return false;
+    final d = t.returnedAt.toLocal();
+    final day = DateTime(d.year, d.month, d.day);
+    if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+    if (_toDate != null && day.isAfter(_toDate!)) return false;
+    return true;
+  }
+
+  Future<void> _openFilterDialog(Map<String, String> branches) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'From Branch',
+      allLabel: 'All branches',
+      branches: branches,
+      current: (
+        branch: _filterBranch,
+        branch2: null,
+        from: _fromDate,
+        to: _toDate,
+      ),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterBranch = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+      _selected = null;
+      _detail = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final returnsAsync = ref.watch(incomingStockReturnsProvider);
     final all = returnsAsync.value ?? const <BranchStockReturnModel>[];
 
-    final filtered = _filterStatus == 'all'
-        ? all
-        : all.where((r) => r.status == _filterStatus).toList();
+    final branchOptions = <String, String>{
+      for (final r in all) r.fromBranchId: r.fromBranchName ?? r.fromBranchId,
+    };
+    final filterButton = Badge(
+      isLabelVisible: _activeFilterCount > 0,
+      label: Text('$_activeFilterCount'),
+      child: OutlinedButton.icon(
+        onPressed: () => _openFilterDialog(branchOptions),
+        icon: const Icon(Icons.filter_list, size: 18),
+        label: const Text('Filter'),
+      ),
+    );
+
+    final filtered = all
+        .where((r) =>
+            _matchesFilters(r) &&
+            (_filterStatus == 'all' || r.status == _filterStatus))
+        .toList();
     final pendingCount = all.where((r) => r.status == 'pending').length;
     final filteredItems = filtered.expand((r) => r.items);
     final totalQuantity = filteredItems.fold<int>(0, (s, i) => s + i.quantity);
@@ -133,6 +192,8 @@ class _IncomingStockReturnsScreenState
                     ],
                   ),
                 ),
+              filterButton,
+              const SizedBox(width: 4),
               IconButton(
                 tooltip: 'Refresh',
                 icon: const AppIcon(AppIcons.refresh, size: 18),
@@ -211,10 +272,7 @@ class _IncomingStockReturnsScreenState
                             size: 40,
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            'Error: $e',
-                            style: const TextStyle(color: Colors.red),
-                          ),
+                          ErrorView(error: e, onRetry: () => ref.invalidate(incomingStockReturnsProvider)),
                         ],
                       ),
                     ),
@@ -330,8 +388,7 @@ class _IncomingStockReturnsScreenState
 String _fmtAmt(double v) =>
     v == v.truncate() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 Color _statusColor(String status) {
   switch (status) {
@@ -711,7 +768,7 @@ Future<void> _confirmAccept(
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }
@@ -758,7 +815,7 @@ Future<void> _confirmReject(
   } catch (e) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }

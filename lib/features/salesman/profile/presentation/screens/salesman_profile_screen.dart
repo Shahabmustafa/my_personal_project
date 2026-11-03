@@ -7,6 +7,7 @@ import '../providers/salesman_profile_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 class SalesmanProfileScreen extends ConsumerWidget {
   const SalesmanProfileScreen({super.key});
@@ -55,8 +56,7 @@ class SalesmanProfileScreen extends ConsumerWidget {
                       const AppIcon(AppIcons.errorOutline,
                           size: 40, color: Colors.redAccent),
                       const SizedBox(height: 10),
-                      Text('Error: $e',
-                          style: const TextStyle(color: Color(0xFF8A8FA3))),
+                      ErrorView(error: e, onRetry: () => ref.invalidate(salesmanProfileProvider)),
                     ]),
                   ),
                 ),
@@ -357,8 +357,7 @@ class _SalaryHistoryCard extends ConsumerWidget {
               padding: EdgeInsets.symmetric(vertical: 20),
               child: Center(child: CircularProgressIndicator()),
             ),
-            error: (e, _) => Text('Error: $e',
-                style: const TextStyle(color: Color(0xFF8A8FA3))),
+            error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(salesmanSalaryHistoryProvider)),
             data: (history) {
               if (history.isEmpty) {
                 return const Padding(

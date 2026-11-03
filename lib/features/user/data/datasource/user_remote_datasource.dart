@@ -184,4 +184,20 @@ class UserRemoteDatasource {
           );
     }
   }
+
+  /// Head office (superadmin) kisi user ka password badalta hai — server-side
+  /// Edge Function `admin-change-password` ke zariye (role check wahan hota hai).
+  Future<void> changeUserPassword({
+    required String userId,
+    required String newPassword,
+  }) async {
+    final res = await _client.functions.invoke(
+      'admin-change-password',
+      body: {'user_id': userId, 'new_password': newPassword},
+    );
+    final data = res.data;
+    if (res.status != 200 || (data is Map && data['error'] != null)) {
+      throw Exception(data is Map ? data['error'] : 'Failed to change password');
+    }
+  }
 }

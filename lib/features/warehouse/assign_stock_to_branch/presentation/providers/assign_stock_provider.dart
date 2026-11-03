@@ -7,6 +7,7 @@ import '../../data/datasources/assign_stock_datasource.dart';
 import '../../data/models/assign_stock_model.dart';
 import '../../data/repositories/assign_stock_repository.dart';
 import '../../../shared/current_warehouse_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final assignStockDatasourceProvider = Provider<AssignStockDatasource>(
@@ -72,7 +73,7 @@ class AssignListNotifier extends StateNotifier<AssignListState> {
       final list = await _repo.getAssignments(_warehouseId);
       state = state.copyWith(assignments: list, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 
@@ -81,7 +82,7 @@ class AssignListNotifier extends StateNotifier<AssignListState> {
       await _repo.acceptAssignment(assignmentId);
       await loadAssignments();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: friendlyError(e));
     }
   }
 
@@ -90,7 +91,7 @@ class AssignListNotifier extends StateNotifier<AssignListState> {
       await _repo.rejectAssignment(assignmentId);
       await loadAssignments();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: friendlyError(e));
     }
   }
 }
@@ -293,9 +294,9 @@ class AssignStockNotifier extends StateNotifier<AssignStockState> {
       return null;
     } catch (e) {
       if (mounted) {
-        state = state.copyWith(isSaving: false, error: e.toString());
+        state = state.copyWith(isSaving: false, error: friendlyError(e));
       }
-      return e.toString();
+      return friendlyError(e);
     }
   }
 

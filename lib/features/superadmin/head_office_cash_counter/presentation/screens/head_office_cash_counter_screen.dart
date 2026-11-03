@@ -9,6 +9,7 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/widget/cash_counter_bar_chart.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 
 class HeadOfficeCashCounterScreen extends ConsumerStatefulWidget {
   const HeadOfficeCashCounterScreen({super.key});
@@ -161,7 +162,7 @@ class _HeadOfficeCashCounterScreenState
 
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: _searchDecor('Search by date or amount...'),
             ),
@@ -577,25 +578,13 @@ class _TD extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const AppIcon(AppIcons.errorOutline,
-                size: 48, color: Colors.redAccent),
-            const SizedBox(height: 12),
-            Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-          ]),
-    );
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {

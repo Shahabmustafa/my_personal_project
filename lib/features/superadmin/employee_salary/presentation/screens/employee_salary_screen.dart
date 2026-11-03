@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/employee_salary_model.dart';
@@ -9,6 +10,8 @@ import '../widgets/employee_salary_history_dialog.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 class EmployeeSalaryScreen extends ConsumerStatefulWidget {
   const EmployeeSalaryScreen({super.key});
 
@@ -38,7 +41,7 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
       body: salariesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _ErrorView(
-          message: e.toString(),
+          message: friendlyError(e),
           onRetry: () => ref.invalidate(employeeSalariesProvider),
         ),
         data: (salaries) {
@@ -89,7 +92,7 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
               // ── Search ──────────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                child: TextField(
+                child: TextField(cursorHeight: 16, 
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: _searchDecor('Search by employee, branch...'),
                 ),
@@ -147,7 +150,7 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
             }
           } catch (e) {
             if (context.mounted) {
-              _snack(context, 'Error: $e', Colors.red);
+              _snack(context, friendlyError(e, prefix: 'Error: '), Colors.red);
             }
           }
         },
@@ -189,7 +192,7 @@ class _EmployeeSalaryScreenState extends ConsumerState<EmployeeSalaryScreen> {
                 }
               } catch (e) {
                 if (context.mounted) {
-                  _snack(context, 'Error: $e', Colors.red);
+                  _snack(context, friendlyError(e, prefix: 'Error: '), Colors.red);
                 }
               }
             },
@@ -396,10 +399,7 @@ class _DesktopTable extends StatelessWidget {
     );
   }
 
-  String _fmt(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _fmt(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Mobile List ───────────────────────────────────────────────────────────────
@@ -488,21 +488,13 @@ class _IconBtn extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) => Center(
-        child:
-            Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
-          const SizedBox(height: 12),
-          Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-        ]),
-      );
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {

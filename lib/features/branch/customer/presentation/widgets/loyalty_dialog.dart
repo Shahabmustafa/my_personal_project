@@ -7,6 +7,7 @@ import '../providers/customer_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 class LoyaltyDialog extends ConsumerStatefulWidget {
   final CustomerModel customer;
   const LoyaltyDialog({super.key, required this.customer});
@@ -61,7 +62,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString().replaceFirst(RegExp(r'^Exception: '), '')),
+            content: Text(friendlyError(e)),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -181,7 +182,7 @@ class _LoyaltyDialogState extends ConsumerState<LoyaltyDialog> {
               const SizedBox(height: 14),
 
               // Points input
-              TextFormField(
+              TextFormField(cursorHeight: 16, 
                 controller: _ctrl,
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],

@@ -7,6 +7,7 @@ import '../../data/datasources/stock_datasource.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/stock_repository.dart';
 import '../../../shared/current_warehouse_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final stockDatasourceProvider = Provider<StockDatasource>(
@@ -138,7 +139,7 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
       }
       return (error: e.message, skipped: <String>[]);
     } catch (e) {
-      return (error: e.toString(), skipped: <String>[]);
+      return (error: friendlyError(e), skipped: <String>[]);
     }
   }
 
@@ -148,7 +149,7 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
       replaceRow((s) => s.id == stockId, updated);
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -158,7 +159,7 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
       replaceRow((s) => s.id == stockId, updated);
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -168,7 +169,7 @@ class StockNotifier extends PaginatedListNotifier<WarehouseStockModel> {
       removeRow((s) => s.id == stockId);
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 }

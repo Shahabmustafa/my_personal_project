@@ -7,6 +7,8 @@ import '../../../report/presentation/widgets/report_table_shell.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Head office yahan global "sale amount" discount tiers set karta hai —
 /// jab kisi branch ki sale invoice ka items total kisi tier ke minimum tak
@@ -74,7 +76,7 @@ class SaleDiscountTiersScreen extends ConsumerWidget {
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: Text('Error: ${state.error}', style: const TextStyle(color: Colors.red)),
+              child: ErrorView(error: state.error, onRetry: notifier.load),
             ),
           Expanded(
             child: state.isLoading && state.tiers.isEmpty
@@ -323,7 +325,7 @@ class _TierFormDialogState extends ConsumerState<_TierFormDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(friendlyError(e, prefix: 'Error: '))));
       }
     }
   }
@@ -339,7 +341,7 @@ class _TierFormDialogState extends ConsumerState<_TierFormDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextFormField(
+            TextFormField(cursorHeight: 16, 
               controller: _minCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [
@@ -381,7 +383,7 @@ class _TierFormDialogState extends ConsumerState<_TierFormDialog> {
               ],
             ),
             const SizedBox(height: 8),
-            TextFormField(
+            TextFormField(cursorHeight: 16, 
               controller: _valueCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [

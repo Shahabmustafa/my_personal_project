@@ -125,7 +125,10 @@ class _CartRow extends ConsumerWidget {
     final notifier = ref.read(branchTransferProvider.notifier);
 
     return Container(
-      color: index.isEven ? Colors.grey.shade50 : Colors.white,
+      decoration: BoxDecoration(
+        color: index.isEven ? Colors.grey.shade50 : Colors.white,
+        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+      ),
       child: Row(
         children: [
           _c(
@@ -144,13 +147,20 @@ class _CartRow extends ConsumerWidget {
           _c(item.categoryName, flex: 2),
           _c(item.salePrice.toStringAsFixed(0), flex: 2),
           _c(
-            '${item.availableStock}',
+            item.quantity >= item.availableStock && item.availableStock > 0
+                ? '${item.availableStock} (all)'
+                : '${item.availableStock}',
             flex: 2,
             style: TextStyle(
               fontSize: 12,
+              fontWeight: item.quantity >= item.availableStock
+                  ? FontWeight.w600
+                  : FontWeight.w400,
               color: item.availableStock <= 0
                   ? Colors.red
-                  : Colors.grey.shade600,
+                  : item.quantity >= item.availableStock
+                      ? Colors.orange.shade800
+                      : Colors.grey.shade600,
             ),
           ),
           Expanded(
@@ -233,50 +243,56 @@ class _Footer extends StatelessWidget {
   final List<BranchTransferCartItem> items;
   const _Footer({required this.items});
 
+  // Column flex (header / row jaisa): # 1, Barcode 3, Article 3, Size 1,
+  // Color 2, Category 2, S.Price 2, Stock 2 = 16 → label Stock tak phailta hai.
+  static const _labelFlex = 16;
+
   @override
   Widget build(BuildContext context) {
     final totalQty = items.fold(0, (s, i) => s + i.quantity);
     final net = items.fold(0.0, (s, i) => s + i.lineTotal);
     const primary = Color(0xFF1565C0);
 
+    Widget cell(String text, int flex, {double size = 13, FontWeight? w}) =>
+        Expanded(
+          flex: flex,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontWeight: w ?? FontWeight.w700,
+                fontSize: size,
+                color: primary,
+              ),
+            ),
+          ),
+        );
+
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFFF5F5F5),
+        color: Color(0xFFF5F7FB),
+        border: Border(top: BorderSide(color: Color(0xFFE7E9F0))),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(10)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          const Expanded(
-            flex: 13, // 1+3+3+1+2+2+2 (label spans up to S.Price)
-            child: Text(
-              'TOTALS',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-            ),
-          ),
           Expanded(
-            flex: 3,
-            child: Text(
-              '$totalQty',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: primary,
+            flex: _labelFlex,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                'TOTALS  ·  ${items.length} item${items.length == 1 ? '' : 's'}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              net.toStringAsFixed(0),
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: primary,
-              ),
-            ),
-          ),
+          cell('$totalQty pairs', 3),
+          cell(net.toStringAsFixed(0), 2, w: FontWeight.w800),
           const Expanded(flex: 1, child: SizedBox()),
         ],
       ),

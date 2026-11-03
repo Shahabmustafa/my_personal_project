@@ -196,7 +196,7 @@ class _Field extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return TextFormField(cursorHeight: 16, 
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,

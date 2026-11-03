@@ -7,6 +7,7 @@ import '../../data/models/purchase_return_model.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/purchase_return_repository.dart';
 import '../../../shared/current_warehouse_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final purchaseReturnDatasourceProvider = Provider<PurchaseReturnDatasource>(
@@ -77,7 +78,7 @@ class ReturnListNotifier extends StateNotifier<ReturnListState> {
       final list = await _repo.getReturns(_warehouseId);
       state = state.copyWith(returns: list, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 }
@@ -320,7 +321,7 @@ class PurchaseReturnNotifier extends StateNotifier<PurchaseReturnState> {
       }
       return null;
     } catch (e) {
-      final errMsg = e.toString();
+      final errMsg = friendlyError(e);
 
       // Duplicate key retry
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {

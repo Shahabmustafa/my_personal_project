@@ -9,6 +9,7 @@ import '../../../../../core/pagination/pagination.dart';
 import '../../data/datasource/product_remote_datasource.dart';
 import '../../data/model/product_model.dart';
 import '../../data/repository/product_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final productRemoteDatasourceProvider =
     Provider<ProductRemoteDatasource>((_) => ProductRemoteDatasource());
@@ -55,7 +56,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
     } catch (e) {
       state = state.copyWith(
           isFirstLoad: false,
-          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          error: friendlyError(e));
     }
   }
 
@@ -91,7 +92,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
       _invalidateLookups();
       return null;
     } catch (e) {
-      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      return friendlyError(e);
     }
   }
 
@@ -102,7 +103,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
       _invalidateLookups();
       return null;
     } catch (e) {
-      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      return friendlyError(e);
     }
   }
 
@@ -113,7 +114,7 @@ class ProductNotifier extends PaginatedListNotifier<ProductModel> {
       _invalidateLookups();
       return null;
     } catch (e) {
-      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      return friendlyError(e);
     }
   }
 }

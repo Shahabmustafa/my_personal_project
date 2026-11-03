@@ -10,6 +10,8 @@ import '../widgets/report_table_shell.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Per-pair incentive — Branch Target report jaisa drill-down:
 ///   sab employees (is mahine) → employee click: saal-wise →
@@ -179,7 +181,7 @@ class _PairIncentiveReportScreenState
             skipLoadingOnReload: true,
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(
-              child: Text('Error: $e', style: const TextStyle(color: _red)),
+              child: ErrorView(error: e, onRetry: () => ref.invalidate(pairIncentiveProvider)),
             ),
             data: (data) {
               if (data.rows.isEmpty) {
@@ -360,7 +362,7 @@ class _PairIncentiveReportScreenState
     return startAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Text('Error: $err', style: const TextStyle(color: _red)),
+        child: ErrorView(error: err, onRetry: () => ref.invalidate(pairIncentiveStartYearProvider)),
       ),
       data: (start) {
         final from = DateTime(start < now.year ? start : now.year);
@@ -375,7 +377,7 @@ class _PairIncentiveReportScreenState
           skipLoadingOnReload: true,
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, _) => Center(
-            child: Text('Error: $err', style: const TextStyle(color: _red)),
+            child: ErrorView(error: err, onRetry: () => ref.invalidate(pairIncentiveProvider)),
           ),
           data: (data) {
             final mine = data.rows
@@ -414,7 +416,7 @@ class _PairIncentiveReportScreenState
       skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Text('Error: $err', style: const TextStyle(color: _red)),
+        child: ErrorView(error: err, onRetry: () => ref.invalidate(pairIncentiveProvider)),
       ),
       data: (data) {
         final mine = data.rows
@@ -454,7 +456,7 @@ class _PairIncentiveReportScreenState
       skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(
-        child: Text('Error: $err', style: const TextStyle(color: _red)),
+        child: ErrorView(error: err, onRetry: () => ref.invalidate(pairIncentiveDaysProvider)),
       ),
       data: (days) => SingleChildScrollView(
         child: ReportTableShell(
@@ -594,7 +596,7 @@ class _PairIncentiveReportScreenState
       ref.invalidate(pairIncentiveProvider);
       _snack('Accepted');
     } catch (e) {
-      _snack('Error: $e');
+      _snack(friendlyError(e, prefix: 'Error: '));
     }
   }
 
@@ -606,7 +608,7 @@ class _PairIncentiveReportScreenState
       context: context,
       builder: (_) => AlertDialog(
         title: Text('Rate per pair — ${r.username}'),
-        content: TextField(
+        content: TextField(cursorHeight: 16, 
           controller: ctrl,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -633,7 +635,7 @@ class _PairIncentiveReportScreenState
       await ref.read(pairIncentiveDatasourceProvider).setRate(r.employeeId, v);
       ref.invalidate(pairIncentiveProvider);
     } catch (e) {
-      _snack('Error: $e');
+      _snack(friendlyError(e, prefix: 'Error: '));
     }
   }
 

@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 
@@ -12,9 +13,11 @@ import '../../../../superadmin/report/presentation/widgets/report_summary_card.d
 import '../provider/branch_assign_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
-import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 
 class BranchAssignListScreen extends ConsumerStatefulWidget {
   const BranchAssignListScreen({super.key});
@@ -28,6 +31,8 @@ class _BranchAssignListScreenState
     extends ConsumerState<BranchAssignListScreen> {
   String _filterStatus = 'all';
   String? _filterSource; // assigned-by (branch / warehouse) id
+  DateTime? _fromDate; // assigned-on range (inclusive)
+  DateTime? _toDate;
   static const _pageSize = 50;
   int _page = 1;
   static const _primary = Color(0xFF3E63DD);
@@ -42,6 +47,30 @@ class _BranchAssignListScreenState
     Future.microtask(
       () => ref.read(branchAssignProvider.notifier).loadAssignments(),
     );
+  }
+
+  int get _activeFilterCount =>
+      (_filterSource != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  Future<void> _openFilterDialog(Map<String, String> sources) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Assigned By',
+      allLabel: 'All sources',
+      branches: sources,
+      current: (branch: _filterSource, branch2: null, from: _fromDate, to: _toDate),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterSource = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+      _page = 1;
+      _selected = null;
+      _detail = null;
+    });
   }
 
   /// Accept/Reject ke baad detail side panel band (agar wahi row khuli ho).
@@ -117,7 +146,7 @@ class _BranchAssignListScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Print failed: $e'),
+          content: Text(friendlyError(e, prefix: 'Print failed: ')),
           backgroundColor: Colors.orange.shade700,
         ),
       );
@@ -138,6 +167,10 @@ class _BranchAssignListScreenState
       if (_filterSource != null && a.warehouseId != _filterSource) {
         return false;
       }
+      final d = a.assignedAt.toLocal();
+      final day = DateTime(d.year, d.month, d.day);
+      if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+      if (_toDate != null && day.isAfter(_toDate!)) return false;
       if (_filterStatus == 'all') return true;
       return a.status == _filterStatus;
     }).toList();
@@ -204,6 +237,16 @@ class _BranchAssignListScreenState
                     ],
                   ),
                 ),
+              Badge(
+                isLabelVisible: _activeFilterCount > 0,
+                label: Text('$_activeFilterCount'),
+                child: OutlinedButton.icon(
+                  onPressed: () => _openFilterDialog(sources),
+                  icon: const Icon(Icons.filter_list, size: 18),
+                  label: const Text('Filter'),
+                ),
+              ),
+              const SizedBox(width: 4),
               IconButton(
                 tooltip: 'Refresh',
                 icon: const AppIcon(AppIcons.refresh, size: 18),
@@ -244,21 +287,6 @@ class _BranchAssignListScreenState
             ],
           ),
           const SizedBox(height: 16),
-
-          // ── Assigned-by filter ──────────────────────────────────────
-          BranchFilterDropdown(
-            label: 'Assigned By',
-            allLabel: 'All sources',
-            options: sources,
-            value: _filterSource,
-            onChanged: (v) => setState(() {
-              _filterSource = v;
-              _page = 1;
-              _selected = null;
-              _detail = null;
-            }),
-          ),
-          const SizedBox(height: 12),
 
           // ── Status filter chips ─────────────────────────────────────
           SingleChildScrollView(
@@ -438,8 +466,7 @@ class _BranchAssignListScreenState
 String _fmtAmt(double v) =>
     v == v.truncate() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 // ── Table (flex-based — poori width par phailti hai) ─────────────────────
 
@@ -912,7 +939,7 @@ Future<void> _confirmAccept(
       content: Text(
         error == null
             ? 'Stock accepted and added to branch inventory!'
-            : 'Error: $error',
+            : friendlyError(error, prefix: 'Error: '),
       ),
       backgroundColor: error == null
           ? Colors.green.shade700
@@ -993,7 +1020,7 @@ Future<void> _confirmReject(
       content: Text(
         error == null
             ? 'Assignment rejected. Stock returned to sender.'
-            : 'Error: $error',
+            : friendlyError(error, prefix: 'Error: '),
       ),
       backgroundColor: error == null
           ? Colors.orange.shade700
@@ -1065,41 +1092,13 @@ class _StatusChip extends StatelessWidget {
 // ── Error / Empty views ──────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  final String error;
+  final Object? error;
   final VoidCallback onRetry;
   const _ErrorView({required this.error, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.red.shade50,
-            shape: BoxShape.circle,
-          ),
-          child: AppIcon(
-            AppIcons.errorOutline,
-            color: Colors.red.shade400,
-            size: 36,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Error: $error',
-          style: const TextStyle(color: Color(0xFF8A8FA3), fontSize: 13),
-        ),
-        const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: onRetry,
-          icon: const AppIcon(AppIcons.refresh, size: 16),
-          label: const Text('Retry'),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: error, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {
@@ -1143,3 +1142,5 @@ class _EmptyView extends StatelessWidget {
     ),
   );
 }
+
+

@@ -10,6 +10,7 @@ class UserCard extends StatelessWidget {
   final ValueChanged<String> onRoleChange;
   final VoidCallback onToggleActive;
   final VoidCallback onAssign;
+  final VoidCallback onChangePassword;
 
   const UserCard({
     super.key,
@@ -19,6 +20,7 @@ class UserCard extends StatelessWidget {
     required this.onRoleChange,
     required this.onToggleActive,
     required this.onAssign,
+    required this.onChangePassword,
   });
 
   @override
@@ -88,6 +90,13 @@ class UserCard extends StatelessWidget {
                   label: 'Assign',
                   color: const Color(0xFF3E63DD),
                   onTap: onAssign,
+                ),
+                const SizedBox(width: 8),
+                _OutlineBtn(
+                  icon: AppIcons.lockOutline,
+                  label: 'Password',
+                  color: Colors.orange,
+                  onTap: onChangePassword,
                 ),
               ],
             )

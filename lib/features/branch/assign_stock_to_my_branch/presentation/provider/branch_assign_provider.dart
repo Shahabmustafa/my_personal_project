@@ -6,6 +6,7 @@ import '../../../shared/current_branch_provider.dart';
 import '../../../../warehouse/assign_stock_to_branch/data/models/assign_stock_model.dart';
 import '../../data/datasoruce/branch_assign_datasource.dart';
 import '../../data/repossitory/branch_assign_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final branchAssignDatasourceProvider = Provider<BranchAssignDatasource>(
@@ -56,7 +57,7 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
       final list = await _repo.getBranchAssignments(_branchId);
       state = state.copyWith(assignments: list, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 
@@ -67,8 +68,8 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
       await loadAssignments();
       return null;
     } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return e.toString();
+      state = state.copyWith(error: friendlyError(e));
+      return friendlyError(e);
     }
   }
 
@@ -79,8 +80,8 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
       await loadAssignments();
       return null;
     } catch (e) {
-      state = state.copyWith(error: e.toString());
-      return e.toString();
+      state = state.copyWith(error: friendlyError(e));
+      return friendlyError(e);
     }
   }
 
@@ -89,7 +90,7 @@ class BranchAssignNotifier extends StateNotifier<BranchAssignListState> {
     try {
       return await _repo.getAssignmentDetail(assignmentId);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: friendlyError(e));
       return null;
     }
   }

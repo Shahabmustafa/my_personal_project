@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../branch/data/model/branch_model.dart';
 import '../../../branch/presentation/providers/branch_provider.dart';
 import '../../data/branch_target_datasource.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 /// Superadmin/admin yahan branch ka target set karta hai. Start date hamesha
 /// aaj hoti hai (badal nahi sakti); admin end date aur ek total amount deta
@@ -122,7 +123,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
         }
       });
     } catch (e) {
-      if (mounted) _snack(e.toString().replaceFirst(RegExp(r'^Exception: '), ''), error: true);
+      if (mounted) _snack(friendlyError(e), error: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -175,7 +176,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
           .save(id, _sortedDays.last, targets);
       if (mounted) _snack('Target saved');
     } catch (e) {
-      if (mounted) _snack(e.toString().replaceFirst(RegExp(r'^Exception: '), ''), error: true);
+      if (mounted) _snack(friendlyError(e), error: true);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -226,7 +227,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
             style: TextStyle(color: _end == null ? const Color(0xFF8A8FA3) : null)),
       ),
     );
-    final totalField = TextField(
+    final totalField = TextField(cursorHeight: 16, 
       controller: _totalCtrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],
@@ -364,7 +365,7 @@ class _BranchTargetScreenState extends ConsumerState<BranchTargetScreen> {
         Expanded(
           child: SizedBox(
             width: 200,
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               controller: _dayCtrls[d],
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))],

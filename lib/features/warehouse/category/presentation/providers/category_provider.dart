@@ -6,6 +6,7 @@ import '../../data/datasource/category_remote_datasource.dart';
 import '../../data/model/category_model.dart';
 import '../../data/repository/category_repository.dart';
 import 'category_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final categoryRemoteDatasourceProvider =
     Provider<CategoryRemoteDatasource>((_) => CategoryRemoteDatasource());
@@ -33,7 +34,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -47,7 +48,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -62,7 +63,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -76,7 +77,7 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     } catch (e) {
       state = state.copyWith(
           status: CategoryStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

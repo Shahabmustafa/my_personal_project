@@ -6,6 +6,8 @@ import '../../../../superadmin/employee_salary/presentation/providers/employee_s
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 const _primary = Color(0xFF3E63DD);
 
 /// Dedicated, read-only employee list for a branch — sourced entirely from
@@ -72,7 +74,7 @@ class _BranchEmployeeScreenState extends ConsumerState<BranchEmployeeScreen> {
           // ── Search ──────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: _searchDecor('Search by name or role...'),
             ),
@@ -83,7 +85,7 @@ class _BranchEmployeeScreenState extends ConsumerState<BranchEmployeeScreen> {
             child: salariesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => _ErrorView(
-                message: e.toString(),
+                message: friendlyError(e),
                 onRetry: () => ref.invalidate(employeeSalariesForBranchProvider),
               ),
               data: (salaries) {
@@ -372,22 +374,13 @@ class _RoleBadge extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
-        const SizedBox(height: 12),
-        Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-        const SizedBox(height: 16),
-        ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {

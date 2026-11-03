@@ -5,6 +5,7 @@ import 'package:safishoe_app/core/service/realtime/table_changes_provider.dart';
 import '../../data/datasource/sale_discount_tier_datasource.dart';
 import '../../data/model/sale_discount_tier_model.dart';
 import '../../data/repository/sale_discount_tier_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final saleDiscountTierDatasourceProvider = Provider<SaleDiscountTierDatasource>(
   (_) => SaleDiscountTierDatasource(Supabase.instance.client),
@@ -60,7 +61,7 @@ class SaleDiscountTierNotifier extends StateNotifier<SaleDiscountTierState> {
       state = state.copyWith(tiers: tiers, isLoading: false);
       _ref.invalidate(saleDiscountTiersProvider);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 

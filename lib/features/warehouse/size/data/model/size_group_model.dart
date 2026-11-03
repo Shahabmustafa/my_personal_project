@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/error_text.dart';
 class SizeGroupModel {
   final String id;
   final String name;
@@ -14,7 +15,7 @@ class SizeGroupModel {
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       sizeIds: ((json['size_ids'] as List?) ?? const [])
-          .map((e) => e.toString())
+          .map((e) => friendlyError(e))
           .toList(),
     );
   }

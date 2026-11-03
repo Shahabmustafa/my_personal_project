@@ -8,6 +8,7 @@ import '../../../../../core/pagination/pagination.dart';
 import '../../data/datasource/stock_inventory_datasource.dart';
 import '../../data/model/stock_inventory_model.dart';
 import '../../data/repository/stock_inventory_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final stockInventoryDatasourceProvider = Provider<StockInventoryDatasource>(
@@ -65,7 +66,7 @@ class HeadOfficeStockNotifier
     } catch (e) {
       state = state.copyWith(
           isFirstLoad: false,
-          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          error: friendlyError(e));
     }
   }
 }
@@ -188,7 +189,7 @@ class HeadOfficeStockActions {
       }
       return (error: null, skipped: skipped);
     } catch (e) {
-      return (error: e.toString(), skipped: <String>[]);
+      return (error: friendlyError(e), skipped: <String>[]);
     }
   }
 
@@ -197,7 +198,7 @@ class HeadOfficeStockActions {
       await _repo.updateQuantity(stockId, qty);
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -206,7 +207,7 @@ class HeadOfficeStockActions {
       await _repo.updateDiscount(stockId, discount);
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -215,7 +216,7 @@ class HeadOfficeStockActions {
       await _repo.deleteStock(stockId);
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 }

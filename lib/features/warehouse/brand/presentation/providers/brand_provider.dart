@@ -6,6 +6,7 @@ import '../../data/datasource/brand_remote_datasource.dart';
 import '../../data/model/brand_model.dart';
 import '../../data/repository/brand_repository.dart';
 import 'brand_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final brandRemoteDatasourceProvider =
     Provider<BrandRemoteDatasource>((_) => BrandRemoteDatasource());
@@ -32,7 +33,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -46,7 +47,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -61,7 +62,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -75,7 +76,7 @@ class BrandNotifier extends StateNotifier<BrandState> {
     } catch (e) {
       state = state.copyWith(
           status: BrandStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

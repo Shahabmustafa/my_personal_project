@@ -16,6 +16,8 @@ import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/widget/stock_level_filter.dart';
 import 'package:safishoe_app/core/widget/stock_size_variants.dart';
 import 'package:safishoe_app/core/widget/b1g1_stock_badge.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 class BranchStockScreen extends ConsumerStatefulWidget {
   /// Poora stock (default), sirf Buy 1 Get 1 stock, ya sirf discount stock.
@@ -181,7 +183,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e, prefix: 'Print failed: '))));
       }
     } finally {
       if (mounted) setState(() => _printing = false);
@@ -210,13 +212,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
       status = Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Center(
-          child: Column(
-            children: [
-              Text('${state.error}', textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              ElevatedButton(onPressed: _refresh, child: const Text('Retry')),
-            ],
-          ),
+          child: ErrorView(error: state.error, onRetry: _refresh),
         ),
       );
     } else if (state.showEmpty) {
@@ -433,7 +429,7 @@ class _BranchStockScreenState extends ConsumerState<BranchStockScreen> {
               constraints: BoxConstraints(
                 maxWidth: isMobile ? double.infinity : 230,
               ),
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 controller: _searchCtrl,
                 onChanged: notifier.setSearch,
                 decoration: InputDecoration(

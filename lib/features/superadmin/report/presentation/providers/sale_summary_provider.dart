@@ -3,6 +3,7 @@ import '../../data/model/sale_summary_totals.dart';
 import '../../data/model/sale_transaction_row.dart';
 import '../../data/repository/sale_report_repository.dart';
 import 'sale_report_providers.dart' show saleReportRepositoryProvider;
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 class SaleSummaryState {
   final SaleSummaryTotals totals;
@@ -89,7 +90,7 @@ class SaleSummaryNotifier extends StateNotifier<SaleSummaryState> {
       final rows = await _fetchPage(page);
       state = state.copyWith(transactions: rows, page: page, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 
@@ -109,7 +110,7 @@ class SaleSummaryNotifier extends StateNotifier<SaleSummaryState> {
       final rows = await _fetchPage(target);
       state = state.copyWith(transactions: rows, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 

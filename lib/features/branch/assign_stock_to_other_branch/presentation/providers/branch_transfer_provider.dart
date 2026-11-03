@@ -10,6 +10,7 @@ import '../../../shared/current_branch_provider.dart';
 import '../../data/datasource/branch_transfer_cart_item.dart';
 import '../../data/datasource/branch_transfer_datasource.dart';
 import '../../data/repository/branch_transfer_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -221,9 +222,9 @@ class BranchTransferNotifier extends StateNotifier<BranchTransferState> {
       return null;
     } catch (e) {
       if (mounted) {
-        state = state.copyWith(isSaving: false, error: e.toString());
+        state = state.copyWith(isSaving: false, error: friendlyError(e));
       }
-      return e.toString();
+      return friendlyError(e);
     }
   }
 

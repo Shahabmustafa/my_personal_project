@@ -6,6 +6,7 @@ import '../../data/model/user_model.dart';
 import 'auth_state.dart';
 import 'workspace_selection_provider.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 
 final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((_) => AuthLocalDatasource());
@@ -66,7 +67,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+        errorMessage: friendlyError(e),
       );
     }
   }

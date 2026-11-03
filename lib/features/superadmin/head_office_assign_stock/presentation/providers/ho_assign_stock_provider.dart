@@ -10,6 +10,7 @@ import '../../../shared/current_head_office_provider.dart';
 import '../../data/datasources/ho_assign_stock_datasource.dart';
 import '../../data/models/ho_assign_stock_model.dart';
 import '../../data/repositories/ho_assign_stock_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final hoAssignStockDatasourceProvider = Provider<HoAssignStockDatasource>(
@@ -100,7 +101,7 @@ class HoAssignListNotifier extends StateNotifier<HoAssignListState> {
         final list = await _repo.getBranchTransfers();
         state = state.copyWith(assignments: list, isLoading: false);
       } catch (e) {
-        state = state.copyWith(isLoading: false, error: e.toString());
+        state = state.copyWith(isLoading: false, error: friendlyError(e));
       }
       return;
     }
@@ -114,7 +115,7 @@ class HoAssignListNotifier extends StateNotifier<HoAssignListState> {
       final list = await _repo.getAssignments(_headOfficeId);
       state = state.copyWith(assignments: list, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 
@@ -123,7 +124,7 @@ class HoAssignListNotifier extends StateNotifier<HoAssignListState> {
       await _repo.acceptAssignment(assignmentId);
       await loadAssignments();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: friendlyError(e));
     }
   }
 
@@ -132,7 +133,7 @@ class HoAssignListNotifier extends StateNotifier<HoAssignListState> {
       await _repo.rejectAssignment(assignmentId);
       await loadAssignments();
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      state = state.copyWith(error: friendlyError(e));
     }
   }
 }
@@ -357,9 +358,9 @@ class HoAssignStockNotifier extends StateNotifier<HoAssignStockState> {
       return null;
     } catch (e) {
       if (mounted) {
-        state = state.copyWith(isSaving: false, error: e.toString());
+        state = state.copyWith(isSaving: false, error: friendlyError(e));
       }
-      return e.toString();
+      return friendlyError(e);
     }
   }
 

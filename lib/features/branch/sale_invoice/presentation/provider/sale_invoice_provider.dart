@@ -18,6 +18,7 @@ import '../../data/datasource/sale_invoice_datasource.dart';
 import '../../data/model/sale_invoice_model.dart';
 import '../../data/repository/sale_invoice_repository.dart';
 import 'package:safishoe_app/core/utils/money.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ class SaleInvoiceListNotifier extends StateNotifier<SaleInvoiceListState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+        error: friendlyError(e),
       );
     }
   }
@@ -178,7 +179,7 @@ class SaleInvoiceDayListNotifier extends StateNotifier<SaleInvoiceListState> {
       if (!mounted || seq != _seq) return;
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+        error: friendlyError(e),
       );
     }
   }
@@ -749,7 +750,7 @@ class SaleInvoiceNotifier extends StateNotifier<SaleInvoiceState> {
       }
       return null;
     } catch (e) {
-      final errMsg = e.toString();
+      final errMsg = friendlyError(e);
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {
         try {
           final retryNumber = await _repo.generateInvoiceNumber();

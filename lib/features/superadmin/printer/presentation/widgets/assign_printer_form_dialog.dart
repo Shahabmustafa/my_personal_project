@@ -8,6 +8,7 @@ import '../providers/printer_providers.dart';
 
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 class AssignPrinterFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String branchId,
@@ -58,7 +59,7 @@ class _AssignPrinterFormDialogState
             child: Center(child: CircularProgressIndicator()),
           ),
           error: (e, _) => Text(
-            'Failed to load printers: $e',
+            friendlyError(e, prefix: 'Failed to load printers: '),
             style: const TextStyle(color: Colors.red),
           ),
           data: (printers) {

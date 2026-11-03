@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,9 @@ import '../widgets/purchase_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
+
 class PurchaseInvoiceScreen extends ConsumerWidget {
   const PurchaseInvoiceScreen({super.key});
 
@@ -37,7 +41,9 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
           Text(
             'Purchase Invoice',
             style: TextStyle(
-                fontSize: isMobile ? 18 : 22, fontWeight: FontWeight.bold),
+              fontSize: isMobile ? 18 : 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 14),
 
@@ -62,10 +68,11 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           if (isMobile)
             SizedBox(
-                height: (MediaQuery.of(context).size.height * 0.55)
-                    .clamp(320.0, 520.0)
-                    .toDouble(),
-                child: cartCard)
+              height: (MediaQuery.of(context).size.height * 0.55)
+                  .clamp(320.0, 520.0)
+                  .toDouble(),
+              child: cartCard,
+            )
           else
             Expanded(child: cartCard),
           const SizedBox(height: 12),
@@ -77,13 +84,12 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
 
   /// Desktop: fixed column, cart fills the leftover height.
   /// Mobile: whole page scrolls and the cart gets a fixed-height window.
-  Widget _wrapBody({
-    required bool isMobile,
-    required List<Widget> children,
-  }) {
+  Widget _wrapBody({required bool isMobile, required List<Widget> children}) {
     if (!isMobile) {
       return Column(
-          crossAxisAlignment: CrossAxisAlignment.start, children: children);
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      );
     }
     return ListView(children: children);
   }
@@ -104,44 +110,57 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
         ],
       );
     }
-    return Row(children: [
-      invoiceNo,
-      const SizedBox(width: 20),
-      Expanded(flex: 4, child: company),
-      const SizedBox(width: 16),
-      date,
-    ]);
+    return Row(
+      children: [
+        invoiceNo,
+        const SizedBox(width: 20),
+        Expanded(flex: 4, child: company),
+        const SizedBox(width: 16),
+        date,
+      ],
+    );
   }
 
   Widget _invoiceNo(
-      BuildContext context, WidgetRef ref, PurchaseInvoiceState state) {
+    BuildContext context,
+    WidgetRef ref,
+    PurchaseInvoiceState state,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Invoice Number :',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text(
+          'Invoice Number :',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
         const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             state.invoiceLoading
                 ? const SizedBox(
-                    width: 80, child: LinearProgressIndicator(minHeight: 2))
+                    width: 80,
+                    child: LinearProgressIndicator(minHeight: 2),
+                  )
                 : Text(
                     state.invoiceNumber.isEmpty ? '...' : state.invoiceNumber,
                     style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
-                        color: Theme.of(context).colorScheme.primary),
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
             const SizedBox(width: 8),
             InkWell(
               borderRadius: BorderRadius.circular(4),
               onTap: () =>
                   ref.read(purchaseInvoiceProvider.notifier).resetInvoice(),
-              child:
-                  const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+              child: const AppIcon(
+                AppIcons.refresh,
+                size: 17,
+                color: Colors.red,
+              ),
             ),
           ],
         ),
@@ -149,13 +168,20 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
     );
   }
 
-  Widget _company(WidgetRef ref, PurchaseInvoiceState state,
-      AsyncValue<List<StockLookupItem>> companiesAsync) {
+  Widget _company(
+    WidgetRef ref,
+    PurchaseInvoiceState state,
+    AsyncValue<List<StockLookupItem>> companiesAsync,
+  ) {
     return companiesAsync.when(
       loading: () => const SizedBox(
-          height: 48, child: Center(child: LinearProgressIndicator())),
-      error: (e, _) => Text('Error: $e',
-          style: const TextStyle(color: Colors.red, fontSize: 12)),
+        height: 48,
+        child: Center(child: LinearProgressIndicator()),
+      ),
+      error: (e, _) => ErrorView(
+        error: e,
+        onRetry: () => ref.invalidate(purchaseCompaniesProvider),
+      ),
       data: (companies) => DropdownSearch<StockLookupItem>(
         items: (filter, _) => companies
             .where((c) => c.label.toLowerCase().contains(filter.toLowerCase()))
@@ -173,15 +199,17 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 14,
+            ),
           ),
         ),
         popupProps: PopupProps.menu(
           fit: FlexFit.loose,
           showSearchBox: true,
           constraints: const BoxConstraints(maxHeight: 260),
-          searchFieldProps: const TextFieldProps(
+          searchFieldProps: const TextFieldProps(cursorHeight: 16, 
             decoration: InputDecoration(
               hintText: 'Search company...',
               prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
@@ -197,19 +225,20 @@ class PurchaseInvoiceScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text('Date',
-            style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+        Text(
+          'Date',
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+        ),
         const SizedBox(height: 4),
-        Text(_formatDate(DateTime.now()),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+        Text(
+          _formatDate(DateTime.now()),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
       ],
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Invoice footer ────────────────────────────────────────────────────────
@@ -227,95 +256,113 @@ class _InvoiceFooter extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: LayoutBuilder(builder: (context, c) {
-        final isMobile = c.maxWidth < 600;
-        final stats = [
-          _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
-          _stat('Discount', '- ${state.totalDiscount.toStringAsFixed(0)}',
-              color: Colors.orange.shade700),
-        ];
-        final net = Column(
-          crossAxisAlignment:
-              isMobile ? CrossAxisAlignment.end : CrossAxisAlignment.end,
-          children: [
-            const Text('Net Amount',
-                style: TextStyle(fontSize: 11, color: Colors.grey)),
-            Text(
-              state.netAmount.toStringAsFixed(0),
-              style: TextStyle(
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final isMobile = c.maxWidth < 600;
+          final stats = [
+            _stat('Sub Total', state.totalAmount.toStringAsFixed(0)),
+            _stat(
+              'Discount',
+              '- ${state.totalDiscount.toStringAsFixed(0)}',
+              color: Colors.orange.shade700,
+            ),
+          ];
+          final net = Column(
+            crossAxisAlignment: isMobile
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.end,
+            children: [
+              const Text(
+                'Net Amount',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
+              Text(
+                state.netAmount.toStringAsFixed(0),
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: theme.colorScheme.primary),
-            ),
-          ],
-        );
-        final clearBtn = OutlinedButton.icon(
-          icon: const AppIcon(AppIcons.clearAll, size: 18),
-          label: const Text('Clear'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.red,
-            side: const BorderSide(color: Colors.red),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: state.cartItems.isEmpty
-              ? null
-              : () => ref.read(purchaseInvoiceProvider.notifier).clearCart(),
-        );
-        final saveBtn = FilledButton.icon(
-          icon: state.isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white))
-              : const AppIcon(AppIcons.receiptLong, size: 18),
-          label: const Text('Purchase Invoice'),
-          style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: state.isSaving || state.cartItems.isEmpty
-              ? null
-              : () => _onPurchaseInvoiceTap(context, ref),
-        );
-
-        if (isMobile) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(children: [
-                stats[0],
-                const SizedBox(width: 20),
-                stats[1],
-                const Spacer(),
-                net,
-              ]),
-              const SizedBox(height: 12),
-              Row(children: [
-                clearBtn,
-                const SizedBox(width: 10),
-                Expanded(child: saveBtn),
-              ]),
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ],
           );
-        }
-        return Row(
-          children: [
-            stats[0],
-            const SizedBox(width: 28),
-            stats[1],
-            const Spacer(),
-            net,
-            const SizedBox(width: 20),
-            clearBtn,
-            const SizedBox(width: 10),
-            saveBtn,
-          ],
-        );
-      }),
+          final clearBtn = OutlinedButton.icon(
+            icon: const AppIcon(AppIcons.clearAll, size: 18),
+            label: const Text('Clear'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: state.cartItems.isEmpty
+                ? null
+                : () => ref.read(purchaseInvoiceProvider.notifier).clearCart(),
+          );
+          final saveBtn = FilledButton.icon(
+            icon: state.isSaving
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const AppIcon(AppIcons.receiptLong, size: 18),
+            label: const Text('Purchase Invoice'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: state.isSaving || state.cartItems.isEmpty
+                ? null
+                : () => _onPurchaseInvoiceTap(context, ref),
+          );
+
+          if (isMobile) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    stats[0],
+                    const SizedBox(width: 20),
+                    stats[1],
+                    const Spacer(),
+                    net,
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    clearBtn,
+                    const SizedBox(width: 10),
+                    Expanded(child: saveBtn),
+                  ],
+                ),
+              ],
+            );
+          }
+          return Row(
+            children: [
+              stats[0],
+              const SizedBox(width: 28),
+              stats[1],
+              const Spacer(),
+              net,
+              const SizedBox(width: 20),
+              clearBtn,
+              const SizedBox(width: 10),
+              saveBtn,
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -323,14 +370,16 @@ class _InvoiceFooter extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(fontSize: 11, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
         const SizedBox(height: 2),
-        Text(value,
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: color ?? Colors.black87)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: color ?? Colors.black87,
+          ),
+        ),
       ],
     );
   }
@@ -343,16 +392,18 @@ class _InvoiceFooter extends ConsumerWidget {
         SnackBar(
           content: const Row(
             children: [
-              AppIcon(AppIcons.warningAmberRounded,
-                  color: Colors.white, size: 18),
+              AppIcon(
+                AppIcons.warningAmberRounded,
+                color: Colors.white,
+                size: 18,
+              ),
               SizedBox(width: 10),
               Text('Please select a company first'),
             ],
           ),
           backgroundColor: Colors.orange.shade700,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           margin: const EdgeInsets.all(16),
         ),
       );
@@ -362,8 +413,7 @@ class _InvoiceFooter extends ConsumerWidget {
     _showPaymentDialog(context, ref);
   }
 
-  Future<void> _showPaymentDialog(
-      BuildContext context, WidgetRef ref) async {
+  Future<void> _showPaymentDialog(BuildContext context, WidgetRef ref) async {
     final state = ref.read(purchaseInvoiceProvider);
     await showDialog(
       context: context,
@@ -388,8 +438,9 @@ class _InvoiceFooter extends ConsumerWidget {
           if (err != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                  content: Text('Error: $err'),
-                  backgroundColor: Colors.red),
+                content: Text(friendlyError(err, prefix: 'Error: ')),
+                backgroundColor: Colors.red,
+              ),
             );
             return;
           }
@@ -397,18 +448,18 @@ class _InvoiceFooter extends ConsumerWidget {
           await showDialog(
             context: context,
             builder: (_) => AlertDialog(
-              icon: const AppIcon(AppIcons.checkCircleOutline,
-                  color: Colors.green, size: 48),
+              icon: const AppIcon(
+                AppIcons.checkCircleOutline,
+                color: Colors.green,
+                size: 48,
+              ),
               title: const Text('Invoice Saved!'),
-              content:
-                  const Text('Purchase invoice saved successfully.'),
+              content: const Text('Purchase invoice saved successfully.'),
               actions: [
                 FilledButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    ref
-                        .read(purchaseInvoiceProvider.notifier)
-                        .resetInvoice();
+                    ref.read(purchaseInvoiceProvider.notifier).resetInvoice();
                   },
                   child: const Text('New Invoice'),
                 ),
@@ -426,10 +477,9 @@ class _InvoiceFooter extends ConsumerWidget {
 class _PaymentDialog extends ConsumerStatefulWidget {
   final PurchaseInvoiceState invoiceState;
   final Future<void> Function(double paid, double credit, String mode)
-      onConfirm;
+  onConfirm;
 
-  const _PaymentDialog(
-      {required this.invoiceState, required this.onConfirm});
+  const _PaymentDialog({required this.invoiceState, required this.onConfirm});
 
   @override
   ConsumerState<_PaymentDialog> createState() => _PaymentDialogState();
@@ -444,9 +494,11 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   void initState() {
     super.initState();
     _customerNameCtrl = TextEditingController(
-        text: widget.invoiceState.selectedCompany?.label ?? '');
+      text: widget.invoiceState.selectedCompany?.label ?? '',
+    );
     _payCtrl = TextEditingController(
-        text: widget.invoiceState.netAmount.toStringAsFixed(0));
+      text: widget.invoiceState.netAmount.toStringAsFixed(0),
+    );
   }
 
   @override
@@ -473,8 +525,9 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
     final payEntered = double.tryParse(_payCtrl.text) ?? 0;
     final canPay = cashAmount >= totalAmount;
 
-    final effectivePay =
-        canPay ? payEntered.clamp(0, cashAmount).toDouble() : 0.0;
+    final effectivePay = canPay
+        ? payEntered.clamp(0, cashAmount).toDouble()
+        : 0.0;
     final remaining = totalAmount - effectivePay;
 
     final String paymentMode;
@@ -489,17 +542,17 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
     final primary = Theme.of(context).colorScheme.primary;
 
     return AlertDialog(
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       title: Row(
         children: [
           AppIcon(AppIcons.receiptLong, color: primary, size: 22),
           const SizedBox(width: 8),
-          const Text('Purchase Invoice',
-              style:
-                  TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          const Text(
+            'Purchase Invoice',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
         ],
       ),
       content: SizedBox(
@@ -512,10 +565,12 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
             _fieldRow(
               label: 'Customer Name',
               icon: AppIcons.personOutline,
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 controller: _customerNameCtrl,
                 style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w600),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
                 decoration: _inputDeco(context, 'Enter customer name'),
               ),
             ),
@@ -560,25 +615,25 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               label: 'Pay Amount',
               icon: AppIcons.paymentsOutlined,
               child: canPay
-                  ? TextField(
+                  ? TextField(cursorHeight: 16, 
                       controller: _payCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
+                        decimal: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(
-                            RegExp(r'^\d*\.?\d*$')),
+                          RegExp(r'^\d*\.?\d*$'),
+                        ),
                       ],
                       style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: primary),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: primary,
+                      ),
                       decoration: _inputDeco(context, '0'),
                       onChanged: (_) => setState(() {}),
                     )
-                  : _readOnlyField(
-                      value: 'PKR 0',
-                      color: Colors.red.shade700,
-                    ),
+                  : _readOnlyField(value: 'PKR 0', color: Colors.red.shade700),
             ),
             const SizedBox(height: 12),
 
@@ -607,15 +662,20 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                 ),
                 child: Row(
                   children: [
-                    AppIcon(AppIcons.warningAmberRounded,
-                        color: Colors.red.shade700, size: 18),
+                    AppIcon(
+                      AppIcons.warningAmberRounded,
+                      color: Colors.red.shade700,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Cash in hand (PKR ${cashAmount.toStringAsFixed(0)}) is insufficient. '
                         'Full amount will be added to company balance.',
                         style: TextStyle(
-                            fontSize: 12, color: Colors.red.shade700),
+                          fontSize: 12,
+                          color: Colors.red.shade700,
+                        ),
                       ),
                     ),
                   ],
@@ -626,8 +686,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
 
             // Summary chips
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(10),
@@ -642,20 +701,14 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
                     color: Colors.green.shade700,
                     icon: AppIcons.paymentsOutlined,
                   ),
-                  Container(
-                      width: 1,
-                      height: 36,
-                      color: Colors.grey.shade300),
+                  Container(width: 1, height: 36, color: Colors.grey.shade300),
                   _chip(
                     label: 'On Credit',
                     value: 'PKR ${remaining.toStringAsFixed(0)}',
                     color: Colors.orange.shade700,
                     icon: AppIcons.creditCardOutlined,
                   ),
-                  Container(
-                      width: 1,
-                      height: 36,
-                      color: Colors.grey.shade300),
+                  Container(width: 1, height: 36, color: Colors.grey.shade300),
                   _chip(
                     label: 'Mode',
                     value: paymentMode.toUpperCase(),
@@ -670,8 +723,7 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       ),
       actions: [
         TextButton(
-          onPressed:
-              _isProcessing ? null : () => Navigator.pop(context),
+          onPressed: _isProcessing ? null : () => Navigator.pop(context),
           child: const Text('Cancel'),
         ),
         FilledButton(
@@ -680,20 +732,20 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
               : () async {
                   setState(() => _isProcessing = true);
                   Navigator.pop(context);
-                  await widget.onConfirm(
-                      effectivePay, remaining, paymentMode);
+                  await widget.onConfirm(effectivePay, remaining, paymentMode);
                 },
           style: FilledButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8)),
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: _isProcessing
               ? const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2))
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : const Text('Confirm & Save'),
         ),
       ],
@@ -707,38 +759,42 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
   }) {
     final labelRow = Row(
       children: [
-              AppIcon(icon, size: 15, color: Colors.grey),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(label,
-                    style: const TextStyle(
-                        fontSize: 13, color: Colors.grey)),
-              ),
+        AppIcon(icon, size: 15, color: Colors.grey),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+        ),
       ],
     );
     // Dialog narrow ho (mobile) to label field ke upar, warna side by side.
-    return LayoutBuilder(builder: (context, c) {
-      if (c.maxWidth < 320) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [labelRow, const SizedBox(height: 6), child],
+    return LayoutBuilder(
+      builder: (context, c) {
+        if (c.maxWidth < 320) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [labelRow, const SizedBox(height: 6), child],
+          );
+        }
+        return Row(
+          children: [
+            SizedBox(width: 140, child: labelRow),
+            Expanded(child: child),
+          ],
         );
-      }
-      return Row(
-        children: [
-          SizedBox(width: 140, child: labelRow),
-          Expanded(child: child),
-        ],
-      );
-    });
+      },
+    );
   }
 
-
-  Widget _readOnlyField(
-      {required String value, Color? color, bool bold = false}) {
+  Widget _readOnlyField({
+    required String value,
+    Color? color,
+    bool bold = false,
+  }) {
     return Container(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(8),
@@ -759,10 +815,11 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       InputDecoration(
         hintText: hint,
         isDense: true,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        border:
-            OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 11,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: Colors.grey.shade300),
@@ -770,7 +827,9 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(
-              color: Theme.of(context).colorScheme.primary, width: 1.5),
+            color: Theme.of(context).colorScheme.primary,
+            width: 1.5,
+          ),
         ),
       );
 
@@ -785,15 +844,19 @@ class _PaymentDialogState extends ConsumerState<_PaymentDialog> {
       children: [
         AppIcon(icon, size: 14, color: color),
         const SizedBox(height: 3),
-        Text(label,
-            style:
-                TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+        ),
         const SizedBox(height: 1),
-        Text(value,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
       ],
     );
   }

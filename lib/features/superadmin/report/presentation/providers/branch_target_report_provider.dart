@@ -5,6 +5,7 @@ import '../../../branch_target/data/branch_target_datasource.dart';
 import '../../data/model/branch_target_row.dart';
 import '../../data/repository/sale_report_repository.dart';
 import 'sale_report_providers.dart' show saleReportRepositoryProvider;
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 enum TargetPeriod { today, monthly, yearly }
 
@@ -133,7 +134,7 @@ class BranchTargetReportNotifier extends StateNotifier<BranchTargetReportState> 
       state = state.copyWith(rows: rows, isLoading: false, asOf: DateTime.now());
     } catch (e) {
       if (stale()) return;
-      state = state.copyWith(isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 }

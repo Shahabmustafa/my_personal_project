@@ -4,6 +4,7 @@ import '../../data/model/warehouse_model.dart';
 import '../../data/repository/warehouse_repository.dart';
 import 'warehouse_state.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final warehouseRemoteDatasourceProvider =
     Provider<WarehouseRemoteDatasource>((_) => WarehouseRemoteDatasource());
@@ -22,7 +23,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final warehouses = await _repo.getAllWarehouses();
       state = state.copyWith(status: WarehouseStatus.success, warehouses: warehouses);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: friendlyError(e));
     }
   }
 
@@ -32,7 +33,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final warehouses = await _repo.getWarehousesForUser(warehouseIds);
       state = state.copyWith(status: WarehouseStatus.success, warehouses: warehouses);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: friendlyError(e));
     }
   }
 
@@ -42,7 +43,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final created = await _repo.createWarehouse(warehouse);
       state = state.copyWith(status: WarehouseStatus.success, warehouses: [...state.warehouses, created]);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: friendlyError(e));
     }
   }
 
@@ -53,7 +54,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       final list = state.warehouses.map((w) => w.id == updated.id ? updated : w).toList();
       state = state.copyWith(status: WarehouseStatus.success, warehouses: list);
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: friendlyError(e));
     }
   }
 
@@ -63,7 +64,7 @@ class WarehouseNotifier extends StateNotifier<WarehouseState> {
       await _repo.deleteWarehouse(id);
       state = state.copyWith(status: WarehouseStatus.success, warehouses: state.warehouses.where((w) => w.id != id).toList());
     } catch (e) {
-      state = state.copyWith(status: WarehouseStatus.error, errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+      state = state.copyWith(status: WarehouseStatus.error, errorMessage: friendlyError(e));
     }
   }
 }

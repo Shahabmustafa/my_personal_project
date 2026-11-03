@@ -7,6 +7,7 @@ import '../../../profile/presentation/providers/salesman_profile_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Salesman dashboard ka home tab — apni salary/commission ka quick glance
 /// aur aaj/is mahine ki apni sale ka khulasa.
@@ -47,8 +48,7 @@ class SalesmanOverviewScreen extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(vertical: 40),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (e, _) => Text('Error: $e',
-                    style: const TextStyle(color: Colors.red)),
+                error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(mySalesProvider)),
                 data: (sales) {
                   final now = DateTime.now();
                   final today = sales.where((s) =>

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/branch/sale_invoice/data/model/sale_invoice_model.dart'
     show PrinterLookupItem;
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 /// Printer dropdown for slips/invoices. Pre-selects the first printer once
 /// the list loads; an empty list is fine — printing then falls back to the
@@ -36,7 +37,7 @@ class _PrinterPickerFieldState extends ConsumerState<PrinterPickerField> {
 
     return async.when(
       loading: () => const LinearProgressIndicator(minHeight: 2),
-      error: (e, _) => Text('Printers unavailable: $e',
+      error: (e, _) => Text(friendlyError(e, prefix: 'Printers unavailable: '),
           style: const TextStyle(fontSize: 11, color: Colors.red)),
       data: (list) {
         if (list.isEmpty) {

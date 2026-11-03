@@ -51,7 +51,7 @@ class _TypeFormDialogState extends State<TypeFormDialog> {
         width: 360,
         child: Form(
           key: _formKey,
-          child: TextFormField(
+          child: TextFormField(cursorHeight: 16, 
             controller: _ctrl,
             autofocus: true,
             decoration: InputDecoration(

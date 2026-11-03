@@ -4,6 +4,7 @@ import 'paginated_list_state.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 /// Infinite-scrolling body for a server-paginated list.
 ///
 /// Handles: first-load spinner, first-load error + retry, empty state,
@@ -194,28 +195,13 @@ class _Footer<T> extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const AppIcon(AppIcons.errorOutline, size: 44, color: Colors.redAccent),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFF8A8FA3))),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {

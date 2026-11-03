@@ -8,12 +8,14 @@ import '../../../superadmin/head_office/presentation/providers/head_office_provi
 import '../providers/user_provider.dart';
 import '../providers/user_state.dart';
 import '../widgets/user_card.dart';
+import '../widgets/change_password_dialog.dart';
 import '../widgets/assign_dialog.dart';
 import '../widgets/add_user_dialog.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
 
@@ -92,7 +94,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
           // Search
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: _searchDecor('Search by name, email or role...'),
             ),
@@ -117,6 +119,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               onRoleChange: (u, r) => ref.read(userProvider.notifier).updateUserRole(userId: u.id, role: r),
               onToggleActive: (u) => ref.read(userProvider.notifier).toggleUserActive(userId: u.id, isActive: !u.isActive),
               onAssign: (u) => showDialog(context: context, builder: (_) => AssignDialog(user: u)),
+              onChangePassword: (u) => showDialog(context: context, builder: (_) => ChangePasswordDialog(user: u)),
             )
                 : _DesktopTable(
               users: filtered,
@@ -125,6 +128,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               onRoleChange: (u, r) => ref.read(userProvider.notifier).updateUserRole(userId: u.id, role: r),
               onToggleActive: (u) => ref.read(userProvider.notifier).toggleUserActive(userId: u.id, isActive: !u.isActive),
               onAssign: (u) => showDialog(context: context, builder: (_) => AssignDialog(user: u)),
+              onChangePassword: (u) => showDialog(context: context, builder: (_) => ChangePasswordDialog(user: u)),
             ),
           ),
         ],
@@ -142,6 +146,7 @@ class _DesktopTable extends StatelessWidget {
   final Function(UserModel, String) onRoleChange;
   final Function(UserModel) onToggleActive;
   final Function(UserModel) onAssign;
+  final Function(UserModel) onChangePassword;
 
   const _DesktopTable({
     required this.users,
@@ -150,6 +155,7 @@ class _DesktopTable extends StatelessWidget {
     required this.onRoleChange,
     required this.onToggleActive,
     required this.onAssign,
+    required this.onChangePassword,
   });
 
   @override
@@ -327,6 +333,13 @@ class _DesktopTable extends StatelessWidget {
                                 tooltip: 'Assign',
                                 onTap: () => onAssign(u),
                               ),
+                              const SizedBox(width: 8),
+                              _IconBtn(
+                                icon: AppIcons.lockOutline,
+                                color: Colors.orange,
+                                tooltip: 'Change Password',
+                                onTap: () => onChangePassword(u),
+                              ),
                             ])),
                           ),
                       ]),
@@ -351,10 +364,11 @@ class _MobileList extends StatelessWidget {
   final Function(UserModel, String) onRoleChange;
   final Function(UserModel) onToggleActive;
   final Function(UserModel) onAssign;
+  final Function(UserModel) onChangePassword;
 
   const _MobileList({
     required this.users, required this.canEdit, required this.roles,
-    required this.onRoleChange, required this.onToggleActive, required this.onAssign,
+    required this.onRoleChange, required this.onToggleActive, required this.onAssign, required this.onChangePassword,
   });
 
   @override
@@ -369,6 +383,7 @@ class _MobileList extends StatelessWidget {
         onRoleChange: (r) => onRoleChange(users[i], r),
         onToggleActive: () => onToggleActive(users[i]),
         onAssign: () => onAssign(users[i]),
+        onChangePassword: () => onChangePassword(users[i]),
       ),
     );
   }
@@ -608,20 +623,13 @@ class _RoleBadge extends StatelessWidget {
 }
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
-      const SizedBox(height: 12),
-      Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-      const SizedBox(height: 16),
-      ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-    ]));
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {

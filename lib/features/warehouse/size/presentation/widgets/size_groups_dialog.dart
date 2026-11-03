@@ -10,6 +10,7 @@ import '../providers/size_group_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 const _primary = Color(0xFF3E63DD);
 const _muted = Color(0xFF8A8FA3);
@@ -57,7 +58,7 @@ class SizeGroupsDialog extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceFirst(RegExp(r'^Exception: '), '')),
+            content: Text(friendlyError(e)),
             backgroundColor: Colors.redAccent));
       }
     }
@@ -114,7 +115,7 @@ class SizeGroupsDialog extends ConsumerWidget {
                     child: Center(child: CircularProgressIndicator())),
                 error: (e, _) => Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Text(e.toString(),
+                    child: Text(friendlyError(e),
                         style: const TextStyle(color: Colors.redAccent))),
                 data: (groups) => groups.isEmpty
                     ? const Padding(
@@ -237,7 +238,7 @@ class _SizeGroupFormDialogState extends ConsumerState<_SizeGroupFormDialog> {
     } catch (e) {
       setState(() {
         _saving = false;
-        _nameError = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+        _nameError = friendlyError(e);
       });
     }
   }
@@ -261,7 +262,7 @@ class _SizeGroupFormDialogState extends ConsumerState<_SizeGroupFormDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
+              TextField(cursorHeight: 16, 
                 controller: _nameCtrl,
                 autofocus: !isEdit,
                 decoration: InputDecoration(

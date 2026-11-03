@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,11 +6,13 @@ import '../../../../../core/widget/app_dropdown.dart';
 import '../../data/model/expense_entry_model.dart';
 import '../../data/model/expense_head_model.dart';
 import '../provider/expense_provider.dart';
-import '../../../../superadmin/report/presentation/widgets/report_date_filter_dialog.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import '../../../../superadmin/report/presentation/widgets/report_summary_card.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 const _primary = Color(0xFFE56A00);
 
 /// Superadmin ke Add Expense dialog mein branch choose karne ke liye.
@@ -55,8 +58,6 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
   /// Null = All Heads.
   String? _headId;
 
-  bool get _hasDateFilter => _startDate != null || _endDate != null;
-
   bool _inRange(ExpenseEntryModel e) {
     final d = DateTime(e.createdAt.year, e.createdAt.month, e.createdAt.day);
     if (_startDate != null &&
@@ -71,24 +72,30 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
     return true;
   }
 
-  String _rangeLabel() {
-    final s = _startDate == null ? '…' : _fmtDate(_startDate!);
-    final e = _endDate == null ? '…' : _fmtDate(_endDate!);
-    return '$s – $e';
-  }
+  int get _activeFilterCount =>
+      (_headId != null ? 1 : 0) +
+      (_startDate != null ? 1 : 0) +
+      (_endDate != null ? 1 : 0);
 
-  Future<void> _pickDates() async {
-    final result = await showDialog<(DateTime?, DateTime?)?>(
-      context: context,
-      builder: (_) => ReportDateFilterDialog(
-          initialStart: _startDate, initialEnd: _endDate),
+  Future<void> _openFilterDialog(List<ExpenseHeadModel> heads) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Expense Head',
+      allLabel: 'All Heads',
+      branches: {for (final h in heads) h.id: h.name},
+      current: (
+        branch: _headId,
+        branch2: null,
+        from: _startDate,
+        to: _endDate,
+      ),
     );
-    if (result != null) {
-      setState(() {
-        _startDate = result.$1;
-        _endDate = result.$2;
-      });
-    }
+    if (r == null || !mounted) return;
+    setState(() {
+      _headId = r.branch;
+      _startDate = r.from;
+      _endDate = r.to;
+    });
   }
 
   @override
@@ -127,24 +134,17 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
                     ],
                   ),
                 ),
-                if (_hasDateFilter)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: TextButton.icon(
-                      onPressed: () => setState(() {
-                        _startDate = null;
-                        _endDate = null;
-                      }),
-                      icon: const AppIcon(AppIcons.clear, size: 16),
-                      label: Text(_rangeLabel()),
-                    ),
-                  ),
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
-                  child: OutlinedButton.icon(
-                    onPressed: _pickDates,
-                    icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
-                    label: const Text('Filter'),
+                  child: Badge(
+                    isLabelVisible: _activeFilterCount > 0,
+                    label: Text('$_activeFilterCount'),
+                    child: OutlinedButton.icon(
+                      onPressed: () => _openFilterDialog(fullState.heads),
+                      icon:
+                          const AppIcon(AppIcons.filterAltOutlined, size: 18),
+                      label: const Text('Filter'),
+                    ),
                   ),
                 ),
                 Tooltip(
@@ -183,40 +183,14 @@ class _ExpenseScreenState extends ConsumerState<ExpenseScreen> {
             ),
           ),
 
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                if (widget.scopePicker != null) widget.scopePicker!,
-                SizedBox(
-                  width: 320,
-                  child: AppSearchDropdown<ExpenseHeadModel>(
-                    label: 'Expense Head',
-                    items: [
-                      const ExpenseHeadModel(id: '', name: 'All Heads'),
-                      ...fullState.heads,
-                    ],
-                    selectedItem: fullState.heads
-                            .where((h) => h.id == _headId)
-                            .firstOrNull ??
-                        const ExpenseHeadModel(id: '', name: 'All Heads'),
-                    itemLabel: (h) => h.name,
-                    onChanged: (h) => setState(
-                        () => _headId = (h == null || h.id.isEmpty) ? null : h.id),
-                  ),
-                ),
-                if (_headId != null)
-                  TextButton.icon(
-                    onPressed: () => setState(() => _headId = null),
-                    icon: const AppIcon(AppIcons.clear, size: 16),
-                    label: const Text('Clear'),
-                  ),
-              ],
+          if (widget.scopePicker != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: widget.scopePicker!,
+              ),
             ),
-          ),
 
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
@@ -390,7 +364,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
                 ],
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              TextFormField(cursorHeight: 16, 
                 controller: _amountCtrl,
                 decoration: _decor('Amount').copyWith(prefixText: 'Rs. '),
                 keyboardType:
@@ -405,7 +379,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              TextFormField(cursorHeight: 16, 
                 controller: _noteCtrl,
                 decoration: _decor('Note (optional)'),
                 maxLines: 2,
@@ -475,7 +449,7 @@ class _AddExpenseDialogState extends ConsumerState<_AddExpenseDialog> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(error == null
           ? (_isEdit ? 'Expense updated.' : 'Expense added.')
-          : 'Error: $error'),
+          : friendlyError(error, prefix: 'Error: ')),
       backgroundColor: error == null ? Colors.green.shade700 : Colors.red.shade700,
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -542,7 +516,7 @@ class _AddHeadDialogState extends ConsumerState<_AddHeadDialog> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
       content: SizedBox(
         width: 320,
-        child: TextField(
+        child: TextField(cursorHeight: 16, 
           controller: _nameCtrl,
           autofocus: true,
           decoration: InputDecoration(
@@ -941,14 +915,13 @@ Future<void> _confirmDelete(BuildContext context, WidgetRef ref,
       await ref.read(expenseProvider(scope).notifier).deleteExpense(entry);
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    content: Text(error == null ? 'Expense deleted.' : 'Error: $error'),
+    content: Text(error == null ? 'Expense deleted.' : friendlyError(error, prefix: 'Error: ')),
     backgroundColor: error == null ? Colors.green.shade700 : Colors.red.shade700,
     behavior: SnackBarBehavior.floating,
   ));
 }
 
-String _fmtDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+String _fmtDate(DateTime d) => dfmt.fmtDateTime(d);
 
 String _fmtAmt(double v) {
   if (v == v.truncate()) return v.toStringAsFixed(0);
@@ -958,24 +931,13 @@ String _fmtAmt(double v) {
 // ── Error / Empty views ─────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const AppIcon(AppIcons.errorOutline, size: 48, color: Colors.redAccent),
-            const SizedBox(height: 12),
-            Text(message, style: const TextStyle(color: Color(0xFF8A8FA3))),
-            const SizedBox(height: 16),
-            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
-          ]),
-    );
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _EmptyView extends StatelessWidget {

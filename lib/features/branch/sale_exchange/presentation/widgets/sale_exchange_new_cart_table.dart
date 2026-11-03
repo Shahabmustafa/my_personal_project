@@ -203,35 +203,35 @@ class _Footer extends StatelessWidget {
     final net = items.fold(0.0, (s, i) => s + i.lineTotal);
     final primary = Theme.of(context).colorScheme.primary;
 
+    // Header / rows ki tarah har cell par 10px horizontal padding, taake
+    // numbers apne columns ke neeche aayein.
+    Widget cell(String text, int flex, TextStyle style) => Expanded(
+          flex: flex,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(text, style: style),
+          ),
+        );
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: const Color(0xFFF5F7FB),
+        border: const Border(top: BorderSide(color: Color(0xFFE7E9F0))),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(10)),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          const Expanded(
-            flex: 12,
-            child: Text('TOTALS', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(totalAmt.toStringAsFixed(0),
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-          ),
+          // # 1 + Barcode 3 + Article 3 + Size 1 + Color 2 + Category 2 = 12
+          cell('TOTALS  ·  ${items.length} item${items.length == 1 ? '' : 's'}',
+              12, const TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
+          cell(totalAmt.toStringAsFixed(0), 2,
+              const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
           const Expanded(flex: 2, child: SizedBox()),
-          Expanded(
-            flex: 3,
-            child: Text('$totalQty',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: primary)),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(net.toStringAsFixed(0),
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: primary)),
-          ),
+          cell('$totalQty pairs', 3,
+              TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: primary)),
+          cell(net.toStringAsFixed(0), 2,
+              TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: primary)),
           const Expanded(flex: 1, child: SizedBox()),
         ],
       ),

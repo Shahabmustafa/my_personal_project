@@ -4,6 +4,7 @@ import '../../data/datasource/warehouse_cash_counter_remote_datasource.dart';
 import '../../data/model/warehouse_cash_counter_model.dart';
 import '../../data/repository/warehouse_cash_counter_repository.dart';
 import 'warehouse_cash_counter_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final cashCounterRemoteDatasourceProvider =
     Provider<WarehouseCashCounterRemoteDatasource>(
@@ -31,7 +32,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -48,7 +49,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -66,7 +67,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -81,7 +82,7 @@ class WarehouseCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: CashCounterStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

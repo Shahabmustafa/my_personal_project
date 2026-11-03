@@ -127,7 +127,7 @@ class _TypesScreenState extends ConsumerState<TypesScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => setState(() => _search = v),
               decoration: InputDecoration(
                 hintText: 'Search types...',

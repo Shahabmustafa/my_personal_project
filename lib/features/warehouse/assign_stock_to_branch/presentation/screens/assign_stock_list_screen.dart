@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/min_width_scroll.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,8 @@ import '../../../../superadmin/report/presentation/widgets/report_pagination_bar
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 
 class AssignStockListScreen extends ConsumerStatefulWidget {
   const AssignStockListScreen({super.key});
@@ -18,6 +21,9 @@ class AssignStockListScreen extends ConsumerStatefulWidget {
 
 class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
   String _filterStatus = 'all'; // all | pending | accepted | rejected
+  String? _filterBranch; // receiving branch id
+  DateTime? _fromDate; // assigned-on range (inclusive)
+  DateTime? _toDate;
   static const _pageSize = 50;
   int _page = 1;
 
@@ -30,12 +36,49 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
     );
   }
 
+  int get _activeFilterCount =>
+      (_filterBranch != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  Future<void> _openFilterDialog(Map<String, String> branches) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Assigned To Branch',
+      allLabel: 'All branches',
+      branches: branches,
+      current: (
+        branch: _filterBranch,
+        branch2: null,
+        from: _fromDate,
+        to: _toDate,
+      ),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterBranch = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+      _page = 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final listState = ref.watch(assignListProvider);
 
+    final branchOptions = <String, String>{
+      for (final a in listState.assignments)
+        a.branchId: a.branchName ?? a.branchId,
+    };
+
     // Filter
     final filtered = listState.assignments.where((a) {
+      if (_filterBranch != null && a.branchId != _filterBranch) return false;
+      final d = a.assignedAt.toLocal();
+      final day = DateTime(d.year, d.month, d.day);
+      if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+      if (_toDate != null && day.isAfter(_toDate!)) return false;
       if (_filterStatus == 'all') return true;
       return a.status == _filterStatus;
     }).toList();
@@ -65,6 +108,16 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const Spacer(),
+              Badge(
+                isLabelVisible: _activeFilterCount > 0,
+                label: Text('$_activeFilterCount'),
+                child: OutlinedButton.icon(
+                  onPressed: () => _openFilterDialog(branchOptions),
+                  icon: const Icon(Icons.filter_list, size: 18),
+                  label: const Text('Filter'),
+                ),
+              ),
+              const SizedBox(width: 4),
               // Refresh button
               IconButton(
                 onPressed: () =>
@@ -160,33 +213,11 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : listState.error != null
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const AppIcon(
-                                    AppIcons.errorOutline,
-                                    color: Colors.red,
-                                    size: 40,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Error: ${listState.error}',
-                                    style: const TextStyle(color: Colors.red),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  FilledButton.icon(
-                                    onPressed: () => ref
-                                        .read(assignListProvider.notifier)
-                                        .loadAssignments(),
-                                    icon: const AppIcon(
-                                      AppIcons.refresh,
-                                      size: 16,
-                                    ),
-                                    label: const Text('Retry'),
-                                  ),
-                                ],
-                              ),
+                          ? ErrorView(
+                              error: listState.error,
+                              onRetry: () => ref
+                                  .read(assignListProvider.notifier)
+                                  .loadAssignments(),
                             )
                           : filtered.isEmpty
                           ? Center(
@@ -546,10 +577,7 @@ class _ListRow extends ConsumerWidget {
     }
   }
 
-  String _fmtDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Status chip ───────────────────────────────────────────────────────────

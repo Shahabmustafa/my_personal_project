@@ -10,6 +10,7 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/utils/money.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
 /// (color/size/category/type ke sath) hai, is liye alag Size/Color/
@@ -127,7 +128,7 @@ class _PurchaseReturnProductSelectorState
       loading: () =>
           const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) =>
-          Text('Error: $e', style: const TextStyle(color: Colors.red)),
+          ErrorView(error: e, onRetry: () => ref.invalidate(returnWarehouseStockProvider)),
       data: (allStock) {
         // Taza list se selected article — purchase/return/assign ke baad qty purani na rahe.
         final sel = _selectedStock;
@@ -143,7 +144,7 @@ class _PurchaseReturnProductSelectorState
 
         final isMobile = Responsive(context).isMobile;
 
-        final field0 = TextField(
+        final field0 = TextField(cursorHeight: 16, 
           controller: _barcodeCtrl,
           focusNode: _barcodeFocus,
           autofocus: true,
@@ -191,7 +192,7 @@ class _PurchaseReturnProductSelectorState
             fit: FlexFit.loose,
             showSearchBox: true,
             constraints: const BoxConstraints(maxHeight: 320),
-            searchFieldProps: const TextFieldProps(
+            searchFieldProps: const TextFieldProps(cursorHeight: 16, 
               decoration: InputDecoration(
                 hintText: 'Search article, color, size, category...',
                 prefixIcon: TextFieldIcon(AppIcons.search, size: 18),

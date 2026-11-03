@@ -5,6 +5,7 @@ import '../../data/datasources/stock_datasource.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/stock_repository.dart';
 import '../../../shared/current_warehouse_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final stockDatasourceProvider = Provider<StockDatasource>(
@@ -91,7 +92,7 @@ class StockNotifier extends StateNotifier<StockState> {
       final items = await _repository.getStockByWarehouse(_warehouseId);
       state = state.copyWith(items: items, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 
@@ -131,7 +132,7 @@ class StockNotifier extends StateNotifier<StockState> {
 
       return (error: null, skipped: skipped);
     } catch (e) {
-      return (error: e.toString(), skipped: <String>[]);
+      return (error: friendlyError(e), skipped: <String>[]);
     }
   }
 
@@ -143,7 +144,7 @@ class StockNotifier extends StateNotifier<StockState> {
       );
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -157,7 +158,7 @@ class StockNotifier extends StateNotifier<StockState> {
       );
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 
@@ -168,7 +169,7 @@ class StockNotifier extends StateNotifier<StockState> {
           items: state.items.where((s) => s.id != stockId).toList());
       return null;
     } catch (e) {
-      return e.toString();
+      return friendlyError(e);
     }
   }
 

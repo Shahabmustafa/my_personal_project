@@ -167,7 +167,7 @@ class _AdminStockScreenState extends ConsumerState<AdminStockScreen> {
           isMobile ? 16 : 24,
           16,
         ),
-        child: TextField(
+        child: TextField(cursorHeight: 16, 
           onChanged: notifier.setSearch,
           decoration: InputDecoration(
             hintText: 'Search by barcode, article, brand, warehouse...',

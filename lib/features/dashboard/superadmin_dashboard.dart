@@ -18,6 +18,9 @@ import '../superadmin/head_office/presentation/screens/head_office_screen.dart';
 import '../superadmin/head_office_cash_counter/presentation/screens/head_office_cash_counter_screen.dart';
 import '../superadmin/expense/presentation/screens/superadmin_expense_screen.dart';
 import '../superadmin/incoming_branch_returns/presentation/screens/incoming_branch_returns_screen.dart';
+import '../superadmin/incoming_branch_returns/presentation/providers/incoming_branch_return_provider.dart'
+    show incomingBranchReturnNotifyProvider, incomingBranchReturnsProvider;
+import 'package:safishoe_app/core/widget/stock_notification.dart';
 import '../superadmin/branch_payments/presentation/screens/branch_payments_screen.dart';
 import '../superadmin/printer/presentation/screens/assign_printer_screen.dart';
 import '../superadmin/printer/presentation/screens/printer_heads_screen.dart';
@@ -403,10 +406,38 @@ class _SuperAdminDashboardState extends ConsumerState<SuperAdminDashboard> {
             ?.where((c) => c.isPending)
             .length ??
         0;
+    // Branch ne stock return kiya — notification + sidebar badge.
+    final returnsIndex = _navItems.indexWhere(
+      (i) => i.label == 'Incoming Branch Returns',
+    );
+    ref.listen(incomingBranchReturnNotifyProvider, (_, next) {
+      final number = next.value;
+      if (number == null) return;
+      showStockNotification(
+        context,
+        title: 'Stock returned by a branch',
+        subtitle: number.isEmpty
+            ? 'Accept or reject'
+            : 'Return $number — accept or reject',
+        icon: Icons.assignment_return_outlined,
+        onView: returnsIndex < 0
+            ? null
+            : () => setState(() => _index = returnsIndex),
+      );
+    });
+    final pendingReturns =
+        ref
+            .watch(incomingBranchReturnsProvider)
+            .value
+            ?.where((r) => r.status == 'pending')
+            .length ??
+        0;
     final withBadge = [
       for (final item in _navItems)
         item.label == 'Branch Sale Claims'
             ? item.withBadge(pendingClaims)
+            : item.label == 'Incoming Branch Returns'
+            ? item.withBadge(pendingReturns)
             : item,
     ];
     // "Reports" group Keyboard Shortcuts ke neeche, sidebar ke aakhir mein.

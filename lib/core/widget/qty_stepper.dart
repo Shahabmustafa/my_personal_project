@@ -119,7 +119,7 @@ class _QtyStepperFieldState extends State<QtyStepperField> {
             onTap: canDec ? () => _step(-1) : null,
           ),
           Expanded(
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               controller: widget.controller,
               focusNode: widget.focusNode,
               enabled: enabled,

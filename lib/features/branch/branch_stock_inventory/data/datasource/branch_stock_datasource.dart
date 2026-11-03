@@ -23,9 +23,14 @@ class BranchStockDatasource {
   BranchStockDatasource(this._client);
 
   Future<List<BranchStockModel>> fetchBranchStock(String branchId) async {
-    final res = await _client
-        .from('branch_stock_inventory')
-        .select('''
+    // Supabase ek request mein max 1000 rows deta hai — page-by-page saari
+    // rows lao, warna dropdowns mein purane articles gayab ho jate hain.
+    const size = 1000;
+    final out = <BranchStockModel>[];
+    for (var from = 0; ; from += size) {
+      final page = await _client
+          .from('branch_stock_inventory')
+          .select('''
           *,
           products   ( article_name ),
           sizes      ( number ),
@@ -34,12 +39,14 @@ class BranchStockDatasource {
           categories ( name ),
           types      ( name )
         ''')
-        .eq('branch_id', branchId)
-        .order('created_at', ascending: false);
-
-    return (res as List)
-        .map((e) => BranchStockModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+          .eq('branch_id', branchId)
+          .order('created_at', ascending: false)
+          .order('id', ascending: true)
+          .range(from, from + size - 1);
+      out.addAll((page as List)
+          .map((e) => BranchStockModel.fromJson(e as Map<String, dynamic>)));
+      if (page.length < size) return out;
+    }
   }
 
   static BranchStockModel _fromViewRow(Map<String, dynamic> r) =>

@@ -7,6 +7,7 @@ import '../providers/bank_providers.dart';
 
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 class BankEntryFormDialog extends ConsumerStatefulWidget {
   final void Function({
     required String bankId,
@@ -60,7 +61,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
             height: 100,
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (e, _) => Text('Failed to load banks: $e',
+          error: (e, _) => Text(friendlyError(e, prefix: 'Failed to load banks: '),
               style: const TextStyle(color: Colors.red)),
           data: (banks) {
             if (_selectedBankId == null && banks.isNotEmpty) {
@@ -190,7 +191,7 @@ class _BankEntryFormDialogState extends ConsumerState<BankEntryFormDialog> {
     bool required = false,
     bool isNumeric = false,
   }) {
-    return TextFormField(
+    return TextFormField(cursorHeight: 16, 
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,

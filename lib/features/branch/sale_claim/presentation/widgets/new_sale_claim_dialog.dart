@@ -13,6 +13,7 @@ import '../../../sale_invoice/presentation/provider/sale_invoice_provider.dart'
 import '../../../shared/current_branch_provider.dart';
 import '../providers/sale_claim_provider.dart';
 import 'sale_claim_common.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 /// Naya claim: invoice chuno -> us invoice ki product line chuno -> quantity
 /// + reason. Claim Head Office ko 'pending' jata hai.
@@ -87,7 +88,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
       if (!mounted) return;
       setState(() {
         _detailLoading = false;
-        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+        _error = friendlyError(e);
       });
     }
   }
@@ -139,7 +140,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+        _error = friendlyError(e);
       });
     }
   }
@@ -225,7 +226,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
-                                child: TextFormField(
+                                child: TextFormField(cursorHeight: 16, 
                                   controller: _qtyCtrl,
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [
@@ -265,7 +266,7 @@ class _NewSaleClaimDialogState extends ConsumerState<NewSaleClaimDialog> {
                             }),
                           ),
                           const SizedBox(height: 12),
-                          TextFormField(
+                          TextFormField(cursorHeight: 16, 
                             controller: _reasonCtrl,
                             minLines: 3,
                             maxLines: 5,

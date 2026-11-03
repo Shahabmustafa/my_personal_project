@@ -215,7 +215,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
         borderRadius: BorderRadius.circular(7),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: TextField(
+      child: TextField(cursorHeight: 16, 
         controller: _ctrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],

@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
@@ -20,6 +21,8 @@ import '../widgets/sale_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 /// Sale Invoice screen ka mirror — structure bilkul wahi hai, sirf effect
 /// vice versa: stock wapis add hota hai, cash counter se minus hota hai.
 class SaleReturnScreen extends ConsumerWidget {
@@ -73,7 +76,7 @@ Container(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Return Number :',
+                    Text('Return Number',
                         style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                     const SizedBox(height: 4),
                     Row(
@@ -85,10 +88,16 @@ Container(
                                 style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: accent),
                               ),
                         const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref.read(saleReturnProvider.notifier).resetReturn(),
-                          child: const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                        Tooltip(
+                          message: 'Start a new return (clears the cart)',
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(4),
+                            onTap: () => ref.read(saleReturnProvider.notifier).resetReturn(),
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -116,7 +125,7 @@ Container(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('Return Number :',
+                    Text('Return Number',
                         style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                     const SizedBox(height: 4),
                     Row(
@@ -128,10 +137,16 @@ Container(
                                 style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: accent),
                               ),
                         const SizedBox(width: 8),
-                        InkWell(
-                          borderRadius: BorderRadius.circular(4),
-                          onTap: () => ref.read(saleReturnProvider.notifier).resetReturn(),
-                          child: const AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                        Tooltip(
+                          message: 'Start a new return (clears the cart)',
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(4),
+                            onTap: () => ref.read(saleReturnProvider.notifier).resetReturn(),
+                            child: const Padding(
+                              padding: EdgeInsets.all(2),
+                              child: AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -172,8 +187,7 @@ const _ReturnFooter(),
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Refund type toggle (cash / card / cash+card) ──────────────────────────
@@ -310,7 +324,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
             flex: 3,
             child: customersAsync.when(
               loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+              error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(customersForSaleProvider)),
               data: (list) {
                 final active = list.where((c) => c.isActive).toList();
                 return DropdownSearch<CustomerModel>(
@@ -330,7 +344,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
             flex: 3,
             child: salesmenAsync.when(
               loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+              error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(salesmenProvider)),
               data: (list) => DropdownSearch<EmployeeLookupItem>(
                 items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
                 selectedItem: state.salesman,
@@ -347,7 +361,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
             flex: 3,
             child: printersAsync.when(
               loading: () => const _FieldLoading(),
-              error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+              error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(printersForSaleProvider)),
               data: (list) => DropdownSearch<PrinterLookupItem>(
                 items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
                 selectedItem: state.printer,
@@ -366,7 +380,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
               flex: 3,
               child: bankAsync.when(
                 loading: () => const _FieldLoading(),
-                error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(bankEntriesForSaleProvider)),
                 data: (list) => DropdownSearch<BankEntryLookupItem>(
                   items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
                   selectedItem: state.bankEntry,
@@ -386,7 +400,7 @@ class _ReturnMetaRowState extends ConsumerState<_ReturnMetaRow> {
             const SizedBox(width: 16),
             Expanded(
               flex: 2,
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 controller: _cashAmountCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 inputFormatters: [
@@ -463,7 +477,7 @@ Wrap(
           )],
  ),
 const SizedBox(height: 12),
-TextField(
+TextField(cursorHeight: 16, 
               onChanged: (v) => ref.read(saleReturnProvider.notifier).setNote(v),
               decoration: InputDecoration(
                 hintText: 'Note (optional)',
@@ -514,7 +528,7 @@ Row(
           _stat('Discount', '- ${state.totalDiscount.toStringAsFixed(0)}', color: Colors.orange.shade700),
           const SizedBox(width: 28),
           Expanded(
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => ref.read(saleReturnProvider.notifier).setNote(v),
               decoration: InputDecoration(
                 hintText: 'Note (optional)',
@@ -643,7 +657,7 @@ Row(
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $error'),
+          content: Text(friendlyError(error, prefix: 'Error: ')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -663,7 +677,7 @@ Row(
       } catch (e) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Print failed: $e'), backgroundColor: Colors.orange.shade700),
+            SnackBar(content: Text(friendlyError(e, prefix: 'Print failed: ')), backgroundColor: Colors.orange.shade700),
           );
         }
       }

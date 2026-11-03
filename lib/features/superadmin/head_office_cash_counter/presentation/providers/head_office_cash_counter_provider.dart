@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import '../../data/datasource/head_office_cash_counter_remote_datasource.dart';
 import '../../data/repository/head_office_cash_counter_repository.dart';
 import 'head_office_cash_counter_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final headOfficeCashCounterRemoteDatasourceProvider =
     Provider<HeadOfficeCashCounterRemoteDatasource>(
@@ -30,7 +31,7 @@ class HeadOfficeCashCounterNotifier
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeCashCounterStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

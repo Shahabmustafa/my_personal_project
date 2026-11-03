@@ -9,6 +9,7 @@ import 'report_table_shell.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Report ke upar ka ek summary card.
 class SimpleReportCard {
@@ -126,7 +127,6 @@ class SimpleReportScreen extends ConsumerStatefulWidget {
 enum _Period { today, month, year, custom }
 
 class _SimpleReportScreenState extends ConsumerState<SimpleReportScreen> {
-  static const _red = Color(0xFFE5484D);
   static const _grey = Color(0xFF8A8FA3);
   static const _pageSize = 50;
   static const _mon = [
@@ -295,7 +295,7 @@ class _SimpleReportScreenState extends ConsumerState<SimpleReportScreen> {
               ),
             SizedBox(
               width: 240,
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 decoration: InputDecoration(
                   isDense: true,
                   hintText: widget.searchHint,
@@ -332,8 +332,7 @@ class _SimpleReportScreenState extends ConsumerState<SimpleReportScreen> {
               ? const Center(child: CircularProgressIndicator())
               : _error != null
                   ? Center(
-                      child: Text('Error: $_error',
-                          style: const TextStyle(color: _red)))
+                      child: ErrorView(error: _error, onRetry: _load))
                   : data == null || filtered.isEmpty
                       ? const Center(
                           child: Text('No records found',
@@ -435,8 +434,7 @@ class _DetailDialogState extends State<_DetailDialog> {
             if (snap.hasError) {
               return Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Error: ${snap.error}',
-                    style: const TextStyle(color: Color(0xFFE5484D))),
+                child: ErrorView(error: snap.error),
               );
             }
             final d = snap.data!;

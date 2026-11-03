@@ -289,7 +289,7 @@ class _QtyStepperState extends State<_QtyStepper> {
             ),
           ),
           Expanded(
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               controller: _ctrl,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],

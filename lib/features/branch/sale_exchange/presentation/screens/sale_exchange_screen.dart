@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
@@ -15,6 +16,8 @@ import '../widgets/sale_exchange_return_items_picker.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Layout bilkul SaleInvoiceScreen jaisa: header card (number + payment
 /// toggle + date), meta row (salesman / printer / bank / cash), return
@@ -35,201 +38,157 @@ class SaleExchangeScreen extends ConsumerWidget {
 
     final invoice = state.originalInvoice!;
 
-    return InvoicePageBody(
- top: [
-Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+    final numberValue = state.numberLoading
+        ? const SizedBox(width: 80, child: LinearProgressIndicator(minHeight: 2))
+        : Text(
+            state.exchangeNumber.isEmpty ? '...' : state.exchangeNumber,
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              color: primary,
             ),
-            child: isMobile
- ? Column(
- crossAxisAlignment: CrossAxisAlignment.stretch,
- children: [
- Wrap(
- spacing: 24,
- runSpacing: 10,
- children: [
-_headerField(
-                  'Exchange Number :',
-                  state.numberLoading
-                      ? const SizedBox(
-                          width: 80,
-                          child: LinearProgressIndicator(minHeight: 2),
-                        )
-                      : Text(
-                          state.exchangeNumber.isEmpty
-                              ? '...'
-                              : state.exchangeNumber,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: primary,
-                          ),
-                        ),
+          );
+
+    final header = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-_headerField(
-                  'Original Invoice :',
-                  Text(
-                    invoice.invoiceNumber,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-_headerField(
-                  'Customer :',
-                  Text(
-                    invoice.customerName ?? '—',
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                ),
- Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: AppIcon(AppIcons.swapHoriz, color: primary, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Wrap(
+                  spacing: 32,
+                  runSpacing: 10,
                   children: [
-                    Text(
-                      'Date',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
+                    _headerField('Exchange Number', numberValue),
+                    _headerField(
+                      'Original Invoice',
+                      Text(
+                        invoice.invoiceNumber,
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w700),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDate(DateTime.now()),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    _headerField(
+                      'Customer',
+                      Text(invoice.customerName ?? '—',
+                          style: const TextStyle(fontSize: 15)),
                     ),
+                    if (invoice.branchName != null &&
+                        invoice.branchName!.isNotEmpty)
+                      _headerField(
+                        'Branch',
+                        Text(invoice.branchName!,
+                            style: const TextStyle(fontSize: 15)),
+                      ),
                   ],
                 ),
- ],
- ),
- if (state.differenceAmount != 0) ...[
- const SizedBox(height: 12),
- _PaymentTypeToggle(
- stretch: true,
-                    value: state.paymentType,
-                    onChanged: ref
-                        .read(saleExchangeProvider.notifier)
-                        .selectPaymentType,
-                  ),
- ],
- ],
- )
- : Row(
+              ),
+              _headerField(
+                'Date',
+                Text(
+                  _formatDate(DateTime.now()),
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+                end: true,
+              ),
+            ],
+          ),
+          // Payment type — sirf tab jab paisa lena/dena ho
+          if (state.differenceAmount != 0) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Row(
               children: [
-                _headerField(
-                  'Exchange Number :',
-                  state.numberLoading
-                      ? const SizedBox(
-                          width: 80,
-                          child: LinearProgressIndicator(minHeight: 2),
-                        )
-                      : Text(
-                          state.exchangeNumber.isEmpty
-                              ? '...'
-                              : state.exchangeNumber,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: primary,
-                          ),
-                        ),
-                ),
-                const SizedBox(width: 24),
-                _headerField(
-                  'Original Invoice :',
-                  Text(
-                    invoice.invoiceNumber,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 24),
-                _headerField(
-                  'Customer :',
-                  Text(
-                    invoice.customerName ?? '—',
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                ),
-                const SizedBox(width: 24),
-
-                // Payment type toggle — sirf tab jab paisa lena/dena ho
-                if (state.differenceAmount != 0)
-                  _PaymentTypeToggle(
-                    value: state.paymentType,
-                    onChanged: ref
-                        .read(saleExchangeProvider.notifier)
-                        .selectPaymentType,
-                  ),
-                const Spacer(),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Date',
+                if (!isMobile)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: Text(
+                      state.isCollect ? 'Collect via' : 'Refund via',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade600),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatDate(DateTime.now()),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  ),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _PaymentTypeToggle(
+                      stretch: isMobile,
+                      value: state.paymentType,
+                      onChanged: ref
+                          .read(saleExchangeProvider.notifier)
+                          .selectPaymentType,
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
-const SizedBox(height: 12),
-const _ExchangePaymentRow(),
-ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 190),
-            child: const SingleChildScrollView(
-              child: SaleExchangeReturnItemsPicker(),
-            ),
-          ),
-const SizedBox(height: 8),
-SaleProductSelector(
-            leading: const [_SalesmanField(), _PrinterField()],
-            buttonLabel: 'Add New Item',
-            onAdd: (ref, stock, qty) => ref
-                .read(saleExchangeProvider.notifier)
-                .addNewCartItem(stock, quantity: qty),
-          ),
-const SizedBox(height: 8),
- ],
- cart: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: const SaleExchangeNewCartTable(),
-            ),
- bottom: [
-const SizedBox(height: 12),
-const _ExchangeFooter(),
- ],
- );
+          ],
+        ],
+      ),
+    );
+
+    return InvoicePageBody(
+      scrollOnDesktop: true,
+      top: [
+        header,
+        const SizedBox(height: 12),
+        const _ExchangePaymentRow(),
+        const SaleExchangeReturnItemsPicker(),
+        const SizedBox(height: 12),
+        const _SectionLabel(
+          icon: AppIcons.add,
+          label: 'New items (customer takes)',
+        ),
+        SaleProductSelector(
+          leading: const [_SalesmanField(), _PrinterField()],
+          buttonLabel: 'Add New Item',
+          onAdd: (ref, stock, qty) => ref
+              .read(saleExchangeProvider.notifier)
+              .addNewCartItem(stock, quantity: qty),
+        ),
+        const SizedBox(height: 8),
+      ],
+      cart: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: const SaleExchangeNewCartTable(),
+      ),
+      bottom: [
+        const SizedBox(height: 12),
+        const _ExchangeFooter(),
+      ],
+    );
   }
 
-  Widget _headerField(String label, Widget value) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _headerField(String label, Widget value, {bool end = false}) =>
+      Column(
+        crossAxisAlignment:
+            end ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
@@ -238,8 +197,34 @@ const _ExchangeFooter(),
         ],
       );
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String icon;
+  final String label;
+  const _SectionLabel({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, left: 2),
+      child: Row(
+        children: [
+          AppIcon(icon, size: 15, color: Colors.grey.shade600),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Payment type toggle (cash / card / cash + card) ─────────────────────
@@ -323,7 +308,7 @@ class _SalesmanField extends ConsumerWidget {
     final state = ref.watch(saleExchangeProvider);
     return ref.watch(salesmenProvider).when(
           loading: () => const _FieldLoading(),
-          error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+          error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(salesmenProvider)),
           data: (list) => DropdownSearch<EmployeeLookupItem>(
             items: (f, _) => list.where((e) => e.name.toLowerCase().contains(f.toLowerCase())).toList(),
             selectedItem: state.salesman,
@@ -345,7 +330,7 @@ class _PrinterField extends ConsumerWidget {
     final state = ref.watch(saleExchangeProvider);
     return ref.watch(printersForSaleProvider).when(
           loading: () => const _FieldLoading(),
-          error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+          error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(printersForSaleProvider)),
           data: (list) => DropdownSearch<PrinterLookupItem>(
             items: (f, _) => list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
             selectedItem: state.printer,
@@ -403,7 +388,7 @@ class _ExchangePaymentRowState extends ConsumerState<_ExchangePaymentRow> {
           Expanded(
             child: ref.watch(bankEntriesForSaleProvider).when(
                   loading: () => const _FieldLoading(),
-                  error: (e, _) => Text('Error: $e', style: const TextStyle(fontSize: 11, color: Colors.red)),
+                  error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(bankEntriesForSaleProvider)),
                   data: (list) => DropdownSearch<BankEntryLookupItem>(
                     items: (f, _) =>
                         list.where((e) => e.label.toLowerCase().contains(f.toLowerCase())).toList(),
@@ -422,7 +407,7 @@ class _ExchangePaymentRowState extends ConsumerState<_ExchangePaymentRow> {
           const SizedBox(width: 16),
           Expanded(
             child: showCash
-                ? TextField(
+                ? TextField(cursorHeight: 16, 
                     controller: _cashAmountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
@@ -458,6 +443,16 @@ class _FieldLoading extends StatelessWidget {
 class _ExchangeFooter extends ConsumerWidget {
   const _ExchangeFooter();
 
+  void _clear(WidgetRef ref) {
+    final n = ref.read(saleExchangeProvider.notifier);
+    for (final i in ref.read(saleExchangeProvider).returnCartItems) {
+      if (i.quantity > 0) n.setReturnQuantity(i.originalItemId, 0);
+    }
+    for (final i in List.of(ref.read(saleExchangeProvider).newCartItems)) {
+      n.removeNewItem(i.branchStockId);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = Responsive(context).isMobile;
@@ -466,173 +461,168 @@ class _ExchangeFooter extends ConsumerWidget {
     final canSave = !state.isSaving &&
         state.returnCartItems.any((i) => i.quantity > 0) &&
         state.newCartItems.isNotEmpty;
-    final canClear = state.returnCartItems.any((i) => i.quantity > 0) || state.newCartItems.isNotEmpty;
+    final canClear = state.returnCartItems.any((i) => i.quantity > 0) ||
+        state.newCartItems.isNotEmpty;
 
     final Color diffColor;
     final String diffLabel;
+    final String diffIcon;
     if (state.isCollect) {
       diffColor = Colors.green.shade700;
-      diffLabel = 'Collect';
+      diffLabel = 'Collect from customer';
+      diffIcon = AppIcons.add;
     } else if (state.isRefund) {
       diffColor = Colors.red.shade700;
-      diffLabel = 'Refund';
+      diffLabel = 'Refund to customer';
+      diffIcon = AppIcons.swapHoriz;
     } else {
       diffColor = Colors.grey.shade600;
-      diffLabel = 'Even Exchange';
+      diffLabel = 'Even exchange';
+      diffIcon = AppIcons.checkCircleOutline;
     }
 
+    final diffBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: diffColor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: diffColor.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppIcon(diffIcon, size: 18, color: diffColor),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(diffLabel,
+                  style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: diffColor)),
+              Text(
+                'Rs. ${state.absDifference.toStringAsFixed(0)}',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: diffColor),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final note = TextField(cursorHeight: 16, 
+      onChanged: (v) => ref.read(saleExchangeProvider.notifier).setNote(v),
+      decoration: InputDecoration(
+        hintText: 'Note (optional)',
+        isDense: true,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      ),
+    );
+
+    final clearButton = OutlinedButton.icon(
+      icon: const AppIcon(AppIcons.clearAll, size: 18),
+      label: const Text('Clear'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.red,
+        side: const BorderSide(color: Colors.red),
+        minimumSize: const Size(0, 46),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: canClear ? () => _clear(ref) : null,
+    );
+
+    final saveButton = FilledButton.icon(
+      icon: state.isSaving
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.white))
+          : const AppIcon(AppIcons.swapHoriz, size: 18),
+      label: const Text('Save Exchange'),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(0, 46),
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: canSave ? () => _onSaveTap(context, ref) : null,
+    );
+
+    final totals = [
+      _stat('Return Total', '- Rs. ${state.returnTotal.toStringAsFixed(0)}',
+          color: Colors.red.shade700),
+      _stat('New Total', 'Rs. ${state.newTotal.toStringAsFixed(0)}',
+          color: Colors.green.shade700),
+    ];
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: isMobile
- ? Column(
- crossAxisAlignment: CrossAxisAlignment.stretch,
- children: [
-Wrap(
- spacing: 24,
- runSpacing: 10,
- crossAxisAlignment: WrapCrossAlignment.end,
- children: [_stat('Return Total', '- ${state.returnTotal.toStringAsFixed(0)}', color: Colors.red.shade700), _stat('New Total', state.newTotal.toStringAsFixed(0), color: Colors.green.shade700), Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(diffLabel, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              Text(
-                state.absDifference.toStringAsFixed(0),
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: diffColor),
-              ),
-            ],
-          )],
- ),
-const SizedBox(height: 12),
-TextField(
-              onChanged: (v) => ref.read(saleExchangeProvider.notifier).setNote(v),
-              decoration: InputDecoration(
-                hintText: 'Note (optional)',
-                isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Wrap(spacing: 24, runSpacing: 8, children: totals),
+                    diffBadge,
+                  ],
+                ),
+                const SizedBox(height: 12),
+                note,
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    clearButton,
+                    const SizedBox(width: 10),
+                    Expanded(child: saveButton),
+                  ],
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                ...[
+                  for (final t in totals) ...[t, const SizedBox(width: 28)],
+                ],
+                Expanded(child: note),
+                const SizedBox(width: 20),
+                diffBadge,
+                const SizedBox(width: 20),
+                clearButton,
+                const SizedBox(width: 10),
+                saveButton,
+              ],
             ),
-const SizedBox(height: 12),
-Row(
- children: [
- OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: canClear
-                ? () {
-                    final n = ref.read(saleExchangeProvider.notifier);
-                    for (final i in ref.read(saleExchangeProvider).returnCartItems) {
-                      if (i.quantity > 0) n.setReturnQuantity(i.originalItemId, 0);
-                    }
-                    for (final i in List.of(ref.read(saleExchangeProvider).newCartItems)) {
-                      n.removeNewItem(i.branchStockId);
-                    }
-                  }
-                : null,
-          ),
- const SizedBox(width: 10),
- Expanded(child: FilledButton.icon(
-            icon: state.isSaving
-                ? const SizedBox(
-                    width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const AppIcon(AppIcons.swapHoriz, size: 18),
-            label: const Text('Save Exchange'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: canSave ? () => _onSaveTap(context, ref) : null,
-          )),
- ],
- ),
- ],
- )
- : Row(
-        children: [
-          _stat('Return Total', '- ${state.returnTotal.toStringAsFixed(0)}', color: Colors.red.shade700),
-          const SizedBox(width: 28),
-          _stat('New Total', state.newTotal.toStringAsFixed(0), color: Colors.green.shade700),
-          const SizedBox(width: 28),
-          Expanded(
-            child: TextField(
-              onChanged: (v) => ref.read(saleExchangeProvider.notifier).setNote(v),
-              decoration: InputDecoration(
-                hintText: 'Note (optional)',
-                isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              ),
-            ),
-          ),
-          const SizedBox(width: 20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(diffLabel, style: const TextStyle(fontSize: 11, color: Colors.grey)),
-              Text(
-                state.absDifference.toStringAsFixed(0),
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: diffColor),
-              ),
-            ],
-          ),
-          const SizedBox(width: 20),
-          OutlinedButton.icon(
-            icon: const AppIcon(AppIcons.clearAll, size: 18),
-            label: const Text('Clear'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: canClear
-                ? () {
-                    final n = ref.read(saleExchangeProvider.notifier);
-                    for (final i in ref.read(saleExchangeProvider).returnCartItems) {
-                      if (i.quantity > 0) n.setReturnQuantity(i.originalItemId, 0);
-                    }
-                    for (final i in List.of(ref.read(saleExchangeProvider).newCartItems)) {
-                      n.removeNewItem(i.branchStockId);
-                    }
-                  }
-                : null,
-          ),
-          const SizedBox(width: 10),
-          FilledButton.icon(
-            icon: state.isSaving
-                ? const SizedBox(
-                    width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const AppIcon(AppIcons.swapHoriz, size: 18),
-            label: const Text('Save Exchange'),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: canSave ? () => _onSaveTap(context, ref) : null,
-          ),
-        ],
-      ),
     );
   }
 
   Widget _stat(String label, String value, {Color? color}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
         const SizedBox(height: 2),
-        Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color ?? Colors.black87)),
+        Text(value,
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: color ?? Colors.black87)),
       ],
     );
   }
@@ -708,7 +698,7 @@ Row(
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red.shade700),
+        SnackBar(content: Text(friendlyError(error, prefix: 'Error: ')), backgroundColor: Colors.red.shade700),
       );
       return;
     }

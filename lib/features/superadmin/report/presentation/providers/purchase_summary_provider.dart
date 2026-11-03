@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasource/purchase_report_datasource.dart';
 import '../../data/model/purchase_transaction_row.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final purchaseReportDatasourceProvider = Provider<PurchaseReportDatasource>(
   (_) => PurchaseReportDatasource(Supabase.instance.client),
@@ -96,7 +97,7 @@ class PurchaseSummaryNotifier extends StateNotifier<PurchaseSummaryState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+        error: friendlyError(e),
       );
     }
   }

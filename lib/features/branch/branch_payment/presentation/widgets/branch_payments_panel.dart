@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart'
@@ -6,11 +7,13 @@ import '../../data/model/branch_payment_model.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 
 /// Branch → Head Office payments, shown under a cash counter table.
 /// [showBranch] adds the "From Branch" column (Admin side, where payments of
 /// every branch are listed).
-class BranchPaymentsPanel extends StatelessWidget {
+class BranchPaymentsPanel extends StatefulWidget {
   final AsyncValue<List<BranchPaymentModel>> payments;
   final bool showBranch;
   final VoidCallback onRetry;
@@ -23,9 +26,59 @@ class BranchPaymentsPanel extends StatelessWidget {
   });
 
   @override
+  State<BranchPaymentsPanel> createState() => _BranchPaymentsPanelState();
+}
+
+class _BranchPaymentsPanelState extends State<BranchPaymentsPanel> {
+  String? _filterBranch;
+  DateTime? _fromDate; // paid-on range (inclusive)
+  DateTime? _toDate;
+
+  AsyncValue<List<BranchPaymentModel>> get payments => widget.payments;
+  bool get showBranch => widget.showBranch;
+  VoidCallback get onRetry => widget.onRetry;
+
+  int get _activeFilterCount =>
+      (_filterBranch != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  bool _matches(BranchPaymentModel p) {
+    if (_filterBranch != null && p.branchId != _filterBranch) return false;
+    final d = p.paidAt.toLocal();
+    final day = DateTime(d.year, d.month, d.day);
+    if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+    if (_toDate != null && day.isAfter(_toDate!)) return false;
+    return true;
+  }
+
+  Future<void> _openFilterDialog(List<BranchPaymentModel> all) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'From Branch',
+      allLabel: 'All branches',
+      showBranch: showBranch,
+      branches: {for (final p in all) p.branchId: p.branchName ?? p.branchId},
+      current: (
+        branch: _filterBranch,
+        branch2: null,
+        from: _fromDate,
+        to: _toDate,
+      ),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterBranch = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 768;
-    final list = payments.value ?? const <BranchPaymentModel>[];
+    final all = payments.value ?? const <BranchPaymentModel>[];
+    final list = all.where(_matches).toList();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -58,6 +111,18 @@ class BranchPaymentsPanel extends StatelessWidget {
                     Text('${list.length}',
                         style: const TextStyle(
                             fontSize: 13, color: Color(0xFF8A8FA3))),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Badge(
+                      isLabelVisible: _activeFilterCount > 0,
+                      label: Text('$_activeFilterCount'),
+                      child: OutlinedButton.icon(
+                        onPressed: () => _openFilterDialog(all),
+                        icon: const Icon(Icons.filter_list, size: 18),
+                        label: const Text('Filter'),
+                      ),
+                    ),
+                  ),
                   IconButton(
                     icon: const AppIcon(AppIcons.refresh, size: 18),
                     tooltip: 'Refresh',
@@ -75,17 +140,17 @@ class BranchPaymentsPanel extends StatelessWidget {
             else if (payments.hasError && !payments.hasValue)
               Padding(
                 padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: Text('Error: ${payments.error}',
-                      style: const TextStyle(color: Colors.red)),
-                ),
+                child: ErrorView(error: payments.error),
               )
             else if (list.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32),
+              Padding(
+                padding: const EdgeInsets.all(32),
                 child: Center(
-                  child: Text('No payments yet',
-                      style: TextStyle(color: Color(0xFF8A8FA3))),
+                  child: Text(
+                      _activeFilterCount > 0
+                          ? 'No payments match the filter'
+                          : 'No payments yet',
+                      style: const TextStyle(color: Color(0xFF8A8FA3))),
                 ),
               )
             else if (isMobile)
@@ -225,8 +290,7 @@ class _MobileRow extends StatelessWidget {
   }
 }
 
-String _fmtDate(DateTime d) =>
-    '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+String _fmtDate(DateTime d) => dfmt.fmtDateTime(d);
 
 String _fmtAmt(double v) {
   if (v == v.truncate()) return v.toStringAsFixed(0);

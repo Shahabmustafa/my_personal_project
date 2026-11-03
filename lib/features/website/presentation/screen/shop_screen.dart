@@ -53,7 +53,7 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
                   style: WText.body(14.5, color: WColors.muted),
                 ),
                 const SizedBox(height: 18),
-                TextField(
+                TextField(cursorHeight: 16, 
                   controller: _search,
                   onChanged: (v) => setState(() => _query = v),
                   style: WText.body(14.5),

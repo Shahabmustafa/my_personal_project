@@ -1,7 +1,8 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
@@ -10,10 +11,12 @@ import '../../data/models/ho_assign_stock_model.dart';
 import '../providers/ho_assign_stock_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
-import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 /// Stock assignment history. Lays the data out the same way as the sale
 /// reports: summary cards, a scrollable [ReportTableShell] table, a right
 /// slide-in detail panel on "View", and a pagination bar.
@@ -134,18 +137,35 @@ class _HoAssignStockListScreenState
           icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
           label: const Text('Filter'),
           onPressed: () async {
-            final result = await showDialog<(DateTime?, DateTime?)?>(
-              context: context,
-              builder: (_) => ReportDateFilterDialog(
-                  initialStart: _startDate, initialEnd: _endDate),
+            final byBranch = widget.byBranch;
+            final r = await showAssignFilterDialog(
+              context,
+              branchLabel: byBranch ? 'Assigned By' : 'Assigned To',
+              allLabel: 'All branches',
+              branches: byBranch ? fromOptions : toOptions,
+              branch2Label: byBranch ? 'Assigned To' : null,
+              branch2AllLabel: 'All branches',
+              branches2: byBranch ? toOptions : null,
+              current: (
+                branch: byBranch ? _filterFrom : _filterTo,
+                branch2: byBranch ? _filterTo : null,
+                from: _startDate,
+                to: _endDate,
+              ),
             );
-            if (result != null) {
-              setState(() {
-                _startDate = result.$1;
-                _endDate = result.$2;
-                _page = 1;
-              });
-            }
+            if (r == null) return;
+            setState(() {
+              if (byBranch) {
+                _filterFrom = r.branch;
+                _filterTo = r.branch2;
+              } else {
+                _filterTo = r.branch;
+              }
+              _startDate = r.from;
+              _endDate = r.to;
+              _page = 1;
+              _selected = null;
+            });
           },
         ),
         IconButton(
@@ -225,36 +245,6 @@ class _HoAssignStockListScreenState
                 ],
               );
             },
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              if (widget.byBranch)
-                BranchFilterDropdown(
-                  label: 'Assigned By',
-                  allLabel: 'All branches',
-                  options: fromOptions,
-                  value: _filterFrom,
-                  onChanged: (v) => setState(() {
-                    _filterFrom = v;
-                    _page = 1;
-                    _selected = null;
-                  }),
-                ),
-              BranchFilterDropdown(
-                label: 'Assigned To',
-                allLabel: 'All branches',
-                options: toOptions,
-                value: _filterTo,
-                onChanged: (v) => setState(() {
-                  _filterTo = v;
-                  _page = 1;
-                  _selected = null;
-                }),
-              ),
-            ],
           ),
           const SizedBox(height: 16),
           SingleChildScrollView(
@@ -425,7 +415,7 @@ class _HoAssignStockListScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Print failed: $e'),
+          content: Text(friendlyError(e, prefix: 'Print failed: ')),
           backgroundColor: Colors.orange.shade700,
         ),
       );
@@ -500,8 +490,8 @@ class _HoAssignStockListScreenState
   }
 
   String _rangeLabel(DateTime? start, DateTime? end) {
-    final s = start == null ? '…' : _fmtDate(start);
-    final e = end == null ? '…' : _fmtDate(end);
+    final s = start == null ? '…' : dfmt.fmtDateOnly(start);
+    final e = end == null ? '…' : dfmt.fmtDateOnly(end);
     return '$s – $e';
   }
 }
@@ -521,7 +511,7 @@ class _AssignmentDetailBody extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
       error: (e, _) =>
-          Text('Error: $e', style: const TextStyle(color: Colors.red)),
+          ErrorView(error: e, onRetry: () => ref.invalidate(hoAssignmentDetailProvider)),
       data: (a) {
         final items = a.items;
         final pairs = items.fold<int>(0, (s, it) => s + it.quantity);
@@ -569,30 +559,13 @@ class _AssignmentDetailBody extends ConsumerWidget {
 // ── Small shared bits ─────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AppIcon(AppIcons.errorOutline, color: Colors.red, size: 40),
-          const SizedBox(height: 8),
-          Text('Error: $message',
-              style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const AppIcon(AppIcons.refresh, size: 16),
-            label: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 class _StatusChip extends StatelessWidget {
@@ -658,10 +631,7 @@ Color _statusColor(String s) {
   }
 }
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/'
-    '${dt.month.toString().padLeft(2, '0')}/'
-    '${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 /// Date plus 12-hour local time, e.g. "05/10/2026 03:42 PM".
 String _fmtDateTime(DateTime dt) {

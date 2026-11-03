@@ -11,6 +11,7 @@ import '../widgets/report_table_shell.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Har employee ka mahine-wise salary report — basic salary, sale, return,
 /// commission aur net salary. Current mahina live, pichle mahine history se.
@@ -177,8 +178,7 @@ class _EmployeeSalaryReportScreenState
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Error: ${state.error}',
-                  style: const TextStyle(color: Colors.red)),
+              child: ErrorView(error: state.error, onRetry: notifier.load),
             ),
           const SizedBox(height: 16),
           Expanded(

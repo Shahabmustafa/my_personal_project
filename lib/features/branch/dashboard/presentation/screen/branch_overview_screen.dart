@@ -6,6 +6,7 @@ import '../provider/branch_overview_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 class BranchOverviewScreen extends ConsumerWidget {
   const BranchOverviewScreen({super.key});
 
@@ -67,7 +68,7 @@ class BranchOverviewScreen extends ConsumerWidget {
                     child: Column(children: [
                       const AppIcon(AppIcons.errorOutline, size: 40, color: Colors.redAccent),
                       const SizedBox(height: 10),
-                      Text('Error: $e', style: const TextStyle(color: Color(0xFF8A8FA3))),
+                      ErrorView(error: e, onRetry: () => ref.invalidate(branchOverviewProvider)),
                     ]),
                   ),
                 ),

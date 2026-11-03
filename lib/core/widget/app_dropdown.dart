@@ -84,7 +84,7 @@ class AppSearchDropdown<T> extends StatelessWidget {
         showSearchBox: showSearchBox,
         // Shrink the popup to its items; maxHeight below still caps long lists.
         fit: FlexFit.loose,
-        searchFieldProps: TextFieldProps(
+        searchFieldProps: TextFieldProps(cursorHeight: 16, 
           decoration: InputDecoration(
             hintText: 'Search $label...',
             prefixIcon: const TextFieldIcon(AppIcons.search, size: 24),
@@ -297,7 +297,7 @@ class _MultiSelectDialogState<T> extends State<_MultiSelectDialog<T>> {
             Padding(
               padding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 autofocus: true,
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(

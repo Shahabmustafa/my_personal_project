@@ -9,6 +9,7 @@ import '../providers/stock_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 class StockTable extends ConsumerWidget {
   final bool readOnly;
   const StockTable({super.key, this.readOnly = false});
@@ -224,7 +225,7 @@ class _DesktopRow extends ConsumerWidget {
               if (err != null && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                      content: Text('Error: $err'),
+                      content: Text(friendlyError(err, prefix: 'Error: ')),
                       backgroundColor: Colors.red),
                 );
               }
@@ -267,7 +268,7 @@ void showEditStockDialog(
                         fontWeight: FontWeight.w600,
                         color: Colors.grey)),
                 const SizedBox(height: 16),
-                TextFormField(
+                TextFormField(cursorHeight: 16, 
                   controller: qtyCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -287,7 +288,7 @@ void showEditStockDialog(
                   },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                TextFormField(cursorHeight: 16, 
                   controller: discountCtrl,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
@@ -342,7 +343,7 @@ void showEditStockDialog(
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text(err == null
                             ? 'Stock updated successfully!'
-                            : 'Error: $err'),
+                            : friendlyError(err, prefix: 'Error: ')),
                         backgroundColor:
                             err == null ? Colors.green : Colors.red,
                       ));
@@ -697,7 +698,7 @@ class _MobileList extends ConsumerWidget {
                           if (err != null && context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text('Error: $err'),
+                                  content: Text(friendlyError(err, prefix: 'Error: ')),
                                   backgroundColor: Colors.red),
                             );
                           }

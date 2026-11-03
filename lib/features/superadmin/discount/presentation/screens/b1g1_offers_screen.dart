@@ -8,6 +8,8 @@ import '../providers/b1g1_offer_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Admin yahan "Buy 1 Get 1 Free" offers banata hai — kin Articles (size /
 /// color ke sath) par lagega. Sab branches ki Sale Invoice mein har 2 pairs mein
@@ -79,8 +81,7 @@ class B1g1OffersScreen extends ConsumerWidget {
             child: offersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Center(
-                child: Text('Error: $e',
-                    style: const TextStyle(color: Colors.red)),
+                child: ErrorView(error: e, onRetry: () => ref.invalidate(b1g1OffersProvider)),
               ),
               data: (offers) => offers.isEmpty
                   ? const Center(
@@ -347,7 +348,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = e.toString();
+          _error = friendlyError(e);
         });
       }
     }
@@ -390,7 +391,7 @@ class _OfferFormDialogState extends ConsumerState<_OfferFormDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
+              TextField(cursorHeight: 16, 
                 controller: _nameCtrl,
                 decoration: const InputDecoration(
                   labelText: 'Offer Name (e.g. Eid Sale)',
@@ -560,7 +561,7 @@ class _VariantPickerDialogState extends State<_VariantPickerDialog> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 autofocus: true,
                 onChanged: (v) => setState(() => _search = v),
                 decoration: InputDecoration(

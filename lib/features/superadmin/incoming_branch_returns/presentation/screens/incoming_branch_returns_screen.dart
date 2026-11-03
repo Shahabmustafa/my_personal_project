@@ -1,3 +1,5 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../branch/return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart'
@@ -5,7 +7,6 @@ import '../../../../branch/return_stock_to_other_branch/presentation/screens/bra
 import '../../../../branch/return_stock_to_warehouse/data/model/branch_warehouse_return_model.dart';
 import '../../../../branch/return_stock_to_warehouse/presentation/providers/branch_warehouse_return_provider.dart'
     show branchWarehouseReturnRepositoryProvider;
-import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
@@ -13,10 +14,12 @@ import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../providers/incoming_branch_return_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
-import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 
 /// Admin's screen for accepting/rejecting stock returns sent by branches —
 /// same accept/reject pattern as the head-office->branch assignment history,
@@ -112,18 +115,26 @@ class _IncomingBranchReturnsScreenState
           icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
           label: const Text('Filter'),
           onPressed: () async {
-            final result = await showDialog<(DateTime?, DateTime?)?>(
-              context: context,
-              builder: (_) => ReportDateFilterDialog(
-                  initialStart: _startDate, initialEnd: _endDate),
+            final r = await showAssignFilterDialog(
+              context,
+              branchLabel: 'From Branch',
+              allLabel: 'All branches',
+              branches: branchOptions,
+              current: (
+                branch: _filterBranch,
+                branch2: null,
+                from: _startDate,
+                to: _endDate,
+              ),
             );
-            if (result != null) {
-              setState(() {
-                _startDate = result.$1;
-                _endDate = result.$2;
-                _page = 1;
-              });
-            }
+            if (r == null) return;
+            setState(() {
+              _filterBranch = r.branch;
+              _startDate = r.from;
+              _endDate = r.to;
+              _page = 1;
+              _selected = null;
+            });
           },
         ),
         IconButton(
@@ -200,18 +211,6 @@ class _IncomingBranchReturnsScreenState
                 ],
               );
             },
-          ),
-          const SizedBox(height: 16),
-          BranchFilterDropdown(
-            label: 'From Branch',
-            allLabel: 'All branches',
-            options: branchOptions,
-            value: _filterBranch,
-            onChanged: (v) => setState(() {
-              _filterBranch = v;
-              _page = 1;
-              _selected = null;
-            }),
           ),
           const SizedBox(height: 16),
           SingleChildScrollView(
@@ -381,7 +380,7 @@ class _IncomingBranchReturnsScreenState
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Print failed: $e'),
+          content: Text(friendlyError(e, prefix: 'Print failed: ')),
           backgroundColor: Colors.orange.shade700,
         ),
       );
@@ -466,7 +465,7 @@ class _IncomingBranchReturnsScreenState
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }
@@ -538,8 +537,8 @@ class _IncomingBranchReturnsScreenState
   }
 
   String _rangeLabel(DateTime? start, DateTime? end) {
-    final s = start == null ? '…' : _fmtDate(start);
-    final e = end == null ? '…' : _fmtDate(end);
+    final s = start == null ? '…' : dfmt.fmtDateOnly(start);
+    final e = end == null ? '…' : dfmt.fmtDateOnly(end);
     return '$s – $e';
   }
 }
@@ -559,7 +558,7 @@ class _ReturnDetailBody extends ConsumerWidget {
         child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
       error: (e, _) =>
-          Text('Error: $e', style: const TextStyle(color: Colors.red)),
+          ErrorView(error: e, onRetry: () => ref.invalidate(incomingBranchReturnDetailProvider)),
       data: (r) {
         final items = r.items;
         final saleVal = items.fold<double>(
@@ -603,29 +602,13 @@ class _ReturnDetailBody extends ConsumerWidget {
 // ── Small shared bits ─────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AppIcon(AppIcons.errorOutline, color: Colors.red, size: 40),
-          const SizedBox(height: 8),
-          Text('Error: $message', style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const AppIcon(AppIcons.refresh, size: 16),
-            label: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 int _pairs(BranchWarehouseReturnModel r) =>
@@ -645,10 +628,7 @@ Color _statusColor(String s) {
   }
 }
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/'
-    '${dt.month.toString().padLeft(2, '0')}/'
-    '${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 /// Whole-rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
 String _money(double v) {

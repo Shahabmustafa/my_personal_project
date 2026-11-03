@@ -6,6 +6,7 @@ import '../../data/datasource/size_remote_datasource.dart';
 import '../../data/model/size_model.dart';
 import '../../data/repository/size_repository.dart';
 import 'size_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final sizeRemoteDatasourceProvider =
     Provider<SizeRemoteDatasource>((_) => SizeRemoteDatasource());
@@ -32,7 +33,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -46,7 +47,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -61,7 +62,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -75,7 +76,7 @@ class SizeNotifier extends StateNotifier<SizeState> {
     } catch (e) {
       state = state.copyWith(
           status: SizeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

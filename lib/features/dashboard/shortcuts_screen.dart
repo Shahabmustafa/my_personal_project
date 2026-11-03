@@ -50,7 +50,7 @@ class _ShortcutsScreenState extends State<ShortcutsScreen> {
           const SizedBox(height: 16),
           SizedBox(
             width: 320,
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => setState(() => _query = v),
               decoration: InputDecoration(
                 hintText: 'Search screen or key',

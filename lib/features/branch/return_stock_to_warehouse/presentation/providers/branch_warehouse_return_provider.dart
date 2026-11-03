@@ -12,6 +12,7 @@ import '../../data/datasource/branch_warehouse_return_cart_item.dart';
 import '../../data/datasource/branch_warehouse_return_datasource.dart';
 import '../../data/model/branch_warehouse_return_model.dart';
 import '../../data/repository/branch_warehouse_return_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -233,7 +234,7 @@ class BranchWarehouseReturnNotifier
       _ref.invalidate(branchStockCacheProvider);
       return null;
     } catch (e) {
-      final message = e is PostgrestException ? e.message : e.toString();
+      final message = e is PostgrestException ? e.message : friendlyError(e);
       if (mounted) {
         state = state.copyWith(isSaving: false, error: message);
       }

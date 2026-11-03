@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_detail_panel.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Stock rows that are the same article — same product, color, category,
 /// brand and type — differing only by size. The list shows one row per group;
@@ -167,7 +168,7 @@ class _StockSizesBodyState<T> extends State<StockSizesBody<T>> {
   @override
   Widget build(BuildContext context) {
     if (_error != null && _items == null) {
-      return Text('Error: $_error', style: const TextStyle(color: Colors.red));
+      return ErrorView(error: _error, onRetry: _load);
     }
     final items = _items;
     if (items == null) {

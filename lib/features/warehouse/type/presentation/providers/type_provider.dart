@@ -6,6 +6,7 @@ import '../../data/datasource/type_remote_datasource.dart';
 import '../../data/model/type_model.dart';
 import '../../data/repository/type_repository.dart';
 import 'type_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final typeRemoteDatasourceProvider =
     Provider<TypeRemoteDatasource>((_) => TypeRemoteDatasource());
@@ -32,7 +33,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -46,7 +47,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -61,7 +62,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -75,7 +76,7 @@ class TypeNotifier extends StateNotifier<TypeState> {
     } catch (e) {
       state = state.copyWith(
           status: TypeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

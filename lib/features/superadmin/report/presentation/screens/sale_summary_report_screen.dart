@@ -14,6 +14,8 @@ import '../../../../branch/shared/current_branch_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Sale Invoice, Sale Return aur Sale Exchange teeno — ek hi combined list
 /// mein (newest first), top par Total Sale / Total Return / Exchange /
@@ -93,7 +95,7 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
       if (!mounted) return;
       setState(() => _loadingId = null);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load detail: $e')),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Failed to load detail: '))),
       );
     }
   }
@@ -388,7 +390,7 @@ class _SaleSummaryReportScreenState extends ConsumerState<SaleSummaryReportScree
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Error: ${state.error}', style: const TextStyle(color: Colors.red)),
+              child: ErrorView(error: state.error, onRetry: notifier.load),
             ),
           const SizedBox(height: 16),
           Expanded(child: content),

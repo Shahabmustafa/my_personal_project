@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import '../../data/models/printer_head_model.dart';
 import '../screens/printer_design_screen.dart';
@@ -119,10 +120,7 @@ class PrinterHeadCard extends StatelessWidget {
     );
   }
 
-  String _fmt(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _fmt(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 class _DefaultIcon extends StatelessWidget {

@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +18,8 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 class SaleInvoiceScreen extends ConsumerWidget {
   const SaleInvoiceScreen({super.key});
@@ -33,7 +36,7 @@ class SaleInvoiceScreen extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Invoice Number :',
+          'Invoice Number',
           style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
         ),
         const SizedBox(height: 4),
@@ -54,14 +57,16 @@ class SaleInvoiceScreen extends ConsumerWidget {
                     ),
                   ),
             const SizedBox(width: 8),
-            InkWell(
-              borderRadius: BorderRadius.circular(4),
-              onTap: () =>
-                  ref.read(saleInvoiceProvider.notifier).resetInvoice(),
-              child: const AppIcon(
-                AppIcons.refresh,
-                size: 17,
-                color: Colors.red,
+            Tooltip(
+              message: 'Start a new invoice (clears the cart)',
+              child: InkWell(
+                borderRadius: BorderRadius.circular(4),
+                onTap: () =>
+                    ref.read(saleInvoiceProvider.notifier).resetInvoice(),
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                ),
               ),
             ),
           ],
@@ -147,8 +152,7 @@ class SaleInvoiceScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Sale type toggle (cash / card) ────────────────────────────────────────
@@ -296,10 +300,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
             Expanded(
               child: customersAsync.when(
                 loading: () => const _FieldLoading(),
-                error: (e, _) => Text(
-                  'Error: $e',
-                  style: const TextStyle(fontSize: 11, color: Colors.red),
-                ),
+                error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(customersForSaleProvider)),
                 data: (list) {
                   final active = list.where((c) => c.isActive).toList();
                   return KeyboardDropdown<CustomerModel>(
@@ -334,10 +335,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
             Expanded(
               child: printersAsync.when(
                 loading: () => const _FieldLoading(),
-                error: (e, _) => Text(
-                  'Error: $e',
-                  style: const TextStyle(fontSize: 11, color: Colors.red),
-                ),
+                error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(printersForSaleProvider)),
                 data: (list) => KeyboardDropdown<PrinterLookupItem>(
                   key: _printerKey,
                   filter: (f) => list
@@ -363,10 +361,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
               Expanded(
                 child: bankAsync.when(
                   loading: () => const _FieldLoading(),
-                  error: (e, _) => Text(
-                    'Error: $e',
-                    style: const TextStyle(fontSize: 11, color: Colors.red),
-                  ),
+                  error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(bankEntriesForSaleProvider)),
                   data: (list) => DropdownSearch<BankEntryLookupItem>(
                     items: (f, _) => list
                         .where(
@@ -392,7 +387,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
               if (state.paymentType == 'cash_card') ...[
                 const SizedBox(width: 16),
                 Expanded(
-                  child: TextField(
+                  child: TextField(cursorHeight: 16, 
                     controller: _cashAmountCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -451,10 +446,7 @@ class _InvoiceMetaRowState extends ConsumerState<_InvoiceMetaRow> {
   }) {
     return async.when(
       loading: () => const _FieldLoading(),
-      error: (e, _) => Text(
-        'Error: $e',
-        style: const TextStyle(fontSize: 11, color: Colors.red),
-      ),
+      error: (e, _) => InlineError(e),
       data: (list) {
         if (list.isEmpty) {
           return InputDecorator(
@@ -561,7 +553,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
 
     final isMobile = Responsive(context).isMobile;
 
-    final noteField = TextField(
+    final noteField = TextField(cursorHeight: 16, 
       onChanged: (v) => ref.read(saleInvoiceProvider.notifier).setNote(v),
       decoration: InputDecoration(
         hintText: 'Note (optional)',
@@ -673,7 +665,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
                       SizedBox(
                         width: 150,
                         // Cashier edit nahi kar sakta — admin ka tay kiya % khud lagta hai.
-                        child: TextFormField(
+                        child: TextFormField(cursorHeight: 16, 
                           key: ValueKey(
                             'branch-disc-${manualLocked ? 0 : branchPct}',
                           ),
@@ -744,7 +736,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
                   SizedBox(
                     width: 150,
                     // Cashier edit nahi kar sakta — admin ka tay kiya % khud lagta hai.
-                    child: TextFormField(
+                    child: TextFormField(cursorHeight: 16, 
                       key: ValueKey(
                         'branch-disc-${manualLocked ? 0 : branchPct}',
                       ),
@@ -898,7 +890,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $error'),
+          content: Text(friendlyError(error, prefix: 'Error: ')),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -921,7 +913,7 @@ class _InvoiceFooterState extends ConsumerState<_InvoiceFooter> {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Print failed: $e'),
+              content: Text(friendlyError(e, prefix: 'Print failed: ')),
               backgroundColor: Colors.orange.shade700,
             ),
           );

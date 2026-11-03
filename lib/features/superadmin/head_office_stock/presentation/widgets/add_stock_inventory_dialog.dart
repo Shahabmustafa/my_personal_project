@@ -28,6 +28,7 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/features/warehouse/size/data/model/size_group_model.dart';
 import 'package:safishoe_app/features/warehouse/size/presentation/providers/size_group_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 class AddStockInventoryDialog extends ConsumerStatefulWidget {
   const AddStockInventoryDialog({super.key});
@@ -217,7 +218,7 @@ class _AddStockInventoryDialogState
     if (!mounted) return;
 
     if (result.error != null) {
-      _showSnack('Error: ${result.error}', Colors.red);
+      _showSnack(friendlyError(result.error, prefix: 'Error: '), Colors.red);
       return;
     }
 
@@ -382,7 +383,7 @@ class _AddStockInventoryDialogState
                           const SizedBox(width: 16),
                           Expanded(
                             flex: 1,
-                            child: TextFormField(
+                            child: TextFormField(cursorHeight: 16, 
                               controller: _discountCtrl,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
@@ -473,7 +474,7 @@ class _AddStockInventoryDialogState
                           const SizedBox(width: 12),
                           Expanded(
                             flex: 2,
-                            child: TextField(
+                            child: TextField(cursorHeight: 16, 
                               controller: _fillAllCtrl,
                               keyboardType: TextInputType.number,
                               inputFormatters: [
@@ -722,7 +723,7 @@ class _SizeQtyCell extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                     color: filled ? Colors.white : Colors.black87)),
           ),
-          TextField(
+          TextField(cursorHeight: 16, 
             controller: controller,
             textAlign: TextAlign.center,
             keyboardType: TextInputType.number,

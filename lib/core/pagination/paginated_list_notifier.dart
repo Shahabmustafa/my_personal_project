@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/legacy.dart';
 
 import 'page_models.dart';
 import 'paginated_list_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 /// Base class for every server-paginated list in the app.
 ///
@@ -197,5 +198,5 @@ abstract class PaginatedListNotifier<T>
     }
   }
 
-  String _message(Object e) => e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+  String _message(Object e) => friendlyError(e);
 }

@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
@@ -11,6 +12,8 @@ import '../widgets/purchase_return_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 class PurchaseReturnScreen extends ConsumerWidget {
   const PurchaseReturnScreen({super.key});
@@ -145,9 +148,9 @@ class PurchaseReturnScreen extends ConsumerWidget {
                         height: 48,
                         child: Center(child: LinearProgressIndicator()),
                       ),
-                      error: (e, _) => Text(
-                        'Error: $e',
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      error: (e, _) => ErrorView(
+                        error: e,
+                        onRetry: () => ref.invalidate(returnCompaniesProvider),
                       ),
                       data: (companies) => DropdownSearch<StockLookupItem>(
                         items: (filter, _) => companies
@@ -185,7 +188,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                           fit: FlexFit.loose,
                           showSearchBox: true,
                           constraints: const BoxConstraints(maxHeight: 260),
-                          searchFieldProps: const TextFieldProps(
+                          searchFieldProps: const TextFieldProps(cursorHeight: 16, 
                             decoration: InputDecoration(
                               hintText: 'Search company...',
                               prefixIcon: TextFieldIcon(
@@ -204,7 +207,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                         height: 48,
                         child: Center(child: LinearProgressIndicator()),
                       ),
-                      error: (e, _) => const SizedBox(),
+                      error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(returnInvoiceNumbersProvider)),
                       data: (invoices) => DropdownSearch<Map<String, String>>(
                         items: (f, _) => invoices
                             .where(
@@ -255,7 +258,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                           fit: FlexFit.loose,
                           showSearchBox: true,
                           constraints: BoxConstraints(maxHeight: 260),
-                          searchFieldProps: TextFieldProps(
+                          searchFieldProps: TextFieldProps(cursorHeight: 16, 
                             decoration: InputDecoration(
                               hintText: 'Search invoice...',
                               prefixIcon: TextFieldIcon(
@@ -330,12 +333,10 @@ class PurchaseReturnScreen extends ConsumerWidget {
                           height: 48,
                           child: Center(child: LinearProgressIndicator()),
                         ),
-                        error: (e, _) => Text(
-                          'Error: $e',
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 12,
-                          ),
+                        error: (e, _) => ErrorView(
+                          error: e,
+                          onRetry: () =>
+                              ref.invalidate(returnCompaniesProvider),
                         ),
                         data: (companies) => DropdownSearch<StockLookupItem>(
                           items: (filter, _) => companies
@@ -373,7 +374,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                             fit: FlexFit.loose,
                             showSearchBox: true,
                             constraints: const BoxConstraints(maxHeight: 260),
-                            searchFieldProps: const TextFieldProps(
+                            searchFieldProps: const TextFieldProps(cursorHeight: 16, 
                               decoration: InputDecoration(
                                 hintText: 'Search company...',
                                 prefixIcon: TextFieldIcon(
@@ -397,7 +398,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                           height: 48,
                           child: Center(child: LinearProgressIndicator()),
                         ),
-                        error: (e, _) => const SizedBox(),
+                        error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(returnInvoiceNumbersProvider)),
                         data: (invoices) => DropdownSearch<Map<String, String>>(
                           items: (f, _) => invoices
                               .where(
@@ -448,7 +449,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
                             fit: FlexFit.loose,
                             showSearchBox: true,
                             constraints: BoxConstraints(maxHeight: 260),
-                            searchFieldProps: TextFieldProps(
+                            searchFieldProps: TextFieldProps(cursorHeight: 16, 
                               decoration: InputDecoration(
                                 hintText: 'Search invoice...',
                                 prefixIcon: TextFieldIcon(
@@ -504,10 +505,7 @@ class PurchaseReturnScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Return footer ─────────────────────────────────────────────────────────
@@ -885,7 +883,10 @@ class _ReturnFooter extends ConsumerWidget {
 
     if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $err'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(friendlyError(err, prefix: 'Error: ')),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }

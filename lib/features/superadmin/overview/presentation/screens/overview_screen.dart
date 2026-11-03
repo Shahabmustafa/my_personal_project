@@ -6,6 +6,7 @@ import '../providers/overview_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 class OverviewScreen extends ConsumerWidget {
   const OverviewScreen({super.key});
 
@@ -69,10 +70,7 @@ class OverviewScreen extends ConsumerWidget {
                         size: 44,
                       ),
                       const SizedBox(height: 10),
-                      Text(
-                        'Error: $e',
-                        style: const TextStyle(color: Color(0xFF8A8FA3)),
-                      ),
+                      ErrorView(error: e, onRetry: () => ref.invalidate(overviewStatsProvider)),
                       const SizedBox(height: 14),
                       FilledButton.icon(
                         onPressed: () => ref.invalidate(overviewStatsProvider),

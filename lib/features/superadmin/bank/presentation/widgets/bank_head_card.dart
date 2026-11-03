@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import '../../data/models/bank_head_model.dart';
 
@@ -73,8 +74,5 @@ class BankHeadCard extends StatelessWidget {
     );
   }
 
-  String _fmt(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _fmt(DateTime dt) => dfmt.fmtDateTime(dt);
 }

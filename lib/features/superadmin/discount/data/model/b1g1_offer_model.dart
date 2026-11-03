@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/error_text.dart';
 /// Ek stock variant ki pehchan — article + size + color + brand + category +
 /// type. Head office aur branch stock dono mein yahi IDs hoti hain.
 String b1g1VariantKey({
@@ -66,7 +67,7 @@ class B1g1OfferModel {
   }
 
   static List<String> _ids(dynamic v) =>
-      ((v as List?) ?? const []).map((e) => e.toString()).toList();
+      ((v as List?) ?? const []).map((e) => friendlyError(e)).toList();
 
   static DateTime? _date(dynamic v) =>
       v == null ? null : DateTime.tryParse(v.toString());

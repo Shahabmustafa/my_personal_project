@@ -110,7 +110,7 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: notifier.setSearch,
               decoration: InputDecoration(
                 hintText: 'Search products...',

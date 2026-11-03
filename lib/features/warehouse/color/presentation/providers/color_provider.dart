@@ -6,6 +6,7 @@ import '../../data/datasource/color_remote_datasource.dart';
 import '../../data/model/color_model.dart';
 import '../../data/repository/color_repository.dart';
 import 'color_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final colorRemoteDatasourceProvider =
     Provider<ColorRemoteDatasource>((_) => ColorRemoteDatasource());
@@ -32,7 +33,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -46,7 +47,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -61,7 +62,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -75,7 +76,7 @@ class ColorNotifier extends StateNotifier<ColorState> {
     } catch (e) {
       state = state.copyWith(
           status: ColorStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

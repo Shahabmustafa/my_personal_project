@@ -12,6 +12,8 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_summary_card.dart';
 import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_table_shell.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Manager / cashier / salesman ki apni attendance — aaj check in / check
 /// out, is mahine ka khulasa aur pichle din.
@@ -84,7 +86,7 @@ class _MyAttendanceScreenState extends ConsumerState<MyAttendanceScreen> {
 
   static String _message(Object e) => e is PostgrestException
       ? e.message
-      : e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      : friendlyError(e);
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +99,7 @@ class _MyAttendanceScreenState extends ConsumerState<MyAttendanceScreen> {
         skipLoadingOnReload: true,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
-            child: Text('Error: $e', style: const TextStyle(color: _red))),
+            child: ErrorView(error: e, onRetry: () => ref.invalidate(myAttendanceProvider))),
         data: (records) {
           final today = pakistanToday();
           // Khula record (check out baqi) — kal raat ka bhi ho sakta hai.

@@ -17,6 +17,8 @@ import 'package:safishoe_app/core/widget/stock_size_variants.dart';
 import 'package:safishoe_app/core/widget/b1g1_stock_badge.dart';
 import 'package:safishoe_app/core/widget/stock_filter_dropdown.dart';
 import 'package:safishoe_app/core/service/print/stock_report_printer.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Superadmin stock view — head office ka stock (`stock_inventory` table).
 /// Warehouse se koi taalluq nahi. Add / Edit / Delete + barcode print/copy.
@@ -135,7 +137,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Print failed: $e')));
+        ).showSnackBar(SnackBar(content: Text(friendlyError(e, prefix: 'Print failed: '))));
       }
     } finally {
       if (mounted) setState(() => _printing = false);
@@ -227,7 +229,7 @@ class _HeadOfficeStockScreenState extends ConsumerState<HeadOfficeStockScreen> {
           children: [
             SizedBox(
               width: isMobile ? double.infinity : 360,
-              child: TextField(
+              child: TextField(cursorHeight: 16, 
                 controller: _searchCtrl,
                 onChanged: notifier.setSearch,
                 decoration: InputDecoration(
@@ -506,7 +508,7 @@ void _confirmDelete(
             if (err != null && context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Error: $err'),
+                  content: Text(friendlyError(err, prefix: 'Error: ')),
                   backgroundColor: Colors.red,
                 ),
               );
@@ -556,7 +558,7 @@ void _showEditDialog(
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                TextFormField(cursorHeight: 16, 
                   controller: qtyCtrl,
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -582,7 +584,7 @@ void _showEditDialog(
                   },
                 ),
                 const SizedBox(height: 12),
-                TextFormField(
+                TextFormField(cursorHeight: 16, 
                   controller: discountCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
@@ -652,7 +654,7 @@ void _showEditDialog(
                           content: Text(
                             err == null
                                 ? 'Stock updated successfully!'
-                                : 'Error: $err',
+                                : friendlyError(err, prefix: 'Error: '),
                           ),
                           backgroundColor: err == null
                               ? Colors.green
@@ -1016,16 +1018,7 @@ class _MobileBody extends StatelessWidget {
       status = Padding(
         padding: const EdgeInsets.all(32),
         child: Center(
-          child: Column(
-            children: [
-              Text('${state.error}', textAlign: TextAlign.center),
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: notifier.refresh,
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
+          child: ErrorView(error: state.error, onRetry: notifier.refresh),
         ),
       );
     } else if (state.showEmpty) {

@@ -8,6 +8,7 @@ import '../../data/models/purchase_return_model.dart';
 import '../../data/models/warehouse_stock_model.dart';
 import '../../data/repositories/purchase_invoice_repository.dart';
 import '../../../shared/current_head_office_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 final purchaseInvoiceDatasourceProvider = Provider<PurchaseInvoiceDatasource>(
@@ -103,7 +104,7 @@ class InvoiceListNotifier extends StateNotifier<InvoiceListState> {
       final list = await _repo.getInvoices(_headOfficeId);
       state = state.copyWith(invoices: list, isLoading: false);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      state = state.copyWith(isLoading: false, error: friendlyError(e));
     }
   }
 }
@@ -359,7 +360,7 @@ class PurchaseInvoiceNotifier extends StateNotifier<PurchaseInvoiceState> {
       }
       return null;
     } catch (e) {
-      final errMsg = e.toString();
+      final errMsg = friendlyError(e);
 
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {
         try {

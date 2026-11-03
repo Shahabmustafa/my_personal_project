@@ -10,6 +10,7 @@ import '../../data/datasource/company_remote_datasource.dart';
 import '../../data/model/company_model.dart';
 import '../../data/repository/company_repository.dart';
 import 'company_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final companyRemoteDatasourceProvider =
     Provider<CompanyRemoteDatasource>((_) => CompanyRemoteDatasource());
@@ -42,7 +43,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -55,7 +56,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -73,7 +74,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -90,7 +91,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -105,7 +106,7 @@ class CompanyNotifier extends StateNotifier<CompanyState> {
     } catch (e) {
       state = state.copyWith(
           status: CompanyStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

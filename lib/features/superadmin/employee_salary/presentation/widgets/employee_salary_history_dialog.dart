@@ -5,6 +5,7 @@ import '../providers/employee_salary_providers.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Ek employee ke pichle mahinon ka archived total_sales/total_sales_return/
 /// net_salary — har mahine ki 1 tareekh ko reset se pehle jo record
@@ -27,7 +28,7 @@ class EmployeeSalaryHistoryDialog extends ConsumerWidget {
         height: 360,
         child: historyAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: ErrorView(error: e, onRetry: () => ref.invalidate(employeeSalaryHistoryProvider))),
           data: (history) {
             if (history.isEmpty) {
               return const Center(

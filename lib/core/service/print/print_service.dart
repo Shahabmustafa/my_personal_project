@@ -10,6 +10,7 @@ import 'receipt_options.dart';
 import '../../../features/branch/sale_exchange/data/model/sale_exchange_model.dart';
 import '../../../features/branch/sale_invoice/data/model/sale_invoice_model.dart';
 import '../../../features/branch/sale_return/data/model/sale_return_model.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 /// Builds and prints thermal-receipt-sized PDFs for sale invoices and sale
 /// returns, styled for a footwear shop (size/color per line, exchange
@@ -735,7 +736,7 @@ class ThermalPrintService {
         onLayout: (_) async => bytes,
       );
     } catch (e) {
-      debugPrint('Direct print failed, falling back to dialog: $e');
+      debugPrint(friendlyError(e, prefix: 'Direct print failed, falling back to dialog: '));
       await Printing.layoutPdf(name: jobName, onLayout: (_) async => bytes);
     }
   }
@@ -765,7 +766,7 @@ class ThermalPrintService {
       final data = await rootBundle.load('assets/images/safi.png');
       return pw.MemoryImage(data.buffer.asUint8List());
     } catch (e) {
-      debugPrint('Default logo load failed: $e');
+      debugPrint(friendlyError(e, prefix: 'Default logo load failed: '));
       return null;
     }
   }
@@ -777,7 +778,7 @@ class ThermalPrintService {
       if (res.statusCode != 200 || res.bodyBytes.isEmpty) return null;
       return pw.MemoryImage(res.bodyBytes);
     } catch (e) {
-      debugPrint('Logo fetch failed: $e');
+      debugPrint(friendlyError(e, prefix: 'Logo fetch failed: '));
       return null;
     }
   }

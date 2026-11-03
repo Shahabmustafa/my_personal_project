@@ -298,7 +298,7 @@ class _EditField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
-      child: TextField(
+      child: TextField(cursorHeight: 16, 
         controller: controller,
         keyboardType:
         const TextInputType.numberWithOptions(decimal: true),
@@ -387,7 +387,7 @@ class _QtyRowStepperState extends State<_QtyRowStepper> {
         borderRadius: BorderRadius.circular(7),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: TextField(
+      child: TextField(cursorHeight: 16, 
         controller: _ctrl,
         keyboardType: TextInputType.number,
         inputFormatters: [FilteringTextInputFormatter.digitsOnly],

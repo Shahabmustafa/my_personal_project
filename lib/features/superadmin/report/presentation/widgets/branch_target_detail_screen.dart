@@ -5,6 +5,8 @@ import '../../data/model/branch_target_row.dart';
 import '../providers/sale_report_providers.dart'
     show saleReportRepositoryProvider;
 import 'report_table_shell.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Branch Target report mein branch par click karne par khulne wali screen —
 /// us branch ke har din ka sale target, total sale aur achieve hua ya nahi.
@@ -106,7 +108,7 @@ class _BranchTargetDetailScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -214,7 +216,7 @@ class _BranchTargetDetailScreenState
       );
     }
     if (_error != null) {
-      return Text('Error: $_error', style: const TextStyle(color: Colors.red));
+      return ErrorView(error: _error, onRetry: _load);
     }
     if (_lines.isEmpty) {
       return const Padding(

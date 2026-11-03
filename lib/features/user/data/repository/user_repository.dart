@@ -68,4 +68,11 @@ class UserRepository {
   }) =>
       remoteDatasource.assignHeadOfficesToUser(
           userId: userId, headOfficeIds: headOfficeIds);
+
+  Future<void> changeUserPassword({
+    required String userId,
+    required String newPassword,
+  }) =>
+      remoteDatasource.changeUserPassword(
+          userId: userId, newPassword: newPassword);
 }

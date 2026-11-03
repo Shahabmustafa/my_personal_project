@@ -10,6 +10,7 @@ import '../../../../branch/shared/current_branch_provider.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Har branch ka aaj ka target (admin ne din-wise set kiya), aaj ki net sale, aur
 /// target achieve hua ya nahi — ek jagah.
@@ -143,7 +144,7 @@ class _BranchTargetReportScreenState extends ConsumerState<BranchTargetReportScr
           if (state.error != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
-              child: Text('Error: ${state.error}', style: const TextStyle(color: Colors.red)),
+              child: ErrorView(error: state.error, onRetry: notifier.load),
             ),
           const SizedBox(height: 16),
           Expanded(

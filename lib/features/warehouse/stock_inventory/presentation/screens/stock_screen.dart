@@ -85,7 +85,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           const SizedBox(height: 16),
 
           // ── Search ───────────────────────────────────────────────────
-          TextField(
+          TextField(cursorHeight: 16, 
             controller: _searchCtrl,
             onChanged: notifier.setSearch,
             decoration: InputDecoration(

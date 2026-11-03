@@ -11,6 +11,7 @@ import '../../data/datasource/sale_exchange_datasource.dart';
 import '../../data/model/sale_exchange_model.dart';
 import '../../data/repository/sale_exchange_repository.dart';
 import 'package:safishoe_app/core/utils/money.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -215,7 +216,7 @@ class SaleExchangeNotifier extends StateNotifier<SaleExchangeState> {
       if (mounted) {
         state = state.copyWith(
           originalInvoiceLoading: false,
-          error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+          error: friendlyError(e),
         );
       }
     }
@@ -415,7 +416,7 @@ class SaleExchangeNotifier extends StateNotifier<SaleExchangeState> {
       if (mounted) state = state.copyWith(isSaving: false, lastSavedExchange: saved);
       return null;
     } catch (e) {
-      final errMsg = e.toString();
+      final errMsg = friendlyError(e);
       if (errMsg.contains('duplicate') || errMsg.contains('23505')) {
         try {
           final retryNumber = await _repo.generateExchangeNumber();

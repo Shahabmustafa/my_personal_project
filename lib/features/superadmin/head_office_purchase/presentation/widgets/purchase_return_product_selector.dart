@@ -9,6 +9,7 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
 /// (color/size/category/type ke sath) hai, is liye alag Size/Color/
@@ -123,7 +124,7 @@ class _PurchaseReturnProductSelectorState
       // Realtime reload par purani list dikhti rahe — spinner/focus loss nahi.
       skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
+      error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(returnWarehouseStockProvider)),
       data: (allStock) {
         // Taza list se selected article — purchase/return/assign ke baad qty purani na rahe.
         final sel = _selectedStock;
@@ -137,8 +138,7 @@ class _PurchaseReturnProductSelectorState
         final companyDropdown = companiesAsync.when(
           loading: () => const SizedBox(
               height: 48, child: Center(child: LinearProgressIndicator())),
-          error: (e, _) => Text('Error: $e',
-              style: const TextStyle(color: Colors.red, fontSize: 12)),
+          error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(returnCompaniesProvider)),
           data: (companies) => DropdownSearch<StockLookupItem>(
             items: (filter, _) => companies
                 .where((c) =>
@@ -156,7 +156,7 @@ class _PurchaseReturnProductSelectorState
               fit: FlexFit.loose,
               showSearchBox: true,
               constraints: const BoxConstraints(maxHeight: 260),
-              searchFieldProps: const TextFieldProps(
+              searchFieldProps: const TextFieldProps(cursorHeight: 16, 
                 decoration: InputDecoration(
                   hintText: 'Search company...',
                   prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
@@ -167,7 +167,7 @@ class _PurchaseReturnProductSelectorState
           ),
         );
 
-        final barcodeField = TextField(
+        final barcodeField = TextField(cursorHeight: 16, 
           controller: _barcodeCtrl,
           focusNode: _barcodeFocus,
           autofocus: true,
@@ -211,7 +211,7 @@ class _PurchaseReturnProductSelectorState
             fit: FlexFit.loose,
             showSearchBox: true,
             constraints: const BoxConstraints(maxHeight: 320),
-            searchFieldProps: const TextFieldProps(
+            searchFieldProps: const TextFieldProps(cursorHeight: 16, 
               decoration: InputDecoration(
                 hintText: 'Search article, color, size, category...',
                 prefixIcon: TextFieldIcon(AppIcons.search, size: 24),

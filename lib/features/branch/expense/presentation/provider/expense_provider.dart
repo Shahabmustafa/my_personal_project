@@ -6,6 +6,7 @@ import '../../data/datasource/expense_datasource.dart';
 import '../../data/model/expense_entry_model.dart';
 import '../../data/model/expense_head_model.dart';
 import '../../data/repository/expense_repository.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 // ── Infrastructure ────────────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''),
+        error: friendlyError(e),
       );
     }
   }
@@ -151,7 +152,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       state = state.copyWith(isSaving: false);
       return null;
     } catch (e) {
-      final message = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      final message = friendlyError(e);
       state = state.copyWith(isSaving: false, error: message);
       return message;
     }
@@ -184,7 +185,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       state = state.copyWith(isSaving: false);
       return null;
     } catch (e) {
-      final message = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      final message = friendlyError(e);
       state = state.copyWith(isSaving: false, error: message);
       return message;
     }
@@ -196,7 +197,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       state = state.copyWith(heads: [...state.heads, head]);
       return null;
     } catch (e) {
-      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      return friendlyError(e);
     }
   }
 
@@ -210,7 +211,7 @@ class ExpenseNotifier extends StateNotifier<ExpenseState> {
       await load();
       return null;
     } catch (e) {
-      return e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+      return friendlyError(e);
     }
   }
 }

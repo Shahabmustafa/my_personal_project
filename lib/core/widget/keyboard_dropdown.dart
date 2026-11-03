@@ -126,7 +126,7 @@ class KeyboardDropdownState<T> extends State<KeyboardDropdown<T>> {
         fit: FlexFit.loose,
         showSearchBox: true,
         constraints: BoxConstraints(maxHeight: widget.maxHeight),
-        searchFieldProps: TextFieldProps(
+        searchFieldProps: TextFieldProps(cursorHeight: 16, 
           autofocus: true,
           focusNode: _searchFocus,
           decoration: InputDecoration(

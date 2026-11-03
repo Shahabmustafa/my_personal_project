@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
@@ -11,6 +12,8 @@ import '../widgets/assign_product_selector.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 class AssignStockScreen extends ConsumerWidget {
   const AssignStockScreen({super.key});
@@ -69,10 +72,7 @@ class AssignStockScreen extends ConsumerWidget {
         height: 48,
         child: Center(child: LinearProgressIndicator()),
       ),
-      error: (e, _) => Text(
-        'Error: $e',
-        style: const TextStyle(color: Colors.red, fontSize: 12),
-      ),
+      error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(branchesProvider)),
       data: (branches) => DropdownSearch<BranchModel>(
         items: (filter, _) => branches
             .where((b) => b.label.toLowerCase().contains(filter.toLowerCase()))
@@ -100,7 +100,7 @@ class AssignStockScreen extends ConsumerWidget {
           fit: FlexFit.loose,
           showSearchBox: true,
           constraints: const BoxConstraints(maxHeight: 260),
-          searchFieldProps: const TextFieldProps(
+          searchFieldProps: const TextFieldProps(cursorHeight: 16, 
             decoration: InputDecoration(
               hintText: 'Search branch...',
               prefixIcon: TextFieldIcon(AppIcons.search, size: 18),
@@ -204,10 +204,7 @@ class AssignStockScreen extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────
@@ -385,7 +382,7 @@ class _AssignFooter extends ConsumerWidget {
       ref.invalidate(assignWarehouseStockProvider);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(error, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }

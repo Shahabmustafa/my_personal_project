@@ -10,6 +10,7 @@ import 'package:safishoe_app/core/widget/keyboard_dropdown.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
 /// (color/size/category/type ke sath) hai, is liye alag Size/Color/
@@ -197,7 +198,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
       // Realtime reload par purani list dikhti rahe — spinner/focus loss nahi.
       skipLoadingOnReload: true,
       loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-      error: (e, _) => Text('Error: $e', style: const TextStyle(color: Colors.red)),
+      error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(branchStockCacheProvider)),
       data: (allStock) {
         // Taza list se selected article — sale/return ke baad qty purani na rahe.
         final sel = _selectedStock;
@@ -216,7 +217,7 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
 
         final isMobile = Responsive(context).isMobile;
 
-        final barcodeField = TextField(
+        final barcodeField = TextField(cursorHeight: 16, 
                   controller: _barcodeCtrl,
                   focusNode: _barcodeFocus,
                   autofocus: true,
@@ -352,10 +353,9 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                   ],
                 )
               : Row(
-                  // Hint ke sath fields lambe hote hain — baqi cheezein upar se.
-                  crossAxisAlignment: widget.showShortcutHints
-                      ? CrossAxisAlignment.start
-                      : CrossAxisAlignment.end,
+                  // Sab boxes ek hi top line par (floating labels, 48px) —
+                  // hint ke sath fields lambe hon tab bhi.
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     for (final w in widget.leading) ...[
                       Expanded(flex: 3, child: w),
@@ -365,9 +365,19 @@ class _SaleProductSelectorState extends ConsumerState<SaleProductSelector> {
                     const SizedBox(width: 10),
                     Expanded(flex: 5, child: articleField),
                     const SizedBox(width: 10),
-                    Expanded(flex: 2, child: stockInfo),
+                    SizedBox(width: 110, child: stockInfo),
                     const SizedBox(width: 10),
-                    qtyField,
+                    _QtyStepperInput(
+                      controller: _qtyCtrl,
+                      focusNode: _qtyFocus,
+                      max: totalQty,
+                      enabled: stock != null && totalQty > 0,
+                      primaryColor: primary,
+                      showLabel: false,
+                      onSubmit: (_) {
+                        if (_qtyFits(totalQty)) _addToCart();
+                      },
+                    ),
                     const SizedBox(width: 10),
                     addButton,
                   ],
@@ -406,31 +416,34 @@ class _InfoBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEmpty = value == null || value!.isEmpty;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-        const SizedBox(height: 4),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Text(
-            isEmpty ? '—' : value!,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: (!isEmpty && valueColor != null) ? FontWeight.w600 : FontWeight.normal,
-              color: isEmpty ? Colors.grey.shade400 : (valueColor ?? Colors.black87),
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
+    // Barcode / Article fields jaisi floating-label read-only box.
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        floatingLabelBehavior: FloatingLabelBehavior.always,
+        filled: true,
+        fillColor: Colors.grey.shade50,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
-      ],
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      ),
+      child: Text(
+        isEmpty ? '—' : value!,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: (!isEmpty && valueColor != null)
+              ? FontWeight.w700
+              : FontWeight.w500,
+          color:
+              isEmpty ? Colors.grey.shade400 : (valueColor ?? Colors.black87),
+        ),
+      ),
     );
   }
 }
@@ -443,6 +456,9 @@ class _QtyStepperInput extends StatelessWidget {
   final void Function(String) onSubmit;
   final int? max;
 
+  /// false: label nahi (desktop row mein baqi fields ke saath align).
+  final bool showLabel;
+
   const _QtyStepperInput({
     required this.controller,
     this.focusNode,
@@ -450,6 +466,7 @@ class _QtyStepperInput extends StatelessWidget {
     required this.primaryColor,
     required this.onSubmit,
     this.max,
+    this.showLabel = true,
   });
 
   @override
@@ -458,8 +475,11 @@ class _QtyStepperInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Quantity', style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-        const SizedBox(height: 4),
+        if (showLabel) ...[
+          Text('Quantity',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+          const SizedBox(height: 4),
+        ],
         SizedBox(
           width: 132,
           child: QtyStepperField(

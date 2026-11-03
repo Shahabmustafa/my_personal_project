@@ -213,7 +213,7 @@ class _EmployeeSalaryFormDialogState
     bool required = false,
     bool isNumeric = false,
   }) {
-    return TextFormField(
+    return TextFormField(cursorHeight: 16, 
       controller: controller,
       keyboardType: isNumeric
           ? const TextInputType.numberWithOptions(decimal: true)

@@ -12,6 +12,7 @@ import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/widget/cash_counter_bar_chart.dart';
 import 'package:safishoe_app/features/superadmin/report/presentation/widgets/report_detail_panel.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 class BranchCashCounterScreen extends ConsumerStatefulWidget {
   const BranchCashCounterScreen({super.key});
 
@@ -178,7 +179,7 @@ class _BranchCashCounterScreenState
           // ── Search ────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: notifier.setSearch,
               decoration: _searchDecor('Search by date (dd/mm/yyyy, mm/yyyy) or total sale amount...'),
             ),
@@ -660,7 +661,7 @@ class _PayToHeadOfficeDialogState
       if (mounted) {
         setState(() {
           _saving = false;
-          _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+          _error = friendlyError(e);
         });
       }
     }
@@ -691,7 +692,7 @@ class _PayToHeadOfficeDialogState
                     fontSize: 13, color: Color(0xFF8A8FA3)),
               ),
               const SizedBox(height: 14),
-              TextFormField(
+              TextFormField(cursorHeight: 16, 
                 controller: _amountCtrl,
                 autofocus: true,
                 keyboardType:
@@ -714,7 +715,7 @@ class _PayToHeadOfficeDialogState
                 },
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              TextFormField(cursorHeight: 16, 
                 controller: _notesCtrl,
                 maxLines: 2,
                 decoration: const InputDecoration(

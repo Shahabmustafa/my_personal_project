@@ -10,6 +10,7 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Ek hi searchable "Article" dropdown — har entry ek exact stock variant
 /// (color/size/category/type ke sath) hai, is liye alag Size/Color/
@@ -153,7 +154,7 @@ class _HoAssignProductSelectorState
       loading: () =>
           const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       error: (e, _) =>
-          Text('Error: $e', style: const TextStyle(color: Colors.red)),
+          ErrorView(error: e, onRetry: () => ref.invalidate(hoAssignStockListProvider)),
       data: (allStock) {
         // Taza list se selected article — purchase/return/assign ke baad qty purani na rahe.
         final sel = _selectedStock;
@@ -168,8 +169,7 @@ class _HoAssignProductSelectorState
         final branchDropdown = branchesAsync.when(
           loading: () => const SizedBox(
               height: 48, child: Center(child: LinearProgressIndicator())),
-          error: (e, _) => Text('Error: $e',
-              style: const TextStyle(color: Colors.red, fontSize: 12)),
+          error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(hoAssignBranchesProvider)),
           data: (branches) => DropdownSearch<HoBranchModel>(
             items: (filter, _) => branches
                 .where((b) =>
@@ -187,7 +187,7 @@ class _HoAssignProductSelectorState
               fit: FlexFit.loose,
               showSearchBox: true,
               constraints: const BoxConstraints(maxHeight: 260),
-              searchFieldProps: const TextFieldProps(
+              searchFieldProps: const TextFieldProps(cursorHeight: 16, 
                 decoration: InputDecoration(
                   hintText: 'Search branch...',
                   prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
@@ -216,7 +216,7 @@ class _HoAssignProductSelectorState
             Text('Barcode',
                 style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
             const SizedBox(height: 4),
-            TextField(
+            TextField(cursorHeight: 16, 
               controller: _barcodeCtrl,
               focusNode: _barcodeFocus,
               autofocus: true,
@@ -269,7 +269,7 @@ class _HoAssignProductSelectorState
             fit: FlexFit.loose,
             showSearchBox: true,
             constraints: const BoxConstraints(maxHeight: 320),
-            searchFieldProps: const TextFieldProps(
+            searchFieldProps: const TextFieldProps(cursorHeight: 16, 
               decoration: InputDecoration(
                 hintText: 'Search article, color, size, category...',
                 prefixIcon: TextFieldIcon(AppIcons.search, size: 24),
@@ -545,20 +545,28 @@ class _QtyStepperInputState extends State<_QtyStepperInput> {
       children: [
         SizedBox(
           height: 16,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Quantity to assign',
-                  style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
-              if (enabled) ...[
-                const SizedBox(width: 6),
-                Text(over ? 'only ${widget.max} in stock' : 'max ${widget.max}',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: over ? Colors.red.shade600 : color)),
+          // Label + "max N" stepper se chauray ho sakte hain — overflow ke
+          // bajaye zaroorat par thora chhota ho jaye.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Quantity to assign',
+                    style:
+                        TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                if (enabled) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                      over ? 'only ${widget.max} in stock' : 'max ${widget.max}',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: over ? Colors.red.shade600 : color)),
+                ],
               ],
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 4),

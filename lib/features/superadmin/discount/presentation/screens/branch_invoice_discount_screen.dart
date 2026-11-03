@@ -75,7 +75,7 @@ class _BranchInvoiceDiscountScreenState
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(
+            child: TextField(cursorHeight: 16, 
               onChanged: (v) => setState(() => _searchQuery = v),
               decoration: InputDecoration(
                 hintText: 'Search branches...',
@@ -210,7 +210,7 @@ class _BranchDiscountRowState extends ConsumerState<_BranchDiscountRow> {
       ],
     );
 
-    final field = TextField(
+    final field = TextField(cursorHeight: 16, 
       controller: _ctrl,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [

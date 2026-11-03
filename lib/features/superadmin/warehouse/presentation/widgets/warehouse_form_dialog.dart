@@ -98,7 +98,7 @@ class _WarehouseFormDialogState extends State<WarehouseFormDialog> {
   }
 
   Widget _field({required TextEditingController controller, required String label, bool required = false, TextInputType keyboardType = TextInputType.text}) {
-    return TextFormField(
+    return TextFormField(cursorHeight: 16, 
       controller: controller,
       keyboardType: keyboardType,
       decoration: _decor(label),

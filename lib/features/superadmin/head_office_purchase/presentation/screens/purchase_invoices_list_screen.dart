@@ -5,6 +5,7 @@ import '../providers/purchase_invoice_provider.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 class PurchaseInvoicesListScreen extends ConsumerStatefulWidget {
   const PurchaseInvoicesListScreen({super.key});
 
@@ -68,8 +69,9 @@ class _PurchaseInvoicesListScreenState
           else if (state.error != null)
             Expanded(
               child: Center(
-                  child: Text('Error: ${state.error}',
-                      style: const TextStyle(color: Colors.red))),
+                  child: ErrorView(
+                    error: state.error,
+                    onRetry: () => ref.read(invoiceListProvider.notifier).loadInvoices())),
             )
           else if (state.invoices.isEmpty)
             const Expanded(

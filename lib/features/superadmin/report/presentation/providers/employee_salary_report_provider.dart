@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/datasource/employee_salary_report_datasource.dart';
 import '../../data/model/employee_salary_report_row.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final employeeSalaryReportDatasourceProvider =
     Provider<EmployeeSalaryReportDatasource>(
@@ -97,7 +98,7 @@ class EmployeeSalaryReportNotifier
     } catch (e) {
       if (state.month != requested) return;
       state = state.copyWith(
-          isLoading: false, error: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          isLoading: false, error: friendlyError(e));
     }
   }
 

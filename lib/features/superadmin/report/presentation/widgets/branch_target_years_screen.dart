@@ -9,6 +9,8 @@ import 'report_table_shell.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 /// Branch Target report mein branch par click — us branch ke saal (target
 /// set hone wale pehle saal se is saal tak), har saal ka total target, sale
@@ -111,7 +113,7 @@ class _BranchTargetYearsScreenState
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+        _error = friendlyError(e);
         _loading = false;
       });
     }
@@ -168,7 +170,7 @@ class _BranchTargetYearsScreenState
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
-      return Text('Error: $_error', style: const TextStyle(color: Colors.red));
+      return ErrorView(error: _error, onRetry: _load);
     }
     return ReportTableShell(
       columns: const [

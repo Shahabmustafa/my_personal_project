@@ -4,6 +4,7 @@ import '../../data/datasource/head_office_remote_datasource.dart';
 import '../../data/model/head_office_model.dart';
 import '../../data/repository/head_office_repository.dart';
 import 'head_office_state.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 final headOfficeRemoteDatasourceProvider =
     Provider<HeadOfficeRemoteDatasource>((_) => HeadOfficeRemoteDatasource());
@@ -26,7 +27,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -48,7 +49,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -64,7 +65,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 
@@ -78,7 +79,7 @@ class HeadOfficeNotifier extends StateNotifier<HeadOfficeState> {
     } catch (e) {
       state = state.copyWith(
           status: HeadOfficeStatus.error,
-          errorMessage: e.toString().replaceFirst(RegExp(r'^Exception: '), ''));
+          errorMessage: friendlyError(e));
     }
   }
 }

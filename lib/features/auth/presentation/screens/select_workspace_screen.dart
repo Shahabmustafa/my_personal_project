@@ -13,6 +13,7 @@ import 'login_screen.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 /// User ko uske assigned branches aur warehouses dikhata hai — jab
 /// login ke baad 1 se zyada assign hon. Jis par tap kare, wahi id
 /// locally persist ho jati hai aur app usi branch/warehouse ke liye
@@ -60,7 +61,7 @@ class _SelectWorkspaceScreenState extends ConsumerState<SelectWorkspaceScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = e.toString().replaceFirst(RegExp(r'^Exception: '), '');
+        _error = friendlyError(e);
         _isLoading = false;
       });
     }

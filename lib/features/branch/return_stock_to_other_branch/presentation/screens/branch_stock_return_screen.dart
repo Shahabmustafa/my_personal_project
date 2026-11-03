@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
@@ -13,9 +14,11 @@ import '../widgets/branch_return_cart_table.dart';
 import '../widgets/branch_return_product_selector.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
-import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/widget/text_field_icon.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart';
 
 const _primary = Color(0xFF1565C0);
 
@@ -39,6 +42,8 @@ class _BranchStockReturnScreenState
     extends ConsumerState<BranchStockReturnScreen> {
   String _filterStatus = 'all';
   String? _filterBranch; // destination branch id
+  DateTime? _fromDate; // returned-on range (inclusive)
+  DateTime? _toDate;
 
   BranchStockReturnModel? _selected; // list row (brief)
   BranchStockReturnModel? _detail; // loaded detail (items with names)
@@ -74,8 +79,66 @@ class _BranchStockReturnScreenState
     }
   }
 
+  int get _activeFilterCount =>
+      (_filterBranch != null ? 1 : 0) +
+      (_fromDate != null ? 1 : 0) +
+      (_toDate != null ? 1 : 0);
+
+  bool _matchesFilters(BranchStockReturnModel t) {
+    if (_filterBranch != null && t.toBranchId != _filterBranch) return false;
+    final d = t.returnedAt.toLocal();
+    final day = DateTime(d.year, d.month, d.day);
+    if (_fromDate != null && day.isBefore(_fromDate!)) return false;
+    if (_toDate != null && day.isAfter(_toDate!)) return false;
+    return true;
+  }
+
+  Future<void> _openFilterDialog(Map<String, String> branches) async {
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Returned To Branch',
+      allLabel: 'All branches',
+      branches: branches,
+      current: (
+        branch: _filterBranch,
+        branch2: null,
+        from: _fromDate,
+        to: _toDate,
+      ),
+    );
+    if (r == null || !mounted) return;
+    setState(() {
+      _filterBranch = r.branch;
+      _fromDate = r.from;
+      _toDate = r.to;
+      _selected = null;
+      _detail = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final branchOptions = <String, String>{
+      for (final t in ref.watch(sentStockReturnsProvider).value ??
+          const <BranchStockReturnModel>[])
+        t.toBranchId: t.toBranchName ?? '—',
+    };
+    final filterButton = Badge(
+      isLabelVisible: _activeFilterCount > 0,
+      label: Text('$_activeFilterCount'),
+      child: OutlinedButton.icon(
+        onPressed: () => _openFilterDialog(branchOptions),
+        icon: const Icon(Icons.filter_list, size: 18),
+        label: const Text('Filter'),
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
+    );
+
     final returnsAsync = ref.watch(sentStockReturnsProvider);
 
     final isMobile = Responsive(context).isMobile;
@@ -136,6 +199,8 @@ class _BranchStockReturnScreenState
                             },
                           ),
                         ),
+                        const SizedBox(width: 8),
+                        filterButton,
                         Tooltip(
                           message: 'Refresh',
                           child: IconButton(
@@ -169,6 +234,8 @@ class _BranchStockReturnScreenState
                         ],
                       ),
                     ),
+                    filterButton,
+                    const SizedBox(width: 4),
                     Tooltip(
                       message: 'Refresh',
                       child: IconButton(
@@ -203,19 +270,14 @@ class _BranchStockReturnScreenState
           const SizedBox(height: 16),
           returnsAsync.when(
             loading: () => const SizedBox.shrink(),
-            error: (e, _) => const SizedBox.shrink(),
+            error: (e, _) => InlineError(e, onRetry: () => ref.invalidate(sentStockReturnsProvider)),
             data: (returns) {
               final filtered = returns.where((t) {
-                if (_filterBranch != null && t.toBranchId != _filterBranch) {
-                  return false;
-                }
+                if (!_matchesFilters(t)) return false;
                 if (_filterStatus == 'all') return true;
                 return t.status == _filterStatus;
               }).toList();
               final filteredItems = filtered.expand((t) => t.items);
-              final branches = <String, String>{
-                for (final t in returns) t.toBranchId: t.toBranchName ?? '—',
-              };
               final totalArticles = filteredItems
                   .map((i) => i.productId)
                   .toSet()
@@ -263,20 +325,6 @@ class _BranchStockReturnScreenState
                   ),
                   const SizedBox(height: 16),
 
-                  // ── Destination branch filter ────────────────────────
-                  BranchFilterDropdown(
-                    label: 'Returned To Branch',
-                    allLabel: 'All branches',
-                    options: branches,
-                    value: _filterBranch,
-                    onChanged: (v) => setState(() {
-                      _filterBranch = v;
-                      _selected = null;
-                      _detail = null;
-                    }),
-                  ),
-                  const SizedBox(height: 12),
-
                   // ── Status filter chips ──────────────────────────────
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
@@ -320,17 +368,11 @@ class _BranchStockReturnScreenState
                       child: CircularProgressIndicator(strokeWidth: 2),
                     ),
                     error: (e, _) => Center(
-                      child: Text(
-                        'Error: $e',
-                        style: const TextStyle(color: Colors.red),
-                      ),
+                      child: ErrorView(error: e, onRetry: () => ref.invalidate(sentStockReturnsProvider)),
                     ),
                     data: (returns) {
                       final filtered = returns.where((t) {
-                        if (_filterBranch != null &&
-                            t.toBranchId != _filterBranch) {
-                          return false;
-                        }
+                        if (!_matchesFilters(t)) return false;
                         if (_filterStatus == 'all') return true;
                         return t.status == _filterStatus;
                       }).toList();
@@ -457,8 +499,7 @@ class _BranchStockReturnScreenState
   }
 }
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 Color _statusColor(String status) {
   switch (status) {
@@ -745,7 +786,7 @@ class _NewReturnForm extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Return No :',
+                              'Return No',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey.shade500,
@@ -772,15 +813,17 @@ class _NewReturnForm extends ConsumerWidget {
                                         ),
                                       ),
                                 const SizedBox(width: 8),
-                                InkWell(
-                                  borderRadius: BorderRadius.circular(4),
-                                  onTap: () => ref
-                                      .read(branchStockReturnProvider.notifier)
-                                      .resetReturn(),
-                                  child: const AppIcon(
-                                    AppIcons.refresh,
-                                    size: 17,
-                                    color: Colors.red,
+                                Tooltip(
+                                  message: 'Start a new return (clears the cart)',
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(4),
+                                    onTap: () => ref
+                                        .read(branchStockReturnProvider.notifier)
+                                        .resetReturn(),
+                                    child: const Padding(
+                                      padding: EdgeInsets.all(2),
+                                      child: AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -816,10 +859,7 @@ class _NewReturnForm extends ConsumerWidget {
                         height: 48,
                         child: Center(child: LinearProgressIndicator()),
                       ),
-                      error: (e, _) => Text(
-                        'Error: $e',
-                        style: const TextStyle(color: Colors.red, fontSize: 12),
-                      ),
+                      error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(otherBranchesForReturnProvider)),
                       data: (branches) => DropdownSearch<BranchModel>(
                         items: (filter, _) => branches
                             .where(
@@ -856,7 +896,7 @@ class _NewReturnForm extends ConsumerWidget {
                           fit: FlexFit.loose,
                           showSearchBox: true,
                           constraints: const BoxConstraints(maxHeight: 260),
-                          searchFieldProps: const TextFieldProps(
+                          searchFieldProps: const TextFieldProps(cursorHeight: 16, 
                             decoration: InputDecoration(
                               hintText: 'Search branch...',
                               prefixIcon: TextFieldIcon(
@@ -899,7 +939,7 @@ class _NewReturnForm extends ConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Return No :',
+                          'Return No',
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade500,
@@ -926,15 +966,17 @@ class _NewReturnForm extends ConsumerWidget {
                                     ),
                                   ),
                             const SizedBox(width: 8),
-                            InkWell(
-                              borderRadius: BorderRadius.circular(4),
-                              onTap: () => ref
-                                  .read(branchStockReturnProvider.notifier)
-                                  .resetReturn(),
-                              child: const AppIcon(
-                                AppIcons.refresh,
-                                size: 17,
-                                color: Colors.red,
+                            Tooltip(
+                              message: 'Start a new return (clears the cart)',
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(4),
+                                onTap: () => ref
+                                    .read(branchStockReturnProvider.notifier)
+                                    .resetReturn(),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(2),
+                                  child: AppIcon(AppIcons.refresh, size: 17, color: Colors.red),
+                                ),
                               ),
                             ),
                           ],
@@ -949,13 +991,7 @@ class _NewReturnForm extends ConsumerWidget {
                           height: 48,
                           child: Center(child: LinearProgressIndicator()),
                         ),
-                        error: (e, _) => Text(
-                          'Error: $e',
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 12,
-                          ),
-                        ),
+                        error: (e, _) => ErrorView(error: e, onRetry: () => ref.invalidate(otherBranchesForReturnProvider)),
                         data: (branches) => DropdownSearch<BranchModel>(
                           items: (filter, _) => branches
                               .where(
@@ -992,7 +1028,7 @@ class _NewReturnForm extends ConsumerWidget {
                             fit: FlexFit.loose,
                             showSearchBox: true,
                             constraints: const BoxConstraints(maxHeight: 260),
-                            searchFieldProps: const TextFieldProps(
+                            searchFieldProps: const TextFieldProps(cursorHeight: 16, 
                               decoration: InputDecoration(
                                 hintText: 'Search branch...',
                                 prefixIcon: TextFieldIcon(
@@ -1068,8 +1104,7 @@ class _NewReturnForm extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 // ── Footer ────────────────────────────────────────────────────────────────
@@ -1081,6 +1116,112 @@ class _ReturnFooter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isMobile = Responsive(context).isMobile;
     final state = ref.watch(branchStockReturnProvider);
+
+    Widget stat(String label, String value, {Color color = _primary}) =>
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
+          ],
+        );
+
+    final totalValue =
+        state.cartItems.fold<double>(0, (s, i) => s + i.lineTotal);
+    final pairsBlock = stat('Total Pairs', '${state.totalQuantity}');
+    final itemsBlock = stat(
+      'Items',
+      '${state.cartItems.length}',
+      color: const Color(0xFF6C4DE0),
+    );
+    final valueBlock = stat(
+      'Total Value',
+      'Rs. ${totalValue.toStringAsFixed(0)}',
+      color: const Color(0xFF22A06B),
+    );
+
+    final hasBranch = state.destinationBranch != null;
+    final branchLabel = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: (hasBranch ? _primary : Colors.orange).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: (hasBranch ? _primary : Colors.orange).withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppIcon(
+            AppIcons.storeOutlined,
+            size: 16,
+            color: hasBranch ? _primary : Colors.orange.shade800,
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              hasBranch
+                  ? 'Returning to: ${state.destinationBranch!.label}'
+                  : 'Select a branch to return to',
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: hasBranch ? Colors.black87 : Colors.orange.shade800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final clearButton = OutlinedButton.icon(
+      icon: const AppIcon(AppIcons.clearAll, size: 18),
+      label: const Text('Clear'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.red,
+        side: const BorderSide(color: Colors.red),
+        minimumSize: const Size(0, 46),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: state.cartItems.isEmpty
+          ? null
+          : () => ref.read(branchStockReturnProvider.notifier).clearCart(),
+    );
+
+    final sendButton = state.isSaving
+        ? const SizedBox(
+            width: 180,
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        : FilledButton.icon(
+            icon: const AppIcon(AppIcons.assignmentReturnOutlined, size: 18),
+            label: const Text('Send Return'),
+            style: FilledButton.styleFrom(
+              backgroundColor: _primary,
+              minimumSize: const Size(0, 46),
+              padding: const EdgeInsets.symmetric(horizontal: 22),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed:
+                state.cartItems.isEmpty ? null : () => _onSend(context, ref),
+          );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1097,200 +1238,33 @@ class _ReturnFooter extends ConsumerWidget {
                   spacing: 24,
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Total Pairs',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${state.totalQuantity}',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: _primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (state.destinationBranch != null)
-                      Row(
-                        children: [
-                          const AppIcon(
-                            AppIcons.storeOutlined,
-                            size: 16,
-                            color: _primary,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            state.destinationBranch!.label,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
+                  children: [pairsBlock, itemsBlock, valueBlock],
                 ),
+                const SizedBox(height: 10),
+                branchLabel,
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    OutlinedButton.icon(
-                      icon: const AppIcon(AppIcons.clearAll, size: 18),
-                      label: const Text('Clear'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: state.cartItems.isEmpty
-                          ? null
-                          : () => ref
-                                .read(branchStockReturnProvider.notifier)
-                                .clearCart(),
-                    ),
+                    clearButton,
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: state.isSaving
-                          ? const SizedBox(
-                              width: 180,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                          : FilledButton.icon(
-                              icon: const AppIcon(
-                                AppIcons.assignmentReturnOutlined,
-                                size: 18,
-                              ),
-                              label: const Text('Send Return'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: _primary,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onPressed: state.cartItems.isEmpty
-                                  ? null
-                                  : () => _onSend(context, ref),
-                            ),
-                    ),
+                    Expanded(child: sendButton),
                   ],
                 ),
               ],
             )
           : Row(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Total Pairs',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade500,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${state.totalQuantity}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: _primary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 24),
-                if (state.destinationBranch != null)
-                  Row(
-                    children: [
-                      const AppIcon(
-                        AppIcons.storeOutlined,
-                        size: 16,
-                        color: _primary,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        state.destinationBranch!.label,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                pairsBlock,
+                const SizedBox(width: 28),
+                itemsBlock,
+                const SizedBox(width: 28),
+                valueBlock,
+                const SizedBox(width: 28),
+                Flexible(child: branchLabel),
                 const Spacer(),
-                OutlinedButton.icon(
-                  icon: const AppIcon(AppIcons.clearAll, size: 18),
-                  label: const Text('Clear'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red,
-                    side: const BorderSide(color: Colors.red),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  onPressed: state.cartItems.isEmpty
-                      ? null
-                      : () => ref
-                            .read(branchStockReturnProvider.notifier)
-                            .clearCart(),
-                ),
+                clearButton,
                 const SizedBox(width: 12),
-                state.isSaving
-                    ? const SizedBox(
-                        width: 180,
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : FilledButton.icon(
-                        icon: const AppIcon(
-                          AppIcons.assignmentReturnOutlined,
-                          size: 18,
-                        ),
-                        label: const Text('Send Return'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: _primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        onPressed: state.cartItems.isEmpty
-                            ? null
-                            : () => _onSend(context, ref),
-                      ),
+                sendButton,
               ],
             ),
     );
@@ -1347,7 +1321,7 @@ class _ReturnFooter extends ConsumerWidget {
       ref.invalidate(sentStockReturnsProvider);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(error, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }

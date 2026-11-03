@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:safishoe_app/core/widget/invoice_page_body.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +11,7 @@ import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
 import 'package:safishoe_app/core/service/print/print_service.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 /// SuperAdmin — Head Office se Branch ko stock assign karna (form only).
 /// History ab alag sidebar item hai ([HoAssignStockListScreen]).
 /// Warehouse ke "Assign Stock to Branch" jaisa hi, bas source head office
@@ -131,10 +133,7 @@ class _AssignStockTab extends ConsumerWidget {
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day.toString().padLeft(2, '0')}/'
-      '${dt.month.toString().padLeft(2, '0')}/'
-      '${dt.year}';
+  String _formatDate(DateTime dt) => dfmt.fmtDateTime(dt);
 }
 
 /// Whole-rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
@@ -355,7 +354,7 @@ class _AssignFooter extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Print failed: $e'),
+              content: Text(friendlyError(e, prefix: 'Print failed: ')),
               backgroundColor: Colors.orange.shade700,
             ),
           );
@@ -364,7 +363,7 @@ class _AssignFooter extends ConsumerWidget {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: $error'),
+          content: Text(friendlyError(error, prefix: 'Error: ')),
           backgroundColor: Colors.red,
         ),
       );

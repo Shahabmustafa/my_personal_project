@@ -1,3 +1,4 @@
+import 'package:safishoe_app/core/utils/date_format.dart' as dfmt;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../branch/branch_payment/data/model/branch_payment_model.dart';
@@ -5,17 +6,18 @@ import '../../../../branch/branch_payment/presentation/providers/branch_payment_
 import '../../../../branch/return_stock_to_other_branch/presentation/screens/branch_stock_return_screen.dart'
     show StatusChip;
 import '../../../branch/presentation/providers/branch_provider.dart';
-import '../../../report/presentation/widgets/report_date_filter_dialog.dart';
+import 'package:safishoe_app/core/widget/assign_filter_dialog.dart';
 import '../../../report/presentation/widgets/report_detail_panel.dart';
 import '../../../report/presentation/widgets/report_pagination_bar.dart';
 import '../../../report/presentation/widgets/report_summary_card.dart';
 import '../../../report/presentation/widgets/report_table_shell.dart';
 import '../providers/branch_payments_provider.dart';
 
-import 'package:safishoe_app/core/widget/app_dropdown.dart';
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
 import 'package:safishoe_app/core/utils/responsive.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
+import 'package:safishoe_app/core/widget/error_view.dart' as shared;
 
 /// Transaction report of the amounts branches have paid to Head Office.
 /// Accepting a pending payment adds it to the Head Office cash counter's net
@@ -51,8 +53,6 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
   }
   BranchPaymentModel? _selected;
 
-  bool get _hasDateFilter => _startDate != null || _endDate != null;
-
   /// Branch + date scope. Status chips count within this, so they always add
   /// up to what the table can show.
   List<BranchPaymentModel> _applyScope(List<BranchPaymentModel> all) {
@@ -68,23 +68,33 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
     }).toList();
   }
 
-  /// Branch filter — app ka custom search dropdown; null = sab branches.
-  Widget _branchFilter() {
-    final branches = ref.watch(branchProvider).branches;
-    final names = {for (final b in branches) b.id: b.branchName};
-    return SizedBox(
-      width: 220,
-      child: AppSearchDropdown<String?>(
-        label: 'Branch',
-        items: [null, ...names.keys],
-        selectedItem: _branchId,
-        itemLabel: (id) => id == null ? 'All Branches' : names[id] ?? '',
-        onChanged: (v) => setState(() {
-          _branchId = v;
-          _page = 1;
-        }),
+  int get _activeFilterCount =>
+      (_branchId != null ? 1 : 0) +
+      (_startDate != null ? 1 : 0) +
+      (_endDate != null ? 1 : 0);
+
+  Future<void> _openFilterDialog() async {
+    final branches = ref.read(branchProvider).branches;
+    final r = await showAssignFilterDialog(
+      context,
+      branchLabel: 'Branch',
+      allLabel: 'All Branches',
+      branches: {for (final b in branches) b.id: b.branchName},
+      current: (
+        branch: _branchId,
+        branch2: null,
+        from: _startDate,
+        to: _endDate,
       ),
     );
+    if (r == null || !mounted) return;
+    setState(() {
+      _branchId = r.branch;
+      _startDate = r.from;
+      _endDate = r.to;
+      _page = 1;
+      _selected = null;
+    });
   }
 
   @override
@@ -126,34 +136,14 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
       runSpacing: 8,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        _branchFilter(),
-        if (_hasDateFilter)
-          TextButton.icon(
-            onPressed: () => setState(() {
-              _startDate = null;
-              _endDate = null;
-              _page = 1;
-            }),
-            icon: const AppIcon(AppIcons.clear, size: 16),
-            label: Text(_rangeLabel(_startDate, _endDate)),
+        Badge(
+          isLabelVisible: _activeFilterCount > 0,
+          label: Text('$_activeFilterCount'),
+          child: OutlinedButton.icon(
+            icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
+            label: const Text('Filter'),
+            onPressed: _openFilterDialog,
           ),
-        OutlinedButton.icon(
-          icon: const AppIcon(AppIcons.filterAltOutlined, size: 18),
-          label: const Text('Filter'),
-          onPressed: () async {
-            final result = await showDialog<(DateTime?, DateTime?)?>(
-              context: context,
-              builder: (_) => ReportDateFilterDialog(
-                  initialStart: _startDate, initialEnd: _endDate),
-            );
-            if (result != null) {
-              setState(() {
-                _startDate = result.$1;
-                _endDate = result.$2;
-                _page = 1;
-              });
-            }
-          },
         ),
         IconButton(
           icon: const AppIcon(AppIcons.refresh, size: 18),
@@ -438,7 +428,7 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        SnackBar(content: Text(friendlyError(e, prefix: 'Error: ')), backgroundColor: Colors.red),
       );
     }
   }
@@ -508,12 +498,6 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
       ),
     );
   }
-
-  String _rangeLabel(DateTime? start, DateTime? end) {
-    final s = start == null ? '…' : _fmtDate(start);
-    final e = end == null ? '…' : _fmtDate(end);
-    return '$s – $e';
-  }
 }
 
 // ── Detail panel body ─────────────────────────────────────────────────────
@@ -548,29 +532,13 @@ class _PaymentDetailBody extends StatelessWidget {
 // ── Small shared bits ─────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
-  final String message;
+  final Object? message;
   final VoidCallback onRetry;
   const _ErrorView({required this.message, required this.onRetry});
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AppIcon(AppIcons.errorOutline, color: Colors.red, size: 40),
-          const SizedBox(height: 8),
-          Text('Error: $message', style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const AppIcon(AppIcons.refresh, size: 16),
-            label: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      shared.ErrorView(error: message, onRetry: onRetry);
 }
 
 Color _statusColor(String s) {
@@ -584,10 +552,7 @@ Color _statusColor(String s) {
   }
 }
 
-String _fmtDate(DateTime dt) =>
-    '${dt.day.toString().padLeft(2, '0')}/'
-    '${dt.month.toString().padLeft(2, '0')}/'
-    '${dt.year}';
+String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 /// Rupee amount with thousands separators, e.g. 1875000 -> "1,875,000".
 /// Paise are kept only when present, e.g. 1500.5 -> "1,500.50".

@@ -30,7 +30,7 @@ class CustomTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       validator: validator,
-      cursorHeight: 14,
+      cursorHeight: 16,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

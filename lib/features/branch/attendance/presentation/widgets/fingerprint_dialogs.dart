@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/service/fingerprint_helper_client.dart';
 import '../providers/attendance_provider.dart';
+import 'package:safishoe_app/core/utils/error_text.dart';
 
 const _green = Color(0xFF22A06B);
 const _red = Color(0xFFE5484D);
@@ -64,7 +65,7 @@ class _RegisterDialogState extends ConsumerState<_RegisterDialog> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _error = e.toString().replaceFirst('Exception: ', '');
+          _error = friendlyError(e);
         });
       }
     }
@@ -178,7 +179,7 @@ class _PunchDialogState extends ConsumerState<_PunchDialog> {
       }
       templates = await ds.fetchFingerprintTemplates(widget.branchId);
     } catch (e) {
-      _show(e.toString(), _red, fatal: true);
+      _show(friendlyError(e), _red, fatal: true);
       return;
     }
     if (templates.isEmpty) {
@@ -217,7 +218,7 @@ class _PunchDialogState extends ConsumerState<_PunchDialog> {
         return;
       } catch (e) {
         // Server ka jawab (e.g. "already checked in and out today").
-        _show(e.toString().replaceFirst('Exception: ', ''), _red);
+        _show(friendlyError(e), _red);
         await Future<void>.delayed(const Duration(seconds: 3));
       }
     }
