@@ -24,12 +24,14 @@ class SaleClaimsScreen extends ConsumerStatefulWidget {
 class _SaleClaimsScreenState extends ConsumerState<SaleClaimsScreen> {
   static const _accent = saleClaimAccent;
 
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all'; // all | pending | approved | rejected
   String _search = '';
   DateTime? _fromDate; // claim-date range (inclusive)
   DateTime? _toDate;
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_fromDate != null ? 1 : 0) + (_toDate != null ? 1 : 0);
 
   /// Search + date scope. Status chips count within this.
@@ -51,6 +53,9 @@ class _SaleClaimsScreenState extends ConsumerState<SaleClaimsScreen> {
       allLabel: '',
       showBranch: false,
       branches: const {},
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
       current: (branch: null, branch2: null, from: _fromDate, to: _toDate),
     );
     if (r == null || !mounted) return;
@@ -89,7 +94,6 @@ class _SaleClaimsScreenState extends ConsumerState<SaleClaimsScreen> {
         ? scoped
         : scoped.where((c) => c.status == _filterStatus).toList();
 
-    int count(String s) => scoped.where((c) => c.status == s).length;
     final pairs = filtered.fold<int>(0, (s, c) => s + c.quantity);
     final value = filtered.fold<double>(0, (s, c) => s + c.totalPrice);
 
@@ -197,16 +201,11 @@ class _SaleClaimsScreenState extends ConsumerState<SaleClaimsScreen> {
             onChanged: (v) => setState(() => _search = v),
           ),
           const SizedBox(height: 12),
-          SaleClaimStatusFilterChips(
-            value: _filterStatus,
-            counts: {
-              'all': scoped.length,
-              'pending': count('pending'),
-              'approved': count('approved'),
-              'rejected': count('rejected'),
-            },
-            onChanged: (v) => setState(() => _filterStatus = v),
-          ),
+          Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(scoped, (c) => c.status,
+                second: 'approved');
+            return const SizedBox.shrink();
+          }),
           const SizedBox(height: 16),
           Expanded(
             child: claimsAsync.isLoading && !claimsAsync.hasValue

@@ -29,6 +29,7 @@ class BranchAssignListScreen extends ConsumerStatefulWidget {
 
 class _BranchAssignListScreenState
     extends ConsumerState<BranchAssignListScreen> {
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all';
   String? _filterSource; // assigned-by (branch / warehouse) id
   DateTime? _fromDate; // assigned-on range (inclusive)
@@ -50,6 +51,7 @@ class _BranchAssignListScreenState
   }
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_filterSource != null ? 1 : 0) +
       (_fromDate != null ? 1 : 0) +
       (_toDate != null ? 1 : 0);
@@ -61,6 +63,9 @@ class _BranchAssignListScreenState
       allLabel: 'All sources',
       branches: sources,
       current: (branch: _filterSource, branch2: null, from: _fromDate, to: _toDate),
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
     );
     if (r == null || !mounted) return;
     setState(() {
@@ -289,39 +294,10 @@ class _BranchAssignListScreenState
           const SizedBox(height: 16),
 
           // ── Status filter chips ─────────────────────────────────────
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _chip('All', 'all', listState.assignments.length),
-                const SizedBox(width: 8),
-                _chip(
-                  'Pending',
-                  'pending',
-                  listState.assignments
-                      .where((a) => a.status == 'pending')
-                      .length,
-                ),
-                const SizedBox(width: 8),
-                _chip(
-                  'Accepted',
-                  'accepted',
-                  listState.assignments
-                      .where((a) => a.status == 'accepted')
-                      .length,
-                ),
-                const SizedBox(width: 8),
-                _chip(
-                  'Rejected',
-                  'rejected',
-                  listState.assignments
-                      .where((a) => a.status == 'rejected')
-                      .length,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+          Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(listState.assignments, (x) => x.status);
+            return const SizedBox.shrink();
+          }),
 
           // ── Table + detail panel ────────────────────────────────────
           Expanded(
@@ -386,81 +362,7 @@ class _BranchAssignListScreenState
     );
   }
 
-  Widget _chip(String label, String value, int count) {
-    final isSelected = _filterStatus == value;
-    Color chipColor;
-    String chipIcon;
-    switch (value) {
-      case 'pending':
-        chipColor = Colors.orange;
-        chipIcon = AppIcons.hourglassEmptyOutlined;
-        break;
-      case 'accepted':
-        chipColor = Colors.green;
-        chipIcon = AppIcons.checkCircleOutline;
-        break;
-      case 'rejected':
-        chipColor = Colors.red;
-        chipIcon = AppIcons.cancelOutlined;
-        break;
-      default:
-        chipColor = _primary;
-        chipIcon = AppIcons.listOutlined;
-    }
-    return GestureDetector(
-      onTap: () => setState(() {
-        _filterStatus = value;
-        _page = 1;
-      }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? chipColor : const Color(0xFFE7E9F0),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(
-              chipIcon,
-              size: 14,
-              color: isSelected ? Colors.white : const Color(0xFF8A8FA3),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF5A5F73),
-              ),
-            ),
-            const SizedBox(width: 7),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white24 : const Color(0xFFF0F1F5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : const Color(0xFF5A5F73),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }
 
 String _fmtAmt(double v) =>
@@ -470,7 +372,7 @@ String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
 
 // ── Table (flex-based — poori width par phailti hai) ─────────────────────
 
-const _colFlex = <int>[1, 3, 5, 2, 3, 2, 2, 3, 4];
+const _colFlex = <int>[1, 3, 4, 3, 4, 2, 2, 3, 3, 3];
 const _colLabels = <String>[
   '#',
   'Assignment #',
@@ -479,6 +381,7 @@ const _colLabels = <String>[
   'Date',
   'Items',
   'Qty',
+  'Total Amount',
   'Status',
   'Actions',
 ];
@@ -523,14 +426,18 @@ class _AssignTable extends ConsumerWidget {
                     for (var c = 0; c < _colLabels.length; c++)
                       Expanded(
                         flex: _colFlex[c],
-                        child: Text(
+                        child: Padding(
+                          padding: EdgeInsets.only(left: c == 4 ? 16 : 0),
+                          child: Text(
                           _colLabels[c],
+                          textAlign: (c == 3 || c == 5 || c == 6) ? TextAlign.center : null,
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF5A5F73),
                             letterSpacing: 0.3,
                           ),
+                        ),
                         ),
                       ),
                   ],
@@ -560,6 +467,8 @@ class _AssignTable extends ConsumerWidget {
     int index,
   ) {
     final qty = a.items.fold<int>(0, (s, it) => s + it.quantity);
+    final amount =
+        a.items.fold<double>(0, (s, it) => s + it.salePrice * it.quantity);
     final selected = selectedId == a.id;
     return InkWell(
       onTap: () => onView(a),
@@ -599,20 +508,37 @@ class _AssignTable extends ConsumerWidget {
             ),
             Expanded(
               flex: _colFlex[3],
-              child: _SourceTypeTag(a: a),
+              child: Center(child: _SourceTypeTag(a: a)),
             ),
             Expanded(
               flex: _colFlex[4],
-              child: Text(
-                _fmtDate(a.assignedAt),
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13, color: Color(0xFF5A5F73)),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Text(
+                  _fmtDate(a.assignedAt),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, color: Color(0xFF5A5F73)),
+                ),
               ),
             ),
-            Expanded(flex: _colFlex[5], child: Text('${a.items.length}')),
-            Expanded(flex: _colFlex[6], child: Text('$qty')),
+            Expanded(
+              flex: _colFlex[5],
+              child: Text('${a.items.length}', textAlign: TextAlign.center),
+            ),
+            Expanded(
+              flex: _colFlex[6],
+              child: Text('$qty', textAlign: TextAlign.center),
+            ),
             Expanded(
               flex: _colFlex[7],
+              child: Text(
+                'Rs. ${_fmtAmt(amount)}',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Expanded(
+              flex: _colFlex[8],
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
@@ -620,7 +546,7 @@ class _AssignTable extends ConsumerWidget {
               ),
             ),
             Expanded(
-              flex: _colFlex[8],
+              flex: _colFlex[9],
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,

@@ -43,6 +43,7 @@ class BranchTransferScreen extends ConsumerStatefulWidget {
 }
 
 class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all';
   String? _filterBranch; // destination branch id
   DateTime? _fromDate; // assigned-on range (inclusive)
@@ -135,6 +136,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
   }
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_filterBranch != null ? 1 : 0) +
       (_fromDate != null ? 1 : 0) +
       (_toDate != null ? 1 : 0);
@@ -155,6 +157,9 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
       allLabel: 'All branches',
       branches: branches,
       current: (branch: _filterBranch, branch2: null, from: _fromDate, to: _toDate),
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
     );
     if (r == null || !mounted) return;
     setState(() {
@@ -334,33 +339,10 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
                   const SizedBox(height: 16),
 
                   // ── Status filter chips ──────────────────────────────
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _chip('All', 'all', transfers.length),
-                        const SizedBox(width: 8),
-                        _chip(
-                          'Pending',
-                          'pending',
-                          transfers.where((t) => t.status == 'pending').length,
-                        ),
-                        const SizedBox(width: 8),
-                        _chip(
-                          'Accepted',
-                          'accepted',
-                          transfers.where((t) => t.status == 'accepted').length,
-                        ),
-                        const SizedBox(width: 8),
-                        _chip(
-                          'Rejected',
-                          'rejected',
-                          transfers.where((t) => t.status == 'rejected').length,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(transfers, (x) => x.status);
+            return const SizedBox.shrink();
+          }),
                 ],
               );
             },
@@ -476,81 +458,7 @@ class _BranchTransferScreenState extends ConsumerState<BranchTransferScreen> {
     );
   }
 
-  Widget _chip(String label, String value, int count) {
-    final isSelected = _filterStatus == value;
-    Color chipColor;
-    String chipIcon;
-    switch (value) {
-      case 'pending':
-        chipColor = Colors.orange;
-        chipIcon = AppIcons.hourglassEmptyOutlined;
-        break;
-      case 'accepted':
-        chipColor = Colors.green;
-        chipIcon = AppIcons.checkCircleOutline;
-        break;
-      case 'rejected':
-        chipColor = Colors.red;
-        chipIcon = AppIcons.cancelOutlined;
-        break;
-      default:
-        chipColor = _primary;
-        chipIcon = AppIcons.listOutlined;
-    }
-    return GestureDetector(
-      onTap: () => setState(() {
-        _filterStatus = value;
-        _page = 1;
-      }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? chipColor : const Color(0xFFE7E9F0),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(
-              chipIcon,
-              size: 14,
-              color: isSelected ? Colors.white : const Color(0xFF8A8FA3),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF5A5F73),
-              ),
-            ),
-            const SizedBox(width: 7),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white24 : const Color(0xFFF0F1F5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : const Color(0xFF5A5F73),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }
 
 String _fmtAmt(double v) =>

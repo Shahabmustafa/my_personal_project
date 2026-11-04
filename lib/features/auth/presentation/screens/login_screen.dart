@@ -118,6 +118,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       hint: 'you@example.com',
                       icon: TextFieldIcon(AppIcons.emailOutlined, size: 22, color: Colors.grey.shade600),
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
                           return 'Email is required';
@@ -138,6 +139,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       hint: 'Enter your password',
                       icon: TextFieldIcon(AppIcons.lockOutline, size: 22, color: Colors.grey.shade600),
                       obscureText: _obscurePassword,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) {
+                        if (!authState.isLoading) _handleLogin();
+                      },
                       suffixIcon: IconButton(
                         icon: TextFieldIcon(_obscurePassword ? AppIcons.visibilityOffOutlined : AppIcons.visibilityOutlined,
                           size: 22,

@@ -179,9 +179,15 @@ class _BranchCashCounterScreenState
           // ── Search ────────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(cursorHeight: 16, 
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: TextField(cursorHeight: 16, 
               onChanged: notifier.setSearch,
               decoration: _searchDecor('Search by date (dd/mm/yyyy, mm/yyyy) or total sale amount...'),
+            ),
+              ),
             ),
           ),
 

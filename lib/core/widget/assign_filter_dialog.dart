@@ -5,6 +5,34 @@ import 'package:safishoe_app/core/widget/branch_filter_dropdown.dart';
 typedef AssignFilterResult =
     ({String? branch, String? branch2, DateTime? from, DateTime? to});
 
+/// Status filter option (All / Pending / Accepted / Rejected ...) + count.
+typedef StatusFilterOption = ({String value, String label, int count});
+
+/// [items] ki status ke hisaab se All/Pending/Accepted/Rejected options
+/// (counts samet) banata hai. [second] default 'accepted' hai; sale claims
+/// mein 'approved' pass karein.
+List<StatusFilterOption> buildStatusOptions<T>(
+  Iterable<T> items,
+  String Function(T) statusOf, {
+  String second = 'accepted',
+}) {
+  int c(String s) => items.where((e) => statusOf(e) == s).length;
+  String cap(String s) => s[0].toUpperCase() + s.substring(1);
+  return [
+    (value: 'all', label: 'All', count: items.length),
+    (value: 'pending', label: 'Pending', count: c('pending')),
+    (value: second, label: cap(second), count: c(second)),
+    (value: 'rejected', label: 'Rejected', count: c('rejected')),
+  ];
+}
+
+Color _statusColor(String v) => switch (v) {
+      'pending' => Colors.orange,
+      'accepted' || 'approved' => Colors.green,
+      'rejected' => Colors.red,
+      _ => const Color(0xFF3E63DD),
+    };
+
 /// Tap-to-pick date textfield (read-only) with a clear button.
 class DateFilterField extends StatelessWidget {
   final String label;
@@ -61,7 +89,13 @@ Future<AssignFilterResult?> showAssignFilterDialog(
   Map<String, String>? branches2,
   // false ho to sirf date range dikhta hai (branch dropdown nahi).
   bool showBranch = true,
+  // Status chips (All/Pending/...) — [statusOptions] diye hon to dialog mein
+  // dikhte hain; Apply par [onStatus] naya status deta hai.
+  List<StatusFilterOption>? statusOptions,
+  String status = 'all',
+  ValueChanged<String>? onStatus,
 }) {
+  String statusValue = status;
   String? branch = current.branch;
   String? branch2 = current.branch2;
   DateTime? from = current.from;
@@ -88,6 +122,34 @@ Future<AssignFilterResult?> showAssignFilterDialog(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (statusOptions != null) ...[
+                const Text('Status',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final o in statusOptions)
+                      ChoiceChip(
+                        label: Text('${o.label} (${o.count})'),
+                        selected: statusValue == o.value,
+                        selectedColor: _statusColor(o.value),
+                        labelStyle: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: statusValue == o.value
+                              ? Colors.white
+                              : Colors.grey.shade700,
+                        ),
+                        showCheckmark: false,
+                        onSelected: (_) =>
+                            setLocal(() => statusValue = o.value),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
               if (showBranch)
                 BranchFilterDropdown(
                   label: branchLabel,
@@ -144,6 +206,7 @@ Future<AssignFilterResult?> showAssignFilterDialog(
               branch2 = null;
               from = null;
               to = null;
+              statusValue = 'all';
             }),
             child: const Text('Clear all'),
           ),
@@ -152,9 +215,11 @@ Future<AssignFilterResult?> showAssignFilterDialog(
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(
-                ctx, (branch: branch, branch2: branch2, from: from, to: to)),
+            onPressed: () {
+              onStatus?.call(statusValue);
+              Navigator.pop(
+                  ctx, (branch: branch, branch2: branch2, from: from, to: to));
+            },
             child: const Text('Apply'),
           ),
         ],

@@ -20,6 +20,7 @@ class AssignStockListScreen extends ConsumerStatefulWidget {
 }
 
 class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all'; // all | pending | accepted | rejected
   String? _filterBranch; // receiving branch id
   DateTime? _fromDate; // assigned-on range (inclusive)
@@ -37,6 +38,7 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
   }
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_filterBranch != null ? 1 : 0) +
       (_fromDate != null ? 1 : 0) +
       (_toDate != null ? 1 : 0);
@@ -53,6 +55,9 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
         from: _fromDate,
         to: _toDate,
       ),
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
     );
     if (r == null || !mounted) return;
     setState(() {
@@ -134,39 +139,10 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
           const SizedBox(height: 14),
 
           // ── Status filter chips ──────────────────────────────────────
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterChip('All', 'all', listState.assignments.length),
-                const SizedBox(width: 8),
-                _filterChip(
-                  'Pending',
-                  'pending',
-                  listState.assignments
-                      .where((a) => a.status == 'pending')
-                      .length,
-                ),
-                const SizedBox(width: 8),
-                _filterChip(
-                  'Accepted',
-                  'accepted',
-                  listState.assignments
-                      .where((a) => a.status == 'accepted')
-                      .length,
-                ),
-                const SizedBox(width: 8),
-                _filterChip(
-                  'Rejected',
-                  'rejected',
-                  listState.assignments
-                      .where((a) => a.status == 'rejected')
-                      .length,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
+          Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(listState.assignments, (x) => x.status);
+            return const SizedBox.shrink();
+          }),
 
           Expanded(
             child: MinWidthScroll(
@@ -272,72 +248,7 @@ class _AssignStockListScreenState extends ConsumerState<AssignStockListScreen> {
     );
   }
 
-  Widget _filterChip(String label, String value, int count) {
-    final isSelected = _filterStatus == value;
-    Color chipColor;
-    switch (value) {
-      case 'pending':
-        chipColor = Colors.orange;
-        break;
-      case 'accepted':
-        chipColor = Colors.green;
-        break;
-      case 'rejected':
-        chipColor = Colors.red;
-        break;
-      default:
-        chipColor = const Color(0xFF1565C0);
-    }
-
-    return GestureDetector(
-      onTap: () => setState(() {
-        _filterStatus = value;
-        _page = 1;
-      }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? chipColor : Colors.grey.shade300,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withValues(alpha: 0.25)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 
   Widget _th(String text, {int flex = 2}) => Expanded(
     flex: flex,

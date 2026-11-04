@@ -36,6 +36,7 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
   static const _accent = Color(0xFF1565C0);
   static const _pageSize = 20;
 
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all'; // all | pending | accepted | rejected
   String? _branchId;
   DateTime? _startDate;
@@ -69,6 +70,7 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
   }
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_branchId != null ? 1 : 0) +
       (_startDate != null ? 1 : 0) +
       (_endDate != null ? 1 : 0);
@@ -86,6 +88,9 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
         from: _startDate,
         to: _endDate,
       ),
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
     );
     if (r == null || !mounted) return;
     setState(() {
@@ -221,24 +226,10 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
             },
           ),
           const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _filterChip('All', 'all', scoped.length),
-                const SizedBox(width: 8),
-                _filterChip('Pending', 'pending',
-                    scoped.where((p) => p.status == 'pending').length),
-                const SizedBox(width: 8),
-                _filterChip('Accepted', 'accepted',
-                    scoped.where((p) => p.status == 'accepted').length),
-                const SizedBox(width: 8),
-                _filterChip('Rejected', 'rejected',
-                    scoped.where((p) => p.status == 'rejected').length),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
+          Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(scoped, (x) => x.status);
+            return const SizedBox.shrink();
+          }),
           Expanded(
             child: Stack(
               children: [
@@ -433,71 +424,7 @@ class _BranchPaymentsScreenState extends ConsumerState<BranchPaymentsScreen> {
     }
   }
 
-  Widget _filterChip(String label, String value, int count) {
-    final isSelected = _filterStatus == value;
-    Color chipColor;
-    switch (value) {
-      case 'pending':
-        chipColor = Colors.orange;
-        break;
-      case 'accepted':
-        chipColor = Colors.green;
-        break;
-      case 'rejected':
-        chipColor = Colors.red;
-        break;
-      default:
-        chipColor = _accent;
-    }
-
-    return GestureDetector(
-      onTap: () => setState(() {
-        _filterStatus = value;
-        _page = 1;
-      }),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border:
-              Border.all(color: isSelected ? chipColor : Colors.grey.shade300),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withValues(alpha: 0.25)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }
 
 // ── Detail panel body ─────────────────────────────────────────────────────

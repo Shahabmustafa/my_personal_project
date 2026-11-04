@@ -28,6 +28,7 @@ class _IncomingSaleClaimsScreenState
     extends ConsumerState<IncomingSaleClaimsScreen> {
   static const _accent = saleClaimAccent;
 
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all'; // all | pending | approved | rejected
   String _search = '';
   String? _filterBranch;
@@ -36,6 +37,7 @@ class _IncomingSaleClaimsScreenState
   String? _busyId;
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_filterBranch != null ? 1 : 0) +
       (_fromDate != null ? 1 : 0) +
       (_toDate != null ? 1 : 0);
@@ -59,6 +61,9 @@ class _IncomingSaleClaimsScreenState
       branchLabel: 'Branch',
       allLabel: 'All branches',
       branches: {for (final c in all) c.branchId: c.branchName ?? c.branchId},
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
       current: (
         branch: _filterBranch,
         branch2: null,
@@ -177,16 +182,11 @@ class _IncomingSaleClaimsScreenState
             onChanged: (v) => setState(() => _search = v),
           ),
           const SizedBox(height: 12),
-          SaleClaimStatusFilterChips(
-            value: _filterStatus,
-            counts: {
-              'all': scoped.length,
-              'pending': count('pending'),
-              'approved': count('approved'),
-              'rejected': count('rejected'),
-            },
-            onChanged: (v) => setState(() => _filterStatus = v),
-          ),
+          Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(scoped, (c) => c.status,
+                second: 'approved');
+            return const SizedBox.shrink();
+          }),
           const SizedBox(height: 16),
           Expanded(
             child: claimsAsync.isLoading && !claimsAsync.hasValue

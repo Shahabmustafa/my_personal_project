@@ -6,6 +6,7 @@ import '../../data/model/customer_model.dart';
 import '../providers/customer_provider.dart';
 import '../widgets/customer_form_dialog.dart';
 import '../widgets/loyalty_dialog.dart';
+import '../widgets/customer_detail_panel.dart';
 
 import 'package:safishoe_app/core/widget/app_icon.dart';
 import 'package:safishoe_app/core/constants/app_icons.dart';
@@ -19,6 +20,30 @@ class CustomersScreen extends ConsumerStatefulWidget {
 
 class _CustomersScreenState extends ConsumerState<CustomersScreen> {
   String get _currentBranchId => ref.read(currentBranchIdProvider);
+  CustomerModel? _selected;
+
+  void _select(CustomerModel c) {
+    if (MediaQuery.of(context).size.width < 768) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        builder: (_) => DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.85,
+          maxChildSize: 0.95,
+          builder: (_, sc) => SingleChildScrollView(
+            controller: sc,
+            child: CustomerDetailPanel(customer: c, branchId: _currentBranchId),
+          ),
+        ),
+      );
+    } else {
+      setState(() => _selected = c);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,10 +93,16 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
           // Search
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-            child: TextField(cursorHeight: 16, 
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 360),
+                child: TextField(cursorHeight: 16, 
               onChanged: notifier.setSearch,
               decoration: _searchDecor(
                   'Search by name, phone, email or address...'),
+            ),
+              ),
             ),
           ),
 
@@ -81,16 +112,57 @@ class _CustomersScreenState extends ConsumerState<CustomersScreen> {
                 ? _MobileList(
                     state: state,
                     notifier: notifier,
+                    onTap: _select,
                     onEdit: (c) => _showForm(context, customer: c),
                     onDelete: (c) => _confirmDelete(context, c),
                     onLoyalty: (c) => _showLoyalty(context, c),
                   )
-                : _DesktopTable(
-                    state: state,
-                    notifier: notifier,
-                    onEdit: (c) => _showForm(context, customer: c),
-                    onDelete: (c) => _confirmDelete(context, c),
-                    onLoyalty: (c) => _showLoyalty(context, c),
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _DesktopTable(
+                          state: state,
+                          notifier: notifier,
+                          selectedId: _selected?.id,
+                          onTap: _select,
+                          onEdit: (c) => _showForm(context, customer: c),
+                          onDelete: (c) => _confirmDelete(context, c),
+                          onLoyalty: (c) => _showLoyalty(context, c),
+                        ),
+                      ),
+                      if (_selected != null)
+                        Container(
+                          width: 400,
+                          margin: const EdgeInsets.fromLTRB(0, 0, 24, 24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE7E9F0)),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Stack(children: [
+                              SingleChildScrollView(
+                                child: CustomerDetailPanel(
+                                  key: ValueKey(_selected!.id),
+                                  customer: _selected!,
+                                  branchId: _currentBranchId,
+                                ),
+                              ),
+                              Positioned(
+                                top: 6,
+                                right: 6,
+                                child: IconButton(
+                                  tooltip: 'Close',
+                                  icon: const Icon(Icons.close, size: 20),
+                                  onPressed: () => setState(() => _selected = null),
+                                ),
+                              ),
+                            ]),
+                          ),
+                        ),
+                    ],
                   ),
           ),
         ],
@@ -172,8 +244,12 @@ class _DesktopTable extends StatelessWidget {
   final Function(CustomerModel) onEdit;
   final Function(CustomerModel) onDelete;
   final Function(CustomerModel) onLoyalty;
+  final Function(CustomerModel) onTap;
+  final String? selectedId;
 
   const _DesktopTable({
+    required this.onTap,
+    this.selectedId,
     required this.state,
     required this.notifier,
     required this.onEdit,
@@ -222,8 +298,13 @@ class _DesktopTable extends StatelessWidget {
                   separatorBuilder: (_, __) => const Divider(
                       height: 1, color: Color(0xFFE7E9F0)),
                   itemBuilder: (_, c, __) {
-                    return DecoratedBox(
-                      decoration: const BoxDecoration(),
+                    return InkWell(
+                      onTap: () => onTap(c),
+                      child: DecoratedBox(
+                      decoration: BoxDecoration(
+                          color: c.id == selectedId
+                              ? const Color(0xFFEAEFFD)
+                              : null),
                       child: Row(children: [
                         // Name + avatar
                         Expanded(
@@ -346,7 +427,7 @@ class _DesktopTable extends StatelessWidget {
                                 ),
                               ]))),
                         ),
-                      ]),
+                      ])),
                     );
                   },
                 ),
@@ -367,8 +448,10 @@ class _MobileList extends StatelessWidget {
   final Function(CustomerModel) onEdit;
   final Function(CustomerModel) onDelete;
   final Function(CustomerModel) onLoyalty;
+  final Function(CustomerModel) onTap;
 
   const _MobileList({
+    required this.onTap,
     required this.state,
     required this.notifier,
     required this.onEdit,
@@ -385,7 +468,10 @@ class _MobileList extends StatelessWidget {
       onRefresh: notifier.refresh,
       emptyText: 'No customers found',
       itemBuilder: (_, c, __) {
-        return Container(
+        return InkWell(
+          onTap: () => onTap(c),
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -485,7 +571,7 @@ class _MobileList extends StatelessWidget {
                 ),
             ],
           ),
-        );
+        ));
       },
     );
   }

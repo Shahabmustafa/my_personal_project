@@ -40,6 +40,7 @@ class BranchWarehouseReturnScreen extends ConsumerStatefulWidget {
 
 class _BranchWarehouseReturnScreenState
     extends ConsumerState<BranchWarehouseReturnScreen> {
+  List<StatusFilterOption> _statusOptions = const [];
   String _filterStatus = 'all';
   String? _filterBranch; // destination (Admin / warehouse) id
   DateTime? _fromDate; // returned-on range (inclusive)
@@ -80,6 +81,7 @@ class _BranchWarehouseReturnScreenState
   }
 
   int get _activeFilterCount =>
+      (_filterStatus != 'all' ? 1 : 0) +
       (_filterBranch != null ? 1 : 0) +
       (_fromDate != null ? 1 : 0) +
       (_toDate != null ? 1 : 0);
@@ -105,6 +107,9 @@ class _BranchWarehouseReturnScreenState
         from: _fromDate,
         to: _toDate,
       ),
+      statusOptions: _statusOptions,
+      status: _filterStatus,
+      onStatus: (v) => _filterStatus = v,
     );
     if (r == null || !mounted) return;
     setState(() {
@@ -313,33 +318,10 @@ class _BranchWarehouseReturnScreenState
                   const SizedBox(height: 16),
 
                   // ── Status filter chips ──────────────────────────────
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _chip('All', 'all', returns.length),
-                        const SizedBox(width: 8),
-                        _chip(
-                          'Pending',
-                          'pending',
-                          returns.where((t) => t.status == 'pending').length,
-                        ),
-                        const SizedBox(width: 8),
-                        _chip(
-                          'Accepted',
-                          'accepted',
-                          returns.where((t) => t.status == 'accepted').length,
-                        ),
-                        const SizedBox(width: 8),
-                        _chip(
-                          'Rejected',
-                          'rejected',
-                          returns.where((t) => t.status == 'rejected').length,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  Builder(builder: (_) {
+            _statusOptions = buildStatusOptions(returns, (x) => x.status);
+            return const SizedBox.shrink();
+          }),
                 ],
               );
             },
@@ -428,62 +410,7 @@ class _BranchWarehouseReturnScreenState
     );
   }
 
-  Widget _chip(String label, String value, int count) {
-    final isSelected = _filterStatus == value;
-    Color chipColor;
-    String chipIcon;
-    switch (value) {
-      case 'pending':
-        chipColor = Colors.orange;
-        chipIcon = AppIcons.hourglassEmptyOutlined;
-        break;
-      case 'accepted':
-        chipColor = Colors.green;
-        chipIcon = AppIcons.checkCircleOutline;
-        break;
-      case 'rejected':
-        chipColor = Colors.red;
-        chipIcon = AppIcons.cancelOutlined;
-        break;
-      default:
-        chipColor = _primary;
-        chipIcon = AppIcons.listOutlined;
-    }
-    return GestureDetector(
-      onTap: () => setState(() => _filterStatus = value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-        decoration: BoxDecoration(
-          color: isSelected ? chipColor : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? chipColor : const Color(0xFFE7E9F0),
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(
-              chipIcon,
-              size: 15,
-              color: isSelected ? Colors.white : chipColor,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              '$label ($count)',
-              style: TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : const Color(0xFF5A5F73),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  
 }
 
 String _fmtDate(DateTime dt) => dfmt.fmtDateTime(dt);
